@@ -1,0 +1,60 @@
+@using farmamest.Models
+@model (string Clave, ExpedienteHospitalizacionContextoVm Contexto)
+
+@{
+    var ctx = Model.Contexto;
+    if (ctx == null)
+    {
+        <p class="muted">Sin información complementaria disponible.</p>
+        return;
+    }
+
+    var clave = (Model.Clave ?? "").ToLowerInvariant();
+}
+
+<p class="muted" style="margin-bottom:8px;">Información clínica relacionada registrada en el expediente de hospitalización:</p>
+<table class="kv">
+    @if (clave is "ingreso" or "traslado" or "recepcion" or "egreso" or "evolucion")
+    {
+        <tr><th>Fecha ingreso hospitalización</th><td>@(ctx.FechaInicio ?? "-")</td></tr>
+        <tr><th>Hora de ingreso</th><td>@(ctx.HoraIngreso ?? "-")</td></tr>
+        <tr><th>Procedimiento</th><td>@(ctx.Procedimiento ?? "-")</td></tr>
+        <tr><th>Médico tratante</th><td>@(ctx.MedicoTratante ?? "-") (@(ctx.ColegiadoMedico ?? "-"))</td></tr>
+        <tr><th>Observaciones de admisión</th><td>@(ctx.Observaciones ?? "-")</td></tr>
+    }
+    else if (clave is "enfermeria-ingreso" or "enfermeria-traslado" or "enfermeria-recepcion" or "enfermeria-egreso" or "enfermeria")
+    {
+        <tr><th>Habitación</th><td>@(ctx.Habitacion ?? "-")</td></tr>
+        <tr><th>Categoría</th><td>@(ctx.CategoriaHabitacion ?? "-")</td></tr>
+        <tr><th>Responsable de cuenta</th><td>@(ctx.ResponsableCuenta ?? "-")</td></tr>
+        <tr><th>Seguro</th><td>@(ctx.Seguro ?? "-")</td></tr>
+        <tr><th>Alergias (cuestionario)</th><td>@(ctx.Alergias ?? "-")</td></tr>
+    }
+    else if (clave == "orden-pre" || clave == "orden-post")
+    {
+        <tr><th>Procedimiento programado</th><td>@(ctx.Procedimiento ?? "-")</td></tr>
+        <tr><th>Medicamentos actuales</th><td>@(ctx.MedicamentosActuales ?? "-")</td></tr>
+        <tr><th>Comentarios clínicos</th><td>@(ctx.ComentariosClinicos ?? "-")</td></tr>
+        <tr><th>Médico tratante</th><td>@(ctx.MedicoTratante ?? "-")</td></tr>
+    }
+    else if (clave == "signos")
+    {
+        <tr><th>Peso</th><td>@(ctx.Peso ?? "-")</td></tr>
+        <tr><th>Estatura</th><td>@(ctx.Estatura ?? "-")</td></tr>
+        <tr><th>IMC</th><td>@(ctx.Imc ?? "-")</td></tr>
+        <tr><th>Tipo de sangre</th><td>@(ctx.TipoSangre ?? "-")</td></tr>
+        <tr><th>Edad</th><td>@(ctx.EdadPaciente ?? "-")</td></tr>
+    }
+    else if (clave == "medicamentos")
+    {
+        <tr><th>Medicamentos actuales (cuestionario)</th><td>@(ctx.MedicamentosActuales ?? "-")</td></tr>
+        <tr><th>Procedimiento</th><td>@(ctx.Procedimiento ?? "-")</td></tr>
+        <tr><th>Anestesiólogo</th><td>@(ctx.Anestesiologo ?? "-")</td></tr>
+    }
+    else
+    {
+        <tr><th>Paciente / DPI</th><td>@(ctx.DpiPaciente ?? "-")</td></tr>
+        <tr><th>Procedimiento</th><td>@(ctx.Procedimiento ?? "-")</td></tr>
+        <tr><th>Período de hospitalización</th><td>@(ctx.FechaInicio ?? "-") — @(ctx.FechaFin ?? "-")</td></tr>
+    }
+</table>

@@ -202,7 +202,7 @@ namespace Database.Shared.Data
             }
             if ((empleadoId != null))
             {
-                cita = cita.Where(s => s.EspecialidadId == empleadoId);
+                cita = cita.Where(s => s.EmpleadoId == empleadoId);
             }
             var resultado = PaginacionList<Citas>.CreateAsyncc(cita
              .Include(a => a.Especialidad)
@@ -353,14 +353,6 @@ namespace Database.Shared.Data
 
             foreach (var cita in citas)
             {
-                // Forzar que FechaInicio y FechaFinal se interpreten como UTC
-                if (cita.FechaInicio.HasValue)
-                    cita.FechaInicio = cita.FechaInicio.Value.ToUniversalTime();
-
-                if (cita.FechaFinal.HasValue)
-                    cita.FechaFinal = cita.FechaFinal.Value.ToUniversalTime();
-
-                // Limpieza de servicios eliminados
                 if (cita.CitasServicios != null)
                 {
                     cita.CitasServicios = cita.CitasServicios
@@ -409,8 +401,9 @@ namespace Database.Shared.Data
             return _context.Citass
             .Include(a => a.Especialidad)
             .Include(a => a.Paciente).ThenInclude(a => a.Sexo)
-            .Include(a => a.Empleado)
-                        .Include(a => a.Habitacion)
+            .Include(a => a.Empleado).ThenInclude(a => a.Especialidad)
+            .Include(a => a.Servicio)
+            .Include(a => a.Habitacion)
 
             .Include(a => a.User).ThenInclude(a => a.Persona)
             .Include(a => a.CitasServicios).ThenInclude(a => a.Servicio)
@@ -452,6 +445,8 @@ namespace Database.Shared.Data
             var fecha = _context.CalendarioFechasBloqueadas
                 .Where(a => a.Fecha.Date == dia.Date)
                 .FirstOrDefault();
+            if (fecha == null)
+                return;
             fecha.Eliminada = true;
             _context.Entry(fecha).State = EntityState.Modified;
             _context.SaveChanges();
@@ -459,8 +454,7 @@ namespace Database.Shared.Data
 
         public IList<Citas> CitasPorFechas(DateTime fechaInicial, DateTime fechaFinal, int? id, int? id1, int? id2)
         {
-            return _context.Citass
-
+            var query = _context.Citass
              .Include(a => a.CitasServicios).ThenInclude(a => a.Servicio)
              .Include(a => a.Paciente).ThenInclude(a => a.Sexo)
              .Include(a => a.Paciente).ThenInclude(a => a.SeguroEpss)
@@ -469,9 +463,19 @@ namespace Database.Shared.Data
              .Include(a => a.Servicio)
              .Include(a => a.Empleado)
              .Include(a => a.Habitacion)
-
+             .Include(a => a.Sucursal)
              .Include(a => a.Especialidad)
-             .Where(a => a.FechaInicio >= fechaInicial && a.FechaInicio < fechaFinal.AddDays(1)).ToList();
+             .Where(a => a.FechaInicio >= fechaInicial && a.FechaInicio < fechaFinal.AddDays(1))
+             .Where(a => !a.Eliminado);
+
+            if (id.HasValue)
+                query = query.Where(a => a.SucursalId == id);
+            if (id1.HasValue)
+                query = query.Where(a => a.EmpleadoId == id1);
+            if (id2.HasValue)
+                query = query.Where(a => a.EspecialidadId == id2);
+
+            return query.ToList();
         }
 
         public IList<Citas> CitasCalendarioLineal(
@@ -578,7 +582,8 @@ namespace Database.Shared.Data
             var citas = _context.Citass
             .Include(a => a.Especialidad)
             .Include(a => a.Paciente)
-                        .Include(a => a.Habitacion)
+            .Include(a => a.Empleado).ThenInclude(a => a.Especialidad)
+            .Include(a => a.Habitacion)
 
             .Include(a => a.CitasServicios)
             .Where(a => a.FechaInicio > fechaHoy && a.FechaInicio <= fechaTesDiasDespues)

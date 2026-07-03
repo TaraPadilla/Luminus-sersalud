@@ -13,8 +13,18 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Database.Shared
 {
-    public partial class Context : IdentityDbContext<IdentityUser>
+    public partial class Context : IdentityDbContext<User>
     {
+        private static readonly TimeZoneInfo GuatemalaTimeZone =
+            TimeZoneInfo.FindSystemTimeZoneById("America/Guatemala");
+
+        /// <summary>Convierte instante UTC almacenado a hora de pared Guatemala (no depende del TZ del servidor).</summary>
+        private static DateTime FromStoredUtcToGuatemala(DateTime value) =>
+            TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(value, DateTimeKind.Utc), GuatemalaTimeZone);
+
+        private static DateTime? FromStoredUtcToGuatemala(DateTime? value) =>
+            value.HasValue ? FromStoredUtcToGuatemala(value.Value) : value;
+
         public string ConnectionString { get; set; }
         public Context(DbContextOptions<Context> options) : base(options)
         {
@@ -311,6 +321,7 @@ namespace Database.Shared
         public DbSet<HospitalizacionExamenPdf> HospitalizacionExamenPdf { get; set; }
 
         public DbSet<ListaChequeo> ListasChequeo { get; set; }
+        public DbSet<RegistroAnestesia> RegistrosAnestesia { get; set; }
 
         public DbSet<CuestionarioPreAnestesico> CuestionariosPreAnestesicos { get; set; }
 
@@ -363,13 +374,13 @@ namespace Database.Shared
 
 
             var dateTimeConverter = new ValueConverter<DateTime, DateTime>(
-                v => DateTime.SpecifyKind(v, DateTimeKind.Utc), // Guardar como UTC
-                v => DateTime.SpecifyKind(v, DateTimeKind.Utc).ToLocalTime() // Leer como hora del servidor
+                v => DateTime.SpecifyKind(v, DateTimeKind.Utc),
+                v => FromStoredUtcToGuatemala(v)
             );
 
             var nullableDateTimeConverter = new ValueConverter<DateTime?, DateTime?>(
                 v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : v,
-                v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc).ToLocalTime() : v
+                v => FromStoredUtcToGuatemala(v)
             );
 
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
@@ -511,6 +522,7 @@ namespace Database.Shared
             modelBuilder.Entity<ServicioPrecio>().ToTable("ServiciosPrecios");
 
             modelBuilder.Entity<ListaChequeo>().ToTable("ListasChequeo");
+            modelBuilder.Entity<RegistroAnestesia>().ToTable("RegistrosAnestesia");
             modelBuilder.Entity<CuestionarioPreAnestesico>().ToTable("CuestionariosPreAnestesicos");
 
 
@@ -518,7 +530,13 @@ namespace Database.Shared
             //modelBuilder.Entity<DetalleServicio>().ToTable("DetalleServicios");
             modelBuilder.Entity<Banco>().ToTable("Bancos");
             modelBuilder.Entity<Seguro>().ToTable("Seguros");
-            modelBuilder.Entity<Envio>().ToTable("Envios");
+            modelBuilder.Entity<Envio>(entity =>
+            {
+                entity.ToTable("Envios");
+                entity.HasOne(e => e.User)
+                    .WithMany(u => u.Envios)
+                    .HasForeignKey(e => e.UserId2);
+            });
             modelBuilder.Entity<EstadosEnvio>().ToTable("EstadosEnvio");
             modelBuilder.Entity<DetalleEnvio>().ToTable("DetalleEnvios");
             modelBuilder.Entity<Ruta>().ToTable("Rutas");
@@ -1816,6 +1834,14 @@ namespace Database.Shared
                 entity.ToTable("DevolucionNacional");
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).UseIdentityByDefaultColumn();
+
+                entity.HasOne(e => e.BodegaOrigen)
+                    .WithMany()
+                    .HasForeignKey(e => e.BodegaOrigenId);
+
+                entity.HasOne(e => e.Proveedor)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProveedorId);
             });
 
             modelBuilder.Entity<DevolucionNacionalDetalle>(entity =>
@@ -1823,6 +1849,11 @@ namespace Database.Shared
                 entity.ToTable("DevolucionNacionalDetalle");
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).UseIdentityByDefaultColumn();
+
+                entity.HasOne(d => d.ProductoInventario)
+                    .WithMany()
+                    .HasForeignKey(d => d.ProductoInventarioId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<DevolucionNacional>()
@@ -1854,20 +1885,28 @@ namespace Database.Shared
             });
 
             modelBuilder.Entity<MedicamentoNoControlado>().ToTable("MedicamentoNoControlado");
-
-
-            base.OnModelCreating(modelBuilder);
         }
         public override int SaveChanges()
         {
             ConvertDateTimesToUtc();
+            SanitizePacienteForeignKeys();
             return base.SaveChanges();
         }
 
         public override int SaveChanges(bool acceptAllChangesOnSuccess)
         {
             ConvertDateTimesToUtc();
+            SanitizePacienteForeignKeys();
             return base.SaveChanges(acceptAllChangesOnSuccess);
+        }
+
+        private void SanitizePacienteForeignKeys()
+        {
+            foreach (var entry in ChangeTracker.Entries<Paciente>()
+                .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified))
+            {
+                PacienteFkSanitizer.SanitizeOptionalForeignKeys(this, entry.Entity);
+            }
         }
 
         private void ConvertDateTimesToUtc()

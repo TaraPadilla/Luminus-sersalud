@@ -1,44 +1,59 @@
 @model sistema.Models.HospitalizacionDetallesViewModel
-<div class="tab-pane tabs-animation fade show " id="tab-content-historial-autorizaciones" role="tabpanel">
-                <div class="main-card mb-3 card" style="border-radius: 10px">
-                    <div class="card-body">
-                        <div class="form-row">
-                            <div class="col-md-12">
-                                <h5><b>Autorizaciones</b></h5>
-                            </div>
-                            <div class="col-md-12 text-primary" style="display:none" id="texto-cargando-historial-hospitalizaciones">
-                                Cargando historial de hospitalizaciones...
-                            </div>
-                            <div class="col-md-12 text-danger" style="display:none" id="texto-error-consultar-historial-hospitalizaciones">
-                                Error de conexion.
-                                <a href="#" data-bind="click: consultarHistorialHospitalizaciones">Reintentar</a>
-                            </div>
-                            <div class="col-md-12 table-responsive">
-                                <table class="table table-hover">
+<div class="tab-pane tabs-animation fade " id="tab-content-historial-autorizaciones" role="tabpanel">
+    <div class="main-card mb-3 card" style="border-radius: 10px">
+        <div class="card-body">
+            <div class="form-row">
+                <div class="col-md-12 d-flex justify-content-between align-items-center flex-wrap mb-2" style="gap:10px;">
+                    <h5 class="mb-0"><b>Autorizaciones</b></h5>
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-autorizacion-accion="actualizar">
+                        <i class="fas fa-sync-alt mr-1"></i> Actualizar
+                    </button>
+                </div>
+                <div class="col-md-12 text-primary" style="display:none" id="texto-cargando-autorizaciones">
+                    Cargando archivos de autorización...
+                </div>
+                <div class="col-md-12">
+                    <div class="row">
+                        <div class="col-lg-5">
+                            <div class="table-responsive">
+                                <table class="table table-hover table-sm">
                                     <thead>
                                         <tr>
                                             <th>Nombre del Archivo</th>
-                                            <th>Ver PDF</th>
+                                            <th>Acciones</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        <!--ko foreach: archivosAutorizaciones-->
+                                    <tbody id="tbody-autorizaciones">
                                         <tr>
-                                            <!-- Muestra el nombre del archivo -->
-                                            <td data-bind="text: ArchivoNombre"></td>
-                                            <!-- Botón para abrir el archivo -->
-                                            <td>
-                                                <a data-bind="attr: { href: ArchivoUrl }" target="_blank" class="btn btn-success">
-                                                    <i class="fas fa-file-pdf"></i> Ver PDF
-                                                </a>
+                                            <td colspan="2" class="text-center text-muted py-3">
+                                                No hay archivos de autorización cargados para esta hospitalización.
+                                                <br /><small>Coloque PDFs en <code>wwwroot/Autorizaciones/</code> con el ID de admisión en el nombre.</small>
                                             </td>
                                         </tr>
-                                        <!--/ko-->
                                     </tbody>
-
                                 </table>
+                            </div>
+                        </div>
+                        <div class="col-lg-7">
+                            <div class="border rounded p-2 bg-light" style="min-height:420px;">
+                                <h6 class="text-muted small text-uppercase font-weight-bold mb-2">Vista previa</h6>
+                                <div id="autorizacion-preview-wrap" style="display:none;">
+                                    <div class="embed-responsive embed-responsive-4by3 bg-white border rounded">
+                                        <iframe class="embed-responsive-item" id="autorizacion-preview-iframe" title="Vista previa autorización"></iframe>
+                                    </div>
+                                    <p class="small text-muted mt-2 mb-0" id="autorizacion-preview-nombre"></p>
+                                </div>
+                                <div id="autorizacion-preview-empty" class="d-flex align-items-center justify-content-center text-muted" style="min-height:360px;">
+                                    <div class="text-center">
+                                        <i class="fas fa-file-medical fa-3x mb-2 opacity-50"></i>
+                                        <p class="mb-0">Seleccione un archivo para visualizarlo aquí.</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+</div>

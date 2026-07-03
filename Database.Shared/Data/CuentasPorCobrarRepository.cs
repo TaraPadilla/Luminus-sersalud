@@ -21,6 +21,7 @@ namespace Database.Shared.Data
         {
             return _context.CuentasPorCobrar
                 .Include(a => a.Paciente)
+                .Include(a => a.DetallesCuentaPorCobrar)
                 .Where(a => a.Eliminada == false)
                 .ToList();
         }

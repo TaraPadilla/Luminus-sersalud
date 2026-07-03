@@ -229,6 +229,22 @@ table.t-items-consolidado tfoot tr {
 table.t-items-consolidado tfoot td {
     padding: 5px 8px;
 }
+table.t-items-consolidado thead {
+    display: table-header-group;
+}
+.bloque-categoria-consolidado {
+    margin-top: 25px;
+    page-break-inside: avoid;
+    page-break-before: auto;
+}
+.bloque-categoria-consolidado .resumen-titulo {
+    page-break-after: avoid;
+}
+.insumo-linea td:first-child {
+    padding-left: 14px;
+    font-style: italic;
+    color: #555;
+}
 </style>
 </head>
 <body>
@@ -236,7 +252,7 @@ table.t-items-consolidado tfoot td {
 <div class="doc-header">
     <div>
         <div class="titulo">Reporte General de Ventas</div>
-        <div class="subtitulo">Desglose por ambiente y categoría de ítem</div>
+        <div class="subtitulo">@Model.ModoReporteTexto</div>
     </div>
     <div class="meta">
         Generado: @Model.FechaGeneracion.ToString("dd/MM/yyyy HH:mm")<br/>
@@ -334,7 +350,7 @@ table.t-items-consolidado tfoot td {
                         <td class="r fw green">Q. @v.MontoNeto.ToString("N2")</td>
                         <td class="m">@v.FormasPagoResumen</td>
                     </tr>
-                    @if (Model.MostrarDetalle && v.DetalleItems != null && v.DetalleItems.Any())
+                    @if (Model.MostrarDetalle && v.DetalleItemsPdf != null && v.DetalleItemsPdf.Any())
                     {
                         <tr>
                             <td colspan="@colspanDetalle" style="padding:0; background:#f4f9fe;">
@@ -351,13 +367,14 @@ table.t-items-consolidado tfoot td {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach (var item in v.DetalleItems)
+                                        @foreach (var item in v.DetalleItemsPdf)
                                         {
                                             string catClass = item.Categoria == "Producto" ? "cat-prod"
                                                             : item.Categoria == "Servicio"  ? "cat-serv"
-                                                            : item.Categoria == "Examen/Lab" ? "cat-exam"
+                                                            : item.Categoria == "Insumo" ? "cat-prod"
+                                                            : item.Categoria == "Examen/Lab" || item.Categoria == "Examen" ? "cat-exam"
                                                             : "cat-hosp";
-                                            <tr>
+                                            <tr class="@(item.Categoria == "Insumo" ? "insumo-linea" : "")">
                                                 <td>@item.Descripcion</td>
                                                 <td><span class="cat-badge @catClass">@item.Categoria</span></td>
                                                 <td class="r">@item.Cantidad.ToString("N0")</td>
@@ -431,7 +448,7 @@ table.t-items-consolidado tfoot td {
     </div>
 }
 
-@if (Model.Ambientes.Count > 1)
+@if (Model.Ambientes.Count >= 1)
 {
     <div class="resumen-global">
         <div class="resumen-titulo">Resumen Consolidado por Ambiente</div>
@@ -445,8 +462,24 @@ table.t-items-consolidado tfoot td {
                     <th class="r">Exámenes</th>
                     <th class="r">Hospital</th>
                     <th class="r">Descuentos</th>
-                    <th class="r">Total Facturado</th>
-                    <th class="r">Total Cobrado</th>
+                    @if (Model.MostrarResumenCobro)
+                    {
+                        <th class="r">Total Facturado</th>
+                        <th class="r">Total Cobrado</th>
+                    }
+                    else
+                    {
+                        <th class="r">Total Neto</th>
+                    }
+                    @if (Model.MostrarCostoGananciaEnResumenAmbiente)
+                    {
+                        @if (Model.MostrarPrecioCostoUnitarioResumen)
+                        {
+                            <th class="r">P. Costo Unit.</th>
+                        }
+                        <th class="r">Costo Total</th>
+                        <th class="r">Ganancia</th>
+                    }
                     <th class="r">% Total</th>
                 </tr>
             </thead>
@@ -464,8 +497,24 @@ table.t-items-consolidado tfoot td {
                         <td class="r">@(amb.TotalExamenes  > 0 ? $"Q. {amb.TotalExamenes:N2}"  : "—")</td>
                         <td class="r">@(amb.TotalHospital  > 0 ? $"Q. {amb.TotalHospital:N2}"  : "—")</td>
                         <td class="r red">@(amb.TotalDescuentos > 0 ? $"Q. {amb.TotalDescuentos:N2}" : "—")</td>
-                        <td class="r fw green">Q. @amb.TotalNeto.ToString("N2")</td>
-                        <td class="r fw">Q. @amb.TotalCobrado.ToString("N2")</td>
+                        @if (Model.MostrarResumenCobro)
+                        {
+                            <td class="r fw green">Q. @amb.TotalNeto.ToString("N2")</td>
+                            <td class="r fw">Q. @amb.TotalCobrado.ToString("N2")</td>
+                        }
+                        else
+                        {
+                            <td class="r fw green">Q. @amb.TotalNeto.ToString("N2")</td>
+                        }
+                        @if (Model.MostrarCostoGananciaEnResumenAmbiente)
+                        {
+                            @if (Model.MostrarPrecioCostoUnitarioResumen)
+                            {
+                                <td class="r">@(amb.PrecioCostoUnitarioPromedio > 0 ? $"Q. {amb.PrecioCostoUnitarioPromedio:N2}" : "—")</td>
+                            }
+                            <td class="r">@(amb.TotalCosto > 0 ? $"Q. {amb.TotalCosto:N2}" : "—")</td>
+                            <td class="r fw green">Q. @amb.Ganancia.ToString("N2")</td>
+                        }
                         <td class="r">@pct %</td>
                     </tr>
                 }
@@ -479,16 +528,35 @@ table.t-items-consolidado tfoot td {
                     <td class="r">@(Model.TotalGlobalExamenes  > 0 ? $"Q. {Model.TotalGlobalExamenes:N2}"  : "—")</td>
                     <td class="r">@(Model.TotalGlobalHospital  > 0 ? $"Q. {Model.TotalGlobalHospital:N2}"  : "—")</td>
                     <td class="r">@(Model.TotalGlobalDescuentos > 0 ? $"Q. {Model.TotalGlobalDescuentos:N2}" : "—")</td>
-                    <td class="r">Q. @Model.TotalGlobalNeto.ToString("N2")</td>
-                    <td class="r">Q. @Model.TotalGlobalCobrado.ToString("N2")</td>
+                    @if (Model.MostrarResumenCobro)
+                    {
+                        <td class="r">Q. @Model.TotalGlobalNeto.ToString("N2")</td>
+                        <td class="r">Q. @Model.TotalGlobalCobrado.ToString("N2")</td>
+                    }
+                    else
+                    {
+                        <td class="r">Q. @Model.TotalGlobalNeto.ToString("N2")</td>
+                    }
+                    @if (Model.MostrarCostoGananciaEnResumenAmbiente)
+                    {
+                        @if (Model.MostrarPrecioCostoUnitarioResumen)
+                        {
+                            <td class="r">—</td>
+                        }
+                        <td class="r">@(Model.TotalGlobalCosto > 0 ? $"Q. {Model.TotalGlobalCosto:N2}" : "—")</td>
+                        <td class="r">Q. @Model.TotalGlobalGanancia.ToString("N2")</td>
+                    }
                     <td class="r">100 %</td>
                 </tr>
             </tfoot>
         </table>
-        <div style="font-size:7.5px; color:#888; margin-top:3px; font-style:italic;">
-            * <strong>Total Facturado</strong>: suma de ítems facturados (puede incluir saldos pendientes en cuentas por cobrar).
-            &nbsp;|&nbsp; <strong>Total Cobrado</strong>: pagos efectivamente recibidos en caja. La diferencia corresponde a cuentas por cobrar pendientes.
-        </div>
+        @if (Model.MostrarResumenCobro)
+        {
+            <div style="font-size:7.5px; color:#888; margin-top:3px; font-style:italic;">
+                * <strong>Total Facturado</strong>: suma de ítems facturados (puede incluir saldos pendientes en cuentas por cobrar).
+                &nbsp;|&nbsp; <strong>Total Cobrado</strong>: pagos efectivamente recibidos en caja. La diferencia corresponde a cuentas por cobrar pendientes.
+            </div>
+        }
     </div>
 }
 
@@ -529,6 +597,83 @@ table.t-items-consolidado tfoot td {
     </div>
 }
 
+@if (Model.MostrarConsolidadoEspecialidades && Model.ConsolidadoEspecialidades != null && Model.ConsolidadoEspecialidades.Any())
+{
+    <div class="medicos-consolidado">
+        <div class="medicos-titulo">Consolidado de Ventas por Especialidad</div>
+        <table class="t-medicos" style="font-size:8px;">
+            <thead>
+                <tr>
+                    <th rowspan="2">Especialidad</th>
+                    <th class="r" colspan="2">Ventas Totales</th>
+                    <th class="r" colspan="2">Citas</th>
+                    <th class="r" colspan="2">Hospitalización</th>
+                    <th class="r" colspan="2">C. Externa</th>
+                    <th class="r" colspan="2">Sala OP</th>
+                    <th class="r" rowspan="2">Productos</th>
+                    <th class="r" rowspan="2">Exámenes</th>
+                    <th class="r" rowspan="2">Descuentos</th>
+                    <th class="r" rowspan="2">Total Neto</th>
+                    <th class="r" rowspan="2">% Total</th>
+                </tr>
+                <tr>
+                    <th class="r">#</th><th class="r">Q.</th>
+                    <th class="r">#</th><th class="r">Q.</th>
+                    <th class="r">#</th><th class="r">Q.</th>
+                    <th class="r">#</th><th class="r">Q.</th>
+                    <th class="r">#</th><th class="r">Q.</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var esp in Model.ConsolidadoEspecialidades)
+                {
+                    decimal pctEsp = Model.TotalGlobalNeto > 0
+                        ? Math.Round(esp.TotalNeto / Model.TotalGlobalNeto * 100, 1)
+                        : 0;
+                    <tr>
+                        <td class="fw">@esp.EspecialidadNombre</td>
+                        <td class="r">@esp.CantidadVentas</td>
+                        <td class="r">Q. @esp.TotalNeto.ToString("N2")</td>
+                        <td class="r">@(esp.CantidadCitas > 0 ? esp.CantidadCitas.ToString() : "—")</td>
+                        <td class="r">@(esp.MontoCitas > 0 ? $"Q. {esp.MontoCitas:N2}" : "—")</td>
+                        <td class="r">@(esp.CantidadHospitalizaciones > 0 ? esp.CantidadHospitalizaciones.ToString() : "—")</td>
+                        <td class="r">@(esp.MontoHospitalizacion > 0 ? $"Q. {esp.MontoHospitalizacion:N2}" : "—")</td>
+                        <td class="r">@(esp.CantidadConsultaExterna > 0 ? esp.CantidadConsultaExterna.ToString() : "—")</td>
+                        <td class="r">@(esp.MontoConsultaExterna > 0 ? $"Q. {esp.MontoConsultaExterna:N2}" : "—")</td>
+                        <td class="r">@(esp.CantidadSalaOperaciones > 0 ? esp.CantidadSalaOperaciones.ToString() : "—")</td>
+                        <td class="r">@(esp.MontoSalaOperaciones > 0 ? $"Q. {esp.MontoSalaOperaciones:N2}" : "—")</td>
+                        <td class="r">@(esp.TotalProductos > 0 ? $"Q. {esp.TotalProductos:N2}" : "—")</td>
+                        <td class="r">@(esp.TotalExamenes > 0 ? $"Q. {esp.TotalExamenes:N2}" : "—")</td>
+                        <td class="r red">@(esp.TotalDescuentos > 0 ? $"Q. {esp.TotalDescuentos:N2}" : "—")</td>
+                        <td class="r fw green">Q. @esp.TotalNeto.ToString("N2")</td>
+                        <td class="r">@pctEsp %</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td class="fw">TOTAL GENERAL</td>
+                    <td class="r">@Model.ConsolidadoEspecialidades.Sum(e => e.CantidadVentas)</td>
+                    <td class="r">Q. @Model.ConsolidadoEspecialidades.Sum(e => e.TotalNeto).ToString("N2")</td>
+                    <td class="r">@Model.ConsolidadoEspecialidades.Sum(e => e.CantidadCitas)</td>
+                    <td class="r">Q. @Model.ConsolidadoEspecialidades.Sum(e => e.MontoCitas).ToString("N2")</td>
+                    <td class="r">@Model.ConsolidadoEspecialidades.Sum(e => e.CantidadHospitalizaciones)</td>
+                    <td class="r">Q. @Model.ConsolidadoEspecialidades.Sum(e => e.MontoHospitalizacion).ToString("N2")</td>
+                    <td class="r">@Model.ConsolidadoEspecialidades.Sum(e => e.CantidadConsultaExterna)</td>
+                    <td class="r">Q. @Model.ConsolidadoEspecialidades.Sum(e => e.MontoConsultaExterna).ToString("N2")</td>
+                    <td class="r">@Model.ConsolidadoEspecialidades.Sum(e => e.CantidadSalaOperaciones)</td>
+                    <td class="r">Q. @Model.ConsolidadoEspecialidades.Sum(e => e.MontoSalaOperaciones).ToString("N2")</td>
+                    <td class="r">Q. @Model.ConsolidadoEspecialidades.Sum(e => e.TotalProductos).ToString("N2")</td>
+                    <td class="r">Q. @Model.ConsolidadoEspecialidades.Sum(e => e.TotalExamenes).ToString("N2")</td>
+                    <td class="r">Q. @Model.ConsolidadoEspecialidades.Sum(e => e.TotalDescuentos).ToString("N2")</td>
+                    <td class="r">Q. @Model.ConsolidadoEspecialidades.Sum(e => e.TotalNeto).ToString("N2")</td>
+                    <td class="r">100 %</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+}
+
 @if (Model.MostrarConsolidadoMedicos && Model.ConsolidadoMedicos != null && Model.ConsolidadoMedicos.Any())
 {
     <div class="medicos-consolidado">
@@ -538,10 +683,6 @@ table.t-items-consolidado tfoot td {
                 <tr>
                     <th>Médico</th>
                     <th class="r">Ventas</th>
-                    <th class="r">Citas</th>
-                    <th class="r">Hospit.</th>
-                    <th class="r">C. Externa</th>
-                    <th class="r">Sala Op.</th>
                     <th class="r">Productos</th>
                     <th class="r">Servicios</th>
                     <th class="r">Exámenes</th>
@@ -560,10 +701,6 @@ table.t-items-consolidado tfoot td {
                     <tr>
                         <td class="fw">@med.MedicoNombre</td>
                         <td class="r">@med.CantidadVentas</td>
-                        <td class="r">@(med.CantidadCitas > 0 ? med.CantidadCitas.ToString() : "—")</td>
-                        <td class="r">@(med.CantidadHospitalizaciones > 0 ? med.CantidadHospitalizaciones.ToString() : "—")</td>
-                        <td class="r">@(med.CantidadConsultaExterna > 0 ? med.CantidadConsultaExterna.ToString() : "—")</td>
-                        <td class="r">@(med.CantidadSalaOperaciones > 0 ? med.CantidadSalaOperaciones.ToString() : "—")</td>
                         <td class="r">@(med.TotalProductos > 0 ? $"Q. {med.TotalProductos:N2}" : "—")</td>
                         <td class="r">@(med.TotalServicios > 0 ? $"Q. {med.TotalServicios:N2}" : "—")</td>
                         <td class="r">@(med.TotalExamenes > 0 ? $"Q. {med.TotalExamenes:N2}" : "—")</td>
@@ -578,10 +715,6 @@ table.t-items-consolidado tfoot td {
                 <tr>
                     <td class="fw">TOTAL GENERAL</td>
                     <td class="r">@Model.ConsolidadoMedicos.Sum(m => m.CantidadVentas)</td>
-                    <td class="r">@Model.ConsolidadoMedicos.Sum(m => m.CantidadCitas)</td>
-                    <td class="r">@Model.ConsolidadoMedicos.Sum(m => m.CantidadHospitalizaciones)</td>
-                    <td class="r">@Model.ConsolidadoMedicos.Sum(m => m.CantidadConsultaExterna)</td>
-                    <td class="r">@Model.ConsolidadoMedicos.Sum(m => m.CantidadSalaOperaciones)</td>
                     <td class="r">Q. @Model.ConsolidadoMedicos.Sum(m => m.TotalProductos).ToString("N2")</td>
                     <td class="r">Q. @Model.ConsolidadoMedicos.Sum(m => m.TotalServicios).ToString("N2")</td>
                     <td class="r">Q. @Model.ConsolidadoMedicos.Sum(m => m.TotalExamenes).ToString("N2")</td>
@@ -593,14 +726,14 @@ table.t-items-consolidado tfoot td {
             </tfoot>
         </table>
         <div style="font-size:7.5px; color:#888; margin-top:3px; font-style:italic;">
-            * Los importes se asignan al médico responsable de la venta. Los médicos secundarios solo suman al conteo de ventas.
+            * Los importes se asignan al <strong>médico tratante</strong> (consulta/cita/hospitalización), no al empleado que registró la venta en caja.
         </div>
     </div>
 }
 
 
 
-@if (Model.ItemsConsolidados != null && Model.ItemsConsolidados.Any())
+@if (Model.MostrarConsolidadoItems && Model.ItemsConsolidados != null && Model.ItemsConsolidados.Any())
 {
     <div class="resumen-global" style="margin-top: 25px;">
         <div class="resumen-titulo">Consolidado de Ítems (Productos, Servicios, Exámenes, Paquetes, etc.)</div>
@@ -610,28 +743,54 @@ table.t-items-consolidado tfoot td {
                     <th>Categoría</th>
                     <th>Nombre del Ítem</th>
                     <th class="r">Cantidad</th>
-                    <th class="r">Costo Unitario (Q.)</th>
-                    <th class="r">Costo Total (Q.)</th>
+                    @if (Model.MostrarCostoEnConsolidadoItems)
+                    {
+                        <th class="r">Costo Unitario (Q.)</th>
+                        <th class="r">Costo Total (Q.)</th>
+                    }
                     <th class="r">Total Venta (Q.)</th>
+                    @if (Model.MostrarColumnasCostoResultado)
+                    {
+                        <th class="r">Resultado (Q.)</th>
+                    }
                 </tr>
             </thead>
             <tbody>
-                @foreach (var item in Model.ItemsConsolidados.OrderBy(i => i.Categoria).ThenBy(i => i.Nombre))
+                @foreach (var item in Model.ItemsConsolidados
+                    .OrderBy(i => sistema.Models.ReporteVentasGeneralViewModel.OrdenCategoriaConsolidado(i.Categoria))
+                    .ThenBy(i => i.Categoria).ThenBy(i => i.Nombre))
                 {
                     <tr>
                         <td>@item.Categoria</td>
                         <td>@item.Nombre</td>
                         <td class="r">@item.Cantidad.ToString("N2")</td>
-                        <td class="r">@(item.CostoUnitario.HasValue ? item.CostoUnitario.Value.ToString("N2") : "—")</td>
-                        <td class="r">@(item.CostoTotal > 0 ? item.CostoTotal.ToString("N2") : "—")</td>
+                        @if (Model.MostrarCostoEnConsolidadoItems)
+                        {
+                            <td class="r">@(item.CostoUnitario.HasValue && item.CostoUnitario.Value > 0 ? item.CostoUnitario.Value.ToString("N2") : "—")</td>
+                            <td class="r">@(item.CostoTotal > 0 ? item.CostoTotal.ToString("N2") : "—")</td>
+                        }
                         <td class="r">@item.Total.ToString("N2")</td>
+                        @if (Model.MostrarColumnasCostoResultado)
+                        {
+                            <td class="r fw green">@item.Resultado.ToString("N2")</td>
+                        }
                     </tr>
                 }
             </tbody>
             <tfoot>
                 <tr style="background:#1a3a52; color:#fff;">
-                    <td colspan="5" class="fw r">TOTAL GENERAL ÍTEMS:</td>
+                    <td colspan="2" class="fw r">TOTAL GENERAL ÍTEMS:</td>
+                    <td class="r">@Model.ItemsConsolidados.Sum(i => i.Cantidad).ToString("N2")</td>
+                    @if (Model.MostrarCostoEnConsolidadoItems)
+                    {
+                        <td class="r">—</td>
+                        <td class="r">@(Model.ItemsConsolidados.Sum(i => i.CostoTotal) > 0 ? Model.ItemsConsolidados.Sum(i => i.CostoTotal).ToString("N2") : "0.00")</td>
+                    }
                     <td class="r">@Model.ItemsConsolidados.Sum(i => i.Total).ToString("N2")</td>
+                    @if (Model.MostrarColumnasCostoResultado)
+                    {
+                        <td class="r">@Model.ItemsConsolidados.Sum(i => i.Resultado).ToString("N2")</td>
+                    }
                 </tr>
             </tfoot>
         </table>
@@ -639,23 +798,33 @@ table.t-items-consolidado tfoot td {
 }
 
 
-@if (Model.ItemsConsolidados != null && Model.ItemsConsolidados.Any())
+@if (Model.MostrarConsolidadoItems && Model.ItemsConsolidados != null && Model.ItemsConsolidados.Any())
 {
     // Agrupar por categoría
-    var categorias = Model.ItemsConsolidados.GroupBy(i => i.Categoria).OrderBy(g => g.Key);
+    var categorias = Model.ItemsConsolidados
+        .GroupBy(i => i.Categoria)
+        .OrderBy(g => sistema.Models.ReporteVentasGeneralViewModel.OrdenCategoriaConsolidado(g.Key))
+        .ThenBy(g => g.Key);
 
     foreach (var grupo in categorias)
     {
-        <div class="resumen-global" style="margin-top: 25px;">
+        <div class="resumen-global bloque-categoria-consolidado">
             <div class="resumen-titulo">Consolidado por Categoría: @grupo.Key</div>
             <table class="t-items-consolidado">
                 <thead>
                     <tr>
                         <th>Nombre del Ítem</th>
                         <th class="r">Cantidad</th>
-                        <th class="r">Costo Unitario (Q.)</th>
-                        <th class="r">Costo Total (Q.)</th>
+                        @if (Model.MostrarCostoEnConsolidadoItems)
+                        {
+                            <th class="r">Costo Unitario (Q.)</th>
+                            <th class="r">Costo Total (Q.)</th>
+                        }
                         <th class="r">Total Venta (Q.)</th>
+                        @if (Model.MostrarColumnasCostoResultado)
+                        {
+                            <th class="r">Resultado (Q.)</th>
+                        }
                     </tr>
                 </thead>
                 <tbody>
@@ -664,9 +833,16 @@ table.t-items-consolidado tfoot td {
                         <tr>
                             <td>@item.Nombre</td>
                             <td class="r">@item.Cantidad.ToString("N2")</td>
-                            <td class="r">@(item.CostoUnitario.HasValue ? item.CostoUnitario.Value.ToString("N2") : "—")</td>
-                            <td class="r">@(item.CostoTotal > 0 ? item.CostoTotal.ToString("N2") : "—")</td>
+                            @if (Model.MostrarCostoEnConsolidadoItems)
+                            {
+                                <td class="r">@(item.CostoUnitario.HasValue && item.CostoUnitario.Value > 0 ? item.CostoUnitario.Value.ToString("N2") : "—")</td>
+                                <td class="r">@(item.CostoTotal > 0 ? item.CostoTotal.ToString("N2") : "—")</td>
+                            }
                             <td class="r">@item.Total.ToString("N2")</td>
+                            @if (Model.MostrarColumnasCostoResultado)
+                            {
+                                <td class="r fw green">@item.Resultado.ToString("N2")</td>
+                            }
                         </tr>
                     }
                 </tbody>
@@ -674,9 +850,16 @@ table.t-items-consolidado tfoot td {
                     <tr style="background:#1a3a52; color:#fff;">
                         <td class="fw r">TOTAL @grupo.Key.ToUpper():</td>
                         <td class="r">@grupo.Sum(i => i.Cantidad).ToString("N2")</td>
-                        <td class="r">—</td>
-                        <td class="r">@grupo.Sum(i => i.CostoTotal).ToString("N2")</td>
+                        @if (Model.MostrarCostoEnConsolidadoItems)
+                        {
+                            <td class="r">—</td>
+                            <td class="r">@(grupo.Sum(i => i.CostoTotal) > 0 ? grupo.Sum(i => i.CostoTotal).ToString("N2") : "0.00")</td>
+                        }
                         <td class="r">@grupo.Sum(i => i.Total).ToString("N2")</td>
+                        @if (Model.MostrarColumnasCostoResultado)
+                        {
+                            <td class="r">@grupo.Sum(i => i.Resultado).ToString("N2")</td>
+                        }
                     </tr>
                 </tfoot>
             </table>

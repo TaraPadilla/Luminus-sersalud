@@ -36,13 +36,13 @@
                 <div class="row g-3">
                     <div class="col-md-4 mb-3">
                         <label class="form-label"><strong>Seleccione paciente:</strong></label>
-                        <select class="form-control select2bs4" style="width: 100%;"
-                                data-bind="options: pacientes, optionsText: 'NombreConDpi', value: pacienteSeleccionado, optionsCaption: 'Seleccionar paciente'">
+                        <select class="form-control select2bs4" id="selectPaciente" style="width: 100%;">
+                            <option value="">Seleccionar paciente</option>
                         </select>
                     </div>
                     <div class="col-md-8 mb-3">
                         <label class="form-label"><strong>Nombre del paciente</strong></label>
-                        @Html.TextBoxFor(a => a.PacienteNombre, new { type = "text", @class = "form-control", @readonly = "readonly" })
+                        @Html.TextBoxFor(a => a.PacienteNombre, new { type = "text", @class = "form-control", @placeholder = "Nombre completo del paciente" })
                     </div>
                     <div class="col-md-3 mb-3">
                         <label class="form-label"><strong>No. DPI / Pasaporte</strong></label>
@@ -80,11 +80,15 @@
                     </div>
                     <div class="col-md-3 mb-3">
                         <label class="form-label"><strong>Departamento</strong></label>
-                        <select class="form-control select2bs4" style="width: 100%;" id="departamentoSeleccionado" data-bind="options: departamentosExistentes, optionsText: 'DepartamentoNombreMostrar', optionsValue: 'Id', optionsCaption: 'Seleccione...', value: departamentoSeleccionado"></select>
+                        <select class="form-control select2bs4" style="width: 100%;" id="departamentoSeleccionado">
+                            <option value="">Seleccione...</option>
+                        </select>
                     </div>
                     <div class="col-md-3 mb-3">
                         <label class="form-label"><strong>Municipio</strong></label>
-                        <select class="form-control select2bs4" style="width: 100%;" id="municipioSeleccionado" data-bind="options: municipiosExistentes, optionsText: 'MunicipioNombreMostrar', optionsValue: 'Id', optionsCaption: 'Seleccione...', value: municipioSeleccionado"></select>
+                        <select class="form-control select2bs4" style="width: 100%;" id="municipioSeleccionado">
+                            <option value="">Seleccione...</option>
+                        </select>
                     </div>
                     <div class="col-md-3 mb-3">
                         <label class="form-label"><strong>Etnia</strong></label>
@@ -812,7 +816,12 @@ function cargarHabitacionesPorCategoria(categoriaId, callback) {
                         });
 
                         if ($select.hasClass("select2bs4")) {
-                            $select.select2({ theme: "bootstrap4", width: "100%" });
+                            $select.select2({
+                                theme: "bootstrap4",
+                                width: "100%",
+                                minimumResultsForSearch: 0,
+                                placeholder: "Buscar..."
+                            });
                         }
                     },
                     error: function () {

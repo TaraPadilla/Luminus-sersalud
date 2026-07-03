@@ -7,6 +7,7 @@ using sistema.Service.IService;
 using farmamest.Dtos;
 using sistema.UtilidadesEmailWp.Services.IService;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace farmamest.UtilidadesEmailWp.Controllers
 {
@@ -33,12 +34,11 @@ namespace farmamest.UtilidadesEmailWp.Controllers
             // Creamos la lista que enviaremos al servicio
             var attachmentsList = new List<(string FileName, byte[] Data)>();
 
-            // Recorremos los archivos si es que vienen en el request
             if (request.Attachments != null && request.Attachments.Count > 0)
             {
                 foreach (var file in request.Attachments)
                 {
-                    if (file.Length > 0)
+                    if (file != null && file.Length > 0)
                     {
                         using (var memoryStream = new MemoryStream())
                         {
@@ -49,15 +49,44 @@ namespace farmamest.UtilidadesEmailWp.Controllers
                 }
             }
 
+            // Compatibilidad: algunos clientes envían "Attachment" en singular
+            if (attachmentsList.Count == 0 && Request.HasFormContentType)
+            {
+                var legacyFiles = Request.Form.Files.Where(f =>
+                    string.Equals(f.Name, "Attachment", StringComparison.OrdinalIgnoreCase));
+                foreach (var file in legacyFiles)
+                {
+                    if (file.Length > 0)
+                    {
+                        using var memoryStream = new MemoryStream();
+                        await file.CopyToAsync(memoryStream);
+                        attachmentsList.Add((file.FileName, memoryStream.ToArray()));
+                    }
+                }
+            }
+
             try
             {
+                if (request == null || string.IsNullOrWhiteSpace(request.To))
+                    return BadRequest(new { error = "Destinatario (To) es obligatorio." });
+
                 _messageService.SendEmail(request.Subject, request.Body, request.To, attachmentsList);
                 return Ok("Email sent successfully.");
             }
+            catch (InvalidOperationException ex)
+            {
+                Console.WriteLine($"Email no configurado: {ex.Message}");
+                return StatusCode(503, new { error = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error al enviar el correo: {ex.Message}");
-                return StatusCode(500, new { error = $"Error sending email: {ex.Message}" });
+                var detail = ex.InnerException?.Message ?? ex.Message;
+                Console.WriteLine($"Error al enviar el correo: {detail}");
+                return StatusCode(500, new { error = detail });
             }
         }
     }

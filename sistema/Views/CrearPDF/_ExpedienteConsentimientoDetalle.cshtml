@@ -1,0 +1,184 @@
+@using System.IO
+
+@using farmamest.Models
+
+@using farmamest.Utilidades
+
+@model (ConsentimientoHospiVM Consentimiento, string UrlArchivoEscaneado)
+
+
+
+@{
+
+    var consent = Model.Consentimiento;
+
+    var urlArchivo = Model.UrlArchivoEscaneado;
+
+}
+
+
+
+@if (consent == null && string.IsNullOrWhiteSpace(urlArchivo))
+
+{
+
+    <p class="muted">No hay consentimiento registrado para esta hospitalización.</p>
+
+}
+
+else
+
+{
+
+    @if (!string.IsNullOrWhiteSpace(urlArchivo))
+
+    {
+
+        var docEscaneado = PdfReportHelper.ResolverDocumentoEmbebido(urlArchivo, "Consentimiento informado firmado", Directory.GetCurrentDirectory());
+
+        <div style="margin-bottom:14px;">
+
+            <strong>Consentimiento informado firmado</strong>
+
+            @if (docEscaneado.PaginasBase64?.Any() == true)
+
+            {
+
+                foreach (var pagina in docEscaneado.PaginasBase64)
+
+                {
+
+                    <div style="margin-top:8px;"><img src="@pagina" style="max-width:100%;max-height:520px;" alt="Consentimiento firmado" /></div>
+
+                }
+
+            }
+
+            else
+
+            {
+
+                <p class="muted" style="margin-top:6px;">@(docEscaneado.ArchivoExiste ? "No se pudo visualizar el archivo." : "Archivo no disponible:") @urlArchivo</p>
+
+            }
+
+        </div>
+
+    }
+
+
+
+    @if (consent != null)
+
+    {
+
+        <table class="kv">
+
+            <tr><th>Paciente</th><td>@(consent.NombreCompleto ?? "-")</td></tr>
+
+            <tr><th>DPI</th><td>@(consent.DPI ?? "-")</td></tr>
+
+            <tr><th>Edad</th><td>@(consent.Edad ?? "-")</td></tr>
+
+            <tr><th>Estado civil</th><td>@(consent.EstadoCivil ?? "-")</td></tr>
+
+            <tr><th>Nacionalidad</th><td>@(consent.Nacionalidad ?? "-")</td></tr>
+
+            <tr><th>Dirección</th><td>@(consent.Direccion ?? "-")</td></tr>
+
+            <tr><th>Celular</th><td>@(consent.Celular ?? "-")</td></tr>
+
+            <tr><th>Email</th><td>@(consent.Email ?? "-")</td></tr>
+
+            <tr><th>Tipo de sangre</th><td>@(consent.TipoSangre ?? "-")</td></tr>
+
+            <tr><th>Habitación</th><td>@(consent.NumeroHabitacion ?? "-")</td></tr>
+
+            <tr><th>Hora de ingreso</th><td>@(consent.HoraIngreso ?? "-")</td></tr>
+
+            <tr><th>Médico tratante</th><td>@(consent.NombreMedicoTratante ?? "-") (@(consent.ColegiadoMedico ?? "-"))</td></tr>
+
+            <tr><th>Procedimiento / tratamiento</th><td>@(consent.TratamientoMedico ?? consent.ProcedimientoProgramado ?? "-")</td></tr>
+
+            <tr><th>Seguro médico</th><td>@(consent.PoseeSeguroMedico ?? "-") @(string.IsNullOrWhiteSpace(consent.Aseguradora) ? "" : $"— {consent.Aseguradora}")</td></tr>
+
+            <tr><th>Responsable de cuenta</th><td>@(consent.NombreResponsable ?? "-")</td></tr>
+
+            <tr><th>DPI responsable</th><td>@(consent.DPIResponsable ?? "-")</td></tr>
+
+            <tr><th>Hospital proporcionó médico</th><td>@(consent.HospitalProporcionoMedico ?? "-")</td></tr>
+
+            <tr><th>Receta médica</th><td>@(consent.RecetaMedica ?? "-")</td></tr>
+
+        </table>
+
+
+
+        @if (consent.ContactosEmergencia != null && consent.ContactosEmergencia.Any())
+
+        {
+
+            <div class="section" style="margin-top:12px;">Contactos de emergencia</div>
+
+            <table class="kv">
+
+                @foreach (var c in consent.ContactosEmergencia)
+
+                {
+
+                    <tr>
+
+                        <th>@(c.Nombre ?? "-")</th>
+
+                        <td>@(c.Telefono ?? "-") — @(c.Parentesco ?? "-")</td>
+
+                    </tr>
+
+                }
+
+            </table>
+
+        }
+
+
+
+        <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:16px;justify-content:center;">
+
+            @if (!string.IsNullOrEmpty(consent.FirmaPacienteBase64))
+
+            {
+
+                <div style="text-align:center;"><strong>Firma paciente</strong><br /><img src="@consent.FirmaPacienteBase64" style="max-height:70px;" alt="Firma paciente" /></div>
+
+            }
+
+            @if (!string.IsNullOrEmpty(consent.FirmaResponsableBase64))
+
+            {
+
+                <div style="text-align:center;"><strong>Firma responsable</strong><br /><img src="@consent.FirmaResponsableBase64" style="max-height:70px;" alt="Firma responsable" /></div>
+
+            }
+
+            @if (!string.IsNullOrEmpty(consent.FirmaMedicoBase64))
+
+            {
+
+                <div style="text-align:center;"><strong>Firma médico</strong><br /><img src="@consent.FirmaMedicoBase64" style="max-height:70px;" alt="Firma médico" /></div>
+
+            }
+
+            @if (!string.IsNullOrEmpty(consent.FirmaRepresentanteBase64))
+
+            {
+
+                <div style="text-align:center;"><strong>Representante hospital</strong><br /><img src="@consent.FirmaRepresentanteBase64" style="max-height:70px;" alt="Firma representante" /></div>
+
+            }
+
+        </div>
+
+    }
+
+}
+

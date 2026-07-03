@@ -1,0 +1,14 @@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model SelectList
+<option value="">Sin asignar</option>
+@if (Model != null)
+{
+    foreach (var opcion in Model)
+    {
+        if (string.IsNullOrWhiteSpace(opcion.Text) || string.IsNullOrWhiteSpace(opcion.Value))
+        {
+            continue;
+        }
+        <option value="@opcion.Value">@opcion.Text</option>
+    }
+}

@@ -2,28 +2,15 @@
 @model VentaUnificadaViewModel
 @inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 @{
-    // Leer el valor del appsettings.json. 
-    string sufijoLayout = Configuration["Cliente"]; 
-    
-    // Concatenar para formar el nombre del Layout (ejemplo: "_Layout" + "SS")
-    // Si la clave trae el nombre completo (ej. "_LayoutSS"), simplemente asignalo directo.
-    Layout = $"_Layout{sufijoLayout}";
-    @if (Model.IsClinica)
+    Layout = farmamest.Utilidades.SerSaludUiHelper.ResolverLayout(Configuration);
+
+    if (!string.IsNullOrWhiteSpace(Model.TipoVenta))
     {
-        ViewData["Title"] = "Clinica - Nueva venta";
+        Model.ApplyTipoVenta();
     }
-    @if (Model.IsFarmacia)
-    {
-        ViewData["Title"] = "Farmacia - Nueva venta";
-    }
-    @if (Model.IsLaboratorio)
-    {
-        ViewData["Title"] = "Laboratorio - Nueva venta";
-    }
-    @if (Model.IsEmergencia)
-    {
-        ViewData["Title"] = "Emergencia - Nueva Venta";
-    }
+
+    ViewData["Title"] = Model.GetTituloPantalla();
+    var tituloPantalla = Model.GetTituloPantalla();
 }
 
 <div class="main-card mb-3 card">
@@ -31,24 +18,21 @@
         <center>
             <h4>
                 <b>
-                    @if (Model.IsClinica)
-                    {
-                        <span>Cl&iacute;nica - Nueva venta</span>
-                    }
-                    @if (Model.IsFarmacia)
-                    {
-                        <span>Farmacia - Nueva venta</span>
-                    }
-                    @if (Model.IsLaboratorio)
-                    {
-                        <span>Laboratorio - Nueva venta</span>
-                    }
-                    @if (Model.IsEmergencia)
-                    {
-                        <span>Emergencia - Nueva Venta</span>
-                    }
+                    <span>@tituloPantalla</span>
                 </b>
             </h4>
+            @if (Model.IsClinica)
+            {
+                <span class="badge badge-primary mt-2">Venta clínica</span>
+            }
+            else if (Model.IsFarmacia)
+            {
+                <span class="badge badge-success mt-2">Venta farmacia</span>
+            }
+            else if (Model.IsLaboratorio)
+            {
+                <span class="badge badge-info mt-2">Venta laboratorio / exámenes</span>
+            }
         </center>
     </div>
 </div>

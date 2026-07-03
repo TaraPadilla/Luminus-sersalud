@@ -101,6 +101,9 @@ namespace sistema.Service
 
         public void Update(CategoriaGeneralLabClinicoViewModel categoriaViewModel)
         {
+            if (categoriaViewModel == null || categoriaViewModel.Id <= 0)
+                throw new InvalidOperationException("Id de categoría inválido.");
+
             var categoria = new CategoriaGeneralLabClinico
             {
                 Id = categoriaViewModel.Id,
@@ -112,7 +115,6 @@ namespace sistema.Service
             };
 
             _categoriaGeneralLabClinicoRepository.Update(categoria);
-
         }
 
 

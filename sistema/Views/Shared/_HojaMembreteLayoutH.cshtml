@@ -5,6 +5,7 @@
     // Valores por defecto desde configuración (disponibles en todo el archivo)
     var nombreEmpresaDefault = Config["EstablecimientoNombreEmpresa"];
     var tituloPestanaDefault = Config["EstablecimientoPestana"];
+    var Cliente = Config["Cliente"];
 
     var tituloPagina = (ViewData["Title"] as string) ?? tituloPestanaDefault ?? nombreEmpresaDefault ?? "AVM";
 }
@@ -125,8 +126,9 @@
     bool mostrarDireccion = (ViewData["MostrarDireccion"] as bool?) ?? true;
     bool mostrarTelefono = (ViewData["MostrarTelefono"] as bool?) ?? true;
     bool mostrarCorreo = (ViewData["MostrarCorreoElectronico"] as bool?) ?? true;
-    bool mostrarServicios = (ViewData["MostrarServicios"] as bool?) ?? true;
-    bool mostrarEmergencias = (ViewData["MostrarEmergencias"] as bool?) ?? true;
+    bool esSerSalud = Cliente == "SS" || string.Equals(Cliente, "SerSalud", StringComparison.OrdinalIgnoreCase);
+    bool mostrarServicios = (ViewData["MostrarServicios"] as bool?) ?? !esSerSalud;
+    bool mostrarEmergencias = (ViewData["MostrarEmergencias"] as bool?) ?? !esSerSalud;
 
     bool hayLogo = mostrarLogo && !string.IsNullOrWhiteSpace(logo);
 }
@@ -170,7 +172,7 @@
             </td>
         </tr>
 
-        @if (mostrarServicios)
+        @if (!esSerSalud && mostrarServicios)
         {
             <tr>
                 @if (hayLogo)
@@ -205,7 +207,7 @@
         }
     </table>
 
-    @if (mostrarEmergencias)
+    @if (!esSerSalud && mostrarEmergencias)
     {
         <div class="header-emergency">
             EMERGENCIAS LAS 24 HORAS

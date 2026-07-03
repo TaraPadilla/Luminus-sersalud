@@ -13,8 +13,10 @@ public class NotaEnfermeriaPdfViewModel
     public bool Firmado { get; set; }
     public string FirmaBase64 { get; set; }
     public string FechaFirma { get; set; }
+    public string FirmadoPor { get; set; }
     public string PacienteNombre { get; set; }
     public int HospitalizacionId { get; set; }
+    public string TipoNota { get; set; }
 
     // Datos del establecimiento
     public string EstablecimientoDireccion { get; set; }

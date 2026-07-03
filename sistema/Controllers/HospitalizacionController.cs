@@ -16,6 +16,7 @@ using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Database.Shared;
 using Sistema.Services.WebAuthn;
+using sistema.Helpers;
 using sistema.Models;
 using Database.Shared.IRepository;
 using Database.Shared.Models;
@@ -24,6 +25,7 @@ using farmamest.Models;
 using sistema.Service.IService;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using farmamest.Service.IService;
+using farmamest.Service;
 using Microsoft.AspNetCore.Identity.UI;
 using Microsoft.AspNetCore.Http;
 using System.IO;
@@ -31,6 +33,7 @@ using System.Text;
 using Microsoft.AspNetCore.Hosting;
 
 using Microsoft.Extensions.Configuration;
+using farmamest.Utilidades;
 
 namespace sistema.Controllers
 {
@@ -68,6 +71,7 @@ namespace sistema.Controllers
         private readonly IHospitalizacionService _hospitalizacionService = null;
         private readonly IEmergenciaService _emergenciaService = null;
         private readonly IFilesService _filesService = null;
+        private readonly IConsentimientoHospiService _consentimientoHospiService = null;
         private readonly IProducto _productosRepository = null;
 
         private readonly IHospitalizacionDocumentoRepository _hospitalizacionDocumentoRepository;
@@ -105,6 +109,7 @@ namespace sistema.Controllers
             IHospitalizacionUsuarioAccesoService hospitalizacionUsuarioAcceso,
             IHospitalizacionService hospitalizacionService,
             IFilesService filesService,
+            IConsentimientoHospiService consentimientoHospiService,
             IEmergenciaService emergenciaService,
             IProducto productosRepository,
             IWebAuthnService webAuthn,
@@ -141,6 +146,7 @@ namespace sistema.Controllers
             _hospitalizacionService = hospitalizacionService;
             _emergenciaService = emergenciaService;
             _filesService = filesService;
+            _consentimientoHospiService = consentimientoHospiService;
             _productosRepository = productosRepository;
             _webAuthn = webAuthn;
             _notaOperatoriaRepository = notaOperatoriaRepository;
@@ -160,31 +166,7 @@ namespace sistema.Controllers
             {
                 foreach (var habitacion in habitaciones)
                 {
-                    var ocupante = "-";
-                    if (habitacion.EstadoHabitacionId == (int)EstadoHabitacionEnum.Ocupada)
-                    {
-                        var paciente = _habitacionRepository.GetPacienteOcupante(habitacion.Id);
-                        ocupante = paciente != null ? paciente.Nombre : "-";
-                    }
-                    int? hospitalizacionId = null;
-                    var hospitalizacionActualId = _habitacionRepository.GetHospitalizacionActual(habitacion.Id) == null ? 0 : _habitacionRepository.GetHospitalizacionActual(habitacion.Id).Id;
-
-                    if (habitacion.EstadoHabitacionId == (int)EstadoHabitacionEnum.Ocupada)
-                    {
-                        hospitalizacionId = hospitalizacionActualId;
-                    }
-                    habitacionesConsultadas.Add(new HospitalizacionHabitacionViewModel
-                    {
-                        HabitacionId = habitacion.Id,
-                        HospitalizacionId = hospitalizacionId,
-                        HabitacionNombre = habitacion.NombreNumeroHabitacion,
-                        HabitacionCategoria = habitacion.CategoriaHabitacion.NombreCategoria,
-                        HabitacionEstadoId = habitacion.EstadoHabitacionId,
-                        HabitacionEstado = habitacion.EstadoHabitacion.NombreEstado,
-                        HabitacionOcupante = ocupante,
-                        HabitacionNumeroCamas = habitacion.NumeroCamas,
-                        HabitacionCapacidadPersonas = habitacion.CapacidadPersonas
-                    });
+                    habitacionesConsultadas.Add(HospitalizacionHabitacionHelper.CrearViewModel(habitacion, _habitacionRepository));
                 }
             }
             return View(habitacionesConsultadas);
@@ -402,9 +384,9 @@ namespace sistema.Controllers
 
             var model = new CuestionarioPreAnestesicoViewModel
             {
-                pacienteNombre = paciente.Nombre,
-                pacienteRegistro = paciente.Id.ToString(),
-                pacienteEdad = paciente.Edad.ToString(),
+                pacienteNombre = paciente?.Nombre ?? "Paciente no encontrado",
+                pacienteRegistro = paciente?.Id.ToString() ?? pacienteId.ToString(),
+                pacienteEdad = paciente?.Edad?.ToString() ?? "-",
             };
 
             return View("CrearFormCuestionarioPreAnestesico", model);
@@ -862,6 +844,14 @@ namespace sistema.Controllers
             try
             {
                 var user = await _userManager.GetUserAsync(HttpContext.User);
+                if (user == null)
+                {
+                    return JsonSerializer.Serialize(new
+                    {
+                        Exitoso = false,
+                        Mensaje = "No se pudo identificar el usuario actual."
+                    });
+                }
 
                 #region Especialidad
 
@@ -895,6 +885,14 @@ namespace sistema.Controllers
                 else
                 {
                     paciente = _pacientesRepository.Get((int)model.PacienteId);
+                    if (paciente == null)
+                    {
+                        return JsonSerializer.Serialize(new
+                        {
+                            Exitoso = false,
+                            Mensaje = "El paciente seleccionado no existe."
+                        });
+                    }
                     paciente.Dpi = model.PacienteDpi;
                     paciente.Telefono = model.PacienteTelefono;
                     paciente.FechaNacimiento = model.PacienteFechaNacimiento;
@@ -903,7 +901,23 @@ namespace sistema.Controllers
 
                 #endregion
 
+                if (string.IsNullOrWhiteSpace(model.Periodo) || !model.Periodo.Contains("-"))
+                {
+                    return JsonSerializer.Serialize(new
+                    {
+                        Exitoso = false,
+                        Mensaje = "El período de hospitalización no es válido."
+                    });
+                }
                 var fechas = model.Periodo.Split("-");
+                if (fechas.Length < 2)
+                {
+                    return JsonSerializer.Serialize(new
+                    {
+                        Exitoso = false,
+                        Mensaje = "El período de hospitalización debe incluir fecha inicio y fin."
+                    });
+                }
                 var fechaInicio = Convert.ToDateTime(fechas[0], culture);
                 var fechaFin = Convert.ToDateTime(fechas[1], culture);
 
@@ -917,6 +931,18 @@ namespace sistema.Controllers
                 {
                     // Obtener datos de la emergencia
                     var emergencia = _emergenciasRepo.Get((int)model.EmergenciaId);
+                    if (emergencia == null)
+                    {
+                        return JsonSerializer.Serialize(new
+                        {
+                            Exitoso = false,
+                            Mensaje = "La emergencia asociada no existe."
+                        });
+                    }
+
+                    int? sucursalHospitalizacion = emergencia.SucursalId;
+                    if (!sucursalHospitalizacion.HasValue && user.EmpleadoId.HasValue)
+                        sucursalHospitalizacion = _empleadoRepository.Get(user.EmpleadoId.Value)?.SucursalId;
 
                     // Crear nueva cita basada en la emergencia
                     citaCreada = new Citas()
@@ -926,7 +952,7 @@ namespace sistema.Controllers
                         CategoriaHabitacionId = model.HabitacionCategoriaId,
                         Paciente = paciente,
                         PacienteId = paciente.Id,
-                        SucursalId = 6, // Usar sucursal de emergencia o default
+                        SucursalId = sucursalHospitalizacion,
                         Bloqueada = false,
                         Eliminado = false,
                         Finalizada = false,
@@ -1085,6 +1111,76 @@ namespace sistema.Controllers
                     UrlArchivoConsentimiento = model.UrlArchivoConsentimiento
                 };
                 hospitalizacion = _hospitalizacionRepository.Add(hospitalizacion);
+
+                // Ensure a ConsentimientoHospi record exists for this patient+room and link the hospitalizacion
+                try
+                {
+                    if (model.PacienteId.HasValue && _consentimientoHospiService != null)
+                    {
+                        string nombreMedicoTratante = null;
+                        if (model.CitaId.HasValue && model.CitaId.Value > 0)
+                        {
+                            var citaMedico = _citasRepository.GetCita(model.CitaId.Value);
+                            if (citaMedico?.EmpleadoId != null)
+                            {
+                                var empMedico = _empleadoRepository.Get(citaMedico.EmpleadoId.Value);
+                                nombreMedicoTratante = empMedico?.NombreYApellidos;
+                            }
+                        }
+
+                        var existente = _consentimientoHospiService.GetConsentimientoByPacienteAndHabitacion(model.PacienteId.Value, model.HabitacionId);
+                        if (existente == null)
+                        {
+                            var pacienteBd = _pacientesRepository.Get(model.PacienteId.Value);
+                            var nuevoConsentimiento = new ConsentimientoHospi
+                            {
+                                PacienteId = model.PacienteId.Value,
+                                HabitacionId = model.HabitacionId,
+                                HospitalizacionId = hospitalizacion.Id.ToString(),
+                                NombreCompleto = pacienteBd?.Nombre ?? "",
+                                NumeroPaciente = pacienteBd != null ? pacienteBd.Id.ToString() : "",
+                                NumeroHabitacion = model.HabitacionNumeroNombre ?? "",
+                                HoraIngreso = DateTime.Now.ToString("g"),
+                                DPI = pacienteBd?.Dpi ?? "",
+                                FechaNacimiento = pacienteBd?.FechaNacimiento?.ToString("dd/MM/yyyy") ?? "",
+                                Edad = pacienteBd?.Edad?.ToString() ?? string.Empty,
+                                Direccion = pacienteBd?.Direccion ?? "",
+                                Celular = pacienteBd?.Celular ?? "",
+                                Email = pacienteBd?.Email ?? "",
+                                NombreMedicoTratante = nombreMedicoTratante ?? "",
+                                URLFirmaPaciente = model.UrlFirmaPaciente ?? string.Empty,
+                                URLFirmaResponsable = model.UrlFirmaResponsable ?? string.Empty
+                            };
+                            _consentimientoHospiService.AddConsentimiento(nuevoConsentimiento);
+                        }
+                        else
+                        {
+                            // update hospitalizacion id if missing or different
+                            if (existente.HospitalizacionId != hospitalizacion.Id.ToString())
+                            {
+                                _consentimientoHospiService.UpdateHospitalizacionId(model.PacienteId.Value, model.HabitacionId, hospitalizacion.Id.ToString());
+                            }
+
+                            if (!string.IsNullOrEmpty(model.UrlFirmaPaciente) || !string.IsNullOrEmpty(model.UrlFirmaResponsable)
+                                || (!string.IsNullOrEmpty(nombreMedicoTratante) && string.IsNullOrEmpty(existente.NombreMedicoTratante)))
+                            {
+                                _consentimientoHospiService.UpdateConsentimiento(new ConsentimientoHospi
+                                {
+                                    Id = existente.Id,
+                                    NombreMedicoTratante = !string.IsNullOrEmpty(nombreMedicoTratante) && string.IsNullOrEmpty(existente.NombreMedicoTratante)
+                                        ? nombreMedicoTratante
+                                        : existente.NombreMedicoTratante,
+                                    URLFirmaPaciente = model.UrlFirmaPaciente ?? existente.URLFirmaPaciente,
+                                    URLFirmaResponsable = model.UrlFirmaResponsable ?? existente.URLFirmaResponsable
+                                });
+                            }
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    // Do not break hospitalization flow if consent creation fails
+                }
 
 
                 // ============================================================
@@ -1451,7 +1547,7 @@ namespace sistema.Controllers
                 return JsonSerializer.Serialize(new
                 {
                     Exitoso = false,
-                    Mensaje = "Error al registrar hospitalizacion. " + ex.InnerException?.Message ?? ex.Message
+                    Mensaje = "Error al registrar hospitalizacion. " + (ex.InnerException?.Message ?? ex.Message)
                 });
             }
         }
@@ -1459,67 +1555,39 @@ namespace sistema.Controllers
 
 
         [HttpPost]
-        public string ConsultarTarifasHabitacion(int habitacionId, string codigoSeguro)
+        public string ConsultarTarifasHabitacion(int habitacionId, string codigoSeguro, int? categoriaId = null)
         {
             try
             {
                 var listaTarifas = new List<HospitalizacionHospitalizarTarifaViewModel>();
-                var tarifasBd = _habitacionRepository.GetTarifasHabitacion(habitacionId);
+                var tarifasActivas = ObtenerTarifasActivasHabitacion(habitacionId, categoriaId);
 
-                if (tarifasBd != null)
+                IEnumerable<CategoriaHabitacionTarifa> tarifasFiltradas;
+
+                if (string.IsNullOrWhiteSpace(codigoSeguro))
                 {
-                    // Filtrar tarifas que coincidan con el codigoSeguro
-                    foreach (var tarifa in tarifasBd)
-                    {
-                        if (string.Equals(tarifa.NombreTarifa, codigoSeguro, StringComparison.OrdinalIgnoreCase))
-                        {
-                            listaTarifas.Add(new HospitalizacionHospitalizarTarifaViewModel
-                            {
-                                TarifaId = tarifa.Id,
-                                NombreTarifa = tarifa.NombreTarifa,
-                                Lunes = tarifa.Lunes,
-                                Martes = tarifa.Martes,
-                                Miercoles = tarifa.Miercoles,
-                                Jueves = tarifa.Jueves,
-                                Viernes = tarifa.Viernes,
-                                Sabado = tarifa.Sabado,
-                                Domingo = tarifa.Domingo,
-                                FechaEspecial = tarifa.FechaEspecial,
-                                FechaTarifa = tarifa.FechaEspecial ?
-                                    tarifa.FechaTarifa.ToString("yyyy/MM/dd") :
-                                    "-",
-                                ValorTarifa = tarifa.ValorTarifa
-                            });
-                        }
-                    }
+                    tarifasFiltradas = tarifasActivas;
+                }
+                else
+                {
+                    tarifasFiltradas = tarifasActivas
+                        .Where(t => string.Equals(t.NombreTarifa, codigoSeguro, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
 
-                    // Si no hay tarifas coincidentes, buscar la tarifa "Sin seguro"
-                    if (!listaTarifas.Any())
+                    if (!tarifasFiltradas.Any())
                     {
-                        var tarifaSinSeguro = tarifasBd.FirstOrDefault(t =>
+                        var tarifaSinSeguro = tarifasActivas.FirstOrDefault(t =>
                             string.Equals(t.NombreTarifa, "Sin seguro", StringComparison.OrdinalIgnoreCase));
 
-                        if (tarifaSinSeguro != null)
-                        {
-                            listaTarifas.Add(new HospitalizacionHospitalizarTarifaViewModel
-                            {
-                                TarifaId = tarifaSinSeguro.Id,
-                                NombreTarifa = tarifaSinSeguro.NombreTarifa,
-                                Lunes = tarifaSinSeguro.Lunes,
-                                Martes = tarifaSinSeguro.Martes,
-                                Miercoles = tarifaSinSeguro.Miercoles,
-                                Jueves = tarifaSinSeguro.Jueves,
-                                Viernes = tarifaSinSeguro.Viernes,
-                                Sabado = tarifaSinSeguro.Sabado,
-                                Domingo = tarifaSinSeguro.Domingo,
-                                FechaEspecial = tarifaSinSeguro.FechaEspecial,
-                                FechaTarifa = tarifaSinSeguro.FechaEspecial ?
-                                    tarifaSinSeguro.FechaTarifa.ToString("yyyy/MM/dd") :
-                                    "-",
-                                ValorTarifa = tarifaSinSeguro.ValorTarifa
-                            });
-                        }
+                        tarifasFiltradas = tarifaSinSeguro != null
+                            ? new[] { tarifaSinSeguro }
+                            : tarifasActivas;
                     }
+                }
+
+                foreach (var tarifa in tarifasFiltradas)
+                {
+                    listaTarifas.Add(MapearTarifaHospitalizar(tarifa));
                 }
 
                 return JsonSerializer.Serialize(new
@@ -1536,6 +1604,42 @@ namespace sistema.Controllers
                     Mensaje = "Error al consultar tarifas. " + ex.Message
                 });
             }
+        }
+
+        private IList<CategoriaHabitacionTarifa> ObtenerTarifasActivasHabitacion(int habitacionId, int? categoriaId)
+        {
+            if (habitacionId > 0)
+            {
+                var porHabitacion = _habitacionRepository.GetTarifasHabitacion(habitacionId);
+                if (porHabitacion != null && porHabitacion.Any())
+                    return porHabitacion;
+            }
+
+            if (categoriaId.HasValue && categoriaId.Value > 0)
+                return _habitacionRepository.GetTarifasCategoria(categoriaId.Value);
+
+            return new List<CategoriaHabitacionTarifa>();
+        }
+
+        private static HospitalizacionHospitalizarTarifaViewModel MapearTarifaHospitalizar(CategoriaHabitacionTarifa tarifa)
+        {
+            return new HospitalizacionHospitalizarTarifaViewModel
+            {
+                TarifaId = tarifa.Id,
+                NombreTarifa = tarifa.NombreTarifa,
+                Lunes = tarifa.Lunes,
+                Martes = tarifa.Martes,
+                Miercoles = tarifa.Miercoles,
+                Jueves = tarifa.Jueves,
+                Viernes = tarifa.Viernes,
+                Sabado = tarifa.Sabado,
+                Domingo = tarifa.Domingo,
+                FechaEspecial = tarifa.FechaEspecial,
+                FechaTarifa = tarifa.FechaEspecial ?
+                    tarifa.FechaTarifa.ToString("yyyy/MM/dd") :
+                    "-",
+                ValorTarifa = tarifa.ValorTarifa
+            };
         }
 
 
@@ -1588,8 +1692,11 @@ namespace sistema.Controllers
                 }
 
                 // Actualizar el CódigoSeguro en la cita
-                cita.CodigoDeCita = request.NuevoCodigoSeguro;
+                cita.CodigoDeCita = request.NuevoCodigoSeguro.Trim();
                 _citasRepository.Update(cita);
+
+                var mensajeTarifa = " El código de seguro en la cita fue actualizado.";
+                var tarifaActualizada = false;
 
                 // Buscar la hospitalización asociada al paciente de la cita
                 var hospitalizacion = _hospitalizacionRepository.GetHospitalizacionById(request.HospitalizacionId);
@@ -1602,35 +1709,37 @@ namespace sistema.Controllers
                     {
                         return Json(new
                         {
-                            Exitoso = false,
-                            Mensaje = $"No se encontró la habitación asociada a la hospitalización del paciente con ID {cita.PacienteId}."
+                            Exitoso = true,
+                            Mensaje = $"El seguro se actualizó a '{request.NuevoCodigoSeguro}', pero no se encontró la habitación para recalcular la tarifa."
                         });
                     }
 
                     // Obtener la tarifa de la habitación basada en la categoría y código de seguro
                     var tarifas = _habitacionRepository.GetTarifasHabitacion(habitacion.Id);
-                    var nuevaTarifa = tarifas.FirstOrDefault(t => t.NombreTarifa.Contains(request.NuevoCodigoSeguro));
+                    var codigoSeguro = request.NuevoCodigoSeguro.Trim();
+                    var nuevaTarifa = tarifas.FirstOrDefault(t =>
+                        !string.IsNullOrWhiteSpace(t.NombreTarifa) &&
+                        (t.NombreTarifa.Contains(codigoSeguro, StringComparison.OrdinalIgnoreCase) ||
+                         codigoSeguro.Contains(t.NombreTarifa, StringComparison.OrdinalIgnoreCase)));
 
                     if (nuevaTarifa != null)
                     {
-                        // Asignar la nueva tarifa a la hospitalización
                         hospitalizacion.CategoriaHabitacionTarifaId = nuevaTarifa.Id;
                         _hospitalizacionRepository.Update(hospitalizacion);
+                        tarifaActualizada = true;
+                        mensajeTarifa = " El código de seguro y la tarifa de habitación fueron actualizados.";
                     }
                     else
                     {
-                        return Json(new
-                        {
-                            Exitoso = false,
-                            Mensaje = $"No se encontró una tarifa de habitación correspondiente al código de seguro '{request.NuevoCodigoSeguro}'."
-                        });
+                        mensajeTarifa = " El código de seguro fue actualizado, pero no se encontró una tarifa de habitación que coincida con ese seguro.";
                     }
                 }
 
                 return Json(new
                 {
                     Exitoso = true,
-                    Mensaje = $"El CódigoSeguro se actualizó correctamente a '{request.NuevoCodigoSeguro}' para la cita con ID {request.CitaId}, y la tarifa de la habitación también fue actualizada."
+                    TarifaActualizada = tarifaActualizada,
+                    Mensaje = $"El seguro se actualizó correctamente a '{request.NuevoCodigoSeguro}' para la cita {request.CitaId}.{mensajeTarifa}"
                 });
             }
             catch (Exception ex)
@@ -2049,7 +2158,7 @@ namespace sistema.Controllers
 
         public IActionResult Detalles(int? hospitalizacionId, int? citaId = null)
         {
-            if (!hospitalizacionId.HasValue)
+            if (!hospitalizacionId.HasValue || hospitalizacionId.Value <= 0)
             {
                 TempData["Message"] = "La hospitalizacion no existe";
                 TempData["MessageType"] = "error";
@@ -2100,7 +2209,9 @@ namespace sistema.Controllers
                 && !User.IsInRole("Medico Interno")
                 && !User.IsInRole("Medico Externo")
                 && !User.IsInRole("Coordinador Laboratorio")
+                && !User.IsInRole("Supervisor Laboratorio")
                 && !User.IsInRole("Tecnico laboratorio")
+                && !User.IsInRole("Laboratorio")
                 && !User.IsInRole("Admisiones")
                 && !User.IsInRole("Recepcion Diurno")
                 && !User.IsInRole("Recepcion Nocturno")
@@ -2112,7 +2223,7 @@ namespace sistema.Controllers
 
                 if (registroAutorizacionUsuario == null)
                 {
-                    TempData["Message"] = "El usuario no tiene acceso para ver los detalles de la hospitalizacion *****";
+                    TempData["Message"] = "El usuario no tiene acceso para ver los detalles de la hospitalizacion";
                     TempData["MessageType"] = "error";
                     return RedirectToAction("Habitaciones");
                 }
@@ -2129,8 +2240,12 @@ namespace sistema.Controllers
                 autorizacionTabDietas = registroAutorizacionUsuario.AutorizacionTabDietas;
             }
 
-            // Cargar la consulta relacionada con la hospitalización
-            var consulta = _consultasRepository.GetConsultaPorHospitalizacion(hospitalizacionId.Value);
+            // Cargar la consulta relacionada con la hospitalización (con fallbacks por cita)
+            var consulta = ResolverConsultaHistoriaClinica(
+                hospitalizacionId.Value,
+                citaId,
+                hospitalizacion.PacienteId,
+                hospitalizacion.HabitacionId);
 
             if (consulta != null)
             {
@@ -2142,39 +2257,60 @@ namespace sistema.Controllers
             var pacienteIdPDF = hospitalizacion.PacienteId;
             var habitacionIdPDF = hospitalizacion.HabitacionId;
 
-            // Obtener el ID de la cita
+            // Obtener el ID de la cita (priorizar la cita quirúrgica agendada, no una consulta ajena)
+            var consultaHospitalizacion = _consultasRepository.GetConsultaPorHospitalizacion(hospitalizacionId.Value);
             var citaIdPDF = 0;
-            if (consulta?.CitasId != null && consulta.CitasId.Value > 0)
-            {
-                // Caso principal: la consulta tiene el CitasId cargado (Sala de Operaciones)
-                citaIdPDF = consulta.CitasId.Value;
-            }
-            else if (consulta?.Citas?.Id != null && consulta.Citas.Id > 0)
-            {
-                // Fallback Consultas Externas: CitasId es null pero la propiedad de
-                // navegación Citas sí está cargada en memoria (EF lazy/eager load).
-                citaIdPDF = consulta.Citas.Id;
-            }
-            else if (citaId.HasValue && citaId.Value > 0)
-            {
-                // Caso: citaId viene explícito en la URL (?citaId=123)
+
+            if (citaId.HasValue && citaId.Value > 0)
                 citaIdPDF = citaId.Value;
+
+            if (citaIdPDF <= 0)
+            {
+                var citaHabitacion = _db.Citass
+                    .Where(c => c.PacienteId == hospitalizacion.PacienteId
+                        && c.HabitacionId == hospitalizacion.HabitacionId
+                        && !c.Eliminado)
+                    .OrderByDescending(c => c.FechaInicio)
+                    .ThenByDescending(c => c.Id)
+                    .FirstOrDefault();
+                if (citaHabitacion != null)
+                    citaIdPDF = citaHabitacion.Id;
             }
+
+            if (citaIdPDF <= 0 && consultaHospitalizacion?.CitasId != null && consultaHospitalizacion.CitasId.Value > 0)
+                citaIdPDF = consultaHospitalizacion.CitasId.Value;
+            else if (citaIdPDF <= 0 && consultaHospitalizacion?.Citas?.Id != null && consultaHospitalizacion.Citas.Id > 0)
+                citaIdPDF = consultaHospitalizacion.Citas.Id;
 
             var citaParaEquipo = (citaIdPDF > 0) ? _citasRepository.GetCita(citaIdPDF) : null;
 
-            // ── Fallback final para Consultas Externas sin citaIdPDF ──────────────────────
-            // Si aún no tenemos la cita, buscamos la más reciente del paciente en BD.
-            // La entidad Citas no tiene HabitacionId, así que filtramos solo por paciente.
             if (citaParaEquipo == null)
             {
                 citaParaEquipo = _db.Citass
                     .Where(c => c.PacienteId == hospitalizacion.PacienteId && !c.Eliminado)
-                    .OrderByDescending(c => c.Id)
+                    .OrderByDescending(c => c.FechaInicio)
+                    .ThenByDescending(c => c.Id)
                     .FirstOrDefault();
 
                 if (citaParaEquipo != null)
                     citaIdPDF = citaParaEquipo.Id;
+            }
+
+            if (consulta == null && citaIdPDF > 0)
+            {
+                consulta = _consultasRepository.GetConsultaPorCita(citaIdPDF);
+            }
+
+            if (consulta == null)
+            {
+                consulta = _consultasRepository.GetUltimaConsultaPaciente(hospitalizacion.PacienteId);
+            }
+
+            if (consulta != null)
+            {
+                consulta.ExamenFisico = consulta.ExamenFisico ?? new ExamenFisico();
+                consulta.ConsultaRevisionSistemas = consulta.ConsultaRevisionSistemas ?? new ConsultaRevisionSistemas();
+                consulta.Historia = consulta.Historia ?? new Historia();
             }
 
             // ── Obtener la última NotaOperatoria (fuente de verdad para el equipo quirúrgico
@@ -2219,8 +2355,8 @@ namespace sistema.Controllers
                 if (empAsignado != null)
                     medicoAsignadoNombre = empAsignado.NombreYApellidos;
             }
-            if (string.IsNullOrEmpty(medicoAsignadoNombre))
-                medicoAsignadoNombre = consulta?.Citas?.EmpleadoText ?? "";
+            if (string.IsNullOrEmpty(medicoAsignadoNombre) && consultaHospitalizacion != null)
+                medicoAsignadoNombre = consultaHospitalizacion.Citas?.EmpleadoText ?? "";
             if (string.IsNullOrEmpty(medicoAsignadoNombre))
             {
                 // Fuente 3: Cirujano de la última NotaOperatoria
@@ -2245,10 +2381,62 @@ namespace sistema.Controllers
                     edadCalculada--;
             }
 
+            var examenesFisicosHosp = _hospitalizacionRepository.GetExamenesFisicosHosp(hospitalizacionId.Value);
+            var cuestionarioPreAnestesico = _db.CuestionariosPreAnestesicos
+                .Where(c => c.HospitalizacionId == hospitalizacionId.Value)
+                .OrderByDescending(c => c.FechaRegistro)
+                .FirstOrDefault();
+            var pacienteDb = _pacientesRepository.Get(hospitalizacion.PacienteId) ?? hospitalizacion.Paciente;
+
+            var hospiIdStr = hospitalizacionId.Value.ToString();
+            var consentimientoHospi = _consentimientoHospiService.GetConsentimientoByPacienteHabitacionAndHospitalizacion(
+                    hospitalizacion.PacienteId, hospitalizacion.HabitacionId, hospiIdStr)
+                ?? _consentimientoHospiService.GetConsentimientoByPacienteAndHospitalizacion(
+                    hospitalizacion.PacienteId, hospiIdStr)
+                ?? _consentimientoHospiService.GetConsentimientoByPacienteAndHabitacion(
+                    hospitalizacion.PacienteId, hospitalizacion.HabitacionId)
+                ?? _consentimientoHospiService.GetLatestConsentimientoByPaciente(hospitalizacion.PacienteId);
+
+            var pacientePeso = HospitalizacionPacienteVitalsHelper.ResolverPeso(
+                pacienteDb, cuestionarioPreAnestesico, examenesFisicosHosp);
+            var pacienteTalla = HospitalizacionPacienteVitalsHelper.ResolverTalla(
+                pacienteDb, cuestionarioPreAnestesico, examenesFisicosHosp);
+            var pacienteTipoSangre = HospitalizacionPacienteVitalsHelper.ResolverTipoSangre(
+                pacienteDb, consentimientoHospi?.TipoSangre, examenesFisicosHosp);
+            var pacienteNombre = HospitalizacionPacienteVitalsHelper.ResolverNombrePaciente(
+                pacienteDb,
+                consentimientoHospi?.NombreCompleto,
+                citaParaEquipo?.Paciente?.Nombre,
+                consulta?.Citas?.Paciente?.Nombre);
+
+            var historialMedsControlados = _db.MedicamentosNoControlado
+                .Where(m => m.HospitalizacionId == hospitalizacionId.Value && !m.Eliminado)
+                .OrderByDescending(m => m.FechaRegistro)
+                .ToList();
+            var ultimaFechaMedControlados = historialMedsControlados.FirstOrDefault()?.FechaRegistro;
+            var medsControladosInicial = historialMedsControlados
+                .Where(m => ultimaFechaMedControlados == null || m.FechaRegistro == ultimaFechaMedControlados)
+                .Select(m => new
+                {
+                    productoId = m.ProductoId,
+                    nombre = m.ProductoNombre,
+                    unidadesIniciales = m.UnidadesIniciales,
+                    unidadesExtra = m.UnidadesExtra,
+                    utilizado = m.Utilizado,
+                    descartado = m.Descartado,
+                    retornadas = m.Retornadas,
+                    fechaRegistro = m.FechaRegistro.ToString("dd/MM/yyyy HH:mm"),
+                    fechaProcedimiento = m.FechaProcedimiento
+                })
+                .ToList();
+            var fechaProcedimientoControlados = medsControladosInicial.FirstOrDefault()?.fechaProcedimiento;
+
             var model = new HospitalizacionDetallesViewModel(_configuration)
             {
                 CodigoSeguro = consulta?.Citas?.CodigoDeCita ?? citaParaEquipo?.CodigoDeCita,
                 MedicoAsignado = medicoAsignadoNombre,
+                MedicoAsignadoEmpleadoId = citaParaEquipo?.EmpleadoId,
+                CitaCirujanoId = citaParaEquipo?.EmpleadoId,
                 CitaAnestesista = citaParaEquipo?.Anestesista ?? ultimaNotaOp?.Anestesista ?? "",
                 // PrimerAyudante: buscar primero en la cita, luego en la NotaOperatoria
                 // (al hospitalizar se migra de Cita → NotaOperatoria y se borra de la Cita)
@@ -2259,24 +2447,32 @@ namespace sistema.Controllers
                 CitaProcedimiento = citaParaEquipo?.Procedimiento ?? "",
 
                 FechaNacimientoPaciente = fechaNacimientoStr,
-                PacienteTalla = hospitalizacion.Paciente.Talla,
-                PacientePeso = hospitalizacion.Paciente.Peso,
+                PacienteTalla = pacienteTalla,
+                PacientePeso = pacientePeso,
                 EdadPaciente = edadCalculada,
                 CuentaId = cuenta.Id,
                 HospitalizacionId = hospitalizacionId.Value,
                 HabitacionId = hospitalizacion.HabitacionId,
                 CategoriaHabitacionNombre = hospitalizacion.Habitacion.CategoriaHabitacion.NombreCategoria,
                 UrlArchivoConsentimiento = hospitalizacion.UrlArchivoConsentimiento,
-                EspecialidadNombre = "Medicina General",
+                EspecialidadNombre = hospitalizacion.Especialidad?.NombreEspecialidad
+                    ?? citaParaEquipo?.Especialidad?.NombreEspecialidad
+                    ?? consulta?.Citas?.Especialidad?.NombreEspecialidad
+                    ?? consulta?.Citas?.EspecialidadText
+                    ?? "-",
                 Consulta = consulta,
                 PacienteId = hospitalizacion.PacienteId,
-                PacienteNombre = hospitalizacion.Paciente.Nombre,
+                PacienteNombre = pacienteNombre ?? pacienteDb?.Nombre ?? "-",
+                PacienteDpi = pacienteDb?.Dpi ?? hospitalizacion.Paciente.Dpi,
+                MedicamentosControladosInicialJson = JsonSerializer.Serialize(medsControladosInicial),
+                FechaProcedimientoControlados = fechaProcedimientoControlados?.ToString("yyyy-MM-dd"),
                 PacienteEstadoId = (int)hospitalizacion.Paciente.EstadoPacienteId,
                 PacienteEstado = hospitalizacion.Paciente.EstadoPaciente.NombreEstado,
                 PacienteTelefono = hospitalizacion.Paciente.Telefono,
+                PacienteEmail = hospitalizacion.Paciente.Email,
                 PacienteCelular = hospitalizacion.Paciente.Celular,
                 PacienteSexo = hospitalizacion.Paciente.sexoText,
-                PacienteTipoSangre = hospitalizacion.Paciente.TipoDeSangre,
+                PacienteTipoSangre = pacienteTipoSangre,
                 MedicosSecundarios = medicoSecundariosDto, // Aquí asignas la lista ya procesada
 
                 TipoPaciente = hospitalizacion.Paciente.TipoPaciente != null
@@ -2359,10 +2555,13 @@ namespace sistema.Controllers
                 {
                     foreach (var servicio in serviciosBd)
                     {
+                        if (string.IsNullOrWhiteSpace(servicio?.NombreServicio))
+                            continue;
+
                         listaServicios.Add(new HospitalizacionServicioExistenteViewModel
                         {
                             ServicioId = servicio.Id,
-                            Nombre = servicio.NombreServicio,
+                            Nombre = servicio.NombreServicio.Trim(),
                             //Precio = servicio.Precio
                         });
                     }
@@ -2402,10 +2601,13 @@ namespace sistema.Controllers
                 {
                     foreach (var medicamento in medicamentosBd)
                     {
+                        if (string.IsNullOrWhiteSpace(medicamento?.NombreProducto))
+                            continue;
+
                         listaMedicamentos.Add(new HospitalizacionMedicamentoExistenteViewModel
                         {
                             ProductoId = medicamento.Id,
-                            Nombre = medicamento.NombreProducto
+                            Nombre = medicamento.NombreProducto.Trim()
                         });
                     }
                 }
@@ -2437,10 +2639,13 @@ namespace sistema.Controllers
                 {
                     foreach (var examen in examenesBd)
                     {
+                        if (string.IsNullOrWhiteSpace(examen?.NombreExamen))
+                            continue;
+
                         listaExamenes.Add(new HospitalizacionExamenExistenteViewModel
                         {
                             ExamenLabClinicoId = examen.Id,
-                            Nombre = examen.NombreExamen,
+                            Nombre = examen.NombreExamen.Trim(),
                             Precio = examen.Precio
                         });
                     }
@@ -2681,40 +2886,27 @@ namespace sistema.Controllers
             }
         }
         [HttpPost]
-        public string AgregarMedicamento(HospitalizacionAgregarMedicamentoViewModel model)
+        public async Task<string> AgregarMedicamento(HospitalizacionAgregarMedicamentoViewModel model)
         {
             try
             {
-                var hospitalizacionProducto = _hospitalizacionRepository.AddMedicamento(new HospitalizacionProducto
-                {
-                    HospitalizacionId = model.HospitalizacionId,
-                    ProductoId = model.ProductoId,
-                    UnidadMedidaVentaId = model.UnidadMedidaVentaId,
-                    PrecioId = model.PrecioId,
-                    PrecioValor = model.Precio,
-                    Cantidad = model.Cantidad,
-                    Indicaciones = model.Indicaciones,
-                    ViaAdministracion = model.ViaAdministracion,
-                    FrecuenciaAdministracion = model.FrecuenciaAdministracion,
-                    FechaHoraAplicacionManual = model.FechaHoraAplicacionManual
-                    //PrecioProductoId = model.IdProductoPrecioInventario
-                });
+                MedicamentoAplicacionHelper.RegistrarProductoConAplicaciones(
+                    _hospitalizacionRepository, model, _userManager.GetUserId(HttpContext.User));
 
+                var producto = _productoRepository.GetProdutoById(model.ProductoId);
+                var baseUrl = $"{Request.Scheme}://{Request.Host}";
+                await _medicamentoNotificacionService.ProgramarNotificacionesAsync(
+                    model.HospitalizacionId,
+                    producto?.NombreProducto ?? "Medicamento",
+                    model.Cantidad,
+                    model.Indicaciones ?? "",
+                    model.ViaAdministracion ?? "",
+                    model.FrecuenciaAdministracion ?? "",
+                    model.FechaHoraAplicacionManual,
+                    baseUrl,
+                    _userManager.GetUserId(HttpContext.User));
 
-                for (var i = 1; i <= hospitalizacionProducto.Cantidad; i++)
-                {
-                    _hospitalizacionRepository.AddProductoAplicacion(new HospitalizacionProductoAplicacion
-                    {
-                        HospitalizacionProductoId = hospitalizacionProducto.Id,
-                        Cantidad = 1,
-                        Aplicado = false,
-                        UsuarioCreaId = _userManager.GetUserId(HttpContext.User)
-                    });
-                }
-                return JsonSerializer.Serialize(new
-                {
-                    Exitoso = true
-                });
+                return JsonSerializer.Serialize(new { Exitoso = true });
             }
             catch (Exception ex)
             {
@@ -3327,11 +3519,13 @@ namespace sistema.Controllers
 
                 // ── Guardar sin autorización (estado Pendiente) ───────────────
                 var hospitalizacion = _hospitalizacionRepository.Get((int)model.HospitalizacionId);
-                var fechaHora = DateTime.Now;
+                var fechaHora = HospitalTimeHelper.NowGuatemala();
                 var datos = new List<ExamenFisicoHospDato>();
 
                 if (model.DatosExamen != null)
                 {
+                    CompletarPresionArterialMedia(model.DatosExamen);
+
                     foreach (var dato in model.DatosExamen)
                     {
                         if (dato.NombreDato == "Peso")
@@ -3800,9 +3994,8 @@ namespace sistema.Controllers
                     if (paquete.PaqueteHospitalizacion == null)
                         continue;
 
-                    var detalles = paquete.PaqueteHospitalizacion.DetallePaquetesHospitalizacion;
-                    if (detalles == null)
-                        continue;
+                    var detalles = paquete.PaqueteHospitalizacion.DetallePaquetesHospitalizacion
+                        ?? Enumerable.Empty<DetallePaqueteHospitalizacion>();
 
                     var servicios = new List<HospitalizacionPaqueteDetallePaqueteServicioViewModel>();
                     var productos = new List<HospitalizacionPaqueteDetallePaqueteProductoViewModel>();
@@ -4049,20 +4242,20 @@ namespace sistema.Controllers
             }
         }
         [HttpPost]
-        public string ConsultarProductosAplicacionHospitalizacion(int hospitalizacionId, int tipoProductoId)
+        public string ConsultarProductosAplicacionHospitalizacion(int hospitalizacionId, int tipoProductoId = 0)
         {
             try
             {
-                // Se obtiene la lista de productos filtrando por hospitalización y tipo de producto.
-                // var productosAplicacion = _hospitalizacionRepository
-                //     .GetProductosAplicacion(hospitalizacionId)
-                //     .Where(p => p.HospitalizacionProducto.Producto.TipoProductoId == tipoProductoId)
-                //     .ToList();
                 var productosAplicacion = _hospitalizacionRepository
-    .GetProductosAplicacion(hospitalizacionId)
-    .Where(p => p.HospitalizacionProducto.Producto.TipoProductoId == tipoProductoId)
-    .OrderByDescending(p => p.Id)  // Los más recientes primero
-    .ToList();
+                    .GetProductosAplicacion(hospitalizacionId)
+                    .AsEnumerable()
+                    .Where(p => p.HospitalizacionProducto != null
+                        && !p.HospitalizacionProducto.Eliminado
+                        && p.HospitalizacionProducto.Producto != null)
+                    .Where(p => tipoProductoId <= 0
+                        || p.HospitalizacionProducto.Producto.TipoProductoId == tipoProductoId)
+                    .OrderByDescending(p => p.Id)
+                    .ToList();
 
                 // Si no se encuentran registros, se retorna la respuesta vacía.
                 if (productosAplicacion == null || !productosAplicacion.Any())
@@ -4100,6 +4293,31 @@ namespace sistema.Controllers
                 // Lista para armar el ViewModel final.
                 var listaProductosAplicacion = new List<HospitalizacionProductoAplicacionViewModel>();
 
+                // Horario por dosis (usa FechaHoraAplicacionManual de la fila o calcula desde frecuencia)
+                var fechaManualPorAppId = new Dictionary<int, string>();
+                foreach (var grp in productosAplicacion.GroupBy(p => p.HospitalizacionProductoId))
+                {
+                    var hp = grp.First().HospitalizacionProducto;
+                    if (hp == null) continue;
+
+                    var cantidadDosis = (int)Math.Min(Math.Max(hp.Cantidad, 0), 500);
+                    var horarios = MedicamentoScheduleHelper.CalcularHorariosAplicacion(
+                        cantidadDosis,
+                        hp.FrecuenciaAdministracion ?? "",
+                        hp.FechaHoraAplicacionManual);
+                    int idx = 0;
+                    foreach (var app in grp.OrderBy(x => x.Id))
+                    {
+                        if (app.FechaHoraAplicacionManual.HasValue)
+                            fechaManualPorAppId[app.Id] = MedicamentoScheduleHelper.FormatearHorarioLocal(app.FechaHoraAplicacionManual.Value);
+                        else if (idx < horarios.Count)
+                            fechaManualPorAppId[app.Id] = MedicamentoScheduleHelper.FormatearHorarioLocal(horarios[idx]);
+                        else
+                            fechaManualPorAppId[app.Id] = "-";
+                        idx++;
+                    }
+                }
+
                 foreach (var productoAplicacion in productosAplicacion)
                 {
                     // Resolver el nombre de la persona que aplica utilizando los diccionarios precargados.
@@ -4118,35 +4336,46 @@ namespace sistema.Controllers
                     }
 
                     string fechaAplicacion = productoAplicacion.Aplicado && productoAplicacion.FechaHoraAplicacion.HasValue
-          ? productoAplicacion.FechaHoraAplicacion.Value.ToString("dd/MM/yyyy HH:mm:ss", new CultureInfo("es-GT"))
-          : "-";
+                        ? MedicamentoHistorialDisplayHelper.FormatearInstanteAplicacion(
+                            productoAplicacion.FechaHoraAplicacion,
+                            MedicamentoHistorialDisplayHelper.ParsearFechaProgramada(fechaManualPorAppId.TryGetValue(productoAplicacion.Id, out var fmParse) ? fmParse : null))
+                        : "-";
 
-                    string fechaAplicacionManualOriginal = productoAplicacion.HospitalizacionProducto.FechaHoraAplicacionManual;
-
-                    string fechaAplicacionManual = DateTime.TryParse(fechaAplicacionManualOriginal, out DateTime fechaConvertida)
-                        ? fechaConvertida.ToString("dd/MM/yyyy HH:mm:ss", new CultureInfo("es-GT"))
+                    string fechaAplicacionManual = fechaManualPorAppId.TryGetValue(productoAplicacion.Id, out var fm)
+                        ? (DateTime.TryParse(fm, out DateTime fc)
+                            ? fc.ToString("dd/MM/yyyy HH:mm:ss", new CultureInfo("es-GT"))
+                            : fm)
                         : "-";
 
                     // Resolver el usuario que creó (PersonaCrea)
                     string personaCrea = "-";
-                    if (usuarios.ContainsKey(productoAplicacion.UsuarioCreaId))
+                    if (!string.IsNullOrEmpty(productoAplicacion.UsuarioCreaId)
+                        && usuarios.ContainsKey(productoAplicacion.UsuarioCreaId))
                     {
-                        personaCrea = usuarios[productoAplicacion.UsuarioCreaId].NormalizedUserName;
+                        var userCrea = usuarios[productoAplicacion.UsuarioCreaId];
+                        if (userCrea.EmpleadoId != null && empleados.ContainsKey((int)userCrea.EmpleadoId))
+                            personaCrea = empleados[(int)userCrea.EmpleadoId].NombreYApellidos;
+                        else
+                            personaCrea = userCrea.Persona?.NombreYApellidos ?? userCrea.UserName ?? "-";
                     }
 
+                    var hospitalizacionProducto = productoAplicacion.HospitalizacionProducto;
+                    if (hospitalizacionProducto?.Producto == null)
+                        continue;
+
                     // Solo se procesan los productos que han sido aplicados o que no han sido eliminados y no aplicados.
-                    if (productoAplicacion.Aplicado || (!productoAplicacion.HospitalizacionProducto.Eliminado && !productoAplicacion.Aplicado))
+                    if (productoAplicacion.Aplicado || (!hospitalizacionProducto.Eliminado && !productoAplicacion.Aplicado))
                     {
                         // Se arma el ViewModel; en el caso de aplicado se incluye la unidad de medida de venta.
                         var viewModel = new HospitalizacionProductoAplicacionViewModel
                         {
                             Id = productoAplicacion.Id,
-                            ProductoId = productoAplicacion.HospitalizacionProducto.ProductoId,
-                            Nombre = productoAplicacion.HospitalizacionProducto.Producto.NombreProducto,
+                            ProductoId = hospitalizacionProducto.ProductoId,
+                            Nombre = hospitalizacionProducto.Producto.NombreProducto,
                             Cantidad = productoAplicacion.Cantidad,
-                            Indicaciones = productoAplicacion.HospitalizacionProducto.Indicaciones,
-                            ViaAdministracion = productoAplicacion.HospitalizacionProducto.ViaAdministracion,
-                            FrecuenciaAdministracion = productoAplicacion.HospitalizacionProducto.FrecuenciaAdministracion,
+                            Indicaciones = hospitalizacionProducto.Indicaciones,
+                            ViaAdministracion = hospitalizacionProducto.ViaAdministracion,
+                            FrecuenciaAdministracion = hospitalizacionProducto.FrecuenciaAdministracion,
                             Aplicado = productoAplicacion.Aplicado,
                             FechaHoraAplicacion = fechaAplicacion,
                             FechaHoraAplicacionManual = fechaAplicacionManual,
@@ -4158,8 +4387,8 @@ namespace sistema.Controllers
                         // Si el producto está aplicado, se agrega el nombre de la unidad de medida de venta.
                         if (productoAplicacion.Aplicado)
                         {
-                            viewModel.UnidadMedidaVentaNombre = productoAplicacion.HospitalizacionProducto.UnidadMedidaVenta != null
-                                ? productoAplicacion.HospitalizacionProducto.UnidadMedidaVenta.Nombre
+                            viewModel.UnidadMedidaVentaNombre = hospitalizacionProducto.UnidadMedidaVenta != null
+                                ? hospitalizacionProducto.UnidadMedidaVenta.Nombre
                                 : "-";
                         }
 
@@ -4327,6 +4556,13 @@ namespace sistema.Controllers
                         {
                             persona = _empleadoRepository.Get((int)usuario.EmpleadoId).NombreYApellidos;
                         }
+                        else if (usuario != null)
+                        {
+                            persona = usuario.Persona?.NombreYApellidos
+                                ?? usuario.UserName
+                                ?? usuario.NormalizedUserName
+                                ?? "-";
+                        }
 
                         // Lista para almacenar los datos estructurados
                         var datosExamen = new List<object>();
@@ -4434,9 +4670,11 @@ namespace sistema.Controllers
                 var hospitalizacionProductoAplicacion = _hospitalizacionRepository
                     .GetProductoAplicacion(hospitalizacionProductoAplicacionId);
                 hospitalizacionProductoAplicacion.Aplicado = true;
-                hospitalizacionProductoAplicacion.FechaHoraAplicacion = DateTime.Now;
+                hospitalizacionProductoAplicacion.FechaHoraAplicacion = HospitalTimeHelper.UtcNowForStorage();
                 hospitalizacionProductoAplicacion.UsuarioAplica = _userManager.GetUserId(HttpContext.User);
                 _hospitalizacionRepository.UpdateProductoAplicacion(hospitalizacionProductoAplicacion);
+
+                var fechaAplicacionGuardada = hospitalizacionProductoAplicacion.FechaHoraAplicacion;
 
                 //Se actualiza la cuenta por cobrarCodigoSeguro
                 var cuenta = _cuentasPorCobrarRepository.GetCuenta(cuentaId);
@@ -4462,7 +4700,7 @@ namespace sistema.Controllers
                     {
                         hospitalizacionProductoAplicacionId,
                         Aplicado = true,
-                        FechaHoraAplicacion = DateTime.Now,
+                        FechaHoraAplicacion = MedicamentoHistorialDisplayHelper.FormatearInstanteAplicacion(fechaAplicacionGuardada),
                         UsuarioAplica = _userManager.GetUserId(HttpContext.User),
                         Subtotal = hospitalizacionProductoAplicacion.HospitalizacionProducto.PrecioValor * hospitalizacionProductoAplicacion.Cantidad  // ← AGREGAR
 
@@ -4488,7 +4726,7 @@ namespace sistema.Controllers
                     .GetServicioHospitalizacion(hospitalizacionServicioId);
 
                 hospitalizacionServicio.Aplicado = true;
-                hospitalizacionServicio.FechaHoraAplicacion = DateTime.Now;
+                hospitalizacionServicio.FechaHoraAplicacion = HospitalTimeHelper.NowGuatemala();
                 hospitalizacionServicio.UsuarioAplica = _userManager.GetUserId(HttpContext.User);
                 _hospitalizacionRepository.Update(hospitalizacionServicio);
 
@@ -4665,7 +4903,7 @@ namespace sistema.Controllers
 
                 string usuarioId = _userManager.GetUserId(HttpContext.User);
                 DateTime ahora = DateTime.Now;
-                const int bodegaHospId = (int)AmbienteEnum.Hospital;
+                int? bodegaHospId = Utilidades.BodegaLookupHelper.ObtenerBodegaIdPorAmbiente(_db, AmbienteEnum.Hospital);
 
                 foreach (var item in pendientes)
                 {
@@ -4680,13 +4918,17 @@ namespace sistema.Controllers
                         int unidadVenta = item.UnidadMedidaVentaId ?? 1;
 
                         var inventario =
-                            _db.ProductosInventario.FirstOrDefault(pi =>
-                                pi.ProductoId == productoId &&
-                                pi.UnidadMedidaVentaId == unidadVenta &&
-                                pi.BodegaId == bodegaHospId)
-                            ?? _db.ProductosInventario.FirstOrDefault(pi =>
-                                pi.ProductoId == productoId &&
-                                pi.BodegaId == bodegaHospId)
+                            (bodegaHospId.HasValue
+                                ? _db.ProductosInventario.FirstOrDefault(pi =>
+                                    pi.ProductoId == productoId &&
+                                    pi.UnidadMedidaVentaId == unidadVenta &&
+                                    pi.BodegaId == bodegaHospId)
+                                : null)
+                            ?? (bodegaHospId.HasValue
+                                ? _db.ProductosInventario.FirstOrDefault(pi =>
+                                    pi.ProductoId == productoId &&
+                                    pi.BodegaId == bodegaHospId)
+                                : null)
                             ?? _db.ProductosInventario.FirstOrDefault(pi =>
                                 pi.ProductoId == productoId &&
                                 pi.UnidadMedidaVentaId == unidadVenta)
@@ -4989,24 +5231,62 @@ namespace sistema.Controllers
                     });
                 }
 
-                var autorizacionesPath = Path.Combine("wwwroot", "Autorizaciones");
-
-                // Crear la carpeta si no existe
+                var autorizacionesPath = Path.Combine(_env.WebRootPath, "Autorizaciones");
                 if (!Directory.Exists(autorizacionesPath))
                 {
                     Directory.CreateDirectory(autorizacionesPath);
                 }
 
-                // Simular una lista de archivos relacionados con la hospitalización
-                var archivos = new List<ArchivoAutorizacionVM>
+                var archivos = new List<ArchivoAutorizacionVM>();
+                var hospToken = hospitalizacionId.ToString();
+                var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    new ArchivoAutorizacionVM
-                    {
-                        ArchivoId = hospitalizacion.Id,
-                        ArchivoNombre = "Archivo Autorización " + hospitalizacion.Id,
-                        ArchivoUrl = $"/Autorizaciones/{hospitalizacion}" // Asegúrate de que hospitalizacion.NombreArchivo exista
-                    }
+                    ".pdf", ".png", ".jpg", ".jpeg", ".webp"
                 };
+
+                foreach (var filePath in Directory.EnumerateFiles(autorizacionesPath, "*.*", SearchOption.AllDirectories))
+                {
+                    var extension = Path.GetExtension(filePath);
+                    if (string.IsNullOrWhiteSpace(extension) || !allowedExtensions.Contains(extension))
+                        continue;
+
+                    var fileName = Path.GetFileName(filePath);
+                    var relativePath = Path.GetRelativePath(_env.WebRootPath, filePath)
+                        .Replace('\\', '/');
+                    var relativeLower = relativePath.ToLowerInvariant();
+
+                    var matchesHospitalizacion =
+                        fileName.Contains(hospToken, StringComparison.OrdinalIgnoreCase)
+                        || relativeLower.Contains($"/{hospToken}/")
+                        || relativeLower.Contains($"/{hospToken}.");
+
+                    if (!matchesHospitalizacion)
+                        continue;
+
+                    archivos.Add(new ArchivoAutorizacionVM
+                    {
+                        ArchivoId = archivos.Count + 1,
+                        ArchivoNombre = fileName,
+                        ArchivoUrl = "/" + relativePath
+                    });
+                }
+
+                if (!string.IsNullOrWhiteSpace(hospitalizacion.UrlArchivoConsentimiento))
+                {
+                    var consentUrl = hospitalizacion.UrlArchivoConsentimiento.Trim();
+                    if (!consentUrl.StartsWith("/"))
+                        consentUrl = "/" + consentUrl;
+
+                    if (!archivos.Any(a => string.Equals(a.ArchivoUrl, consentUrl, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        archivos.Add(new ArchivoAutorizacionVM
+                        {
+                            ArchivoId = archivos.Count + 1,
+                            ArchivoNombre = "Consentimiento informado",
+                            ArchivoUrl = consentUrl
+                        });
+                    }
+                }
 
                 // Retornar resultado exitoso
                 return JsonSerializer.Serialize(new
@@ -5074,6 +5354,106 @@ namespace sistema.Controllers
                     Mensaje = "Error al consultar historial de paciente"
                 });
             }
+        }
+
+        [HttpPost]
+        public string ObtenerConsultaIdHistoriaClinica(int hospitalizacionId, int? citaId = null)
+        {
+            try
+            {
+                if (hospitalizacionId <= 0)
+                {
+                    return JsonSerializer.Serialize(new
+                    {
+                        Exitoso = false,
+                        Mensaje = "Hospitalización no válida"
+                    });
+                }
+
+                var hospitalizacion = _hospitalizacionRepository.Get(hospitalizacionId);
+                if (hospitalizacion == null)
+                {
+                    return JsonSerializer.Serialize(new
+                    {
+                        Exitoso = false,
+                        Mensaje = "Hospitalización no encontrada"
+                    });
+                }
+
+                var consulta = ResolverConsultaHistoriaClinica(
+                    hospitalizacionId,
+                    citaId,
+                    hospitalizacion.PacienteId);
+
+                if (consulta == null)
+                {
+                    return JsonSerializer.Serialize(new
+                    {
+                        Exitoso = false,
+                        Mensaje = "No se encontró una consulta vinculada a esta hospitalización"
+                    });
+                }
+
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = true,
+                    ConsultaId = consulta.Id
+                });
+            }
+            catch (Exception)
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = false,
+                    Mensaje = "Error al resolver la consulta de historia clínica"
+                });
+            }
+        }
+
+        private Consulta ResolverConsultaHistoriaClinica(int hospitalizacionId, int? citaId, int pacienteId, int? habitacionId = null)
+        {
+            var consulta = _consultasRepository.GetConsultaPorHospitalizacion(hospitalizacionId);
+            if (consulta != null)
+                return consulta;
+
+            if (citaId.HasValue && citaId.Value > 0)
+            {
+                consulta = _consultasRepository.GetConsultaPorCita(citaId.Value);
+                if (consulta != null)
+                    return consulta;
+            }
+
+            if (habitacionId.HasValue)
+            {
+                var citaSala = _db.Citass
+                    .Where(c => c.PacienteId == pacienteId
+                        && c.HabitacionId == habitacionId
+                        && !c.Eliminado)
+                    .OrderByDescending(c => c.FechaInicio)
+                    .ThenByDescending(c => c.Id)
+                    .FirstOrDefault();
+
+                if (citaSala != null)
+                {
+                    consulta = _consultasRepository.GetConsultaPorCita(citaSala.Id);
+                    if (consulta != null)
+                        return consulta;
+                }
+            }
+
+            var citaReciente = _db.Citass
+                .Where(c => c.PacienteId == pacienteId && !c.Eliminado)
+                .OrderByDescending(c => c.Id)
+                .FirstOrDefault();
+
+            if (citaReciente != null)
+            {
+                consulta = _consultasRepository.GetConsultaPorCita(citaReciente.Id);
+                if (consulta != null)
+                    return consulta;
+            }
+
+            return _consultasRepository.GetUltimaConsultaPaciente(pacienteId);
         }
 
         [HttpPost]
@@ -5614,6 +5994,12 @@ namespace sistema.Controllers
                 _db.HospitalizacionInsumosDirectos.Add(insumo);
                 await _db.SaveChangesAsync();
 
+                var inicioManual = MedicamentoHistorialDisplayHelper.ResolverInicioManualInsumo(insumo);
+                var horariosInsumo = MedicamentoScheduleHelper.CalcularHorariosAplicacion(
+                    (int)insumo.Cantidad,
+                    insumo.FrecuenciaAdministracion ?? "",
+                    inicioManual);
+
                 for (int i = 0; i < insumo.Cantidad; i++)
                 {
                     _db.HospitalizacionInsumosDirectosAplicaciones.Add(
@@ -5622,7 +6008,8 @@ namespace sistema.Controllers
                             HospitalizacionInsumoDirectoId = insumo.Id,
                             Cantidad = 1,
                             Aplicado = false,
-                            UsuarioCreaId = usuarioId
+                            UsuarioCreaId = usuarioId,
+                            FechaHoraAplicacion = null
                         });
                 }
                 await _db.SaveChangesAsync();
@@ -5664,6 +6051,7 @@ namespace sistema.Controllers
                     .Include(a => a.HospitalizacionInsumoDirecto)
                         .ThenInclude(i => i.UnidadMedidaVenta)
                     .Where(a =>
+                        a.HospitalizacionInsumoDirecto != null &&
                         a.HospitalizacionInsumoDirecto.HospitalizacionId == hospitalizacionId &&
                         !a.HospitalizacionInsumoDirecto.Eliminado)
                     .OrderByDescending(a => a.Id)
@@ -5710,8 +6098,32 @@ namespace sistema.Controllers
 
                 var lista = new List<HospitalizacionInsumoDirectoAplicacionViewModel>();
 
+                var fechaManualPorAppId = new Dictionary<int, string>();
+                foreach (var grp in aplicaciones.GroupBy(a => a.HospitalizacionInsumoDirectoId))
+                {
+                    var insumo = grp.First().HospitalizacionInsumoDirecto;
+                    if (insumo == null) continue;
+
+                    var cantidadDosis = (int)Math.Min(Math.Max(insumo.Cantidad, 0), 500);
+                    var horarios = MedicamentoScheduleHelper.CalcularHorariosAplicacion(
+                        cantidadDosis,
+                        insumo.FrecuenciaAdministracion ?? "",
+                        insumo.FechaHoraAplicacionManual);
+                    int idx = 0;
+                    foreach (var app in grp.OrderBy(x => x.Id))
+                    {
+                        fechaManualPorAppId[app.Id] = idx < horarios.Count
+                            ? MedicamentoScheduleHelper.FormatearHorarioLocal(horarios[idx])
+                            : "-";
+                        idx++;
+                    }
+                }
+
                 foreach (var a in aplicaciones)
                 {
+                    if (a.HospitalizacionInsumoDirecto == null)
+                        continue;
+
                     // Omitir ya aplicados del listado de pendientes (igual que el flujo original)
                     if (a.Aplicado) continue;
 
@@ -5719,11 +6131,7 @@ namespace sistema.Controllers
                         ? a.FechaHoraAplicacion.Value.ToString("dd/MM/yyyy hh:mm:ss tt", new CultureInfo("es-GT"))
                         : "-";
 
-                    string fechaManual = DateTime.TryParse(
-    a.HospitalizacionInsumoDirecto.FechaHoraAplicacionManual,
-    out DateTime fechaConvertida)
-    ? fechaConvertida.ToString("dd/MM/yyyy HH:mm:ss", new CultureInfo("es-GT"))
-    : "-";
+                    string fechaManual = fechaManualPorAppId.TryGetValue(a.Id, out var fm) ? fm : "-";
 
                     lista.Add(new HospitalizacionInsumoDirectoAplicacionViewModel
                     {
@@ -5833,7 +6241,7 @@ namespace sistema.Controllers
                     return JsonSerializer.Serialize(new { Exitoso = false, Mensaje = "Registro no encontrado." });
 
                 aplicacion.Aplicado = true;
-                aplicacion.FechaHoraAplicacion = DateTime.Now;
+                aplicacion.FechaHoraAplicacion = HospitalTimeHelper.UtcNowForStorage();
                 aplicacion.UsuarioAplica = _userManager.GetUserId(HttpContext.User);
                 _db.SaveChanges();
 
@@ -5850,46 +6258,39 @@ namespace sistema.Controllers
                 int unidadVenta = aplicacion.HospitalizacionInsumoDirecto.UnidadMedidaVentaId;
                 int cantidad = aplicacion.Cantidad;
 
-                // 1. Definir la bodega objetivo para Hospitalización (Id fijo 8 según tu tabla)
-                const int bodegaHospitalizacionId = 8;
+                int? bodegaHospitalizacionId = Utilidades.BodegaLookupHelper.ObtenerBodegaIdPorAmbiente(_db, AmbienteEnum.Hospital);
+                int? bodegaCentralId = Utilidades.BodegaLookupHelper.ObtenerBodegaIdPorAmbiente(_db, AmbienteEnum.Bodega);
 
-                // 2. Buscar inventario en bodega de Hospitalización con la misma unidad de medida
-                var inventario = _db.ProductosInventario
-                    .Where(pi => pi.ProductoId == productoId
-                              && pi.UnidadMedidaVentaId == unidadVenta
-                              && pi.BodegaId == bodegaHospitalizacionId)
-                    .FirstOrDefault();
+                var inventario = bodegaHospitalizacionId.HasValue
+                    ? _db.ProductosInventario
+                        .Where(pi => !pi.Eliminado && pi.ProductoId == productoId
+                                  && pi.UnidadMedidaVentaId == unidadVenta
+                                  && pi.BodegaId == bodegaHospitalizacionId)
+                        .FirstOrDefault()
+                    : null;
 
-                // 3. Si no existe, buscar cualquier inventario del producto en bodega Hospitalización (sin importar unidad)
-                if (inventario == null)
+                if (inventario == null && bodegaHospitalizacionId.HasValue)
                 {
                     inventario = _db.ProductosInventario
-                        .Where(pi => pi.ProductoId == productoId && pi.BodegaId == bodegaHospitalizacionId)
+                        .Where(pi => !pi.Eliminado && pi.ProductoId == productoId && pi.BodegaId == bodegaHospitalizacionId)
                         .FirstOrDefault();
-                    if (inventario != null)
-                        Console.WriteLine($"[INFO] Se usó inventario en bodega Hospitalización pero con unidad diferente (Id:{inventario.UnidadMedidaVentaId})");
                 }
 
-                // 4. Fallback: buscar en la bodega "Central" (Id=14) o cualquier otra si no hay en Hospitalización
+                if (inventario == null && bodegaCentralId.HasValue)
+                {
+                    inventario = _db.ProductosInventario
+                        .Where(pi => !pi.Eliminado && pi.ProductoId == productoId
+                                  && pi.UnidadMedidaVentaId == unidadVenta
+                                  && pi.BodegaId == bodegaCentralId)
+                        .FirstOrDefault();
+                }
+
                 if (inventario == null)
                 {
-                    const int bodegaCentralId = 14;
                     inventario = _db.ProductosInventario
-                        .Where(pi => pi.ProductoId == productoId && pi.UnidadMedidaVentaId == unidadVenta && pi.BodegaId == bodegaCentralId)
+                        .Where(pi => !pi.Eliminado && pi.ProductoId == productoId && pi.Stock > 0)
+                        .OrderByDescending(pi => pi.Stock)
                         .FirstOrDefault();
-
-                    if (inventario == null)
-                    {
-                        inventario = _db.ProductosInventario
-                            .Where(pi => pi.ProductoId == productoId)
-                            .FirstOrDefault();
-                        if (inventario != null)
-                            Console.WriteLine($"[WARN] No se encontró inventario en bodega Hospitalización ({bodegaHospitalizacionId}) ni Central ({bodegaCentralId}) para producto {productoId}. Se usó bodega {inventario.BodegaId} como fallback.");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"[WARN] No hay inventario en bodega Hospitalización para producto {productoId}, se usó bodega Central (Id={bodegaCentralId})");
-                    }
                 }
 
                 if (inventario != null)
@@ -5971,79 +6372,34 @@ namespace sistema.Controllers
         {
             try
             {
-                var resultado = new List<object>();
-
-                // ── 1. Control de Medicamentos ────────────────────────────────────────
-                var medicamentos = _db.HospitalizacionesProductos
-                    .Include(p => p.Producto)
-                    .Include(p => p.HospitalizacionesProductosAplicaciones)
-                    .Where(p => p.HospitalizacionId == hospitalizacionId && !p.Eliminado)
-                    .ToList();
-
-                foreach (var med in medicamentos)
+                var filas = MedicamentoHistorialPdfBuilder.Build(_db, hospitalizacionId).ToList();
+                var resultado = filas.Select(row =>
                 {
-                    var apps = med.HospitalizacionesProductosAplicaciones.ToList();
-                    bool aplicado = apps.Any(a => a.Aplicado);
+                    string fechaAplicacionUi = row.Aplicado
+                        && row.FechaAplicacion != MedicamentoHistorialDisplayHelper.TextoPendiente
+                        && row.HoraAplicacion != MedicamentoHistorialDisplayHelper.TextoPendiente
+                        ? $"{row.FechaAplicacion} {row.HoraAplicacion}"
+                        : row.FechaAplicacion;
 
-                    var fechaApp = apps
-                        .Where(a => a.Aplicado && a.FechaHoraAplicacion != null)
-                        .OrderByDescending(a => a.FechaHoraAplicacion)
-                        .FirstOrDefault()?.FechaHoraAplicacion;
-
-                    resultado.Add(new
+                    return new
                     {
-                        Id = 0,  // los medicamentos no tienen eliminación desde este modal
-                        Origen = "Control de Medicamentos",
-                        Nombre = med.Producto?.NombreProducto ?? "-",
-                        CantidadTotal = apps.Sum(a => a.Cantidad),
-                        Cantidad = apps.Where(a => a.Aplicado).Sum(a => a.Cantidad),
-                        Indicaciones = med.Indicaciones ?? "-",
-                        Via = med.ViaAdministracion ?? "-",
-                        Frecuencia = med.FrecuenciaAdministracion ?? "-",
-                        Aplicado = aplicado,
-                        FechaAplicacion = fechaApp.Value.ToString("dd/MM/yyyy hh:mm:ss tt", new CultureInfo("es-GT")),
-
-
-                        FechaRegistro = DateTime.TryParse(med.FechaHoraAplicacionManual, out DateTime fReg)
-    ? fReg.ToString("dd/MM/yyyy HH:mm:ss", new CultureInfo("es-GT"))
-    : "-"
-
-
-                    });
-                }  // ← cierra foreach medicamentos correctamente
-
-                // ── 2. Control de Insumos Directos (una fila por cada aplicación, SIN AGRUPAR) ──
-                var aplicacionesInsumos = _db.HospitalizacionInsumosDirectosAplicaciones
-                    .Include(a => a.HospitalizacionInsumoDirecto)
-                        .ThenInclude(i => i.Producto)
-                    .Where(a => a.HospitalizacionInsumoDirecto.HospitalizacionId == hospitalizacionId &&
-                                !a.HospitalizacionInsumoDirecto.Eliminado)
-                    .ToList();
-
-                foreach (var app in aplicacionesInsumos)
-                {
-                    var insumo = app.HospitalizacionInsumoDirecto;
-                    resultado.Add(new
-                    {
-                        Id = app.Id,   // ← ID de la aplicación (útil para eliminar)
-                        Origen = "Control de Insumos",
-                        Nombre = insumo.Producto?.NombreProducto ?? "-",
-                        CantidadTotal = 1,   // cada aplicación es de 1 unidad
-                        Cantidad = app.Aplicado ? 1 : 0,
-                        Indicaciones = insumo.Indicaciones ?? "-",
-                        Via = insumo.ViaAdministracion ?? "-",
-                        Frecuencia = insumo.FrecuenciaAdministracion ?? "-",
-                        Aplicado = app.Aplicado,
-                        FechaAplicacion = app.FechaHoraAplicacion.HasValue
-                            ? app.FechaHoraAplicacion.Value.ToString("dd/MM/yyyy HH:mm", new CultureInfo("es-GT"))
-                            : "-",
-                        FechaRegistro = DateTime.TryParse(insumo.FechaHoraAplicacionManual, out DateTime fManual)
-    ? fManual.ToString("dd/MM/yyyy hh:mm:ss tt", new CultureInfo("es-GT"))
-    : "-",
-                        MotivoDevolucion = app.MotivoDevolucion ?? "-"
-
-                    });
-                }
+                        Id = row.AplicacionId,
+                        row.HospitalizacionProductoId,
+                        row.Origen,
+                        row.Nombre,
+                        CantidadTotal = row.CantidadRegistrada,
+                        Cantidad = row.CantidadAplicada,
+                        row.Indicaciones,
+                        row.Via,
+                        row.Frecuencia,
+                        Aplicado = row.Aplicado,
+                        FechaAplicacion = fechaAplicacionUi,
+                        HoraAplicacion = row.HoraAplicacion,
+                        PersonaAplica = row.AplicadoPor,
+                        FechaRegistro = row.FechaRegistro,
+                        MotivoDevolucion = row.MotivoDevolucion ?? MedicamentoHistorialDisplayHelper.TextoNoRegistrado
+                    };
+                }).ToList();
 
                 return JsonSerializer.Serialize(new { Exitoso = true, Resultado = resultado });
             }
@@ -6142,11 +6498,15 @@ namespace sistema.Controllers
                 var unidadVenta = insumo.UnidadMedidaVentaId;
                 var cantidad = aplicacion.Cantidad;
 
-                const int bodegaHospitalizacionId = (int)AmbienteEnum.Hospital;
-                var inventario = _db.ProductosInventario
-                    .FirstOrDefault(pi => pi.ProductoId == productoId
-                                       && pi.UnidadMedidaVentaId == unidadVenta
-                                       && pi.BodegaId == bodegaHospitalizacionId)
+                int? bodegaHospitalizacionId = Utilidades.BodegaLookupHelper.ObtenerBodegaIdPorAmbiente(_db, AmbienteEnum.Hospital);
+                var inventario = (bodegaHospitalizacionId.HasValue
+                        ? _db.ProductosInventario.FirstOrDefault(pi => pi.ProductoId == productoId
+                                           && pi.UnidadMedidaVentaId == unidadVenta
+                                           && pi.BodegaId == bodegaHospitalizacionId)
+                        : null)
+                    ?? _db.ProductosInventario
+                        .FirstOrDefault(pi => pi.ProductoId == productoId
+                                           && pi.UnidadMedidaVentaId == unidadVenta)
                     ?? _db.ProductosInventario
                         .FirstOrDefault(pi => pi.ProductoId == productoId);
 
@@ -6227,16 +6587,20 @@ namespace sistema.Controllers
                 {
                     int productoId = detalle.ProductoId.Value;
                     int unidadVenta = detalle.UnidadMedidaVentaId ?? 1;
-                    const int bodegaHospId = (int)AmbienteEnum.Hospital;
+                    int? bodegaHospId = Utilidades.BodegaLookupHelper.ObtenerBodegaIdPorAmbiente(_db, AmbienteEnum.Hospital);
 
                     var inventario =
-                        _db.ProductosInventario.FirstOrDefault(pi =>
-                            pi.ProductoId == productoId &&
-                            pi.UnidadMedidaVentaId == unidadVenta &&
-                            pi.BodegaId == bodegaHospId)
-                        ?? _db.ProductosInventario.FirstOrDefault(pi =>
-                            pi.ProductoId == productoId &&
-                            pi.BodegaId == bodegaHospId)
+                        (bodegaHospId.HasValue
+                            ? _db.ProductosInventario.FirstOrDefault(pi =>
+                                pi.ProductoId == productoId &&
+                                pi.UnidadMedidaVentaId == unidadVenta &&
+                                pi.BodegaId == bodegaHospId)
+                            : null)
+                        ?? (bodegaHospId.HasValue
+                            ? _db.ProductosInventario.FirstOrDefault(pi =>
+                                pi.ProductoId == productoId &&
+                                pi.BodegaId == bodegaHospId)
+                            : null)
                         ?? _db.ProductosInventario.FirstOrDefault(pi =>
                             pi.ProductoId == productoId &&
                             pi.UnidadMedidaVentaId == unidadVenta)
@@ -6392,6 +6756,36 @@ namespace sistema.Controllers
         {
             public int hospitalizacionId { get; set; }
             public int nuevaTarifaId { get; set; }
+        }
+
+        private static void CompletarPresionArterialMedia(List<HospitalizacionDatoExamenFisicoExistenteViewModel> datosExamen)
+        {
+            if (datosExamen == null || datosExamen.Count == 0)
+                return;
+
+            var pa = datosExamen.FirstOrDefault(d =>
+                string.Equals(d.NombreDato, "Presion arterial", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(d.NombreDato, "Presion arterial brazo izquierdo", StringComparison.OrdinalIgnoreCase));
+
+            if (pa == null || string.IsNullOrWhiteSpace(pa.ValorDato))
+                return;
+
+            char separador = pa.ValorDato.Contains('/') ? '/' : '-';
+            var partes = pa.ValorDato.Split(separador);
+            if (partes.Length < 2)
+                return;
+
+            if (!int.TryParse(partes[0].Trim(), out var sistolica))
+                return;
+            if (!int.TryParse(partes[1].Trim(), out var diastolica))
+                return;
+
+            var map = (sistolica + 2 * diastolica) / 3;
+            var mapDato = datosExamen.FirstOrDefault(d =>
+                string.Equals(d.NombreDato, "Presion arterial media", StringComparison.OrdinalIgnoreCase));
+
+            if (mapDato != null)
+                mapDato.ValorDato = map.ToString();
         }
 
 

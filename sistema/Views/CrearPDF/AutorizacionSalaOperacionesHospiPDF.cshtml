@@ -47,8 +47,24 @@
     <div style="margin-top: 40px;">
         <p>Firma y Sello:</p>
         <div style="text-align: center; margin-top: 80px;">
-             <img src="@Model.UrlFirmaMedico" alt="Firma del Médico">
+            @{
+                var firmaMedico = !string.IsNullOrWhiteSpace(Model.UrlFirmaMedico)
+                    ? Model.UrlFirmaMedico
+                    : Model.FirmaMedicoBase64;
+            }
+            @if (!string.IsNullOrWhiteSpace(firmaMedico))
+            {
+                <img src="@firmaMedico" alt="Firma del Médico" style="max-height:100px; margin-bottom:8px;" /><br />
+            }
             <div style="width: 350px; border-bottom: 2px solid black; margin: 0 auto;"></div>
+            @if (!string.IsNullOrWhiteSpace(Model.NombreMedicoTratante))
+            {
+                <div style="margin-top:8px;">@Model.NombreMedicoTratante</div>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.ColegiadoMedico))
+            {
+                <div style="color:#64748b;">Colegiado: @Model.ColegiadoMedico</div>
+            }
         </div>
     </div>
 

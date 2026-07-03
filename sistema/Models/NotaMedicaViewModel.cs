@@ -10,6 +10,8 @@ namespace farmamest.Models
         public string Diagnostico { get; set; }
         public string FechaRegistro { get; set; }
         public string Profesional { get; set; }
+        /// <summary>Usuario que capturó la nota en sistema (p. ej. recepción). No sustituye al médico tratante.</summary>
+        public string RegistradoPor { get; set; }
         public int HospitalizacionId { get; set; }
 
         public string PacienteNombre { get; set; }
@@ -22,6 +24,11 @@ namespace farmamest.Models
 
         public bool Autorizado { get; set; }
         public string UsuarioAutoriza { get; set; }
-        public string FechaAutorizacion { get; set; }
-    }
+    public string FechaAutorizacion { get; set; }
+
+    public string FirmaBase64 { get; set; }
+    public string TipoNota { get; set; }
+    public string NombreFirmante { get; set; }
+    public string AutorizadoPor { get; set; }
+}
 }

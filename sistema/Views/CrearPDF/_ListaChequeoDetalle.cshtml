@@ -1,0 +1,78 @@
+@model Database.Shared.Models.ListaChequeo
+
+@if (Model == null)
+{
+    <p class="muted">No hay lista de chequeo registrada.</p>
+}
+else
+{
+
+<p><strong>Fecha chequeo:</strong> @(Model.FechaChequeo?.ToString("dd/MM/yyyy") ?? "-") @(Model.HoraChequeo ?? "")</p>
+<p><strong>Médico tratante:</strong> @(Model.MedicoTratante ?? "-")</p>
+<p><strong>Paciente:</strong> @(Model.NombrePaciente ?? "") @(Model.ApellidoPaciente ?? "")</p>
+
+<div class="phase">Fase I — Ingreso a quirófano (paciente)</div>
+<table class="kv">
+    <tr><th>Nombre confirmado</th><td>@(Model.CI_NombreConfirma ?? "-") @(Model.CI_ApellidoConfirma ?? "")</td></tr>
+    <tr><th>Fecha nac. confirmada</th><td>@(Model.CI_FechaNacConfirma?.ToString("dd/MM/yyyy") ?? "-")</td></tr>
+    <tr><th>Consentimiento</th><td>@(Model.CI_Consentimiento ?? "-")</td></tr>
+    <tr><th>Operación confirmada</th><td>@(Model.CI_Operacion ?? "-")</td></tr>
+    <tr><th>Lado a operar</th><td>@(Model.CI_LadoOperar ?? "-")</td></tr>
+    <tr><th>Sitio marcado</th><td>@(Model.CI_SitioMarcado ?? "-")</td></tr>
+    <tr><th>Alergia</th><td>@(Model.CI_Alergia ?? "-")</td></tr>
+</table>
+
+<div class="phase">Fase I — Anestesiólogo</div>
+<table class="kv">
+    <tr><th>Evaluación preanestésica</th><td>@(Model.CI_EvalPreanestesica ?? "-")</td></tr>
+    <tr><th>Acceso IV</th><td>@(Model.CI_AccesoIV ?? "-")</td></tr>
+    <tr><th>Equipo anestesia</th><td>@(Model.CI_EquipoAnestesia ?? "-")</td></tr>
+    <tr><th>Medicamentos</th><td>@(Model.CI_Medicamentos ?? "-")</td></tr>
+    <tr><th>Oxímetro</th><td>@(Model.CI_Oximetro ?? "-")</td></tr>
+    <tr><th>Equipo aspiración</th><td>@(Model.CI_EquipoAspiracion ?? "-")</td></tr>
+    <tr><th>Vía aérea</th><td>@(Model.CI_ViaAerea ?? "-")</td></tr>
+</table>
+
+<div class="phase">Fase II — Pausa quirúrgica (cirujano)</div>
+<table class="kv">
+    <tr><th>Presentación equipo</th><td>@(Model.CP_Presentacion ?? "-")</td></tr>
+    <tr><th>Paciente / cirugía</th><td>@(Model.CP_NombrePacienteCirujano ?? "-") @(Model.CP_ApellidoPacienteCirujano ?? "") / @(Model.CP_NombreCirugia ?? "-")</td></tr>
+    <tr><th>Fecha nac. paciente</th><td>@(Model.CP_FechaNacCirujano?.ToString("dd/MM/yyyy") ?? "-")</td></tr>
+    <tr><th>Eventos críticos</th><td>@(Model.CP_EventosCriticos ?? "-")</td></tr>
+    <tr><th>Tiempo / duración</th><td>@(Model.CP_TiempoDuracion ?? "-")</td></tr>
+    <tr><th>Imágenes diagnósticas</th><td>@(Model.CP_ImagenesDiagnosticas ?? "-")</td></tr>
+    <tr><th>Pérdida de sangre</th><td>@(Model.CP_PerdidaSangre ?? "-")</td></tr>
+</table>
+
+<div class="phase">Fase II — Instrumentista</div>
+<table class="kv">
+    <tr><th>Esterilidad</th><td>@(Model.CP_Esterilidad ?? "-")</td></tr>
+    <tr><th>Materiales adicionales</th><td>@(Model.CP_MaterialesAdicionales ?? "-")</td></tr>
+</table>
+
+<div class="phase">Fase II — Anestesiólogo</div>
+<table class="kv">
+    <tr><th>Eventos críticos anest.</th><td>@(Model.CP_EventosCriticosAnest ?? "-")</td></tr>
+    <tr><th>Profilaxis antibiótica</th><td>@(Model.CP_ProfilaxisAntibiotica ?? "-")</td></tr>
+    <tr><th>Tromboprofilaxis</th><td>@(Model.CP_Tromboprofilaxis ?? "-")</td></tr>
+    <tr><th>Manejo del dolor</th><td>@(Model.CP_ManejoDolor ?? "-")</td></tr>
+</table>
+
+<div class="phase">Fase III — Antes de salir de quirófano</div>
+<table class="kv">
+    <tr><th>Operación realizada</th><td>@(Model.CS_NombreOperacion ?? "-")</td></tr>
+    <tr><th>Enfermera circulante</th><td>@(Model.CS_NombreEnfermera ?? "-")</td></tr>
+    <tr><th>Recuento de gasas e instrumental</th><td>@(Model.CS_RecuentoCompleto ?? "-")</td></tr>
+    <tr><th>Muestras etiquetadas</th><td>@(Model.CS_EtiquetadoMuestras ?? "-")</td></tr>
+</table>
+
+<div class="phase">Fase IV — Recuperación y traslado</div>
+<table class="kv">
+    <tr><th>Repaso postoperatorio</th><td>@(Model.CS_RepasoPostOp ?? "-")</td></tr>
+    <tr><th>Observaciones</th><td>@(Model.CS_PorQue ?? "-")</td></tr>
+    <tr><th>Traslado del paciente</th><td>@(Model.CS_Traslado ?? "-")</td></tr>
+    <tr><th>Complicaciones</th><td>@(Model.CS_Complicaciones ?? "-")</td></tr>
+    <tr><th>Servicio y cama</th><td>@(Model.CS_ServicioNumCama ?? "-")</td></tr>
+</table>
+
+}

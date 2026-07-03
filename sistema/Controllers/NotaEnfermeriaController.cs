@@ -1,7 +1,8 @@
-﻿using Database.Shared;
+using Database.Shared;
 using Database.Shared.IRepository;
 using Database.Shared.Models;
 using farmamest.Service.IService;
+using farmamest.Utilidades;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +11,7 @@ using sistema.Controllers;
 using Sistema.Services.WebAuthn;
 using System;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -81,7 +83,21 @@ namespace farmamest.Controllers
             try
             {
                 var result = _notaEnfermeriaService.GetNotaEnfermeriaListByHospitalizacionId(hospitalizacionId);
-                // result debe incluir las propiedades de firma
+                var userIds = result.Select(n => n.UserId).Where(id => !string.IsNullOrWhiteSpace(id)).Distinct().ToList();
+                var usuarios = _db.Users
+                    .Include(u => u.Persona)
+                    .Where(u => userIds.Contains(u.Id))
+                    .ToList();
+
+                foreach (var nota in result)
+                {
+                    if (string.IsNullOrWhiteSpace(nota.UserId)) continue;
+                    var user = usuarios.FirstOrDefault(u => u.Id == nota.UserId);
+                    var nombreEmpleado = PdfReportHelper.ObtenerNombreEmpleadoPorUser(user, _empleadoRepository);
+                    if (!string.IsNullOrWhiteSpace(nombreEmpleado) && nombreEmpleado != "-")
+                        nota.Profesional = nombreEmpleado;
+                }
+
                 return JsonSerializer.Serialize(new { exitoso = true, resultado = result });
             }
             catch (Exception)
@@ -332,6 +348,8 @@ namespace farmamest.Controllers
                     return JsonSerializer.Serialize(new { exitoso = false, resultado = "No se puede editar una nota firmada." });
 
                 nota.Diagnostico = model.Diagnostico;
+                if (!string.IsNullOrWhiteSpace(model.TipoNota))
+                    nota.TipoNota = model.TipoNota.Trim();
                 nota.FechaRegistro = DateTime.Now; 
                 await _db.SaveChangesAsync();
 
@@ -349,6 +367,7 @@ namespace farmamest.Controllers
             public int Id { get; set; }
             public string Diagnostico { get; set; }
             public int HospitalizacionId { get; set; }
+            public string TipoNota { get; set; }
         }
 
     }

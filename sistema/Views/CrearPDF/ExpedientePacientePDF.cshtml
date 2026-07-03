@@ -1,3 +1,4 @@
+@using farmamest.Utilidades
 @using Database.Shared.Models
 @model Hospitalizacion
 
@@ -15,6 +16,11 @@
     ViewData["MostrarEmergencias"] = true;
 
     DateTime fecha = DateTime.Now;
+    var medicoNombre = ViewBag.MedicoTratanteNombre as string ?? (Model.Consultas?.FirstOrDefault()?.Citas?.EmpleadoText ?? "-");
+    var medicoEspecialidad = ViewBag.MedicoTratanteEspecialidad as string ?? (Model.Consultas?.FirstOrDefault()?.Citas?.Empleado?.Especialidad?.NombreEspecialidad ?? "-");
+    var medicoColegiado = ViewBag.MedicoTratanteColegiado as string ?? (Model.Consultas?.FirstOrDefault()?.Citas?.Empleado?.Colegiado ?? "-");
+    var codigoSeguro = ViewBag.CodigoSeguro as string ?? (Model.Consultas?.FirstOrDefault()?.Citas?.CodigoDeCita ?? "-");
+    var motivoIngreso = ViewBag.MotivoIngreso as string ?? (Model.Consultas?.FirstOrDefault()?.Citas?.Motivo ?? "-");
 }
 
 @* Si tu layout ya coloca cabecera/membrete, no modifico eso. Me concentro en la primera página. *@
@@ -150,6 +156,9 @@
     th {
         text-align: start;
     }
+
+    .notes p { margin: 0 0 4px 0; }
+    .notes ul, .notes ol { margin: 4px 0; padding-left: 20px; }
 </style>
 
 <div class="doc">
@@ -258,7 +267,7 @@
         <tbody>
             <tr>
                 <th>Compañía aseguradora</th>
-                <td>@(Model.Consultas?.FirstOrDefault()?.Citas.CodigoDeCita ?? "-")</td>
+                <td>@codigoSeguro</td>
             </tr>
         </tbody>
     </table>
@@ -293,7 +302,7 @@
             </tr>
             <tr>
                 <th>Motivo de ingreso</th>
-                <td>@(Model.Consultas?.FirstOrDefault()?.Citas?.Motivo ?? "-")</td>
+                <td>@motivoIngreso</td>
             </tr>
         </tbody>
     </table>
@@ -304,15 +313,15 @@
         <tbody>
             <tr>
                 <th>Médico especialista principal</th>
-                <td>@(Model.Consultas?.FirstOrDefault()?.Citas.EmpleadoText ?? "-")</td>
+                <td>@medicoNombre</td>
             </tr>
             <tr>
                 <th>Especialidad</th>
-                <td>@(Model.Consultas?.FirstOrDefault()?.Citas?.Empleado?.Especialidad?.NombreEspecialidad ?? "-")</td>
+                <td>@medicoEspecialidad</td>
             </tr>
             <tr>
                 <th>No. Colegiado</th>
-                <td>@(Model.Consultas?.FirstOrDefault()?.Citas.Empleado.Colegiado ?? "-")</td>
+                <td>@medicoColegiado</td>
             </tr>
         </tbody>
     </table>
@@ -425,8 +434,8 @@
                 {
                     <tr>
                         <td>@orden.FechaHora.ToString("dd/MM/yyyy HH:mm")</td>
-                        <td>@orden.Descripcion</td>
-                        <td>@orden.Profesional</td>
+                        <td class="notes">@Html.Raw(PdfReportHelper.NormalizarHtmlParaPdf(orden.Descripcion))</td>
+                        <td>@(string.IsNullOrWhiteSpace(orden.Profesional) ? medicoNombre : orden.Profesional)</td>
                         <td>@(orden.Realizada ? "Realizada" : "Pendiente")</td>
                     </tr>
                 }

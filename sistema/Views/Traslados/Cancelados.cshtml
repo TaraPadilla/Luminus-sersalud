@@ -103,21 +103,7 @@
     </div>
 </div>
 
-@{
-    var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
-    var nextDisabled = !Model.HasNextPage ? "disabled" : "";
-}
-
-
-
-<a asp-action="Cancelados" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@(Model.PageIndex - 1)"
-    asp-route-currentFilter="@ViewData["CurrentFilter"]" class="btn btn-danger btn-sm @prevDisabled">
-    Anterior
-</a>
-<a asp-action="Cancelados" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@(Model.PageIndex + 1)"
-    asp-route-currentFilter="@ViewData["CurrentFilter"]" class="btn btn-danger btn-sm @nextDisabled" class="">
-    Siguiente
-</a>
+@await Html.PartialAsync("_TrasladosPaginacion", Model)
 
 @section Scripts{
     <script>

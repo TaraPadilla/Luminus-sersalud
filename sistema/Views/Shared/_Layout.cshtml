@@ -1,0 +1,17 @@
+@{
+    Layout = "_LayoutSS";
+}
+
+@RenderBody()
+
+@section css {
+    @await RenderSectionAsync("css", required: false)
+}
+
+@section Modales {
+    @await RenderSectionAsync("Modales", required: false)
+}
+
+@section Scripts {
+    @await RenderSectionAsync("Scripts", required: false)
+}

@@ -77,11 +77,12 @@ var CitaCalendarioLinealVM = function () {
   self.desbloquearDia = function (fechaYHora) {
     if (confirm("¿Desea desbloquear este día?")) {
       showLoading();
+      var dia = fechaYHora || $("#fechacita").val() || "";
       $.ajax({
         url: "/Cita/DesbloquearDia",
         method: "POST",
         data: {
-          dia: fechaYHora,
+          dia: dia,
           empleadoId: $("#EmpleadoId").val(),
         },
         success: function (dataResult) {
@@ -99,6 +100,10 @@ var CitaCalendarioLinealVM = function () {
         },
       });
     }
+  };
+
+  self.desbloquearDiaActual = function () {
+    self.desbloquearDia($("#fechacita").val());
   };
 
   self.bloquearDiaHora = function () {

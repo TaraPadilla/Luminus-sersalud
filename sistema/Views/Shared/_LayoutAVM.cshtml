@@ -90,7 +90,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta http-equiv="Content-Language" content="en">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>@ViewData["Title"]</title>
+    <title>@(string.IsNullOrWhiteSpace(Config["EstablecimientoPestana"]) ? ViewData["Title"] : Config["EstablecimientoPestana"])</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, shrink-to-fit=no" />
     <meta name="description" content="Build whatever layout you need with our Architect framework.">
     <meta name="msapplication-tap-highlight" content="no">
@@ -120,6 +120,8 @@
 
     <link href="~/css/notification.css" rel="stylesheet">
 
+    @await Html.PartialAsync("_LayoutLogoStyles", "AVM")
+
 </head>
 <body>
 
@@ -138,9 +140,7 @@
     <div class="app-container app-theme-white body-tabs-shadow fixed-sidebar fixed-header" id="menu-navegacion-izquierdo">
         <div class="app-header header-shadow header-text-light" style="background:@background; ">
             <div class="app-header__logo" style="display: flex; align-items: center; justify-content: center;">
-                <div class="logo-src" style="text-align: center; display: flex; align-content: center; justify-content: center; flex-wrap: wrap; color: #7e7e7e;">
-                    @nombre
-                </div>
+                @await Html.PartialAsync("_LogoSrc")
                 <div class="header__pane ml-auto">
                     <div>
                         <button type="button" class="hamburger close-sidebar-btn hamburger--elastic" data-class="closed-sidebar">
@@ -197,17 +197,17 @@
                 @if (usuarioAdministrador || usuarioCaja || usuarioCajero || usuarioRecepcionDiurno)
                 {
                     <li class="nav-item-custom">
-                        <a href="@Url.Action("NuevaVentaUnificada", "Venta", new { isClinica = true })" class="btn btn-primary btn-sm-custom text-white">Clínica - Nueva Venta</a>
+                        <a href="@Url.Action("NuevaVentaClinica", "Venta")" class="btn btn-primary btn-sm-custom text-white">Clínica - Nueva Venta</a>
                     </li>
                     <li class="nav-item-custom">
-                        <a href="@Url.Action("NuevaVentaUnificada", "Venta", new { isFarmacia = true })" class="btn btn-primary btn-sm-custom text-white">Farmacia - Nueva Venta</a>
+                        <a href="@Url.Action("NuevaVentaFarmacia", "Venta")" class="btn btn-primary btn-sm-custom text-white">Farmacia - Nueva Venta</a>
                     </li>
                 }
 
                 @if(usuarioRecepcionRadiologia || usuarioAdministrador || usuarioCaja || usuarioCajero || usuarioAdministradorRadiologia || usuarioRecepcionDiurno)
                 {
                     <li class="nav-item-custom">
-                        <a href="@Url.Action("NuevaVentaUnificada", "Venta", new { isLaboratorio = true })" class="btn btn-primary btn-sm-custom text-white">Exámenes Comp.</a>
+                        <a href="@Url.Action("NuevaVentaLaboratorio", "Venta")" class="btn btn-primary btn-sm-custom text-white">Exámenes Comp.</a>
                     </li>
                 }
 
@@ -317,16 +317,16 @@
                                         
                                         @if (usuarioAdministrador || usuarioCaja || usuarioCajero || usuarioRecepcionDiurno )
                                         {
-                                            <a href="@Url.Action("NuevaVentaUnificada", "Venta", new { isClinica = true })" class="btn btn-primary btn-sm form-inline"
+                                            <a href="/Venta/NuevaVentaClinica" class="btn btn-primary btn-sm form-inline"
                                                style="margin-right:0.5em; color: white;">Clínica - Nueva venta</a>
                                         }
                                         @if (usuarioAdministrador || usuarioCaja || usuarioCajero || usuarioRecepcionDiurno || usuarioRecepcionDiurno )
                                         {
-                                            <a href="@Url.Action("NuevaVentaUnificada", "Venta", new { isFarmacia = true })" class="btn btn-primary btn-sm form-inline"
+                                            <a href="/Venta/NuevaVentaFarmacia" class="btn btn-primary btn-sm form-inline"
                                                style="margin-right:0.5em; color: white;">Farmacia - Nueva venta</a>
                                         }
                                                @if(usuarioRecepcionRadiologia || usuarioAdministrador || usuarioCaja || usuarioCajero || usuarioAdministradorRadiologia || usuarioRecepcionDiurno){
-                                            <a href="@Url.Action("NuevaVentaUnificada", "Venta", new { isLaboratorio = true })" class="btn btn-primary btn-sm form-inline"
+                                            <a href="/Venta/NuevaVentaLaboratorio" class="btn btn-primary btn-sm form-inline"
                                                style="margin-right:0.5em; color: white;">Examenes Complementarios</a>
                                                }
                                         
@@ -425,7 +425,7 @@
 
             <div class="app-sidebar sidebar-shadow sidebar-text-light" style="background: #0d1619">
                 <div class="app-header__logo">
-                    <div class="logo-src"></div>
+                    @await Html.PartialAsync("_LogoSrc")
                     <div class="header__pane ml-auto">
                         <div>
                             <button type="button" class="hamburger close-sidebar-btn hamburger--elastic" data-class="closed-sidebar">
@@ -1975,7 +1975,7 @@
                                         </a>
                                         <ul>
                                             <li>
-                                                <a asp-action="NuevaVentaUnificada" asp-route-isClinica="true" asp-controller="Venta" class="enlace-redirigir">
+                                                <a asp-action="NuevaVentaClinica" asp-controller="Venta" class="enlace-redirigir">
                                                     <i class="metismenu-icon">
                                                     </i>Nueva venta
                                                 </a>
@@ -2211,8 +2211,7 @@
                                         </a>
                                         <ul>
                                             <li>
-                                                <a asp-action="NuevaVentaUnificada" asp-controller="Venta"
-                                                   class="enlace-redirigir" asp-route-isFarmacia="true">
+                                                <a asp-action="NuevaVentaFarmacia" asp-controller="Venta" class="enlace-redirigir">
                                                     <i class="metismenu-icon">
                                                     </i>Nueva venta
                                                 </a>
@@ -2767,7 +2766,7 @@
                                                 || usuarioAdministrador)
                                             {
                                                 <li>
-                                                    <a asp-action="NuevaVentaUnificada" asp-route-isLaboratorio="true" asp-controller="Venta" class="enlace-redirigir">
+                                                    <a asp-action="NuevaVentaLaboratorio" asp-controller="Venta" class="enlace-redirigir">
                                                         <i class="metismenu-icon fas fa-hospital"></i>
                                                         Nueva consulta
                                                     </a>
@@ -2921,8 +2920,7 @@
                                         </a>
                                         <ul>
                                             <li>
-                                                <a asp-action="NuevaVentaUnificada"
-                                                   asp-controller="Venta" asp-route-isLaboratorio="true" class="enlace-redirigir">
+                                                <a asp-action="NuevaVentaLaboratorio" asp-controller="Venta" class="enlace-redirigir">
                                                     <i class="metismenu-icon">
                                                     </i> Nueva venta
                                                 </a>
@@ -4167,7 +4165,7 @@
                                         @if(!usuarioEncargadoKardex){
 
                                          <li>
-                                            <a href="#" class="enlace-redirigir no-acceso">
+                                            <a asp-action="Index" asp-controller="EstadoResultados" class="enlace-redirigir">
                                                 <i class="metismenu-icon">
                                                 </i>Diario mayor y balance
                                             </a>
@@ -4178,7 +4176,7 @@
                                         @if(!usuarioEncargadoKardex){
 
                                          <li>
-                                            <a href="#" class="enlace-redirigir no-acceso">
+                                            <a asp-action="ReporteVentasFechas" asp-controller="Venta" class="enlace-redirigir">
                                                 <i class="metismenu-icon">
                                                 </i>Reporte de rentabilidad
                                             </a>
@@ -4368,19 +4366,6 @@
                                         }
 
                                         @if(!usuarioEncargadoKardex){
-
-                                         <li>
-                                            <a href="#" class="enlace-redirigir no-acceso">
-                                                <i class="metismenu-icon">
-                                                </i>Pago y comisiones
-                                            </a>
-                                        </li> 
-                                         <li>
-                                            <a href="#" class="enlace-redirigir no-acceso">
-                                                <i class="metismenu-icon">
-                                                </i>Planillas
-                                            </a>
-                                        </li> 
 
                                         }
                                         @if (usuarioAuxiliarFarmacia
@@ -4778,6 +4763,7 @@
     @*<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>*@
     <!--JQuery-->
     <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+    <script>window.jQuery || document.write('<script src="/js/jquery.js"><\/script>');</script>
     @*<script src="https://code.jquery.com/jquery-1.12.4.js"></script>*@
 
     <!--Jquery UI-->
@@ -4791,11 +4777,13 @@
     
 
     <script type="text/javascript" src="~/lib/knockout/knockout-3.5.1.js"></script>
+    <script type="text/javascript" src="~/js/selectHelpers.js"></script>
     <script type="text/javascript" src="~/js/bootstrap.bundle.min.js"></script>
     <script type="text/javascript" src="~/js/moment.min.js"></script>
     <script type="text/javascript" src="~/js/select2.full.min.js"></script>
     <script type="text/javascript" src="~/assets/scripts/main.js"></script>
     <script type="text/javascript" src="~/js/daterangepicker.js"></script>
+    @await Html.PartialAsync("_AppConfigScript")
     <script type="text/javascript" src="~/js/site.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -4816,11 +4804,14 @@ function toggleMiMenu() {
         menu.classList.toggle("show");
     }
     
-    // Cerrar el menú si se hace clic fuera de él
+    // Cerrar el menú si se hace clic fuera de él (sin bloquear navegación de enlaces)
     window.onclick = function(event) {
+        if (event.target.closest('#menuSincronizado a[href]')) {
+            return;
+        }
         if (!event.target.matches('.navbar-toggler-custom') && !event.target.matches('.fa-bars')) {
             var menu = document.getElementById("menuSincronizado");
-            if (menu.classList.contains('show')) {
+            if (menu && menu.classList.contains('show')) {
                 menu.classList.remove('show');
             }
         }

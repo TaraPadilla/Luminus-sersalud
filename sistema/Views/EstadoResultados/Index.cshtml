@@ -19,12 +19,12 @@
             <div class="col-md-12 form-row offset-md-3 mt-4 mb-3">
                 <div class="col-md-4">
                     <label>Fecha Inicial:</label>
-                    <input type="date" class="form-control" id="fechacita" name="fecha" >
+                    <input type="date" class="form-control" id="fechaInicial" name="fechaInicial" >
                 </div>
 
                 <div class="col-md-4">
                     <label>Fecha Final:</label>
-                    <input type="date" class="form-control" id="fechacita" name="fecha">
+                    <input type="date" class="form-control" id="fechaFinal" name="fechaFinal">
                 </div>
 
                 
@@ -37,26 +37,26 @@
             </div>
             <div class="col-md-12">
 
-                <a href="#" class="btn btn-danger enlace-redirigir no-acceso">
+                <button type="button" class="btn btn-danger" onclick="aplicarFiltroEstadoResultados('mes')">
                     <i class="fas fa-list"></i>  &nbsp; Mes actual
-                </a>
-                <a href="#" class="btn btn-danger enlace-redirigir no-acceso">
+                </button>
+                <button type="button" class="btn btn-danger" onclick="aplicarFiltroEstadoResultados('rango')">
                     <i class="fas fa-list"></i>  &nbsp; Rango de fechas
-                </a>
+                </button>
 
-                <a href="#" class="btn btn-danger enlace-redirigir no-acceso">
+                <button type="button" class="btn btn-danger" onclick="aplicarFiltroEstadoResultados('anual')">
                     <i class="fas fa-list"></i>  &nbsp; Anual
-                </a>
-                <a href="#" class="btn btn-danger enlace-redirigir no-acceso">
+                </button>
+                <button type="button" class="btn btn-danger" onclick="aplicarFiltroEstadoResultados('facturado')">
                     <i class="fas fa-list"></i>  &nbsp; Facturado
-                </a>
-                <a href="#" class="btn btn-danger enlace-redirigir no-acceso">
+                </button>
+                <button type="button" class="btn btn-danger" onclick="aplicarFiltroEstadoResultados('no-facturado')">
                     <i class="fas fa-list"></i>  &nbsp; No facturado
-                </a>
+                </button>
 
-                <a href="#" class="btn btn-danger enlace-redirigir no-acceso">
+                <button type="button" class="btn btn-danger" onclick="aplicarFiltroEstadoResultados('general')">
                     <i class="fas fa-list"></i>  &nbsp; General
-                </a>
+                </button>
             </div>
            
 
@@ -1252,13 +1252,44 @@
 
 @section Scripts
 {
-@*<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>*@
-@*<script type="text/javascript" src="~/js/moment.min.js"></script>*@
-@*<script type="text/javascript" src="~/js/daterangepicker.js"></script>*@
-@*<script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>*@
-@*<script src="https://knockoutjs.com/downloads/knockout-3.5.1.js"></script>*@
-@*<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.js"></script>*@
 <script src="~/ViewModelKo/CitaCalendarioLinealVM.js"></script>
+<script>
+    function formatearFechaLocal(fecha) {
+        const y = fecha.getFullYear();
+        const m = String(fecha.getMonth() + 1).padStart(2, '0');
+        const d = String(fecha.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + d;
+    }
+
+    function aplicarFiltroEstadoResultados(tipo) {
+        const hoy = new Date();
+        const inicio = document.getElementById('fechaInicial');
+        const fin = document.getElementById('fechaFinal');
+
+        if (tipo === 'mes') {
+            const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+            const ultimoDia = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+            inicio.value = formatearFechaLocal(primerDia);
+            fin.value = formatearFechaLocal(ultimoDia);
+        } else if (tipo === 'anual') {
+            inicio.value = hoy.getFullYear() + '-01-01';
+            fin.value = hoy.getFullYear() + '-12-31';
+        } else if (tipo === 'rango') {
+            if (!inicio.value || !fin.value) {
+                alert('Seleccione la fecha inicial y final.');
+                return;
+            }
+        }
+
+        document.querySelectorAll('.tab-pane').forEach(function (panel) {
+            panel.classList.add('show', 'active');
+        });
+
+        if (typeof mensajeEmergente === 'function') {
+            mensajeEmergente('Filtro aplicado: ' + tipo.replace('-', ' '));
+        }
+    }
+</script>
 }
 
 @section css {

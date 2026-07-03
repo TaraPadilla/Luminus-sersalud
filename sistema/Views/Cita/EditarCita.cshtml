@@ -1,7 +1,16 @@
 @using sistema.Models
 @model CitaViewModel
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 @{
     ViewData["Title"] = "Editar cita";
+    var cliente = Configuration["Cliente"];
+    var puedeEditarHorario = User.IsInRole("CirugiaPlastica")
+        || User.IsInRole("Admisiones")
+        || User.IsInRole("Administrador")
+        || User.IsInRole("Recepcion")
+        || User.IsInRole("Recepcion Diurno")
+        || User.IsInRole("Recepcion Nocturno")
+        || cliente == "SS";
 }
 
 @await Html.PartialAsync("_MensajeExito")
@@ -24,7 +33,7 @@
     </div>
 </div>
 
-@if (User.IsInRole("CirugiaPlastica"))
+@if (puedeEditarHorario)
 {
     <div class="main-card mb-3 card">
         <div class="card-body">
@@ -61,7 +70,7 @@
 
 @await Html.PartialAsync("_CitaForm")
 
-@if (User.IsInRole("CirugiaPlastica"))
+@if (puedeEditarHorario)
 {
     <div class="main-card mb-3 card">
         <div class="card-body">
@@ -101,18 +110,26 @@ else
         });
 
         // 1) Mandamos el modelo del servidor a JS
+        window.__citaVmExternalInit = true;
         var serverModel = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model));
 
+        window.citaVm = new CitaVM(serverModel);
+        ko.applyBindings(window.citaVm);
+        window.citaVm.cargarEquipoQuirurgicoDesdeModel(serverModel);
 
-
-        // 2) Iniciamos KO
-        var citaVm = new CitaVM(serverModel);
-        ko.applyBindings(citaVm);
-
-        if (typeof citaVm !== 'undefined' && citaVm.cargarEquipoQuirurgico) {
-            citaVm.cargarEquipoQuirurgico(serverModel);
-        } else {
-            console.error("citaVm no está disponible o no tiene el método cargarEquipoQuirurgico");
-        }
+        $(function () {
+            window.citaVm.consultarPacientes();
+            window.citaVm.consultarServiciosExistentes();
+            window.citaVm.consultarExamenesExistentes();
+            window.citaVm.consultarDepartamentosExistentes();
+            var citaId = $("#CitaId").val();
+            if (citaId && citaId.trim() !== "") {
+                window.citaVm.consultarServiciosAgregadosCita();
+                window.citaVm.consultarExamenesAgregadosCita();
+            }
+            if (citaId && citaId.trim() !== "" && $("#selectHabitacionEdicion").length) {
+                window.citaVm.cargarHabitacionesEdicion(parseInt(citaId));
+            }
+        });
     </script>
 }

@@ -210,18 +210,13 @@
     // Exponemos el ViewModel globalmente para que el script del Canvas pueda hablar con él
     window.empleadoVm = self;
 
-    self.prepararModalFirma = function () {
-      window.resetearFirmaEmpleadoUI();
-      window.abrirModalFirmaEmpleado();
-    };
-
     // Esta función la llama el script del Canvas cuando dibujas o subes archivo
     self.setFirmaTemporal = function (base64, fileObj) {
       self.FirmaTemporalBase64(base64);
       self.FirmaTemporalFile(fileObj);
 
-      // Activamos el botón de confirmar en el modal
-      document.getElementById("btnConfirmarFirmaEmpleado").disabled = false;
+      var btnConfirmar = document.getElementById("btnConfirmarFirmaEmpleado");
+      if (btnConfirmar) btnConfirmar.disabled = false;
 
       // Mostramos la previsualización dentro del modal
       var contenedorPrev = document.getElementById(
@@ -237,10 +232,17 @@
       contenedorPrev.classList.remove("d-none");
     };
 
-    // self.prepararModalFirma = function () {
-    //   window.resetearFirmaEmpleadoUI();
-    //   window.abrirModalFirmaEmpleado();
-    // };
+    function _fileFromDataUrl(base64, fileName) {
+      var arr = base64.split(",");
+      var mime = arr[0].match(/:(.*?);/)[1];
+      var bstr = atob(arr[1]);
+      var n = bstr.length;
+      var u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      return new File([u8arr], fileName, { type: mime });
+    }
 
     self.confirmarFirmaModal = function () {
       var base64 = self.FirmaTemporalBase64();
@@ -250,47 +252,39 @@
         self.FirmaEmpleadoImagen(file);
         self.FirmaPrevisualizacion(base64);
       } else if (base64) {
-        var arr = base64.split(","),
-          mime = arr[0].match(/:(.*?);/)[1];
-        var bstr = atob(arr[1]),
-          n = bstr.length,
-          u8arr = new Uint8Array(n);
-        while (n--) {
-          u8arr[n] = bstr.charCodeAt(n);
-        }
-        var newFile = new File([u8arr], "firma_canvas.png", { type: mime });
-        self.FirmaEmpleadoImagen(newFile);
+        self.FirmaEmpleadoImagen(_fileFromDataUrl(base64, "firma_canvas.png"));
         self.FirmaPrevisualizacion(base64);
       }
 
       window.cerrarModalFirmaEmpleado();
     };
 
-    // Única definición de prepararModalFirma (Revisada)
     self.prepararModalFirma = function () {
-      // 1. Limpiamos el modal a su estado inicial
-      window.resetearFirmaEmpleadoUI();
-
-      // 2. Verificamos si ya hay una firma cargada desde BD
       var firmaActual = self.FirmaPrevisualizacion();
+      var selector = document.getElementById("selectorFirmaEmpleado");
+      var contenedorPrev = document.getElementById("contenedorPrevFirmaEmpleado");
+      var imgPrev = document.getElementById("imgPrevFirmaEmpleado");
+      var btnConfirmar = document.getElementById("btnConfirmarFirmaEmpleado");
 
-      if (firmaActual) {
-        // Si existe, mostramos la imagen directamente
-        var contenedorPrev = document.getElementById(
-          "contenedorPrevFirmaEmpleado",
-        );
-        var imgPrev = document.getElementById("imgPrevFirmaEmpleado");
-        var selector = document.getElementById("selectorFirmaEmpleado");
-
-        imgPrev.src = firmaActual;
-        selector.classList.add("d-none");
-        contenedorPrev.classList.remove("d-none");
-
-        // Activamos el botón confirmar
-        document.getElementById("btnConfirmarFirmaEmpleado").disabled = false;
+      if (window.empleadoVm) {
+        self.FirmaTemporalBase64(null);
+        self.FirmaTemporalFile(null);
       }
 
-      // 3. Mostramos el modal en pantalla
+      if (selector) selector.classList.remove("d-none");
+      if (contenedorPrev) contenedorPrev.classList.add("d-none");
+      if (btnConfirmar) btnConfirmar.disabled = true;
+      if (imgPrev) imgPrev.src = "";
+
+      window.limpiarCanvasFirmaEmpleado();
+
+      if (firmaActual) {
+        if (imgPrev) imgPrev.src = firmaActual;
+        if (selector) selector.classList.add("d-none");
+        if (contenedorPrev) contenedorPrev.classList.remove("d-none");
+        if (btnConfirmar) btnConfirmar.disabled = false;
+      }
+
       window.abrirModalFirmaEmpleado();
     };
     // ============================

@@ -48,6 +48,24 @@ namespace farmamest.Controllers
         [HttpPost]
         public string Nuevo(CuentasViewModel model)
         {
+            if (string.IsNullOrWhiteSpace(model?.Nombre))
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = false,
+                    Mensaje = "El nombre de la cuenta es obligatorio."
+                });
+            }
+
+            if (model.BancoId <= 0 || model.TipoCuentaId <= 0)
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = false,
+                    Mensaje = "Seleccione banco y tipo de cuenta."
+                });
+            }
+
             try
             {
                 var cuentas = new Cuentas
@@ -111,6 +129,24 @@ namespace farmamest.Controllers
         [HttpPost]
         public string ModificarCuenta(CuentasViewModel model)
         {
+            if (string.IsNullOrWhiteSpace(model?.Nombre))
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = false,
+                    Mensaje = "El nombre de la cuenta es obligatorio."
+                });
+            }
+
+            if (model.BancoId <= 0 || model.TipoCuentaId <= 0)
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = false,
+                    Mensaje = "Seleccione banco y tipo de cuenta."
+                });
+            }
+
             try
             {
                 var cuentas = _cuentasRepository.GetById(model.CuentaId);

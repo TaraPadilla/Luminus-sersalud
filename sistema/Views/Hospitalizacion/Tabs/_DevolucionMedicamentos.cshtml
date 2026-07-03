@@ -1,5 +1,6 @@
+@model sistema.Models.HospitalizacionDetallesViewModel
 @{
-    var hospitalizacionId = Model.HospitalizacionId;
+    var hospitalizacionId = Model?.HospitalizacionId ?? 0;
 }
 <script>
     var hospitalizacionIdGlobal = '@hospitalizacionId';
@@ -13,7 +14,6 @@
     #global-search { padding: 5px 10px; border: 1px solid #ccc; border-radius: 4px; margin-right: 10px; }
 </style>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <link href="https://unpkg.com/tabulator-tables@5.4.4/dist/css/tabulator.min.css" rel="stylesheet">
 <script src="https://unpkg.com/tabulator-tables@5.4.4/dist/js/tabulator.min.js"></script>
 
@@ -44,22 +44,30 @@
         showLoading();
 
         try {
-            listaDevolucionesGlobal = await cargarDevolucionesParaHospitalizacion();
+            listaDevolucionesGlobal = HospAjax.ensureArray(await cargarDevolucionesParaHospitalizacion());
 
             let response = await $.ajax({
                 url: "/Hospitalizacion/ConsultarProductosAplicacionHospitalizacion",
                 method: "POST",
                 dataType: "json",
                 data: {
-                    hospitalizacionId: hospitalizacionIdGlobal,
+                    hospitalizacionId: HospAjax.getHospitalizacionId(),
                     tipoProductoId: tipoProductoMedicamento
                 }
             });
 
             hideLoading();
 
-            if (response.Exitoso) {
-                let medicamentos = (response.Resultado || []).filter(item => !item.Aplicado);
+            response = HospAjax.parseHospJson(response);
+            if (!response) {
+                mensajeEmergenteError("No se pudo interpretar la respuesta del servidor.");
+                return;
+            }
+
+            if (HospAjax.hospExitoso(response)) {
+                let medicamentos = HospAjax.hospResultado(response).filter(function (item) {
+                    return !HospAjax.hospProp(item, 'Aplicado', 'aplicado');
+                });
                 
                 if (medicamentos.length > 0) {
                     renderizarTablaDevolucion(medicamentos);
@@ -68,11 +76,12 @@
                     if(tabulatorTable) tabulatorTable.clearData();
                 }
             } else {
-                mensajeEmergenteError(response.Mensaje);
+                mensajeEmergenteError(HospAjax.hospMensaje(response));
             }
         } catch (error) {
             hideLoading();
             console.error("Error al obtener los datos:", error);
+            mensajeEmergenteError("Error al obtener los datos de medicamentos.");
         }
     }
 
@@ -97,19 +106,23 @@
                             let hpaId = cell.getValue();
                             let btnHtml = `<button class="btn btn-warning btn-sm">Devolver</button>`;
                             
-                            let match = listaDevolucionesGlobal.find(d => d.hospitalizacionProductoAplicacionId === hpaId);
+                            let match = listaDevolucionesGlobal.find(function (d) {
+                                var devId = HospAjax.hospProp(d, 'hospitalizacionProductoAplicacionId', 'HospitalizacionProductoAplicacionId');
+                                return devId === hpaId;
+                            });
                             
                             if (match) {
                                 let colorEstado = "black";
                                 let disabledAttribute = "";
+                                var estado = HospAjax.hospProp(match, 'estado', 'Estado');
 
-                                if (match.estado === "Aprobada") { 
+                                if (estado === "Aprobada") { 
                                     colorEstado = "green"; 
                                     disabledAttribute = "disabled"; 
-                                } else if (match.estado === "En espera") { 
+                                } else if (estado === "En espera") { 
                                     colorEstado = "blue"; 
                                     disabledAttribute = "disabled"; 
-                                } else if (match.estado === "Rechazada") { 
+                                } else if (estado === "Rechazada") { 
                                     colorEstado = "red";
                                     disabledAttribute = "disabled"; 
  
@@ -118,15 +131,19 @@
                                 return `<button class="btn btn-warning btn-sm" ${disabledAttribute}>Devolver</button>
                                         <span style="margin-left: 5px;">
                                             <small style="color: black;">Devolución</small> 
-                                            <b style="color: ${colorEstado};">${match.estado}</b>
+                                            <b style="color: ${colorEstado};">${estado}</b>
                                         </span>`;
                             }
                             return btnHtml;
                         },
                         cellClick: function(e, cell) {
                             let rowData = cell.getRow().getData();
-                            let match = listaDevolucionesGlobal.find(d => d.hospitalizacionProductoAplicacionId === rowData.Id);
-                            if (!match || match.estado === "Rechazada") {
+                            let match = listaDevolucionesGlobal.find(function (d) {
+                                var devId = HospAjax.hospProp(d, 'hospitalizacionProductoAplicacionId', 'HospitalizacionProductoAplicacionId');
+                                return devId === rowData.Id;
+                            });
+                            var estadoMatch = match ? HospAjax.hospProp(match, 'estado', 'Estado') : null;
+                            if (!match || estadoMatch === "Rechazada") {
                                 devolverMedicamento(rowData);
                             }
                         }
@@ -144,9 +161,9 @@
                 url: "/DevolucionMedicamento/GetAllDevolucionesMedicamento",
                 method: "GET",
                 dataType: "json",
-                data: { hospitalizacionId: hospitalizacionIdGlobal }
+                data: { hospitalizacionId: HospAjax.getHospitalizacionId() }
             });
-            return response || [];
+            return HospAjax.ensureArray(response);
         } catch (error) {
             console.error("Error al cargar devoluciones:", error);
             return [];
@@ -171,10 +188,11 @@
                 contentType: "application/json",
                 data: JSON.stringify(devolucion),
                 success: function(response) {
-                    if (response.exitoso) {
+                    response = HospAjax.parseHospJson(response) || response;
+                    if (response && (response.exitoso || response.Exitoso)) {
                         cargarMedicamentosParaDevolucion(); 
                     } else {
-                        mensajeEmergenteError(response.mensaje);
+                        mensajeEmergenteError(HospAjax.hospMensaje(response, response && response.mensaje));
                     }
                 },
                 error: function() {
@@ -184,9 +202,12 @@
         }
     }
 
-    function showLoading() { console.log("Cargando..."); }
-    function hideLoading() { console.log("Carga completada."); }
-    function mensajeEmergenteError(mensaje) { alert("Error: " + mensaje); }
+    function showLoading() { if (typeof window.showLoading === 'function') window.showLoading(); }
+    function hideLoading() { if (typeof window.hideLoading === 'function') window.hideLoading(); }
+    function mensajeEmergenteError(mensaje) {
+        if (typeof window.mensajeEmergenteError === 'function') window.mensajeEmergenteError(mensaje);
+        else alert("Error: " + mensaje);
+    }
 
     $(document).ready(function(){
         $("#global-search").on("keyup", function(){

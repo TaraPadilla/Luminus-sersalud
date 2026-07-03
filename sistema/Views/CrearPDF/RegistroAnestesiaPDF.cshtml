@@ -1,0 +1,126 @@
+@model sistema.Models.RegistroAnestesiaPdfVM
+@using System.Text.Json
+@{
+    var embebido = ViewData["EmbebidoEnExpediente"] as bool? ?? false;
+    Layout = embebido ? null : "_HojaMembreteLayout";
+    ViewData["Title"] = "Registro Anestésico";
+    ViewData["MostrarServicios"] = false;
+    ViewData["MostrarEmergencias"] = false;
+
+    JsonElement? datos = null;
+    if (Model.TieneRegistroGuardado && !string.IsNullOrWhiteSpace(Model.DatosJson))
+    {
+        try { datos = JsonDocument.Parse(Model.DatosJson).RootElement; } catch { }
+    }
+
+    string Valor(JsonElement? root, string prop)
+    {
+        if (root == null || !root.Value.TryGetProperty(prop, out var el)) return "-";
+        if (el.ValueKind == JsonValueKind.Null) return "-";
+        return el.ToString();
+    }
+
+    string Radio(JsonElement? root, string name)
+    {
+        if (root == null || !root.Value.TryGetProperty("radios", out var radios)) return "-";
+        if (!radios.TryGetProperty(name, out var el)) return "-";
+        return el.ToString();
+    }
+
+    string Campo(JsonElement? root, string key)
+    {
+        if (root == null || !root.Value.TryGetProperty("campos", out var campos)) return "-";
+        if (!campos.TryGetProperty(key, out var el) || string.IsNullOrWhiteSpace(el.ToString())) return "-";
+        return el.ToString();
+    }
+}
+
+<style>
+    .doc { padding: 10px 16px 22px; font-size: 11px; font-family: Arial, sans-serif; }
+    .doc-title { font-size: 18px; font-weight: 800; text-align: center; margin-bottom: 12px; }
+    table.kv { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    table.kv th, table.kv td { border: 1px solid #dde3ef; padding: 5px 7px; text-align: left; vertical-align: top; }
+    table.kv th { width: 28%; background: #f7f9ff; }
+    .section { margin-top: 14px; font-weight: 700; border-top: 2px solid #0a47a3; padding-top: 6px; }
+    .firma { margin-top: 40px; text-align: center; }
+    .firma img { max-height: 70px; }
+    .muted { color: #64748b; font-style: italic; }
+</style>
+
+<div class="doc">
+    <div class="doc-title">Hoja de Anestesia — Registro Anestésico</div>
+    <p style="text-align:center;"><strong>Hospitalización #@Model.HospitalizacionId</strong> — Impreso: @Model.FechaImpresion.ToString("dd/MM/yyyy HH:mm")</p>
+    @if (Model.FechaRegistroGuardado.HasValue)
+    {
+        <p style="text-align:center;" class="muted">Último guardado: @Model.FechaRegistroGuardado.Value.ToString("dd/MM/yyyy HH:mm")</p>
+    }
+
+    <div class="section">Primera sección — Datos generales</div>
+    <table class="kv">
+        <tr><th>Paciente</th><td>@(Model.PacienteNombre ?? "-")</td></tr>
+        <tr><th>Sexo</th><td>@(Model.PacienteSexo ?? "-")</td></tr>
+        <tr><th>Edad</th><td>@(Model.EdadPaciente ?? "-")</td></tr>
+        <tr><th>Peso</th><td>@(Model.PacientePeso ?? "-")</td></tr>
+        <tr><th>Talla</th><td>@(Model.PacienteTalla ?? "-")</td></tr>
+        <tr><th>Fecha procedimiento</th><td>@{
+            var fechaProc = Valor(datos, "fecha");
+            if (fechaProc == "-" && Model.FechaRegistroGuardado.HasValue)
+                fechaProc = Model.FechaRegistroGuardado.Value.ToString("dd/MM/yyyy");
+            @(fechaProc)
+        }</td></tr>
+        <tr><th>Procedimiento (Qx)</th><td>@{
+            var qx = Model.TieneRegistroGuardado ? Valor(datos, "qx") : Model.Procedimiento ?? "-";
+            if (qx == "-") qx = Model.Procedimiento ?? "-";
+            @(qx)
+        }</td></tr>
+        <tr><th>ASA</th><td>@{
+            var asa = Model.TieneRegistroGuardado ? Campo(datos, "an_asa") : "-";
+            @(asa)
+        }</td></tr>
+        <tr><th>Técnica anestésica</th><td>@{
+            var tecnica = Model.TieneRegistroGuardado ? Campo(datos, "an_tecnica") : "-";
+            @(tecnica)
+        }</td></tr>
+        <tr><th>Máquina</th><td>@{
+            var maquina = Model.TieneRegistroGuardado ? Radio(datos, "an_maquina") : "-";
+            @(maquina)
+        }</td></tr>
+        <tr><th>IMC</th><td>@{
+            var imc = Model.TieneRegistroGuardado ? Campo(datos, "an_imc") : "-";
+            @(imc)
+        }</td></tr>
+        <tr><th>Anestesiólogo</th><td>@(Model.MedicoAnestesista ?? "-")</td></tr>
+    </table>
+
+    @if (Model.TieneRegistroGuardado && datos != null)
+    {
+        @await Html.PartialAsync("CrearPDF/_RegistroAnestesiaContenidoPDF", Model)
+    }
+    else
+    {
+        <p style="margin-top:16px;" class="muted">
+            No hay registro clínico guardado desde el formulario de hospitalización.
+            Este documento muestra los datos del paciente y la asignación del anestesiólogo.
+        </p>
+    }
+
+    <div class="firma">
+        @if (!string.IsNullOrEmpty(Model.UrlFirmaAnestesista))
+        {
+            <img src="@Model.UrlFirmaAnestesista" alt="Firma anestesiólogo" /><br />
+        }
+        else
+        {
+            <div style="width:260px;border-bottom:1px solid #000;margin:0 auto 6px;"></div>
+        }
+        <strong>Firma del Anestesiólogo</strong><br />
+        @{
+            var nombreFirma = Model.MedicoAnestesista;
+            if (string.IsNullOrWhiteSpace(nombreFirma) || nombreFirma == "-")
+            {
+                nombreFirma = "";
+            }
+        }
+        <span>@nombreFirma</span>
+    </div>
+</div>

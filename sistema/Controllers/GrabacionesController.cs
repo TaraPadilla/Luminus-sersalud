@@ -108,6 +108,11 @@ namespace sistema.Controllers
         [HttpPost]
         public JsonResult Modificar(GrabacionViewModel model)
         {
+            if (string.IsNullOrWhiteSpace(model?.Nombre))
+            {
+                return Json(new { Exitoso = false, Mensaje = "El nombre es obligatorio." });
+            }
+
             try
             {
                 var grabacion = _grabacionesRepository.Get((int)model.GrabacionId);

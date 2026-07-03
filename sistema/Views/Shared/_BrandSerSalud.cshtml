@@ -1,0 +1,30 @@
+@inject Microsoft.Extensions.Configuration.IConfiguration Config
+@using System
+@{
+    var logoUrl = Config["ImagenLogoBase64"];
+    if (string.IsNullOrWhiteSpace(logoUrl))
+    {
+        logoUrl = "/assets/images/logos/logoSS_SinFondo.png";
+    }
+
+    var nombre = Config["EstablecimientoNombreEmpresa"];
+    if (string.IsNullOrWhiteSpace(nombre))
+    {
+        nombre = "SerSalud";
+    }
+
+    var usarLogoImagen = logoUrl.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
+        || logoUrl.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
+        || logoUrl.EndsWith(".webp", StringComparison.OrdinalIgnoreCase)
+        || logoUrl.StartsWith("/assets/", StringComparison.OrdinalIgnoreCase);
+}
+@if (usarLogoImagen)
+{
+    <div class="logo-src">
+        <img src="@logoUrl" alt="@nombre" class="logo-img" />
+    </div>
+}
+else
+{
+    <div class="logo-src sersalud-brand-text">@nombre</div>
+}

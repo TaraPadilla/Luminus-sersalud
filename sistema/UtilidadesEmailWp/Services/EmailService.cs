@@ -24,8 +24,22 @@ namespace sistema.UtilidadesEmailWp.Services
         {
             try
             {
-                var fromEmail = _emailSettings.Username;
-                var password = _emailSettings.Password;
+                if (_emailSettings == null
+                    || string.IsNullOrWhiteSpace(_emailSettings.Host)
+                    || string.IsNullOrWhiteSpace(_emailSettings.Username)
+                    || string.IsNullOrWhiteSpace(_emailSettings.Password))
+                {
+                    throw new InvalidOperationException(
+                        "EmailSettings no está configurado en appsettings (Host, Username, Password).");
+                }
+
+                if (string.IsNullOrWhiteSpace(to))
+                {
+                    throw new ArgumentException("El destinatario del correo es obligatorio.");
+                }
+
+                var fromEmail = _emailSettings.Username.Trim();
+                var password = (_emailSettings.Password ?? "").Replace(" ", "");
 
                 var message = new MailMessage
                 {
@@ -57,6 +71,14 @@ namespace sistema.UtilidadesEmailWp.Services
                 };
 
                 smtpClient.Send(message);
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (ArgumentException)
+            {
+                throw;
             }
             catch (SmtpException smtpEx)
             {

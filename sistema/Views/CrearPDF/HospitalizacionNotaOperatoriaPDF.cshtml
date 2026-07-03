@@ -1,19 +1,21 @@
 @using farmamest.Models
-@model NotaMedica2ViewModel
+@model NotaOperatoriaVM
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 
 @{
-    Layout = "_HojaMembreteLayout";
+    var embebido = ViewData["EmbebidoEnExpediente"] as bool? ?? false;
+    Layout = embebido ? null : "_HojaMembreteLayout";
     ViewData["Title"] = "Hospitalización - Nota Operatoria";
-
     ViewData["MostrarLogo"] = true;
     ViewData["MostrarNombreEmpresa"] = true;
     ViewData["MostrarDireccion"] = true;
     ViewData["MostrarTelefono"] = true;
     ViewData["MostrarCorreoElectronico"] = true;
-    ViewData["MostrarServicios"] = true;
-    ViewData["MostrarEmergencias"] = true;
+    ViewData["MostrarServicios"] = false;
+    ViewData["MostrarEmergencias"] = false;
 
-    DateTime fecha = DateTime.Now;
+    DateTime fecha = farmamest.Utilidades.HospitalTimeHelper.NowGuatemala();
+    string Val(string s) => string.IsNullOrWhiteSpace(s) ? "No registrado" : s;
 }
 
 <div class="doc">
@@ -59,9 +61,9 @@
                     </thead>
                     <tbody>
                         <tr class="kv-row">
-                            <td><span class="value">@Model.PacienteNombre</span></td>
-                            <td><span class="value">@Model.PacienteSexoText</span></td>
-                            <td><span class="value">@Model.PacienteEdad</span></td>
+                            <td><span class="value">@Val(Model.PacienteNombre)</span></td>
+                            <td><span class="value">@Val(Model.PacienteSexoText)</span></td>
+                            <td><span class="value">@Val(Model.PacienteEdad)</span></td>
                         </tr>
                     </tbody>
                 </table>
@@ -89,14 +91,60 @@
                     <tbody>
                         <tr class="kv-row">
                             <td>
-                                <span class="label">Nombre</span>
-                                <span class="value">@Model.EmpleadoText</span>
+                                <span class="label">Cirujano</span>
+                                <span class="value">@Val(Model.Cirujano ?? Model.Profesional)</span>
                             </td>
                             <td>
                                 <span class="label">Colegiatura</span>
-                                <span class="value">@Model.ColegioEmpleado</span>
+                                <span class="value">@Val(Model.Colegiado)</span>
                             </td>
                         </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- FECHA Y HORARIO DE LA OPERACIÓN -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Fecha y horario de la operación</td>
+        </tr>
+    </table>
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table threecol">
+                    <tbody>
+                        <tr class="kv-row">
+                            <td><span class="label">Fecha</span><span class="value">@Val(Model.FechaOperacion)</span></td>
+                            <td><span class="label">Inicio</span><span class="value">@Val(Model.HoraComenzo)</span></td>
+                            <td><span class="label">Término</span><span class="value">@Val(Model.HoraTermino)</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- EQUIPO QUIRÚRGICO -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Equipo quirúrgico</td>
+        </tr>
+    </table>
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <tbody>
+                        <tr class="kv-row"><td style="width:30%;"><span class="label">1er. Ayudante</span></td><td><span class="value">@Val(Model.PrimerAyudante)</span></td></tr>
+                        <tr class="kv-row"><td><span class="label">2do. Ayudante</span></td><td><span class="value">@Val(Model.SegundoAyudante)</span></td></tr>
+                        <tr class="kv-row"><td><span class="label">Anestesista</span></td><td><span class="value">@Val(Model.Anestesista)</span></td></tr>
+                        <tr class="kv-row"><td><span class="label">Instrumentista</span></td><td><span class="value">@Val(Model.Instrumentista)</span></td></tr>
+                        <tr class="kv-row"><td><span class="label">Circulante</span></td><td><span class="value">@Val(Model.Circulante)</span></td></tr>
                     </tbody>
                 </table>
             </td>
@@ -118,7 +166,30 @@
                     <tbody>
                         <tr class="kv-row">
                             <td class="notes">
-                                <span class="value" style="white-space:pre-wrap;">@Model.Diagnostico</span>
+                                <span class="value" style="white-space:pre-wrap;">@Val(Model.DiagnosticoPreOperatorio)</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- DIAGNÓSTICO POSTOPERATORIO -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Diagnóstico Postoperatorio</td>
+        </tr>
+    </table>
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <tbody>
+                        <tr class="kv-row">
+                            <td class="notes">
+                                <span class="value" style="white-space:pre-wrap;">@Val(Model.DiagnosticoPostOperatorio)</span>
                             </td>
                         </tr>
                     </tbody>
@@ -142,7 +213,30 @@
                     <tbody>
                         <tr class="kv-row">
                             <td class="notes">
-                                <span class="value" style="white-space:pre-wrap;">@Model.Evolucion</span>
+                                <span class="value" style="white-space:pre-wrap;">@Val(Model.OperacionEfectuada)</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- HALLAZGOS TRANS-OPERATORIOS -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Hallazgos Trans-Operatorios</td>
+        </tr>
+    </table>
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <tbody>
+                        <tr class="kv-row">
+                            <td class="notes">
+                                <span class="value" style="white-space:pre-wrap;">@Val(Model.HallazgosTransOperatorios)</span>
                             </td>
                         </tr>
                     </tbody>
@@ -166,5 +260,42 @@
             </td>
         </tr>
     </table>
+
+    @if (!string.IsNullOrEmpty(Model.FirmaBase64))
+    {
+        <table class="section-title">
+            <tr>
+                <td class="bar"></td>
+                <td>Firma del cirujano</td>
+            </tr>
+        </table>
+        <table class="block">
+            <tr>
+                <td style="padding:8px; text-align:center;">
+                    <div>@Val(Model.Cirujano ?? Model.Profesional)</div>
+                    <div style="color:#64748b;">Colegiado: @Val(Model.Colegiado)</div>
+                    <img src="@Model.FirmaBase64" style="max-height:100px; max-width:300px; border:1px solid #ccc; padding:4px; margin-top:8px;" />
+                </td>
+            </tr>
+        </table>
+    }
+    else if (!string.IsNullOrWhiteSpace(Model.Cirujano ?? Model.Profesional) && (Model.Cirujano ?? Model.Profesional) != "Sin asignar")
+    {
+        <table class="section-title">
+            <tr>
+                <td class="bar"></td>
+                <td>Cirujano</td>
+            </tr>
+        </table>
+        <table class="block">
+            <tr>
+                <td style="padding:8px; text-align:center;">
+                    <div>@(Model.Cirujano ?? Model.Profesional)</div>
+                    <div style="color:#64748b;">Colegiado: @Val(Model.Colegiado)</div>
+                    <div style="color:#b45309; margin-top:8px; font-style:italic;">Firma digital pendiente.</div>
+                </td>
+            </tr>
+        </table>
+    }
 
 </div>

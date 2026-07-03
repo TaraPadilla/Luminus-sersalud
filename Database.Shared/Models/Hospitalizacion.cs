@@ -1,6 +1,7 @@
 ﻿using Database.Shared.IRepository;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
 namespace Database.Shared.Models
@@ -17,6 +18,7 @@ namespace Database.Shared.Models
             HospitalizacionesPaquetesHospitalizacion = new List<HospitalizacionPaqueteHospitalizacion>();
             HospitalizacionUsuariosAcceso = new List<HospitalizacionUsuarioAcceso>();
             Consultas = new List<Consulta>();
+            HospitalizacionInsumosDirectos = new List<HospitalizacionInsumoDirecto>();
         }
         public List<OrdenesMedicas> OrdenesMedicas { get; set; } = new List<OrdenesMedicas>();
 
@@ -41,6 +43,11 @@ namespace Database.Shared.Models
         public ICollection<HospitalizacionUsuarioAcceso> HospitalizacionUsuariosAcceso { get; set; }
         public ICollection<HospitalizacionServicio> HospitalizacionesServicios { get; set; }
         public ICollection<HospitalizacionProducto> HospitalizacionesProductos { get; set; }
+
+        /// <summary>Insumos/medicamentos del módulo Control de Insumos (cargado manualmente en repositorio).</summary>
+        [NotMapped]
+        public List<HospitalizacionInsumoDirecto> HospitalizacionInsumosDirectos { get; set; }
+
         public ICollection<HospitalizacionExamen> HospitalizacionesExamenes { get; set; }
         public ICollection<ExamenFisicoHosp> ExamenesFisicosHosp { get; set; }
         public ICollection<DetalleCuentaPorCobrar> DetallesCuentaPorCobrar { get; set; }

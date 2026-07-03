@@ -194,6 +194,6 @@ namespace Database.Shared.IRepository
 
         ProductoInventarioPrecio ObtenerPrecioProductoPorDefecto(int productoId);
 
-        List<ProductoInventarioDto> GetProductosHospitalizacion();
+        List<ProductoInventarioDto> GetProductosHospitalizacion(int? bodegaId = null);
     }
 }

@@ -1,0 +1,25 @@
+@model (string Titulo, OrdenMedicaViewModel Orden)
+
+<div class="doc">
+    @if (!string.IsNullOrWhiteSpace(Model.Titulo))
+    {
+        <div class="section-bar">@Model.Titulo</div>
+    }
+    @if (Model.Orden != null)
+    {
+        <table class="kv">
+            <tr><th>Fecha</th><td>@(Model.Orden.FechaHora ?? "-")</td></tr>
+            <tr><th>Profesional</th><td>@(Model.Orden.Profesional ?? "-")</td></tr>
+            <tr><th>Estado</th><td>@(Model.Orden.Realizada ?? "-")</td></tr>
+            <tr><th>Descripción</th><td class="notes">@Html.Raw(Model.Orden.Descripcion ?? "-")</td></tr>
+        </table>
+        if (!string.IsNullOrEmpty(Model.Orden.FirmaBase64))
+        {
+            <img src="@Model.Orden.FirmaBase64" style="max-height:90px;" alt="Firma" />
+        }
+    }
+    else
+    {
+        <p class="muted">No registrada.</p>
+    }
+</div>

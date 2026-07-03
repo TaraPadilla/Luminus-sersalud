@@ -1,0 +1,54 @@
+@model string
+@inject Microsoft.Extensions.Configuration.IConfiguration Config
+@{
+    var logoUrl = Config["ImagenLogoBase64"];
+    if (string.IsNullOrWhiteSpace(logoUrl))
+    {
+        var cliente = Model ?? Config["Cliente"] ?? "";
+        var logoFile = cliente switch
+        {
+            "HNPB" => "logoHPB",
+            _ when !string.IsNullOrWhiteSpace(cliente) => $"logo{cliente}",
+            _ => null
+        };
+        logoUrl = logoFile != null
+            ? $"/assets/images/logos/{logoFile}.png"
+            : "/assets/images/farm.png";
+    }
+}
+<style>
+    .app-header__logo .logo-src,
+    .app-sidebar .app-header__logo .logo-src {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0;
+        line-height: 0;
+        color: transparent;
+        overflow: hidden;
+        background: none !important;
+    }
+
+    .app-header__logo .logo-src .logo-img,
+    .app-sidebar .app-header__logo .logo-src .logo-img {
+        height: 37px;
+        max-width: 167px;
+        width: auto;
+        object-fit: contain;
+        display: block;
+    }
+
+    .app-header__logo .logo-src.sersalud-brand-text,
+    .app-sidebar .app-header__logo .logo-src.sersalud-brand-text {
+        font-size: 1.05rem !important;
+        line-height: 1.2 !important;
+        color: rgba(255, 255, 255, 0.92) !important;
+    }
+
+    .app-header.header-text-light .app-header__logo .logo-src,
+    .app-header.header-text-dark .app-header__logo .logo-src,
+    .app-sidebar.sidebar-text-light .app-header__logo .logo-src,
+    .app-sidebar.sidebar-text-dark .app-header__logo .logo-src {
+        background: none !important;
+    }
+</style>

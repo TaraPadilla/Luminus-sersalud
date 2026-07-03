@@ -1,10 +1,13 @@
 @model sistema.Models.CuentasPorCobrarPagarViewModel
 @using System.Text.Json
+@using Microsoft.AspNetCore.Mvc.Rendering
 @inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 @{
-    string sufijoLayout = Configuration["Cliente"]; 
-    Layout = $"_Layout{sufijoLayout}"; 
+    Layout = farmamest.Utilidades.SerSaludUiHelper.ResolverLayout(Configuration); 
     ViewData["Title"] = "Pagar cuenta";
+    var doctoresLista = Model.DoctoresSelectListItem ?? new SelectList(Enumerable.Empty<SelectListItem>());
+    var formasPagoLista = Model.FormaPagoSelectListItems ?? new SelectList(Enumerable.Empty<SelectListItem>());
+    var monedasLista = Model.MonedaSelectListItems ?? new SelectList(Enumerable.Empty<SelectListItem>());
 }
 
 <script>
@@ -185,7 +188,7 @@
                                 <div class="form-row align-items-end mb-3">
                                     <div class="col-md-6">
                                         <label>Médico</label>
-                                        @Html.DropDownList("DoctorId", Model.DoctoresSelectListItem, "-- Seleccione médico --", new { @class = "form-control", id = "selMedico" })
+                                        @Html.DropDownList("DoctorId", doctoresLista, "-- Seleccione médico --", new { @class = "form-control", id = "selMedico" })
                                     </div>
                                     <div class="col-md-4">
                                         <label>Monto</label>
@@ -358,11 +361,11 @@
         <div class="form-row">
             <div class="col-md-4">
                 <label>Forma de pago</label>
-                @Html.DropDownList("FormaPagoId", Model.FormaPagoSelectListItems, new { @class = "form-control", id="selFormaPago" })
+                @Html.DropDownList("FormaPagoId", formasPagoLista, new { @class = "form-control", id="selFormaPago" })
             </div>
             <div class="col-md-4">
                 <label>Moneda</label>
-                @Html.DropDownList("MonedaId", Model.MonedaSelectListItems, new { @class = "form-control", id="selMoneda" })
+                @Html.DropDownList("MonedaId", monedasLista, new { @class = "form-control", id="selMoneda" })
             </div>
             <div class="col-md-3">
                 <label>Monto</label>

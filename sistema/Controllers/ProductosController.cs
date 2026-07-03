@@ -25,6 +25,7 @@ using DocumentFormat.OpenXml.Office2010.Excel;
 using OfficeOpenXml.ConditionalFormatting.Contracts;
 using DocumentFormat.OpenXml.Office.CustomUI;
 using farmamest.Service.IService;
+using farmamest.Utilidades;
 using OfficeOpenXml.FormulaParsing.Excel.Functions.Information;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml.FormulaParsing.Utilities;
@@ -33,6 +34,8 @@ using Database.Shared.Data;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Security.Cryptography;
+using sistema.Utilidades;
+using Database.Shared.SqlDataSeed;
 using Database.Shared.Dto;
 
 namespace sistema.Controllers
@@ -358,8 +361,7 @@ namespace sistema.Controllers
         public async Task<IActionResult> MedicamentosFarmaciaReporte(int terapeuticoId, string currentFilter)
         {
             var productos = _productosRepository.FiltrarPorBusquedaYTerapeutico(currentFilter, terapeuticoId, 1);
-            var user = _userManager.GetUserAsync(HttpContext.User);
-            var u = _userRepository.GetbyId(user.Result.Id).Persona.Nombre;
+            var u = _userRepository.GetDisplayName(_userManager.GetUserId(HttpContext.User));
 
             var model = new ReportesProductosViewModel()
             {
@@ -373,16 +375,12 @@ namespace sistema.Controllers
         public async Task<IActionResult> InsumosFarmaciaReporte(int categoriaId, string currentFilter)
         {
             var productos = _productosRepository.FiltrarPorBusquedaYCategoria(currentFilter, categoriaId, 1);
-            var user = _userManager.GetUserAsync(HttpContext.User);
-            var us = _userRepository.GetbyId(user.Result.Id);
-            string nombre = "";
-            if (us.Persona != null)
-                nombre = us.Persona.Nombre;
+            var u = _userRepository.GetDisplayName(_userManager.GetUserId(HttpContext.User));
 
             var model = new ReportesProductosViewModel()
             {
                 Productos = productos,
-                Usuario = nombre
+                Usuario = u
             };
 
             return await _generatePdf.GetPdf("Views/Productos/InsumosFarmaciaReporte.cshtml", model);
@@ -391,8 +389,7 @@ namespace sistema.Controllers
         public async Task<IActionResult> MedicamentosClinicaReporte(int terapeuticoId, string currentFilter)
         {
             var productos = _productosRepository.FiltrarPorBusquedaYTerapeutico(currentFilter, terapeuticoId, 2);
-            var user = _userManager.GetUserAsync(HttpContext.User);
-            var u = _userRepository.GetbyId(user.Result.Id).Persona.Nombre;
+            var u = _userRepository.GetDisplayName(_userManager.GetUserId(HttpContext.User));
 
             var model = new ReportesProductosViewModel()
             {
@@ -406,8 +403,7 @@ namespace sistema.Controllers
         public async Task<IActionResult> InsumosClinicaReporte(int categoriaId, string currentFilter)
         {
             var productos = _productosRepository.FiltrarPorBusquedaYCategoria(currentFilter, categoriaId, 2);
-            var user = _userManager.GetUserAsync(HttpContext.User);
-            var u = _userRepository.GetbyId(user.Result.Id).Persona.Nombre;
+            var u = _userRepository.GetDisplayName(_userManager.GetUserId(HttpContext.User));
 
             var model = new ReportesProductosViewModel()
             {
@@ -420,8 +416,7 @@ namespace sistema.Controllers
         public async Task<IActionResult> MedicamentosBodegaReporte(int terapeuticoId, string currentFilter)
         {
             var productos = _productosRepository.FiltrarPorBusquedaYTerapeutico(currentFilter, terapeuticoId, 3);
-            var user = _userManager.GetUserAsync(HttpContext.User);
-            var u = _userRepository.GetbyId(user.Result.Id).Persona.Nombre;
+            var u = _userRepository.GetDisplayName(_userManager.GetUserId(HttpContext.User));
 
             var model = new ReportesProductosViewModel()
             {
@@ -435,16 +430,12 @@ namespace sistema.Controllers
         public async Task<IActionResult> InsumosBodegaReporte(int categoriaId, string currentFilter)
         {
             var productos = _productosRepository.FiltrarPorBusquedaYCategoria(currentFilter, categoriaId, 3);
-            var user = _userManager.GetUserAsync(HttpContext.User);
-            var us = _userRepository.GetbyId(user.Result.Id);
-            string nombre = "";
-            if (us.Persona != null)
-                nombre = us.Persona.Nombre;
+            var u = _userRepository.GetDisplayName(_userManager.GetUserId(HttpContext.User));
 
             var model = new ReportesProductosViewModel()
             {
                 Productos = productos,
-                Usuario = nombre
+                Usuario = u
             };
 
             return await _generatePdf.GetPdf("Views/Productos/InsumosBodegaReporte.cshtml", model);
@@ -1153,11 +1144,20 @@ namespace sistema.Controllers
 
             switch (tipoProducto)
             {
+                case (int)TipoProductoEnum.Medicamentos:
+                    tipoProductoNombre = "Medicamentos";
+                    break;
                 case (int)TipoProductoEnum.InsumosMedicos:
                     tipoProductoNombre = "Insumos medicos";
                     break;
-                case (int)TipoProductoEnum.Medicamentos:
-                    tipoProductoNombre = "Medicamentos";
+                case (int)TipoProductoEnum.EquiposMedicos:
+                    tipoProductoNombre = "Equipos medicos";
+                    break;
+                case (int)TipoProductoEnum.EquiposQuirurgicos:
+                    tipoProductoNombre = "Equipos quirurgicos";
+                    break;
+                case (int)TipoProductoEnum.Suministros:
+                    tipoProductoNombre = "Suministros";
                     break;
                 default:
                     tipoProductoNombre = "Inventario";
@@ -1189,6 +1189,28 @@ namespace sistema.Controllers
                 // Parche rápido: todos los productos nuevos se registran en el ambiente Global (Id = 6)
                 const int globalAmbienteId = 6;
                 model.AmbienteId = globalAmbienteId;
+
+                DevelopmentDemoSeedGuard.EnsureCatalogLookups(_hostEnvironment, _context);
+
+                if (model.TipoProductoId == null || model.TipoProductoId <= 0)
+                {
+                    return JsonSerializer.Serialize(new
+                    {
+                        Exitoso = false,
+                        Mensaje = "Debe seleccionar un tipo de producto válido."
+                    });
+                }
+
+                var tipoProductoValido = _context.TipoProductos
+                    .Any(t => t.Id == model.TipoProductoId && !t.Eliminado);
+                if (!tipoProductoValido)
+                {
+                    return JsonSerializer.Serialize(new
+                    {
+                        Exitoso = false,
+                        Mensaje = $"El tipo de producto (Id {model.TipoProductoId}) no existe en el catálogo."
+                    });
+                }
 
                 var productoExistente = _productosRepository.GetByName(model.Nombre);
                 if (productoExistente != null &&
@@ -1252,7 +1274,7 @@ namespace sistema.Controllers
                 return JsonSerializer.Serialize(new
                 {
                     Exitoso = false,
-                    Mensaje = "Error de servidor al registrar producto. " + ex.Message
+                    Mensaje = "Error de servidor al registrar producto. " + ExceptionHelper.ObtenerMensajeRaiz(ex)
                 });
             }
         }
@@ -2927,9 +2949,28 @@ namespace sistema.Controllers
             int row = 0;
             string columna = "";
 
+            if (excel == null || excel.Length == 0)
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = false,
+                    Mensaje = "Debe seleccionar un archivo Excel."
+                });
+            }
+
+            if (SeguroId <= 0)
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = false,
+                    Mensaje = "Debe seleccionar un seguro."
+                });
+            }
+
             try
             {
-                var workbook = new XLWorkbook(excel.OpenReadStream());
+                using var stream = excel.OpenReadStream();
+                var workbook = new XLWorkbook(stream);
                 var sheet = workbook.Worksheet(1);
 
                 // Obtener seguro por ID
@@ -2974,8 +3015,18 @@ namespace sistema.Controllers
                 // Lista para almacenar los servicios nuevos
                 var servicios = new List<Servicio>();
 
+                var lastRow = sheet.LastRowUsed();
+                if (lastRow == null)
+                {
+                    return JsonSerializer.Serialize(new
+                    {
+                        Exitoso = false,
+                        Mensaje = "El archivo Excel no contiene filas de datos."
+                    });
+                }
+
                 // Obtener el número de filas con datos en el Excel
-                var numeroFilas = sheet.LastRowUsed().RowNumber();
+                var numeroFilas = lastRow.RowNumber();
 
                 // Procesar filas desde la fila 2
                 for (row = 3; row <= numeroFilas; row++)
@@ -2985,6 +3036,8 @@ namespace sistema.Controllers
                     // Leer valores de las columnas
                     columna = "CODIGO";
                     var codigoServicio = item.Cell(1).GetValue<string>().Trim();
+                    if (string.IsNullOrWhiteSpace(codigoServicio))
+                        continue;
 
                     columna = "NOMBRE";
                     var nombreServicio = item.Cell(2).GetValue<string>().Trim();
@@ -2999,6 +3052,7 @@ namespace sistema.Controllers
                         servicioExistente.NombreServicio = nombreServicio;
                         _servicioRepository.Update(servicioExistente);
 
+                        servicioExistente.ServiciosPrecios ??= new List<ServicioPrecio>();
                         var precioExistente = servicioExistente.ServiciosPrecios.FirstOrDefault(p => p.PrecioId == precioId);
                         if (precioExistente != null)
                         {
@@ -3073,11 +3127,6 @@ namespace sistema.Controllers
                     Mensaje = $"Error en la fila #{row}: {ex.Message}"
                 });
             }
-            finally
-            {
-                var data = excel.OpenReadStream();
-                data.Dispose();
-            }
         }
 
         [HttpPost]
@@ -3086,9 +3135,28 @@ namespace sistema.Controllers
             int row = 0;
             string columna = "";
 
+            if (excel == null || excel.Length == 0)
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = false,
+                    Mensaje = "Debe seleccionar un archivo Excel."
+                });
+            }
+
+            if (SeguroId <= 0)
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = false,
+                    Mensaje = "Debe seleccionar un seguro."
+                });
+            }
+
             try
             {
-                var workbook = new XLWorkbook(excel.OpenReadStream());
+                using var stream = excel.OpenReadStream();
+                var workbook = new XLWorkbook(stream);
                 var sheet = workbook.Worksheet(1);
 
                 // Obtener seguro por ID
@@ -3132,8 +3200,18 @@ namespace sistema.Controllers
                 // Lista para almacenar los productos
                 var productos = new List<Producto>();
 
+                var lastRow = sheet.LastRowUsed();
+                if (lastRow == null)
+                {
+                    return JsonSerializer.Serialize(new
+                    {
+                        Exitoso = false,
+                        Mensaje = "El archivo Excel no contiene filas de datos."
+                    });
+                }
+
                 // Obtener el número de filas con datos en el Excel
-                var numeroFilas = sheet.LastRowUsed().RowNumber();
+                var numeroFilas = lastRow.RowNumber();
 
                 // Procesar filas desde la fila 2
                 for (row = 3; row <= numeroFilas; row++)
@@ -3143,6 +3221,8 @@ namespace sistema.Controllers
                     // Leer valores de las columnas
                     columna = "CODIGO";
                     var codigoProducto = item.Cell(1).GetValue<string>().Trim();
+                    if (string.IsNullOrWhiteSpace(codigoProducto))
+                        continue;
 
                     columna = "NOMBRE";
                     var nombreProducto = item.Cell(2).GetValue<string>().Trim();
@@ -3156,6 +3236,8 @@ namespace sistema.Controllers
                     {
                         // Actualizar producto existente
                         productoExistente.NombreProducto = nombreProducto;
+
+                        productoExistente.ProductosInventario ??= new List<ProductoInventario>();
 
                         // Verificar o agregar precio
                         var productoInventario = productoExistente.ProductosInventario.FirstOrDefault();
@@ -3171,6 +3253,8 @@ namespace sistema.Controllers
                             productoExistente.ProductosInventario.Add(productoInventario);
                         }
 
+                        productoInventario.ProductosInventarioPrecios ??= new List<ProductoInventarioPrecio>();
+
                         var precioExistente = productoInventario.ProductosInventarioPrecios.FirstOrDefault(p => p.PrecioId == precioId);
                         if (precioExistente != null)
                         {
@@ -3185,6 +3269,8 @@ namespace sistema.Controllers
                                 Eliminado = false
                             });
                         }
+
+                        productoExistente.ProductoEquivalencias ??= new List<ProductoEquivalencia>();
 
                         // Agregar equivalencias genéricas si no existen
                         if (!productoExistente.ProductoEquivalencias.Any())
@@ -3276,11 +3362,6 @@ namespace sistema.Controllers
                     Mensaje = $"Error en la fila #{row}: {ex.Message}"
                 });
             }
-            finally
-            {
-                var data = excel.OpenReadStream();
-                data.Dispose();
-            }
         }
 
 
@@ -3290,11 +3371,28 @@ namespace sistema.Controllers
             int row = 0;
             string columna = "";
 
+            if (excel == null || excel.Length == 0)
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = false,
+                    Mensaje = "Debe seleccionar un archivo Excel."
+                });
+            }
+
+            if (SeguroId <= 0)
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = false,
+                    Mensaje = "Debe seleccionar un seguro."
+                });
+            }
+
             try
             {
-
-
-                var workbook = new XLWorkbook(excel.OpenReadStream());
+                using var stream = excel.OpenReadStream();
+                var workbook = new XLWorkbook(stream);
                 var sheet = workbook.Worksheet(1);
 
                 var seguro = _seguroRepository.GetSeguro(SeguroId);
@@ -3336,8 +3434,18 @@ namespace sistema.Controllers
                 // Lista para almacenar los exámenes
                 var examenes = new List<ExamenLabClinico>();
 
+                var lastRow = sheet.LastRowUsed();
+                if (lastRow == null)
+                {
+                    return JsonSerializer.Serialize(new
+                    {
+                        Exitoso = false,
+                        Mensaje = "El archivo Excel no contiene filas de datos."
+                    });
+                }
+
                 // Obtener el número de filas con datos
-                var numeroFilas = sheet.LastRowUsed().RowNumber();
+                var numeroFilas = lastRow.RowNumber();
 
                 // Procesar filas de exámenes desde la fila 2
                 for (row = 3; row <= numeroFilas; row++)
@@ -3347,6 +3455,8 @@ namespace sistema.Controllers
                     // Leer valores de las columnas
                     columna = "CODIGO";
                     var codigoExamen = item.Cell(1).GetValue<string>().Trim();
+                    if (string.IsNullOrWhiteSpace(codigoExamen))
+                        continue;
 
                     columna = "NOMBRE";
                     var nombreExamen = item.Cell(2).GetValue<string>().Trim();
@@ -3361,6 +3471,8 @@ namespace sistema.Controllers
                         // Editar el examen existente
                         examenExistente.NombreExamen = nombreExamen;
                         examenExistente.UltimaModificacion = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+                        examenExistente.ExamenLabClinicosPrecios ??= new List<ExamenLabClinicoPrecio>();
 
                         // Editar o agregar precio
                         var precioExistente = examenExistente.ExamenLabClinicosPrecios.FirstOrDefault(p => p.PrecioId == precioId);
@@ -3433,11 +3545,6 @@ namespace sistema.Controllers
                     Mensaje = $"Error en la fila #{row}: {ex.Message}"
                 });
             }
-            finally
-            {
-                var data = excel.OpenReadStream();
-                data.Dispose();
-            }
         }
 
 
@@ -3487,7 +3594,7 @@ namespace sistema.Controllers
                 return JsonSerializer.Serialize(new
                 {
                     Exitoso = false,
-                    Mensaje = "Error de servidor al registrar producto. " + ex.Message
+                    Mensaje = "Error de servidor al registrar producto. " + ExceptionHelper.ObtenerMensajeRaiz(ex)
                 });
             }
         }
@@ -4376,32 +4483,32 @@ namespace sistema.Controllers
                     _productosRepository.Update(productoInventario);
                     TempData["Message"] = "¡Stock del producto elimiminado correctamente!";
 
-                    switch (bodegaId)
+                    var ambienteId = productoInventario.Bodega?.AmbienteId;
+                    switch (ambienteId)
                     {
-                        case 1:
-                            return RedirectToAction("vencidosFarmacia", "Productos");
-                        case 2:
-                            return RedirectToAction("vencidosClinica", "Productos");
-                        case 4:
-                            return RedirectToAction("vencidosLaboratorio", "Productos");
+                        case (int)AmbienteEnum.Farmacia:
+                            return RedirectToAction("VencidosFarmacia", "Productos");
+                        case (int)AmbienteEnum.Clinica:
+                            return RedirectToAction("VencidosClinica", "Productos");
+                        case (int)AmbienteEnum.Laboratorio:
+                            return RedirectToAction("VencidosLaboratorio", "Productos");
                         default:
-                            // Manejar el caso por defecto aquí, como redireccionar a una página de error
-                            return RedirectToAction("vencidosFarmacia", "Productos");
+                            return RedirectToAction("VencidosFarmacia", "Productos");
                     }
                     // Redirige a la acción "vencidosFarmacia" del controlador "NombreControlador"
-                    //return RedirectToAction("vencidosFarmacia", "Productos");
+                    //return RedirectToAction("VencidosFarmacia", "Productos");
                 }
                 else
                 {
                     TempData["Message"] = "No se encontró el producto en el inventario.";
-                    return RedirectToAction("vencidosFarmacia", "Productos"); // Otra acción a la que desees redirigir
+                    return RedirectToAction("VencidosFarmacia", "Productos"); // Otra acción a la que desees redirigir
                 }
             }
             catch (Exception ex)
             {
                 // Manejo de errores
                 TempData["Error"] = "Ocurrió un error al eliminar el producto. " + ex.Message;
-                return RedirectToAction("vencidosFarmacia", "Productos"); // Otra acción a la que desees redirigir
+                return RedirectToAction("VencidosFarmacia", "Productos"); // Otra acción a la que desees redirigir
             }
         }
 

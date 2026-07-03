@@ -38,7 +38,8 @@ namespace farmamest.Service
                     HospitalizacionId = nota.HospitalizacionId,
                     UserId = nota.UserId,
                     Profesional = nota.User?.Persona != null ? $"{nota.User.Persona.NombreYApellidos}" : "-",
-                    TurnoEnfermeriaId = nota.TurnoEnfermeriaId
+                    TurnoEnfermeriaId = nota.TurnoEnfermeriaId,
+                    TipoNota = nota.TipoNota
                 }).ToList();
 
             return result;

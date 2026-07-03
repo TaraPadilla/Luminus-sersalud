@@ -1,0 +1,20 @@
+@inject Microsoft.Extensions.Configuration.IConfiguration Config
+@{
+    var logoUrl = Config["ImagenLogoBase64"];
+    if (string.IsNullOrWhiteSpace(logoUrl))
+    {
+        var cliente = Config["Cliente"] ?? "";
+        var logoFile = cliente switch
+        {
+            "HNPB" => "logoHPB",
+            _ when !string.IsNullOrWhiteSpace(cliente) => $"logo{cliente}",
+            _ => null
+        };
+        logoUrl = logoFile != null
+            ? $"/assets/images/logos/{logoFile}.png"
+            : "/assets/images/farm.png";
+    }
+}
+<div class="logo-src">
+    <img src="@logoUrl" alt="" class="logo-img" />
+</div>

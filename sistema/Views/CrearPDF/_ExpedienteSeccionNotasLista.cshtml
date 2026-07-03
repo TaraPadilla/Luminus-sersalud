@@ -1,0 +1,21 @@
+@using farmamest.Models
+@model (string Titulo, List<NotaMedica2ViewModel> Notas, ExpedienteHospitalizacionContextoVm Contexto, string ClaveResumen)
+
+<div class="page-break">
+    <div class="doc">
+        <div class="section-bar">@Model.Titulo</div>
+        @if (Model.Notas != null && Model.Notas.Any())
+        {
+            foreach (var nota in Model.Notas)
+            {
+                if (nota == null) { continue; }
+                @await Html.PartialAsync("CrearPDF/HospitalizacionNotaMedicaPDF", nota)
+                <hr />
+            }
+        }
+        else
+        {
+            <p class="muted">Sin registro.</p>
+        }
+    </div>
+</div>

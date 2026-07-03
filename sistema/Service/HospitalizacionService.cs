@@ -6,6 +6,7 @@ using farmamest.Models;
 using farmamest.Service.IService;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using sistema.Helpers;
 using sistema.Models;
 using System;
 using System.Collections.Generic;
@@ -96,36 +97,10 @@ namespace farmamest.Service
             {
                 foreach (var habitacion in habitaciones)
                 {
-                    var ocupante = "-";
-                    if (habitacion.EstadoHabitacionId == (int)EstadoHabitacionEnum.Ocupada)
-                    {
-                        var paciente = _habitacionRepository.GetPacienteOcupante(habitacion.Id);
-                        ocupante = paciente != null ? paciente.Nombre : "-";
-                    }
-                    int? hospitalizacionId = null;
-                    var hospitalizacionActualId = _habitacionRepository.GetHospitalizacionActual(habitacion.Id) == null
-                        ? 0
-                        : _habitacionRepository.GetHospitalizacionActual(habitacion.Id).Id;
-
-                    if (habitacion.EstadoHabitacionId == (int)EstadoHabitacionEnum.Ocupada)
-                    {
-                        hospitalizacionId = hospitalizacionActualId;
-                    }
                     if ((disponibles && habitacion.EstadoHabitacionId == (int)EstadoHabitacionEnum.Disponible)
                         || (ocupadas && habitacion.EstadoHabitacionId == (int)EstadoHabitacionEnum.Ocupada))
                     {
-                        habitacionesConsultadas.Add(new HospitalizacionHabitacionViewModel
-                        {
-                            HabitacionId = habitacion.Id,
-                            HospitalizacionId = hospitalizacionId,
-                            HabitacionNombre = habitacion.NombreNumeroHabitacion,
-                            HabitacionCategoria = habitacion.CategoriaHabitacion.NombreCategoria,
-                            HabitacionEstadoId = habitacion.EstadoHabitacionId,
-                            HabitacionEstado = habitacion.EstadoHabitacion.NombreEstado,
-                            HabitacionOcupante = ocupante,
-                            HabitacionNumeroCamas = habitacion.NumeroCamas,
-                            HabitacionCapacidadPersonas = habitacion.CapacidadPersonas
-                        });
+                        habitacionesConsultadas.Add(HospitalizacionHabitacionHelper.CrearViewModel(habitacion, _habitacionRepository));
                     }
                 }
             }

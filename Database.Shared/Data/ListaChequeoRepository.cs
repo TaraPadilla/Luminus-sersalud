@@ -37,6 +37,7 @@ namespace Database.Shared.Data
             // Encabezado
             existente.FechaChequeo      = listaChequeo.FechaChequeo;
             existente.HoraChequeo       = listaChequeo.HoraChequeo;
+            existente.MedicoTratante    = listaChequeo.MedicoTratante;
             existente.NombrePaciente    = listaChequeo.NombrePaciente;
             existente.ApellidoPaciente  = listaChequeo.ApellidoPaciente;
             existente.FechaNacimiento   = listaChequeo.FechaNacimiento;
@@ -63,6 +64,8 @@ namespace Database.Shared.Data
             // PAUSA — Cirujano
             existente.CP_Presentacion           = listaChequeo.CP_Presentacion;
             existente.CP_NombrePacienteCirujano = listaChequeo.CP_NombrePacienteCirujano;
+            existente.CP_ApellidoPacienteCirujano = listaChequeo.CP_ApellidoPacienteCirujano;
+            existente.CP_FechaNacCirujano       = listaChequeo.CP_FechaNacCirujano;
             existente.CP_NombreCirugia          = listaChequeo.CP_NombreCirugia;
             existente.CP_EventosCriticos        = listaChequeo.CP_EventosCriticos;
             existente.CP_TiempoDuracion         = listaChequeo.CP_TiempoDuracion;

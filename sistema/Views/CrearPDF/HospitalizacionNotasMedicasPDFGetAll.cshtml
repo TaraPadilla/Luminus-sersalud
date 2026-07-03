@@ -11,7 +11,7 @@
     ViewData["MostrarDireccion"] = true;
     ViewData["MostrarTelefono"] = true;
     ViewData["MostrarCorreoElectronico"] = true;
-    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarServicios"] = false;
     ViewData["MostrarEmergencias"] = true;
 
     DateTime fecha = DateTime.Now;
@@ -158,12 +158,27 @@
                         </tr>
                             <tr class="kv-row">
                                 <td>
-                                    <span class="label">Profesional</span>
+                                    <span class="label">Médico tratante</span>
                                 </td>
                                 <td>
                                     <span class="value">@nota.Profesional</span>
                                 </td>
                             </tr>
+                            @if (!string.IsNullOrWhiteSpace(nota.RegistradoPor)
+                                && !string.Equals(nota.RegistradoPor, nota.Profesional, StringComparison.OrdinalIgnoreCase))
+                            {
+                                <tr class="kv-row">
+                                    <td><span class="label">Capturado por</span></td>
+                                    <td><span class="value">@nota.RegistradoPor</span></td>
+                                </tr>
+                            }
+                            @if (nota.Autorizado && !string.IsNullOrWhiteSpace(nota.AutorizadoPor))
+                            {
+                                <tr class="kv-row">
+                                    <td><span class="label">Autorizado por</span></td>
+                                    <td><span class="value">@nota.AutorizadoPor</span></td>
+                                </tr>
+                            }
                             <tr class="kv-row">
                                 <td>
                                     <span class="label">Fecha y hora</span>
@@ -177,6 +192,36 @@
                 </td>
             </tr>
         </table>
+
+        @if (!string.IsNullOrEmpty(nota.FirmaBase64))
+        {
+            <table class="block" style="margin-top:8px;">
+                <tr>
+                    <td style="padding:8px; text-align:center;">
+                        <div style="font-size:11px; color:#64748b;">Firma del profesional</div>
+                        <div>@(nota.NombreFirmante ?? nota.RegistradoPor ?? "-")</div>
+                        @if (nota.Autorizado && !string.IsNullOrWhiteSpace(nota.AutorizadoPor))
+                        {
+                            <div style="color:#64748b;">Autorizado por (validaci&oacute;n): @nota.AutorizadoPor</div>
+                        }
+                        <div style="color:#64748b;">M&eacute;dico tratante: @(nota.EmpleadoText ?? nota.Profesional)</div>
+                        <img src="@nota.FirmaBase64" style="max-height:80px; max-width:260px; border:1px solid #ccc; padding:4px; margin-top:6px;" />
+                    </td>
+                </tr>
+            </table>
+        }
+        else if (nota.Autorizado && !string.IsNullOrWhiteSpace(nota.AutorizadoPor))
+        {
+            <table class="block" style="margin-top:8px;">
+                <tr>
+                    <td style="padding:8px; text-align:center;">
+                        <div style="font-size:11px; color:#64748b;">Documento autorizado</div>
+                        <div>@nota.AutorizadoPor</div>
+                        <div style="color:#64748b; margin-top:4px;">Médico tratante: @nota.Profesional</div>
+                    </td>
+                </tr>
+            </table>
+        }
     }
 
 </div>

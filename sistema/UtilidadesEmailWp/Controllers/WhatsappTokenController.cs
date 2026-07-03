@@ -1,9 +1,14 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using farmamest.Models;
 using farmamest.UtilidadesEmailWp;
+
 namespace farmamest.UtilidadesEmailWp.Controllers
 {
+    /// <summary>
+    /// Endpoint legacy. Preferir <see cref="WhatsAppMessagingController"/>.
+    /// </summary>
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class WhatsappTokenController : ControllerBase
@@ -18,7 +23,14 @@ namespace farmamest.UtilidadesEmailWp.Controllers
         [HttpGet]
         public ActionResult<string> GetToken()
         {
-            return _whatsAppSettings.Token;
+            if (!_whatsAppSettings.Enabled)
+                return BadRequest("WhatsApp deshabilitado.");
+
+            var token = _whatsAppSettings.ResolveMetaAccessToken();
+            if (string.IsNullOrWhiteSpace(token))
+                return NotFound("Token Meta no configurado. Use WhatsAppSettings:MetaAccessToken.");
+
+            return token;
         }
     }
 }

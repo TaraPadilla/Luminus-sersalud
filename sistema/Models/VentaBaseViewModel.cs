@@ -2,6 +2,7 @@ using Database.Shared.Models;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Database.Shared.IRepository;
+using sistema.Utilidades;
 using Microsoft.AspNetCore.Http;
 using Database.Shared.Data;
 using Microsoft.AspNetCore.Identity;
@@ -60,7 +61,7 @@ namespace sistema.Models
 
         public void Init(IEmpleado empleadoRepository)
         {
-            ListaEmpleados = new SelectList(empleadoRepository.GetList(), "Id", "Nombre");
+            ListaEmpleados = EmpleadoSelectListHelper.Crear(empleadoRepository);
         }
         public void Init(IRuta rutaRepository)
         {

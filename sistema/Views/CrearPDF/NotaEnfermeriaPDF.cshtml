@@ -2,17 +2,16 @@
 @model NotaEnfermeriaPdfViewModel
 
 @{
-    Layout = "_HojaMembreteLayout";
+    var embebido = ViewData["EmbebidoEnExpediente"] as bool? ?? false;
+    Layout = embebido ? null : "_HojaMembreteLayout";
     ViewData["Title"] = "Nota de Enfermería";
-
-    // Configuración estándar del membrete
     ViewData["MostrarLogo"] = true;
     ViewData["MostrarNombreEmpresa"] = true;
     ViewData["MostrarDireccion"] = true;
     ViewData["MostrarTelefono"] = true;
     ViewData["MostrarCorreoElectronico"] = true;
-    ViewData["MostrarServicios"] = true;
-    ViewData["MostrarEmergencias"] = true;
+    ViewData["MostrarServicios"] = false;
+    ViewData["MostrarEmergencias"] = false;
 
     DateTime fecha = DateTime.Now;
 }
@@ -140,7 +139,7 @@
                             <tr class="kv-row">
                                 <td>
                                     <span class="label">Firmado por:</span>
-                                    <span class="value">@Model.Profesional</span>
+                                    <span class="value">@(Model.FirmadoPor ?? Model.Profesional)</span>
                                 </td>
                                 <td>
                                     <span class="label">Fecha de firma:</span>

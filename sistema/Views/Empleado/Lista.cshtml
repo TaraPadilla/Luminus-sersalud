@@ -142,12 +142,11 @@
                                 + escapeHtml(data) + '</span>';
                         }
                     },
-                    { data: "apellido", name: "Apellido" },
-                    { data: "telefono", name: "Telefono" },
-                    @* { data: "direccion", name: "Direccion" }, *@
-                    { data: "especialidad", name: "Especialidad" },
-                    { data: "dpi", name: "Dpi" },
-                    { data: "nit", name: "Nit" },
+                    { data: "apellido", name: "Apellido", defaultContent: "-" },
+                    { data: "telefono", name: "Telefono", defaultContent: "-" },
+                    { data: "especialidad", name: "Especialidad", defaultContent: "-" },
+                    { data: "dpi", name: "Dpi", defaultContent: "-" },
+                    { data: "nit", name: "Nit", defaultContent: "-" },
                     {
                         data: "sucursalNombre",
                         name: "Sucursal",
@@ -155,12 +154,12 @@
                             return '<span class="text-muted">' + escapeHtml(data || "-") + '</span>';
                         }
                     },
-                    { data: "colegiado", name: "Colegiado" },
-                    { data: "credenciales", name: "Credenciales" },
-                    { data: "direccionClinica", name: "DireccionClinica" },
-                    { data: "telefonoClinica", name: "TelefonoClinica" },
-                    { data: "tipoRegimen", name: "TipoRegimen" },
-                    { data: "tipoEmpleado", name: "TipoEmpleado" },
+                    { data: "colegiado", name: "Colegiado", defaultContent: "-" },
+                    { data: "credenciales", name: "Credenciales", defaultContent: "-" },
+                    { data: "direccionClinica", name: "DireccionClinica", defaultContent: "-" },
+                    { data: "telefonoClinica", name: "TelefonoClinica", defaultContent: "-" },
+                    { data: "tipoRegimen", name: "TipoRegimen", defaultContent: "-" },
+                    { data: "tipoEmpleado", name: "TipoEmpleado", defaultContent: "-" },
                     {
                         data: "id",
                         orderable: false,
@@ -197,12 +196,11 @@
                                 + escapeHtml(data) + '</span>';
                         }
                     },
-                    { data: "apellido", name: "Apellido" },
-                    { data: "telefono", name: "Telefono" },
-                    @* { data: "direccion", name: "Direccion" }, *@
-                    { data: "departamento", name: "Departamento" },
-                    { data: "dpi", name: "Dpi" },
-                    { data: "nit", name: "Nit" },
+                    { data: "apellido", name: "Apellido", defaultContent: "-" },
+                    { data: "telefono", name: "Telefono", defaultContent: "-" },
+                    { data: "departamento", name: "Departamento", defaultContent: "-" },
+                    { data: "dpi", name: "Dpi", defaultContent: "-" },
+                    { data: "nit", name: "Nit", defaultContent: "-" },
                     {
                         data: "sucursalNombre",
                         name: "Sucursal",
@@ -222,7 +220,7 @@
                             return data;
                         }
                     },
-                    { data: "estadoCivil", name: "EstadoCivil" },
+                    { data: "estadoCivil", name: "EstadoCivil", defaultContent: "-" },
                     {
                         data: "id",
                         orderable: false,

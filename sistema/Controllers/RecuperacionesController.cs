@@ -12,6 +12,7 @@ using Wkhtmltopdf.NetCore;
 using Rotativa.AspNetCore;
 using Rotativa.AspNetCore.Options;
 using System.Text.Json;
+using sistema.Helpers;
 using sistema.Models;
 using Database.Shared.IRepository;
 using Database.Shared.Models;
@@ -20,6 +21,7 @@ using farmamest.Models;
 using sistema.Service.IService;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using farmamest.Service.IService;
+using farmamest.Service;
 using Microsoft.AspNetCore.Identity.UI;
 using Microsoft.AspNetCore.Http;
 using System.IO;
@@ -117,31 +119,7 @@ namespace sistema.Controllers
             {
                 foreach (var habitacion in habitaciones)
                 {
-                    var ocupante = "-";
-                    if (habitacion.EstadoHabitacionId == (int)EstadoHabitacionEnum.Ocupada)
-                    {
-                        var paciente = _habitacionRepository.GetPacienteOcupante(habitacion.Id);
-                        ocupante = paciente != null ? paciente.Nombre : "-";
-                    }
-                    int? hospitalizacionId = null;
-                    var hospitalizacionActualId = _habitacionRepository.GetHospitalizacionActual(habitacion.Id) == null ? 0 : _habitacionRepository.GetHospitalizacionActual(habitacion.Id).Id;
-
-                    if (habitacion.EstadoHabitacionId == (int)EstadoHabitacionEnum.Ocupada)
-                    {
-                        hospitalizacionId = hospitalizacionActualId;
-                    }
-                    habitacionesConsultadas.Add(new HospitalizacionHabitacionViewModel
-                    {
-                        HabitacionId = habitacion.Id,
-                        HospitalizacionId = hospitalizacionId,
-                        HabitacionNombre = habitacion.NombreNumeroHabitacion,
-                        HabitacionCategoria = habitacion.CategoriaHabitacion.NombreCategoria,
-                        HabitacionEstadoId = habitacion.EstadoHabitacionId,
-                        HabitacionEstado = habitacion.EstadoHabitacion.NombreEstado,
-                        HabitacionOcupante = ocupante,
-                        HabitacionNumeroCamas = habitacion.NumeroCamas,
-                        HabitacionCapacidadPersonas = habitacion.CapacidadPersonas
-                    });
+                    habitacionesConsultadas.Add(HospitalizacionHabitacionHelper.CrearViewModel(habitacion, _habitacionRepository));
                 }
             }
             return View(habitacionesConsultadas);
@@ -155,31 +133,7 @@ namespace sistema.Controllers
             {
                 foreach (var habitacion in habitaciones)
                 {
-                    var ocupante = "-";
-                    if (habitacion.EstadoHabitacionId == (int)EstadoHabitacionEnum.Ocupada)
-                    {
-                        var paciente = _habitacionRepository.GetPacienteOcupante(habitacion.Id);
-                        ocupante = paciente != null ? paciente.Nombre : "-";
-                    }
-                    int? hospitalizacionId = null;
-                    var hospitalizacionActualId = _habitacionRepository.GetHospitalizacionActual(habitacion.Id) == null ? 0 : _habitacionRepository.GetHospitalizacionActual(habitacion.Id).Id;
-
-                    if (habitacion.EstadoHabitacionId == (int)EstadoHabitacionEnum.Ocupada)
-                    {
-                        hospitalizacionId = hospitalizacionActualId;
-                    }
-                    habitacionesConsultadas.Add(new HospitalizacionHabitacionViewModel
-                    {
-                        HabitacionId = habitacion.Id,
-                        HospitalizacionId = hospitalizacionId,
-                        HabitacionNombre = habitacion.NombreNumeroHabitacion,
-                        HabitacionCategoria = habitacion.CategoriaHabitacion.NombreCategoria,
-                        HabitacionEstadoId = habitacion.EstadoHabitacionId,
-                        HabitacionEstado = habitacion.EstadoHabitacion.NombreEstado,
-                        HabitacionOcupante = ocupante,
-                        HabitacionNumeroCamas = habitacion.NumeroCamas,
-                        HabitacionCapacidadPersonas = habitacion.CapacidadPersonas
-                    });
+                    habitacionesConsultadas.Add(HospitalizacionHabitacionHelper.CrearViewModel(habitacion, _habitacionRepository));
                 }
             }
             // return View("~/Views/Operaciones/HabitacionesOperaciones.cshtml");
@@ -905,31 +859,9 @@ namespace sistema.Controllers
         {
             try
             {
-                var hospitalizacionProducto = _hospitalizacionRepository.AddMedicamento(new HospitalizacionProducto
-                {
-                    HospitalizacionId = model.HospitalizacionId,
-                    ProductoId = model.ProductoId,
-                    UnidadMedidaVentaId = model.UnidadMedidaVentaId,
-                    PrecioId = model.PrecioId,
-                    PrecioValor = model.Precio,
-                    Cantidad = model.Cantidad,
-                    Indicaciones = model.Indicaciones
-                    //PrecioProductoId = model.IdProductoPrecioInventario
-                });
-                for (var i = 1; i <= hospitalizacionProducto.Cantidad; i++)
-                {
-                    _hospitalizacionRepository.AddProductoAplicacion(new HospitalizacionProductoAplicacion
-                    {
-                        HospitalizacionProductoId = hospitalizacionProducto.Id,
-                        Cantidad = 1,
-                        Aplicado = false,
-                        UsuarioCreaId = _userManager.GetUserId(HttpContext.User)
-                    });
-                }
-                return JsonSerializer.Serialize(new
-                {
-                    Exitoso = true
-                });
+                MedicamentoAplicacionHelper.RegistrarProductoConAplicaciones(
+                    _hospitalizacionRepository, model, _userManager.GetUserId(HttpContext.User));
+                return JsonSerializer.Serialize(new { Exitoso = true });
             }
             catch (Exception ex)
             {
@@ -1700,7 +1632,7 @@ namespace sistema.Controllers
                             var persona = "-";
                             if (productoAplicacion.UsuarioAplica != null)
                             {
-                                var empleadoId = _userRepository.GetbyId(productoAplicacion.UsuarioAplica).EmpleadoId;
+                                var empleadoId = _userRepository.GetbyId(productoAplicacion.UsuarioAplica)?.EmpleadoId;
 
                                 if (empleadoId != null)
                                 {
@@ -1728,7 +1660,7 @@ namespace sistema.Controllers
                                 Aplicado = productoAplicacion.Aplicado,
                                 FechaHoraAplicacion = fechaAplicacion,
                                 PersonaAplica = persona,
-                                PersonaCrea = (_userRepository.GetbyId(productoAplicacion.UsuarioCreaId)).NormalizedUserName,
+                                PersonaCrea = _userRepository.GetUserNameOrDefault(productoAplicacion.UsuarioCreaId),
                             });
                         }
                         else if (!productoAplicacion.HospitalizacionProducto.Eliminado && !productoAplicacion.Aplicado)
@@ -1736,7 +1668,7 @@ namespace sistema.Controllers
                             var persona = "-";
                             if (productoAplicacion.UsuarioAplica != null)
                             {
-                                var empleadoId = _userRepository.GetbyId(productoAplicacion.UsuarioAplica).EmpleadoId;
+                                var empleadoId = _userRepository.GetbyId(productoAplicacion.UsuarioAplica)?.EmpleadoId;
 
                                 if (empleadoId != null)
                                 {
@@ -1761,7 +1693,7 @@ namespace sistema.Controllers
                                 Aplicado = productoAplicacion.Aplicado,
                                 FechaHoraAplicacion = fechaAplicacion,
                                 PersonaAplica = persona,
-                                PersonaCrea = (_userRepository.GetbyId(productoAplicacion.UsuarioCreaId)).NormalizedUserName,
+                                PersonaCrea = _userRepository.GetUserNameOrDefault(productoAplicacion.UsuarioCreaId),
                             });
                         }
 
@@ -1794,7 +1726,8 @@ namespace sistema.Controllers
                     foreach (var examen in examenes)
                     {
 
-                        var examenNombre = examen.Examen.DetalleExamenes?.FirstOrDefault().ExamenLabClinico.NombreExamen ?? "-";
+                        var detalleExamen = examen.Examen?.DetalleExamenes?.FirstOrDefault();
+                        var examenNombre = detalleExamen?.ExamenLabClinico?.NombreExamen ?? "-";
                         var precioExamenValor = examen.ExamenLabClinicoPrecio?.PrecioValor ?? 0;
 
                         listaExamenes.Add(new HospitalizacionExamenViewModel
@@ -1802,7 +1735,7 @@ namespace sistema.Controllers
                             Id = examen.Id,
                             ExamenId = examen.ExamenId,
                             FechaHora = examen.FechaHora.ToString(),
-                            DetalleExamenId = examen.Examen.DetalleExamenes.FirstOrDefault().Id,
+                            DetalleExamenId = detalleExamen?.Id ?? 0,
                             Nombre = examenNombre,
                             Precio = precioExamenValor,
 
@@ -2138,7 +2071,7 @@ namespace sistema.Controllers
                             if (productoDetalle.UsuarioAplicacionId != null)
                             {
 
-                                persona = (_userRepository.GetbyId(productoDetalle.UsuarioAplicacionId)).NormalizedUserName;
+                                persona = _userRepository.GetUserNameOrDefault(productoDetalle.UsuarioAplicacionId);
 
                             }
                             var fechaAplicacion = "-";

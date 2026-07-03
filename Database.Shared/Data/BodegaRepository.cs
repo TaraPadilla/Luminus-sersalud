@@ -43,7 +43,7 @@ namespace Database.Shared.Data
             return _context.Bodegas
                 .Include(a => a.Sucursal)
                 .Include(a => a.Ambiente)
-                .Where(b => !b.Eliminada && !b.Sucursal.Eliminado).ToList(); /*Filtra las bodegas donde tanto la bodega como su sucursal no estén eliminadas.*/
+                .Where(b => !b.Eliminada && (b.Sucursal == null || !b.Sucursal.Eliminado)).ToList(); /*Filtra las bodegas donde tanto la bodega como su sucursal no estén eliminadas.*/
         }
 
         //// usar para paginacion

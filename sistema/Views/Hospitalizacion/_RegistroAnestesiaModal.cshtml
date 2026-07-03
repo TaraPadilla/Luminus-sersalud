@@ -17,21 +17,27 @@
 
                         <h5 class="card-title text-primary">Primera Sección</h5>
                         <div class="form-row mt-3">
-                            <div class="form-group col-md-3"><label class="text-muted">Fecha</label><input type="date" class="form-control"></div>
-                            <div class="form-group col-md-3"><label class="text-muted">Qx</label><input type="text" class="form-control"></div>
+                            <div class="form-group col-md-3"><label class="text-muted">Fecha</label><input type="date" id="an_fecha" class="form-control"></div>
+                            <div class="form-group col-md-3"><label class="text-muted">Qx</label><input type="text" id="an_qx" class="form-control"></div>
                             <div class="form-group col-md-6"><label class="text-muted">Paciente</label><input type="text" class="form-control bg-light" value="@Model.PacienteNombre" readonly></div>
                         </div>
                         <div class="form-row">
                             <div class="form-group col-md-3"><label class="text-muted">Sexo</label><input type="text" class="form-control bg-light" value="@Model.PacienteSexo" readonly></div>
                             <div class="form-group col-md-3"><label class="text-muted">Edad</label><input type="text" class="form-control bg-light" value="@Model.EdadPaciente" readonly></div>
-                            <div class="form-group col-md-3"><label class="text-muted">Peso</label><input type="text" class="form-control bg-light" value="@Model.PacientePeso" readonly></div>
-                            <div class="form-group col-md-3"><label class="text-muted">Talla</label><input type="text" class="form-control bg-light" value="@Model.PacienteTalla" readonly></div>
+                            <div class="form-group col-md-3"><label class="text-muted">Peso (kg)</label><input type="number" step="0.1" id="an_peso" class="form-control" value="@Model.PacientePeso" placeholder="kg"></div>
+                            <div class="form-group col-md-3"><label class="text-muted">Talla (cm)</label><input type="number" step="0.1" id="an_talla" class="form-control" value="@Model.PacienteTalla" placeholder="cm"></div>
                         </div>
                         <div class="form-row">
-                            <div class="form-group col-md-3"><label class="text-muted">ASA</label><input type="text" class="form-control"></div>
-                            <div class="form-group col-md-3"><label class="text-muted">Técnica Anestésica</label><input type="text" class="form-control"></div>
-                            <div class="form-group col-md-3"><label class="text-muted">Chequeo de máquina</label><input type="number" class="form-control"></div>
-                            <div class="form-group col-md-3"><label class="text-muted">Índice de masa corporal</label><input type="number" class="form-control"></div>
+                            <div class="form-group col-md-3"><label class="text-muted">ASA</label><input type="text" id="an_asa" class="form-control"></div>
+                            <div class="form-group col-md-3"><label class="text-muted">Técnica Anestésica</label><input type="text" id="an_tecnica" class="form-control"></div>
+                            <div class="form-group col-md-3">
+                                <label class="text-muted d-block mb-1">Máquina</label>
+                                <div class="chequeo-si-no d-flex">
+                                    <label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_maquina" value="SI" class="mr-1"> SÍ</label>
+                                    <label class="chequeo-radio-label mb-0"><input type="radio" name="an_maquina" value="NO" class="mr-1"> NO</label>
+                                </div>
+                            </div>
+                            <div class="form-group col-md-3"><label class="text-muted">Índice de masa corporal</label><input type="text" id="an_imc" class="form-control bg-light" readonly placeholder="Auto"></div>
                         </div>
                         <hr>
                         <div class="d-flex justify-content-end mt-3">
@@ -63,7 +69,7 @@
                                 <div class="form-group col-md-3"><label class="text-muted d-block mb-1">Miembro marcado</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_prep_miembro" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_prep_miembro" value="NO" class="mr-1"> NO</label></div></div>
                             </div>
                             <div class="form-row mt-2">
-                                <div class="form-group col-md-12 mb-0"><label class="text-muted">Ayuno</label><input type="text" class="form-control"></div>
+                                <div class="form-group col-md-12 mb-0"><label class="text-muted">Ayuno</label><input type="text" id="an_ayuno" class="form-control"></div>
                             </div>
                         </fieldset>
 
@@ -73,7 +79,7 @@
                                 <div class="form-group col-md-3"><label class="text-muted d-block mb-1">Revisión de equipo</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_seg_equipo" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_seg_equipo" value="NO" class="mr-1"> NO</label></div></div>
                                 <div class="form-group col-md-3"><label class="text-muted d-block mb-1">Plancha de cauterio</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_seg_cauterio" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_seg_cauterio" value="NO" class="mr-1"> NO</label></div></div>
                                 <div class="form-group col-md-3"><label class="text-muted d-block mb-1">Puntos de presión</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_seg_presion" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_seg_presion" value="NO" class="mr-1"> NO</label></div></div>
-                                <div class="form-group col-md-3"><label class="text-muted d-block mb-1">Protección ocular</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_seg_ocular" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_seg_ocular" value="NO" class="mr-1"> NO</label></div></div>
+                                <div class="form-group col-md-3"><label class="text-muted d-block mb-1">Protección ocular</label><div class="chequeo-si-no d-flex flex-wrap"><label class="chequeo-radio-label mr-2 mb-0"><input type="radio" name="an_seg_ocular" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mr-2 mb-0"><input type="radio" name="an_seg_ocular" value="NO" class="mr-1"> NO</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_seg_ocular" value="N/A" class="mr-1"> N/A</label></div></div>
                             </div>
                         </fieldset>
 
@@ -87,7 +93,7 @@
                                 <div class="form-group col-md-2"><label class="text-muted d-block mb-1">Capno</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_mon_capno" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_mon_capno" value="NO" class="mr-1"> NO</label></div></div>
                             </div>
                             <div class="form-row mt-2">
-                                <div class="form-group col-md-3 mb-0"><label class="text-muted">Foley</label><input type="number" class="form-control"></div>
+                                <div class="form-group col-md-3 mb-0"><label class="text-muted d-block mb-1">Foley</label><div class="chequeo-si-no d-flex flex-wrap"><label class="chequeo-radio-label mr-2 mb-0"><input type="radio" name="an_mon_foley" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mr-2 mb-0"><input type="radio" name="an_mon_foley" value="NO" class="mr-1"> NO</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_mon_foley" value="N/A" class="mr-1"> N/A</label></div></div>
                                 <div class="form-group col-md-3 mb-0"><label class="text-muted d-block mb-1">Monitor</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_mon_monitor" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_mon_monitor" value="NO" class="mr-1"> NO</label></div></div>
                             </div>
                         </fieldset>
@@ -95,12 +101,22 @@
                         <fieldset class="border p-3 mb-4 rounded bg-white">
                             <legend class="w-auto px-2 text-info" style="font-size: 1.05rem; font-weight: bold;">Posición</legend>
                             <div class="form-row">
-                                <div class="form-group col-md-2"><label class="text-muted d-block mb-1">D. supino</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-2 mb-0"><input type="radio" name="an_pos_supino" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_pos_supino" value="NO" class="mr-1"> NO</label></div></div>
-                                <div class="form-group col-md-2"><label class="text-muted d-block mb-1">D. prono</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-2 mb-0"><input type="radio" name="an_pos_prono" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_pos_prono" value="NO" class="mr-1"> NO</label></div></div>
-                                <div class="form-group col-md-2"><label class="text-muted d-block mb-1">D. lateral</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-2 mb-0"><input type="radio" name="an_pos_lateral" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_pos_lateral" value="NO" class="mr-1"> NO</label></div></div>
-                                <div class="form-group col-md-2"><label class="text-muted d-block mb-1">Litotomía</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-2 mb-0"><input type="radio" name="an_pos_lito" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_pos_lito" value="NO" class="mr-1"> NO</label></div></div>
-                                <div class="form-group col-md-2"><label class="text-muted d-block mb-1">N. sevillana</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-2 mb-0"><input type="radio" name="an_pos_navaja" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_pos_navaja" value="NO" class="mr-1"> NO</label></div></div>
-                                <div class="form-group col-md-2"><label class="text-muted">Otro</label><input type="text" class="form-control"></div>
+                                <div class="form-group col-md-6">
+                                    <label class="text-muted">Posición quirúrgica</label>
+                                    <select class="form-control" id="an_posicion">
+                                        <option value="">Seleccione...</option>
+                                        <option value="D. Supino">D. Supino</option>
+                                        <option value="D. Prono">D. Prono</option>
+                                        <option value="D. Lateral">D. Lateral</option>
+                                        <option value="Litotomía">Litotomía</option>
+                                        <option value="N. Sevillana">N. Sevillana</option>
+                                        <option value="Otro">Otro</option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-6" id="an_posicion_otro_wrap" style="display:none;">
+                                    <label class="text-muted">Especifique otro</label>
+                                    <input type="text" class="form-control" id="an_posicion_otro" placeholder="Descripción">
+                                </div>
                             </div>
                         </fieldset>
 
@@ -108,13 +124,18 @@
                             <legend class="w-auto px-2 text-info" style="font-size: 1.05rem; font-weight: bold;">Procedimientos de Vía y Canalización</legend>
                             <h6 class="text-secondary mt-2 mb-3 border-bottom pb-1">Canalización</h6>
                             <div class="form-row">
-                                <div class="form-group col-md-1"><label class="text-muted">Cat</label><input type="number" class="form-control"></div>
-                                <div class="form-group col-md-2"><label class="text-muted">Mano</label><select class="form-control"><option>Derecho</option><option>Izquierdo</option></select></div>
-                                <div class="form-group col-md-2"><label class="text-muted">Antebrazo</label><select class="form-control"><option>Derecho</option><option>Izquierdo</option></select></div>
-                                <div class="form-group col-md-2"><label class="text-muted">P. cubital</label><select class="form-control"><option>Derecho</option><option>Izquierdo</option></select></div>
-                                <div class="form-group col-md-2"><label class="text-muted">Brazo</label><select class="form-control"><option>Derecho</option><option>Izquierdo</option></select></div>
-                                <div class="form-group col-md-2"><label class="text-muted">Otro</label><input type="text" class="form-control"></div>
-                                <div class="form-group col-md-1"><label class="text-muted">Intentos</label><input type="number" class="form-control"></div>
+                                <div class="form-group col-md-2"><label class="text-muted">Cat</label><input type="text" class="form-control" id="an_can_cat" placeholder="Número / calibre"></div>
+                                <div class="form-group col-md-3"><label class="text-muted">Sitio</label>
+                                    <select class="form-control" id="an_can_sitio">
+                                        <option value="">Seleccione...</option>
+                                        <option value="Mano">Mano</option>
+                                        <option value="Antebrazo">Antebrazo</option>
+                                        <option value="P. Cubital">P. Cubital</option>
+                                        <option value="Brazo">Brazo</option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-3"><label class="text-muted">Otro</label><input type="text" class="form-control" id="an_can_otro" placeholder="Otro sitio"></div>
+                                <div class="form-group col-md-2"><label class="text-muted">Intentos</label><input type="text" class="form-control" id="an_can_intentos" placeholder="N° intentos"></div>
                             </div>
                             
                             <h6 class="text-secondary mt-3 mb-3 border-bottom pb-1">Inducción</h6>
@@ -126,7 +147,7 @@
                             </div>
                             <div id="induccionInhalada" style="display: none;">
                                 <div class="form-row">
-                                    <div class="form-group col-md-4"><label class="text-muted">Opción Inhalada</label><select class="form-control"><option>Sevoflurano</option><option>Desflurano</option><option>Vaporizador</option></select></div>
+                                    <div class="form-group col-md-4"><label class="text-muted">Opción Inhalada</label><select class="form-control" id="an_ind_inh_opcion"><option>Sevoflurano</option><option>Desflurano</option><option>Vaporizador</option></select></div>
                                     <div class="form-group col-md-3"><label class="text-muted d-block mb-1">Confirmar</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_ind_inh" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_ind_inh" value="NO" class="mr-1"> NO</label></div></div>
                                 </div>
                             </div>
@@ -137,7 +158,7 @@
                                         <select class="form-control" id="induccionIVSelect"><option>Propofol</option><option>Midazolam</option><option>Fentanyl</option><option>Lidocaína</option><option value="otros">Otros</option></select>
                                     </div>
                                     <div class="form-group col-md-3"><label class="text-muted d-block mb-1">Confirmar</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_ind_iv" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_ind_iv" value="NO" class="mr-1"> NO</label></div></div>
-                                    <div class="form-group col-md-5" id="induccionIVOtro" style="display: none;"><label class="text-muted">Especifique otros</label><input type="text" class="form-control"></div>
+                                    <div class="form-group col-md-5" id="induccionIVOtro" style="display: none;"><label class="text-muted">Especifique otros</label><input type="text" class="form-control" id="an_ind_iv_otro"></div>
                                 </div>
                             </div>
 
@@ -145,23 +166,23 @@
                             <div class="form-row">
                                 <div class="form-group col-md-3"><label class="text-muted d-block mb-1">Cánula binasal</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_via_binasal" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_via_binasal" value="NO" class="mr-1"> NO</label></div></div>
                                 <div class="form-group col-md-3"><label class="text-muted d-block mb-1">Mascarilla c/ reserv.</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_via_mascarilla" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_via_mascarilla" value="NO" class="mr-1"> NO</label></div></div>
-                                <div class="form-group col-md-2"><label class="text-muted">OT</label><input type="number" class="form-control"></div>
-                                <div class="form-group col-md-2"><label class="text-muted">NT</label><input type="number" class="form-control"></div>
-                                <div class="form-group col-md-2"><label class="text-muted">Fijado en</label><input type="number" class="form-control"></div>
+                                <div class="form-group col-md-2"><label class="text-muted">OT</label><input type="number" class="form-control" id="an_via_ot"></div>
+                                <div class="form-group col-md-2"><label class="text-muted">NT</label><input type="number" class="form-control" id="an_via_nt"></div>
+                                <div class="form-group col-md-2"><label class="text-muted">Fijado en</label><input type="number" class="form-control" id="an_via_fijado"></div>
                             </div>
                             <div class="form-row mt-2">
-                                <div class="form-group col-md-4"><label class="text-muted">Método</label><select class="form-control"><option>Macintosh</option><option>Miller</option><option>Fibroscopia</option><option>Glidescope</option></select></div>
-                                <div class="form-group col-md-4"><label class="text-muted">Estado</label><input type="text" class="form-control" placeholder="Corroborado"></div>
-                                <div class="form-group col-md-4"><label class="text-muted">Intentos</label><input type="number" class="form-control" placeholder="Intentos"></div>
+                                <div class="form-group col-md-4"><label class="text-muted">Método</label><select class="form-control" id="an_via_metodo"><option>Macintosh</option><option>Miller</option><option>Fibroscopia</option><option>Glidescope</option></select></div>
+                                <div class="form-group col-md-4"><label class="text-muted">Estado</label><input type="text" class="form-control" id="an_via_estado" placeholder="Corroborado"></div>
+                                <div class="form-group col-md-4"><label class="text-muted">Intentos</label><input type="number" class="form-control" id="an_via_intentos" placeholder="Intentos"></div>
                             </div>
 
                             <h6 class="text-secondary mt-3 mb-3 border-bottom pb-1">Regional</h6>
                             <div class="form-row">
-                                <div class="form-group col-md-2"><label class="text-muted">Epidural Nivel</label><input type="text" class="form-control"></div>
-                                <div class="form-group col-md-2"><label class="text-muted">Raquídeo Nivel</label><input type="text" class="form-control"></div>
-                                <div class="form-group col-md-2"><label class="text-muted">Bloq. Nerv.</label><input type="text" class="form-control"></div>
-                                <div class="form-group col-md-2"><label class="text-muted">+Est. Nerv.</label><input type="text" class="form-control"></div>
-                                <div class="form-group col-md-4"><label class="text-muted">Otros</label><input type="text" class="form-control"></div>
+                                <div class="form-group col-md-2"><label class="text-muted">Epidural Nivel</label><input type="text" class="form-control" id="an_reg_epidural"></div>
+                                <div class="form-group col-md-2"><label class="text-muted">Raquídeo Nivel</label><input type="text" class="form-control" id="an_reg_raquideo"></div>
+                                <div class="form-group col-md-2"><label class="text-muted">Bloq. Nerv.</label><input type="text" class="form-control" id="an_reg_bloq"></div>
+                                <div class="form-group col-md-2"><label class="text-muted">+Est. Nerv.</label><input type="text" class="form-control" id="an_reg_est"></div>
+                                <div class="form-group col-md-4"><label class="text-muted">Otros</label><input type="text" class="form-control" id="an_reg_otros"></div>
                             </div>
                         </fieldset>
 
@@ -187,33 +208,43 @@
 
                         <h5 class="card-title text-primary mb-4">Tercera Sección</h5>
                         <div class="table-responsive shadow-sm rounded">
-                            <table class="table table-bordered table-hover table-sm mb-0" style="font-size: 0.85rem;">
+                            <table id="tbl-medicamentos-anestesia" class="table table-bordered table-hover table-sm mb-0" style="font-size: 0.85rem;">
                                 <thead class="thead-light">
                                     <tr>
-                                        <th style="width: 150px; vertical-align: middle;">Item</th>
-                                        <th class="text-center">1</th><th class="text-center">2</th><th class="text-center">3</th><th class="text-center">4</th><th class="text-center">5</th><th class="text-center">6</th><th class="text-center">7</th><th class="text-center">8</th><th class="text-center">9</th>
+                                        <th style="width: 170px; vertical-align: middle;">Item</th>
+                                        @for (int i = 1; i <= sistema.Utilidades.RegistroAnestesiaMedicamentosGrid.Columnas; i++)
+                                        {
+                                            <th class="text-center" style="min-width: 52px;">@i</th>
+                                        }
                                         <th class="text-center" style="width: 200px;">Notas</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr class="bg-light">
                                         <td class="font-weight-bold text-muted">Hora</td>
-                                        @for (int i = 0; i < 9; i++) { <td><input type="time" class="form-control form-control-sm border-0 bg-transparent text-center"></td> }
-                                        <td><input type="text" class="form-control form-control-sm border-0 bg-transparent" placeholder="Nota general de hora"></td>
-                                    </tr>
-                                    @{
-                                        var items = new[] { "Sevoflurano", "Desflurano", "Propofol", "Midazolam", "Fentanyl", "Atracurio", "Vecuronio", "Succinilcolina", "Agente inhalado", "Relajante N.M.", "Ketamina", "Dexmedetomidina", "Antibióticos", "Analgésico", "Anestésico local", "Otros" };
-                                        foreach (var item in items)
+                                        @for (int i = 0; i < sistema.Utilidades.RegistroAnestesiaMedicamentosGrid.Columnas; i++)
                                         {
-                                            <tr>
-                                                <td class="text-secondary">@item</td>
-                                                @for (int i = 0; i < 9; i++) { <td><input type="text" class="form-control form-control-sm border-0 text-center"></td> }
-                                                <td class="col-3"><input type="text" class="form-control form-control-sm border-0" placeholder="Añadir nota..."></td>
-                                            </tr>
+                                            <td><input type="time" class="form-control form-control-sm border-0 bg-transparent text-center med-hora-col"></td>
                                         }
+                                        <td><input type="text" class="form-control form-control-sm border-0 bg-transparent med-nota-hora" placeholder="Nota general de hora"></td>
+                                    </tr>
+                                    @foreach (var fila in sistema.Utilidades.RegistroAnestesiaMedicamentosGrid.Filas)
+                                    {
+                                        <tr data-item="@fila.Item" class="@(fila.Resaltada ? "table-info" : "")">
+                                            <td class="text-secondary @(fila.Resaltada ? "font-weight-bold" : "")">@fila.Item</td>
+                                            @for (int i = 0; i < sistema.Utilidades.RegistroAnestesiaMedicamentosGrid.Columnas; i++)
+                                            {
+                                                <td><input type="text" class="form-control form-control-sm border-0 text-center med-val"></td>
+                                            }
+                                            <td><input type="text" class="form-control form-control-sm border-0 med-nota" placeholder="Añadir nota..."></td>
+                                        </tr>
                                     }
                                 </tbody>
                             </table>
+                        </div>
+                        <div class="mt-3">
+                            <label class="text-muted font-weight-bold" for="an_tercera_soluciones">Soluciones</label>
+                            <textarea class="form-control" id="an_tercera_soluciones" rows="2" placeholder="Soluciones administradas..."></textarea>
                         </div>
                         <hr class="mt-4">
                         <div class="d-flex justify-content-between mt-3">
@@ -243,15 +274,15 @@
                                     <h6 class="text-success font-weight-bold border-bottom pb-2 mb-3">Ingesta</h6>
                                     <div class="form-group row align-items-center mb-2">
                                         <label class="col-sm-2 col-form-label text-muted mb-0">Cristaloides:</label>
-                                        <div class="col-sm-10"><input type="text" class="form-control form-control-sm"></div>
+                                        <div class="col-sm-10"><input type="text" id="an_bal_cristaloides" class="form-control form-control-sm"></div>
                                     </div>
                                     <div class="form-group row align-items-center mb-2">
                                         <label class="col-sm-2 col-form-label text-muted mb-0">Coloides:</label>
-                                        <div class="col-sm-10"><input type="text" class="form-control form-control-sm"></div>
+                                        <div class="col-sm-10"><input type="text" id="an_bal_coloides" class="form-control form-control-sm"></div>
                                     </div>
                                     <div class="form-group row align-items-center mb-2">
                                         <label class="col-sm-2 col-form-label text-muted mb-0">Sangre:</label>
-                                        <div class="col-sm-10"><input type="text" class="form-control form-control-sm"></div>
+                                        <div class="col-sm-10"><input type="text" id="an_bal_sangre" class="form-control form-control-sm"></div>
                                     </div>
                                 </div>
                             </div>
@@ -261,34 +292,55 @@
                                     <h6 class="text-danger font-weight-bold border-bottom pb-2 mb-3">Pérdidas</h6>
                                     <div class="form-group row align-items-center mb-2">
                                         <label class="col-sm-2 col-form-label text-muted mb-0">Requerimientos basales:</label>
-                                        <div class="col-sm-10"><input type="text" class="form-control form-control-sm"></div>
+                                        <div class="col-sm-10"><input type="text" id="an_bal_requerimientos" class="form-control form-control-sm"></div>
                                     </div>
                                     <div class="form-group row align-items-center mb-2">
                                         <label class="col-sm-2 col-form-label text-muted mb-0">Tipo de cirujia:</label>
-                                        <div class="col-sm-10"><input type="text" class="form-control form-control-sm"></div>
+                                        <div class="col-sm-10"><input type="text" id="an_bal_tipo_cirugia" class="form-control form-control-sm"></div>
                                     </div>
                                     <div class="form-group row align-items-center mb-2">
                                         <label class="col-sm-2 col-form-label text-muted mb-0">Orina:</label>
-                                        <div class="col-sm-10"><input type="text" class="form-control form-control-sm"></div>
+                                        <div class="col-sm-10"><input type="text" id="an_bal_orina" class="form-control form-control-sm"></div>
                                     </div>
                                     <div class="form-group row align-items-center mb-2">
                                         <label class="col-sm-2 col-form-label text-muted mb-0">Sangrado:</label>
-                                        <div class="col-sm-10"><input type="text" class="form-control form-control-sm"></div>
+                                        <div class="col-sm-10"><input type="text" id="an_bal_sangrado" class="form-control form-control-sm"></div>
                                     </div>
                                     <div class="form-group row align-items-center mb-2">
-                                        <label class="col-sm-2 col-form-label text-muted mb-0">Insensibles:</label>
-                                        <div class="col-sm-10"><input type="text" class="form-control form-control-sm"></div>
+                                        <label class="col-sm-2 col-form-label text-muted mb-0">Tiempo de ayuno:</label>
+                                        <div class="col-sm-10"><input type="text" class="form-control form-control-sm" id="an_perd_ayuno" placeholder="Horas / descripción"></div>
                                     </div>
                                 </div>
                             </div>
                             
                             <div class="form-group mb-3 col-6">
                                 <label class="text-muted font-weight-bold">Soluciones</label>
-                                <textarea class="form-control" rows="2" placeholder="Detalles de soluciones..."></textarea>
+                                <textarea class="form-control" id="an_bal_soluciones" rows="2" placeholder="Detalles de soluciones..."></textarea>
                             </div>
                             <div class="form-group mb-3 col-6">
                                 <label class="text-muted font-weight-bold">Balance Total</label>
-                                <textarea class="form-control" rows="2" placeholder="Balance total..."></textarea>
+                                <textarea class="form-control" id="an_bal_total" rows="2" placeholder="Balance total..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="row mt-2">
+                            <div class="col-md-6">
+                                <h6 class="text-success font-weight-bold border-bottom pb-2 mb-2">Registro de Ingesta por hora</h6>
+                                <table class="table table-sm table-bordered" id="tbl-ingesta-anestesia">
+                                    <thead class="thead-light"><tr><th>Hora</th><th>ml</th><th></th></tr></thead>
+                                    <tbody></tbody>
+                                    <tfoot><tr><th>Subtotal</th><th id="ingesta-subtotal">0</th><th></th></tr></tfoot>
+                                </table>
+                                <button type="button" class="btn btn-sm btn-outline-success" onclick="agregarFilaIngestaAnestesia()"><i class="fas fa-plus"></i> Fila</button>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-danger font-weight-bold border-bottom pb-2 mb-2">Registro de Excreta por hora</h6>
+                                <table class="table table-sm table-bordered" id="tbl-excreta-anestesia">
+                                    <thead class="thead-light"><tr><th>Hora</th><th>ml</th><th></th></tr></thead>
+                                    <tbody></tbody>
+                                    <tfoot><tr><th>Subtotal</th><th id="excreta-subtotal">0</th><th></th></tr></tfoot>
+                                </table>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="agregarFilaExcretaAnestesia()"><i class="fas fa-plus"></i> Fila</button>
                             </div>
                         </div>
 
@@ -318,19 +370,19 @@
                             <div class="row text-center">
                                 <div class="col-md-3">
                                     <label class="text-muted font-weight-bold mb-1">Inicio Anestesia</label>
-                                    <input type="time" class="form-control text-center mx-auto" style="max-width: 150px;">
+                                    <input type="time" id="an_hora_inicio_anestesia" class="form-control text-center mx-auto" style="max-width: 150px;">
                                 </div>
                                 <div class="col-md-3">
                                     <label class="text-muted font-weight-bold mb-1">Inicio Cirugía</label>
-                                    <input type="time" class="form-control text-center mx-auto" style="max-width: 150px;">
+                                    <input type="time" id="an_hora_inicio_cirugia" class="form-control text-center mx-auto" style="max-width: 150px;">
                                 </div>
                                 <div class="col-md-3">
                                     <label class="text-muted font-weight-bold mb-1">Fin Cirugía</label>
-                                    <input type="time" class="form-control text-center mx-auto" style="max-width: 150px;">
+                                    <input type="time" id="an_hora_fin_cirugia" class="form-control text-center mx-auto" style="max-width: 150px;">
                                 </div>
                                 <div class="col-md-3">
                                     <label class="text-muted font-weight-bold mb-1">Fin Anestesia</label>
-                                    <input type="time" class="form-control text-center mx-auto" style="max-width: 150px;">
+                                    <input type="time" id="an_hora_fin_anestesia" class="form-control text-center mx-auto" style="max-width: 150px;">
                                 </div>
                             </div>
                         </fieldset>
@@ -402,18 +454,18 @@
                                         <label class="col-sm-4 col-form-label text-muted mb-0">Presión:</label>
                                         <div class="col-sm-8">
                                             <div class="input-group input-group-sm">
-                                                <input type="number" class="form-control">
+                                                <input type="number" id="an_torniquete_presion" class="form-control">
                                                 <div class="input-group-append"><span class="input-group-text">mmHg</span></div>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="form-group row align-items-center mb-2">
                                         <label class="col-sm-4 col-form-label text-muted mb-0">Inicio:</label>
-                                        <div class="col-sm-8"><input type="time" class="form-control form-control-sm"></div>
+                                        <div class="col-sm-8"><input type="time" id="an_torniquete_inicio" class="form-control form-control-sm"></div>
                                     </div>
                                     <div class="form-group row align-items-center mb-0">
                                         <label class="col-sm-4 col-form-label text-muted mb-0">Fin:</label>
-                                        <div class="col-sm-8"><input type="time" class="form-control form-control-sm"></div>
+                                        <div class="col-sm-8"><input type="time" id="an_torniquete_fin" class="form-control form-control-sm"></div>
                                     </div>
                                 </fieldset>
                             </div>
@@ -451,7 +503,7 @@
                             <button type="button" class="btn btn-outline-secondary px-4" onclick="showAnestesiaStep(5)">Anterior</button> 
                             <div>
                                 <button type="button" class="btn btn-danger px-4" onclick='$("#mdl-registro-anestesia").dialog("close")'>Cancelar</button> 
-                                <button type="button" class="btn btn-success px-4 ml-2">Guardar Registro</button>
+                                <button type="button" class="btn btn-success px-4 ml-2" onclick="guardarRegistroAnestesia()">Guardar Registro</button>
                             </div>
                         </div>
                     </div>
@@ -466,6 +518,65 @@
 
 <script type="text/javascript">
     var chartJSAnestesia = null;
+
+    function calcularImcAnestesia() {
+        var pesoEl = document.getElementById("an_peso");
+        var tallaEl = document.getElementById("an_talla");
+        var pesoTxt = (pesoEl?.value || "").replace(",", ".");
+        var tallaTxt = (tallaEl?.value || "").replace(",", ".");
+        var peso = parseFloat(pesoTxt);
+        var talla = parseFloat(tallaTxt);
+        var imcEl = document.getElementById("an_imc");
+        if (!imcEl || !peso || !talla) {
+            if (imcEl) imcEl.value = "";
+            return;
+        }
+        var tallaM = talla > 3 ? talla / 100 : talla;
+        if (tallaM <= 0) return;
+        imcEl.value = (peso / (tallaM * tallaM)).toFixed(2);
+    }
+
+    function guardarPesoTallaPacienteAnestesia() {
+        var pacienteId = parseInt($("#PacienteId").val() || "@Model.PacienteId", 10);
+        if (!pacienteId) return;
+        var peso = document.getElementById("an_peso")?.value;
+        var talla = document.getElementById("an_talla")?.value;
+        if (peso) {
+            $.post("/Pacientes/ActualizarCampo", { pacienteId: pacienteId, campo: "Peso", valor: peso });
+        }
+        if (talla) {
+            $.post("/Pacientes/ActualizarCampo", { pacienteId: pacienteId, campo: "Estatura", valor: talla });
+        }
+    }
+
+    function agregarFilaBalanceAnestesia(tableId, subtotalId) {
+        var tbody = document.querySelector("#" + tableId + " tbody");
+        if (!tbody) return;
+        var tr = document.createElement("tr");
+        tr.innerHTML = '<td><input type="time" class="form-control form-control-sm bal-hora" /></td>'
+            + '<td><input type="number" min="0" step="1" class="form-control form-control-sm bal-ml" oninput="recalcularSubtotalAnestesia(\'' + tableId + '\',\'' + subtotalId + '\')" /></td>'
+            + '<td><button type="button" class="btn btn-sm btn-link text-danger" onclick="this.closest(\'tr\').remove(); recalcularSubtotalAnestesia(\'' + tableId + '\',\'' + subtotalId + '\')">&times;</button></td>';
+        tbody.appendChild(tr);
+    }
+
+    function agregarFilaIngestaAnestesia() { agregarFilaBalanceAnestesia("tbl-ingesta-anestesia", "ingesta-subtotal"); }
+    function agregarFilaExcretaAnestesia() { agregarFilaBalanceAnestesia("tbl-excreta-anestesia", "excreta-subtotal"); }
+
+    function recalcularSubtotalAnestesia(tableId, subtotalId) {
+        var total = 0;
+        document.querySelectorAll("#" + tableId + " .bal-ml").forEach(function (inp) {
+            total += parseFloat(inp.value) || 0;
+        });
+        var el = document.getElementById(subtotalId);
+        if (el) el.textContent = total;
+    }
+
+    hospWhenReady(function ($) {
+        $(document).on("change", "#an_posicion", function () {
+            var show = $(this).val() === "Otro";
+            $("#an_posicion_otro_wrap").toggle(show);
+        });
+    });
 
     function initChartJS() {
         var ctx = document.getElementById('canvas-anestesia');
@@ -601,10 +712,271 @@
             $('#anestesia-step-' + step).show();
         }
         
+        if (step === 1) {
+            calcularImcAnestesia();
+        }
         if (step === 5) {
             setTimeout(function() {
                 initChartJS();
             }, 200); 
         }
     };
+
+    function recolectarDatosRegistroAnestesia() {
+        var form = document.getElementById("formAnestesia");
+        var radios = {};
+        if (form) {
+            form.querySelectorAll('input[type=radio]:checked').forEach(function (el) {
+                if (el.name) radios[el.name] = el.value;
+            });
+        }
+        var campos = {};
+        document.querySelectorAll("#formAnestesia [id^='an_']").forEach(function (el) {
+            if (el.id) campos[el.id] = el.value || "";
+        });
+        if (document.getElementById("an_posicion")) {
+            var pos = document.getElementById("an_posicion").value;
+            if (pos === "Otro") {
+                campos.an_posicion = (document.getElementById("an_posicion_otro")?.value || "").trim() || "Otro";
+            } else {
+                campos.an_posicion = pos;
+            }
+        }
+        var indTipo = document.getElementById("induccionTipo");
+        if (indTipo) campos.an_induccion_tipo = indTipo.value;
+        var indDetalle = [];
+        var inhOpc = document.getElementById("an_ind_inh_opcion");
+        if (inhOpc && inhOpc.value) indDetalle.push("Inhalada: " + inhOpc.value);
+        var ivSel = document.getElementById("induccionIVSelect");
+        if (ivSel && ivSel.value) indDetalle.push("IV: " + ivSel.value);
+        var ivOtro = document.getElementById("an_ind_iv_otro");
+        if (ivOtro && ivOtro.value) indDetalle.push("Otros IV: " + ivOtro.value);
+        if (indDetalle.length) campos.an_induccion_detalle = indDetalle.join("; ");
+
+        function recolectarMedicamentosGrid() {
+            var result = { horas: [], notaHora: "", filas: [] };
+            var table = document.getElementById("tbl-medicamentos-anestesia");
+            if (!table) return result;
+            table.querySelectorAll("tbody tr:first-child .med-hora-col").forEach(function (inp) {
+                if (inp.value) result.horas.push(inp.value);
+            });
+            var notaHora = table.querySelector(".med-nota-hora");
+            if (notaHora && notaHora.value) result.notaHora = notaHora.value;
+            table.querySelectorAll("tbody tr[data-item]").forEach(function (tr) {
+                var vals = [];
+                tr.querySelectorAll(".med-val").forEach(function (inp) { vals.push(inp.value || ""); });
+                var nota = tr.querySelector(".med-nota")?.value || "";
+                if (vals.some(function (v) { return v; }) || nota) {
+                    result.filas.push({ item: tr.getAttribute("data-item"), valores: vals, nota: nota });
+                }
+            });
+            return result;
+        }
+
+        function filasBalance(tableId) {
+            var filas = [];
+            document.querySelectorAll("#" + tableId + " tbody tr").forEach(function (tr) {
+                var hora = tr.querySelector(".bal-hora")?.value || "";
+                var ml = tr.querySelector(".bal-ml")?.value || "";
+                if (hora || ml) filas.push({ hora: hora, ml: ml });
+            });
+            return filas;
+        }
+
+        var graficaPuntos = [];
+        if (chartJSAnestesia && chartJSAnestesia.data && chartJSAnestesia.data.labels) {
+            chartJSAnestesia.data.labels.forEach(function (hora, idx) {
+                graficaPuntos.push({
+                    hora: hora,
+                    pas: chartJSAnestesia.data.datasets[0].data[idx] ?? "",
+                    pad: chartJSAnestesia.data.datasets[1].data[idx] ?? "",
+                    fc: chartJSAnestesia.data.datasets[2].data[idx] ?? "",
+                    fr: chartJSAnestesia.data.datasets[3].data[idx] ?? ""
+                });
+            });
+        }
+
+        return {
+            fecha: document.getElementById("an_fecha")?.value || "",
+            qx: document.getElementById("an_qx")?.value || "",
+            radios: radios,
+            campos: campos,
+            ingestaFilas: filasBalance("tbl-ingesta-anestesia"),
+            excretaFilas: filasBalance("tbl-excreta-anestesia"),
+            graficaPuntos: graficaPuntos,
+            medicamentosGrid: recolectarMedicamentosGrid()
+        };
+    }
+
+    function aplicarDatosRegistroAnestesia(datos) {
+        if (!datos) return;
+        if (datos.fecha && document.getElementById("an_fecha")) document.getElementById("an_fecha").value = datos.fecha;
+        if (datos.qx && document.getElementById("an_qx")) document.getElementById("an_qx").value = datos.qx;
+        if (datos.radios) {
+            Object.keys(datos.radios).forEach(function (name) {
+                var el = document.querySelector('#formAnestesia input[type=radio][name="' + name + '"][value="' + datos.radios[name] + '"]');
+                if (el) el.checked = true;
+            });
+        }
+        if (datos.campos) {
+            Object.keys(datos.campos).forEach(function (key) {
+                var el = document.getElementById(key);
+                if (el) el.value = datos.campos[key] || "";
+            });
+        }
+        if (datos.medicamentosGrid) {
+            var grid = datos.medicamentosGrid;
+            var table = document.getElementById("tbl-medicamentos-anestesia");
+            if (table && grid.horas) {
+                var horaInputs = table.querySelectorAll("tbody tr:first-child .med-hora-col");
+                grid.horas.forEach(function (h, idx) {
+                    if (horaInputs[idx]) horaInputs[idx].value = h;
+                });
+            }
+            if (table && grid.notaHora) {
+                var notaHora = table.querySelector(".med-nota-hora");
+                if (notaHora) notaHora.value = grid.notaHora;
+            }
+            if (table && grid.filas) {
+                var itemAliases = {
+                    "Oxigeno (l/min)": "Oxígeno (l/min)",
+                    "Oxígeno": "Oxígeno (l/min)",
+                    "Oxigeno": "Oxígeno (l/min)",
+                    "N2O": "N2O (l/min)",
+                    "Sevoflurano": "Sevoflurano (%)",
+                    "Desflurano": "Desflurano (%)",
+                    "Propofol": "Propofol (mg)",
+                    "Midazolam": "Midazolam (mg)",
+                    "Fentanyl": "Fentanyl (mcg)",
+                    "Atracurio": "Atracurio (mg)",
+                    "Vecuronio": "Vecuronio (mg)",
+                    "Succinilcolina": "Succinilcolina (mg)",
+                    "Efedrina": "Efedrina (mg)",
+                    "Morfina": "Morfina (mg)",
+                    "Petidina": "Petidina (mg)"
+                };
+                grid.filas.forEach(function (fila) {
+                    var itemKey = fila.item || "";
+                    if (itemAliases[itemKey]) itemKey = itemAliases[itemKey];
+                    var tr = table.querySelector('tbody tr[data-item="' + itemKey + '"]');
+                    if (!tr) return;
+                    var vals = fila.valores || [];
+                    tr.querySelectorAll(".med-val").forEach(function (inp, idx) {
+                        inp.value = vals[idx] || "";
+                    });
+                    var nota = tr.querySelector(".med-nota");
+                    if (nota) nota.value = fila.nota || "";
+                });
+            }
+        }
+        calcularImcAnestesia();
+        if (document.getElementById("an_posicion")) {
+            $("#an_posicion").trigger("change");
+        }
+
+        function aplicarFilasBalance(tableId, subtotalId, filas) {
+            if (!filas || !filas.length) return;
+            var tbody = document.querySelector("#" + tableId + " tbody");
+            if (!tbody) return;
+            tbody.innerHTML = "";
+            filas.forEach(function (f) {
+                agregarFilaBalanceAnestesia(tableId, subtotalId);
+                var rows = tbody.querySelectorAll("tr");
+                var tr = rows[rows.length - 1];
+                if (tr) {
+                    var horaInp = tr.querySelector(".bal-hora");
+                    var mlInp = tr.querySelector(".bal-ml");
+                    if (horaInp) horaInp.value = f.hora || "";
+                    if (mlInp) mlInp.value = f.ml || "";
+                }
+            });
+            recalcularSubtotalAnestesia(tableId, subtotalId);
+        }
+
+        if (datos.ingestaFilas && datos.ingestaFilas.length) {
+            aplicarFilasBalance("tbl-ingesta-anestesia", "ingesta-subtotal", datos.ingestaFilas);
+        }
+        if (datos.excretaFilas && datos.excretaFilas.length) {
+            aplicarFilasBalance("tbl-excreta-anestesia", "excreta-subtotal", datos.excretaFilas);
+        }
+
+        if (datos.graficaPuntos && datos.graficaPuntos.length) {
+            setTimeout(function () {
+                initChartJS();
+                if (!chartJSAnestesia) return;
+                datos.graficaPuntos.forEach(function (p) {
+                    var hora = p.hora;
+                    if (!hora) return;
+                    var labels = chartJSAnestesia.data.labels;
+                    var index = labels.indexOf(hora);
+                    if (index === -1) {
+                        labels.push(hora);
+                        index = labels.length - 1;
+                    }
+                    chartJSAnestesia.data.datasets[0].data[index] = p.pas ? parseInt(p.pas, 10) : null;
+                    chartJSAnestesia.data.datasets[1].data[index] = p.pad ? parseInt(p.pad, 10) : null;
+                    chartJSAnestesia.data.datasets[2].data[index] = p.fc ? parseInt(p.fc, 10) : null;
+                    chartJSAnestesia.data.datasets[3].data[index] = p.fr ? parseInt(p.fr, 10) : null;
+                });
+                chartJSAnestesia.update();
+            }, 350);
+        }
+    }
+
+    window.cargarRegistroAnestesia = function () {
+        var hospId = parseInt($("#HospitalizacionId").val(), 10);
+        if (!hospId) return;
+        $.post("/RegistroAnestesia/Obtener", { hospitalizacionId: hospId }, function (dataResult) {
+            try {
+                var data = typeof dataResult === "string" ? JSON.parse(dataResult) : dataResult;
+                if (!data.exitoso || !data.resultado || !data.resultado.DatosJson) return;
+                var datos = JSON.parse(data.resultado.DatosJson);
+                aplicarDatosRegistroAnestesia(datos);
+            } catch (e) { console.warn("Registro anestesia:", e); }
+        });
+    };
+
+    window.guardarRegistroAnestesia = function () {
+        var hospId = parseInt($("#HospitalizacionId").val(), 10);
+        if (!hospId) {
+            alert("No se encontró la hospitalización.");
+            return;
+        }
+        guardarPesoTallaPacienteAnestesia();
+        var payload = {
+            HospitalizacionId: hospId,
+            DatosJson: JSON.stringify(recolectarDatosRegistroAnestesia())
+        };
+        if (typeof showLoading === "function") showLoading();
+        $.ajax({
+            url: "/RegistroAnestesia/Guardar",
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify(payload),
+            success: function (dataResult) {
+                if (typeof hideLoading === "function") hideLoading();
+                var data = typeof dataResult === "string" ? JSON.parse(dataResult) : dataResult;
+                if (data.exitoso) {
+                    if (typeof mensajeEmergente === "function") mensajeEmergente("Registro anestésico guardado.");
+                    $("#mdl-registro-anestesia").dialog("close");
+                } else {
+                    alert(data.resultado || "Error al guardar.");
+                }
+            },
+            error: function () {
+                if (typeof hideLoading === "function") hideLoading();
+                alert("Error de conexión al guardar el registro anestésico.");
+            }
+        });
+    };
+
+    hospOnReady(function () {
+        calcularImcAnestesia();
+        var pesoInput = document.getElementById("an_peso");
+        var tallaInput = document.getElementById("an_talla");
+        if (pesoInput) pesoInput.addEventListener("input", calcularImcAnestesia);
+        if (tallaInput) tallaInput.addEventListener("input", calcularImcAnestesia);
+        if (!document.querySelector("#tbl-ingesta-anestesia tbody tr")) agregarFilaIngestaAnestesia();
+        if (!document.querySelector("#tbl-excreta-anestesia tbody tr")) agregarFilaExcretaAnestesia();
+    });
 </script>

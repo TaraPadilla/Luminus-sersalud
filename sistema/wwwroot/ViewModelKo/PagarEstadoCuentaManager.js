@@ -100,9 +100,13 @@ const EstadoCuentaManager = (function () {
             const tipoNormalizado = (p.Tipo || "").trim().toUpperCase();
             // Solo si es examen y tipo "EXAMENES" se aplica descuento automático 100%
             const aplicarDescuento100 = esExamen && tipoNormalizado === "EXAMENES";
+            const fechaAplicacion = (p.FechaAplicacion && p.FechaAplicacion !== "Sin fecha")
+                ? p.FechaAplicacion
+                : "";
             return {
                 idOriginal: p.Id, productoId: p.ProductoId, nombre: p.Nombre, tipo: p.Tipo,
                 cantidad: p.Cantidad, precioU: p.PrecioUnitario, precioSeguroOriginal: p.PrecioUnitario,
+                fechaAplicacion: fechaAplicacion,
                 descPct: aplicarDescuento100 ? 100 : 0,
                 cargo: 0, noExcluible: false, esExamen: esExamen
             };

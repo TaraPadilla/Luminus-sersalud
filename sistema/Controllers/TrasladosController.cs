@@ -686,10 +686,7 @@ namespace sistema.Controllers
             if (traslado == null) return StatusCode(404);
 
             var user = _userManager.GetUserAsync(HttpContext.User);
-            var userU = _userRepository.GetbyId(user.Result.Id);
-            var u = userU.Persona != null
-                ? userU.Persona.Nombre
-                : "-";
+            var u = _userRepository.GetDisplayName(user.Result?.Id);
 
             var model = new TrasladosBaseViewModel()
             {
@@ -708,10 +705,7 @@ namespace sistema.Controllers
             if (traslado == null) return StatusCode(404);
 
             var user = _userManager.GetUserAsync(HttpContext.User);
-            var userU = _userRepository.GetbyId(user.Result.Id);
-            var u = userU.Persona != null
-                ? userU.Persona.Nombre
-                : "-";
+            var u = _userRepository.GetDisplayName(user.Result?.Id);
 
             var model = new TrasladosBaseViewModel()
             {

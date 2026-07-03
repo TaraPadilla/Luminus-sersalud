@@ -22,6 +22,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Database.Shared.Enumeraciones;
 using farmamest.Service.IService;
+using farmamest.Utilidades;
 using sistema.Service.IService;
 using System.Text.Encodings.Web;
 using Database.Shared;
@@ -118,11 +119,16 @@ namespace sistema.Controllers
             if (cuenta == null) return RedirectToAction("Pendientes");
 
             var paciente = cuenta.Paciente;
-            if (paciente == null) return View(new CuentasPorCobrarPagarViewModel());
+            if (paciente == null)
+                return View(CreateEmptyPagarViewModel("La cuenta no tiene un paciente asociado."));
 
             #region Consulta hospitalizacion
 
-            if (AdmisionId <= 0) return View(new CuentasPorCobrarPagarViewModel());
+            if (AdmisionId <= 0)
+                AdmisionId = ResolverAdmisionIdDesdeCuenta(cuenta);
+
+            if (AdmisionId <= 0)
+                return View(CreateEmptyPagarViewModel("No se encontró una admisión asociada a esta cuenta."));
 
             bool cuentaTieneEsaHospitalizacion = cuenta.DetallesCuentaPorCobrar != null
                 && cuenta.DetallesCuentaPorCobrar.Any(d => d.HospitalizacionId.HasValue && d.HospitalizacionId.Value == AdmisionId);
@@ -131,7 +137,8 @@ namespace sistema.Controllers
                 return RedirectToAction("Pendientes");
 
             var hospitalizacion = _hospitalizacionRepository.Get(AdmisionId, true, true, false, true, false);
-            if (hospitalizacion == null) return View(new CuentasPorCobrarPagarViewModel());
+            if (hospitalizacion == null)
+                return View(CreateEmptyPagarViewModel("No se encontró la hospitalización asociada a esta cuenta."));
 
 
             bool tieneSaldoPendiente = cuenta.Valor > 0;
@@ -182,7 +189,7 @@ namespace sistema.Controllers
             #endregion
 
             if (hospitalizacion.Habitacion == null || hospitalizacion.Habitacion.CategoriaHabitacion == null)
-                return View(new CuentasPorCobrarPagarViewModel());
+                return View(CreateEmptyPagarViewModel("La hospitalización no tiene habitación o categoría configurada."));
 
             var habitacionViewModel = new HabitacionPagarViewModel
             {
@@ -235,20 +242,14 @@ namespace sistema.Controllers
             var totalPaquetes = paquetesHospitalizacion.Sum(p => p.Precio);
 
             var productosConPrecios = hospitalizacion.HospitalizacionesProductos
-                .Where(p => p?.HospitalizacionesProductosAplicaciones?.Any(a => a.Aplicado) ?? false)
+                .Where(p => HospitalizacionCargosHelper.AplicacionesVigentes(p.HospitalizacionesProductosAplicaciones).Any())
                 .Select(p =>
                 {
-                    int tipoProductoId = p.Producto?.TipoProductoId ?? 0;
-                    string nombreTipoProducto = tipoProductoId switch
-                    {
-                        (int)TipoProductoEnum.InsumosMedicos => "Insumos médicos",
-                        (int)TipoProductoEnum.Medicamentos => "Medicamentos",
-                        (int)TipoProductoEnum.EquiposMedicos => "Equipos médicos",
-                        _ => "Sin tipo"
-                    };
-
-                    var aplicacionesAplicadas = p.HospitalizacionesProductosAplicaciones.Where(a => a.Aplicado == true).ToList();
+                    var aplicacionesAplicadas = HospitalizacionCargosHelper
+                        .AplicacionesVigentes(p.HospitalizacionesProductosAplicaciones)
+                        .ToList();
                     var cantidadAplicada = aplicacionesAplicadas.Sum(a => a.Cantidad);
+                    if (cantidadAplicada <= 0) return null;
 
                     return new ProductoPagarViewModel
                     {
@@ -258,10 +259,16 @@ namespace sistema.Controllers
                         Cantidad = cantidadAplicada,
                         PrecioUnitario = Math.Round(p.PrecioValor, 2),
                         Subtotal = Math.Round(cantidadAplicada * p.PrecioValor, 2),
-                        Tipo = nombreTipoProducto,
-                        FechaAplicacion = aplicacionesAplicadas.OrderBy(a => a.FechaHoraAplicacion).FirstOrDefault()?.FechaAplicacionFormateada ?? "Sin fecha"
+                        Tipo = HospitalizacionCargosHelper.ObtenerTipoProductoCuenta(p.Producto?.TipoProductoId),
+                        FechaAplicacion = HospitalizacionCargosHelper.FormatearFechaAplicacionProducto(
+                            aplicacionesAplicadas,
+                            p.FechaHoraAplicacionManual) is { Length: > 0 } fecha
+                            ? fecha
+                            : "Sin fecha"
                     };
-                }).ToList();
+                })
+                .Where(p => p != null)
+                .ToList();
 
             var serviciosDetalleList = _hospitalizacionService.GetServiciosHospitalizacion(hospitalizacion.Id)?.ToList() ?? new List<HospitalizacionServicioViewModel>();
 
@@ -274,20 +281,13 @@ namespace sistema.Controllers
 
                 foreach (var insumo in insumosDirectos)
                 {
-                    var aplicacionesAplicadas = insumo.Aplicaciones?.Where(a => a.Aplicado == true).ToList();
-                    if (aplicacionesAplicadas == null || !aplicacionesAplicadas.Any()) continue;
+                    var aplicacionesAplicadas = HospitalizacionCargosHelper
+                        .AplicacionesVigentesInsumoDirecto(insumo.Aplicaciones)
+                        .ToList();
+                    if (!aplicacionesAplicadas.Any()) continue;
 
                     int cantidadAplicada = aplicacionesAplicadas.Sum(a => a.Cantidad);
                     if (cantidadAplicada <= 0) continue;
-
-                    int tipoProductoId = insumo.Producto?.TipoProductoId ?? 0;
-                    string nombreTipoProducto = tipoProductoId switch
-                    {
-                        (int)TipoProductoEnum.InsumosMedicos => "Insumos médicos",
-                        (int)TipoProductoEnum.Medicamentos => "Medicamentos",
-                        (int)TipoProductoEnum.EquiposMedicos => "Equipos médicos",
-                        _ => "Medicamentos"
-                    };
 
                     var subtotal = Math.Round(cantidadAplicada * insumo.PrecioValor, 2);
 
@@ -295,12 +295,16 @@ namespace sistema.Controllers
                     {
                         Id = insumo.Id,
                         ProductoId = insumo.ProductoId,
-                        Nombre = insumo.Producto?.NombreProducto ?? "Medicamento",
+                        Nombre = insumo.Producto?.NombreProducto ?? "Producto",
                         Cantidad = cantidadAplicada,
                         PrecioUnitario = Math.Round(insumo.PrecioValor, 2),
                         Subtotal = subtotal,
-                        Tipo = nombreTipoProducto,
-                        FechaAplicacion = insumo.FechaHoraAplicacionManual ?? "Sin fecha"
+                        Tipo = HospitalizacionCargosHelper.ObtenerTipoProductoCuenta(insumo.Producto?.TipoProductoId),
+                        FechaAplicacion = HospitalizacionCargosHelper.FormatearFechaAplicacionInsumoDirecto(
+                            aplicacionesAplicadas,
+                            insumo.FechaHoraAplicacionManual) is { Length: > 0 } fecha
+                            ? fecha
+                            : "Sin fecha"
                     });
                 }
             }
@@ -584,8 +588,8 @@ namespace sistema.Controllers
 
                 // 3. Productos (medicamentos, insumos, etc.) — suma bruta desde BD sin descuentos de línea
                 decimal totalProductos = hospitalizacion.HospitalizacionesProductos
-                    .Where(p => p?.HospitalizacionesProductosAplicaciones?.Any(a => a.Aplicado) ?? false)
-                    .Sum(p => p.HospitalizacionesProductosAplicaciones.Where(a => a.Aplicado).Sum(a => a.Cantidad) * p.PrecioValor);
+                    .Where(p => HospitalizacionCargosHelper.AplicacionesVigentes(p.HospitalizacionesProductosAplicaciones).Any())
+                    .Sum(p => HospitalizacionCargosHelper.AplicacionesVigentes(p.HospitalizacionesProductosAplicaciones).Sum(a => a.Cantidad) * p.PrecioValor);
 
                 // 4. Servicios
                 var serviciosDetalle = _hospitalizacionService.GetServiciosHospitalizacion(hospitalizacion.Id);
@@ -600,7 +604,8 @@ namespace sistema.Controllers
 
                 // 7. Insumos Directos
                 var insumosDirectos = await _context.HospitalizacionInsumosDirectos.Where(i => i.HospitalizacionId == model.AdmisionId && !i.Eliminado).Include(i => i.Aplicaciones).ToListAsync();
-                decimal totalInsumosDirectos = insumosDirectos.Sum(i => (i.Aplicaciones?.Where(a => a.Aplicado == true).Sum(a => a.Cantidad) ?? 0) * i.PrecioValor);
+                decimal totalInsumosDirectos = insumosDirectos.Sum(i =>
+                    HospitalizacionCargosHelper.AplicacionesVigentesInsumoDirecto(i.Aplicaciones).Sum(a => a.Cantidad) * i.PrecioValor);
 
                 // 8. Emergencias
                 decimal totalEmergencias = 0m;
@@ -1407,6 +1412,21 @@ namespace sistema.Controllers
                 return JsonSerializer.Serialize(new { Exitoso = false, Mensaje = ex.Message });
             }
         }
-        
+
+        private CuentasPorCobrarPagarViewModel CreateEmptyPagarViewModel(string mensaje = null)
+        {
+            var model = new CuentasPorCobrarPagarViewModel();
+            model.Init(_cuentasPorCobrarRepository, _empleadoRepository);
+            if (!string.IsNullOrWhiteSpace(mensaje))
+                TempData["Message"] = mensaje;
+            return model;
+        }
+
+        private static int ResolverAdmisionIdDesdeCuenta(CuentaPorCobrar cuenta)
+        {
+            return cuenta?.DetallesCuentaPorCobrar?
+                .FirstOrDefault(d => d.HospitalizacionId.HasValue && d.HospitalizacionId.Value > 0)?
+                .HospitalizacionId ?? 0;
+        }
     }
 }

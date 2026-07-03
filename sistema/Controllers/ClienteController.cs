@@ -106,7 +106,7 @@ namespace sistema.Controllers
                 return RedirectToAction("Lista");
             }
 
-            return View(model.Clientes);
+            return View(model);
         }
 
         public IActionResult Eliminar(int? id)

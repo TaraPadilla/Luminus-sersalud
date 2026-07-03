@@ -60,7 +60,9 @@ namespace farmamest.Service
                 Id = x.Id,
                 UserId = x.UserId,
                 HospitalizacionId = x.HospitalizacionId,
-                UserNombre = x.User.Persona.NombreYApellidos,
+                UserNombre = x.User?.Persona != null
+                    ? x.User.Persona.NombreYApellidos
+                    : _userRepository.GetDisplayName(x.UserId),
                 UserEmail = x.User.UserName,
                 AutTabEnfermeria = x.AutorizacionTabEnfermeria,
                 AutTabControlGlucometria = x.AutorizacionTabControlGlucometria,

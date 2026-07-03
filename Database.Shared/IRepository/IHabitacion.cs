@@ -17,7 +17,9 @@ namespace Database.Shared.IRepository
         public CategoriaHabitacion GetCategoria(int categoriaId);
         public IList<CategoriaHabitacion> GetCategorias(bool includeTarifas = true);
         public IList<CategoriaHabitacionTarifa> GetTarifasHabitacion(int habitacionId);
+        IList<CategoriaHabitacionTarifa> GetTarifasCategoria(int categoriaId);
         public Hospitalizacion GetHospitalizacionActual(int habitacionId);
+        (int? HospitalizacionId, int? CitaId, Paciente Paciente) GetOcupacionActual(int habitacionId);
         public void DeleteCategoria(int categoriaId);
         public IList<EstadoHabitacion> GetEstados();
         public (Paciente, Empleado, string) GetPacienteOcupanteConMedicoYCita(int habitacionId);

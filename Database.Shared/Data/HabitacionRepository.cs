@@ -131,17 +131,50 @@ namespace Database.Shared.Data
 
         public Hospitalizacion GetHospitalizacionActual(int habitacionId)
         {
-            var data = _context.Hospitalizaciones
+            return GetOcupacionActual(habitacionId).HospitalizacionId is int id
+                ? _context.Hospitalizaciones.FirstOrDefault(h => h.Id == id)
+                : null;
+        }
+
+        public (int? HospitalizacionId, int? CitaId, Paciente Paciente) GetOcupacionActual(int habitacionId)
+        {
+            var hospitalizacion = _context.Hospitalizaciones
+                .Include(h => h.Paciente)
+                .Include(h => h.Consultas)
                 .Where(a => !a.Eliminada
-                && a.HabitacionId == habitacionId
-                && !a.Finalizada)
+                    && a.HabitacionId == habitacionId
+                    && !a.Finalizada)
+                .OrderByDescending(a => a.Id)
                 .FirstOrDefault();
 
-            if (data == null)
+            if (hospitalizacion == null)
             {
-                return null;
+                hospitalizacion = _context.Hospitalizaciones
+                    .Include(h => h.Paciente)
+                    .Include(h => h.Consultas)
+                    .Where(a => !a.Finalizada && a.HabitacionId == habitacionId)
+                    .OrderByDescending(a => a.Id)
+                    .FirstOrDefault();
             }
-            return data;
+
+            if (hospitalizacion == null)
+                return (null, null, null);
+
+            int? citaId = hospitalizacion.Consultas?
+                .OrderByDescending(c => c.FechaYHoraInicioConsulta)
+                .Select(c => c.CitasId)
+                .FirstOrDefault(id => id.HasValue && id.Value > 0);
+
+            if (!citaId.HasValue || citaId.Value <= 0)
+            {
+                citaId = _context.Citass
+                    .Where(c => c.HabitacionId == habitacionId && !c.Eliminado && !c.Finalizada)
+                    .OrderByDescending(c => c.FechaInicio)
+                    .Select(c => (int?)c.Id)
+                    .FirstOrDefault();
+            }
+
+            return (hospitalizacion.Id, citaId, hospitalizacion.Paciente);
         }
         public void DeleteCategoria(int categoriaId)
         {
@@ -172,16 +205,29 @@ namespace Database.Shared.Data
 
         public IList<CategoriaHabitacionTarifa> GetTarifasHabitacion(int habitacionId)
         {
-            var habitacion = _context.Habitaciones
-                .Include(h => h.CategoriaHabitacion)
-                .FirstOrDefault(h => h.Id == habitacionId);
+            if (habitacionId <= 0)
+                return new List<CategoriaHabitacionTarifa>();
 
-            if (habitacion?.CategoriaHabitacion == null)
+            var categoriaId = _context.Habitaciones
+                .Where(h => h.Id == habitacionId && !h.Eliminada)
+                .Select(h => h.CategoriaHabitacionId)
+                .FirstOrDefault();
+
+            if (categoriaId <= 0)
+                return new List<CategoriaHabitacionTarifa>();
+
+            return GetTarifasCategoria(categoriaId);
+        }
+
+        public IList<CategoriaHabitacionTarifa> GetTarifasCategoria(int categoriaId)
+        {
+            if (categoriaId <= 0)
                 return new List<CategoriaHabitacionTarifa>();
 
             return _context.CategoriaHabitacionTarifas
-                .Where(t => t.CategoriaHabitacionId == habitacion.CategoriaHabitacionId)
-                .ToList(); 
+                .Where(t => t.CategoriaHabitacionId == categoriaId && !t.Eliminada)
+                .OrderBy(t => t.NombreTarifa)
+                .ToList();
         }
     }
 

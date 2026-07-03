@@ -10,6 +10,7 @@ using Database.Shared.Models;
 using Database.Shared.IRepository;
 using Database.Shared.Enumeraciones;
 using farmamest.Service.IService;
+using farmamest.Utilidades;
 
 namespace sistema.Controllers
 {
@@ -40,11 +41,11 @@ namespace sistema.Controllers
         // 1. Obtener lista de productos (medicamentos con stock)
         // ==========================================================
         [HttpPost]
-        public JsonResult ConsultarProductosNoControlados()
+        public JsonResult ConsultarProductosNoControlados(int? bodegaId)
         {
             try
             {
-                var productos = _productoRepository.GetProductosHospitalizacion();
+                var productos = _productoRepository.GetProductosHospitalizacion(bodegaId);
                 return Json(new { exitoso = true, resultado = productos });
             }
             catch (Exception ex)
@@ -65,16 +66,28 @@ namespace sistema.Controllers
             try
             {
                 var userId = _userManager.GetUserId(HttpContext.User);
-                var fechaRegistro = DateTime.Now;
+                var fechaRegistro = HospitalTimeHelper.NowGuatemala();
+                var bodegaId = data.BodegaId.GetValueOrDefault(8);
+
+                var registrosAnteriores = _db.MedicamentosNoControlado
+                    .Where(m => m.HospitalizacionId == data.HospitalizacionId && !m.Eliminado)
+                    .ToList();
+                foreach (var prev in registrosAnteriores)
+                    prev.Eliminado = true;
+                if (registrosAnteriores.Count > 0)
+                    _db.SaveChanges();
 
                 var productosConStock = (
                     from pi in _db.ProductosInventario
                     join p in _db.Productos on pi.ProductoId equals p.Id
                     join b in _db.Bodegas on pi.BodegaId equals b.Id
                     where b.AmbienteId == 3
-                       && pi.BodegaId == 8
+                       && pi.BodegaId == bodegaId
                        && pi.Stock > 0
-                       && p.TipoProductoId == 1
+                       && (p.TipoProductoId == 1
+                           || (p.GrupoTProducto != null
+                               && p.GrupoTProducto.NombreGrupoT != null
+                               && p.GrupoTProducto.NombreGrupoT.ToLower().Contains("psicotrop")))
                     select new
                     {
                         ProductoId = p.Id,
@@ -138,7 +151,9 @@ namespace sistema.Controllers
                 var historial = _medicamentoNoControladoRepository.GetHistorialByHospitalizacion(hospitalizacionId)
                     .Select(m => new
                     {
+                        productoId = m.ProductoId,
                         fechaRegistro = m.FechaRegistro.ToString("dd/MM/yyyy HH:mm"),
+                        fechaProcedimiento = m.FechaProcedimiento,
                         nombre = m.ProductoNombre,
                         unidadesIniciales = m.UnidadesIniciales,
                         unidadesExtra = m.UnidadesExtra,
@@ -161,6 +176,7 @@ namespace sistema.Controllers
     public class GuardarMedNoControladosDto
     {
         public int HospitalizacionId { get; set; }
+        public int? BodegaId { get; set; }
         public DateTime? FechaProcedimiento { get; set; }
         public List<MedicamentoNoControladoRegistroDto> Registros { get; set; }
     }

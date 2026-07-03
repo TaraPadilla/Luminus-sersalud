@@ -20,7 +20,7 @@
                     </div>
                     <div class="col-md-3 form-group">
                         <label for="numeroPaciente"># Paciente</label>
-                        <input type="text" id="numeroPaciente" class="form-control" data-bind="value: numeroPaciente" placeholder="Ingrese el número de paciente" />
+                        <input type="text" id="numeroPaciente" class="form-control" data-bind="value: numeroPaciente" placeholder="Número de expediente" readonly title="Solo lectura. El ID interno se usa automáticamente al guardar." />
                     </div>
                     <div class="col-md-3 form-group">
                         <label for="numeroHabitacion"># Habitación</label>
@@ -257,11 +257,14 @@
     </div>
 </div>
 
+<input type="hidden" id="consentimientoPacienteId" value="@Model.PacienteId" />
+<input type="hidden" id="consentimientoHabitacionId" value="@Model.HabitacionId" />
+
 <script type="application/json" id="viewModelData">
     @Html.Raw(Json.Serialize(Model))
 </script>
 
 @section Scripts
 {
-<script type="text/javascript" src="~/ViewModelKo/FormConsentimientoVM.js"></script>
+<script type="text/javascript" src="~/ViewModelKo/FormConsentimientoVM.js" asp-append-version="true"></script>
 }

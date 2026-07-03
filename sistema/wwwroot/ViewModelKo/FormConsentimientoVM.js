@@ -3,6 +3,7 @@ var FormConsentimientoVM = function () {
 
     // Observables - Datos del Paciente
     self.horaIngreso = ko.observable(new Date().toLocaleString());
+    self.pacienteId = ko.observable(0);
     self.numeroPaciente = ko.observable("");
     self.habitacionId = ko.observable("");
     self.numeroHabitacion = ko.observable("");
@@ -103,25 +104,41 @@ var FormConsentimientoVM = function () {
 
     // Función para auto-completar los datos del médico usando la URL
     self.obtenerDatosMedicoAsignado = function () {
-        const urlParams = new URLSearchParams(window.location.search);
-        const consultaId = urlParams.get('ConsultaId');
-        const citaId = urlParams.get('CitaId');
+        var nombreActual = (self.nombreMedico() || "").trim();
+        if (nombreActual && nombreActual !== "No suministrado") {
+            return;
+        }
 
-        // Solo hacemos la búsqueda si tenemos al menos uno de los IDs
+        function getUrlParamInsensitive(name) {
+            var urlParams = new URLSearchParams(window.location.search);
+            var direct = urlParams.get(name);
+            if (direct) return direct;
+            var lower = name.toLowerCase();
+            for (var pair of urlParams.entries()) {
+                if (pair[0].toLowerCase() === lower) return pair[1];
+            }
+            return null;
+        }
+
+        const consultaId = getUrlParamInsensitive("ConsultaId");
+        const citaId = getUrlParamInsensitive("CitaId");
+
         if (citaId || consultaId) {
             $.ajax({
                 method: "GET",
-                // NOTA: Deberás cambiar esta URL por la ruta real de tu controlador en C# que busca al médico
-                url: '/Citas/ObtenerDatosMedicoPorCita',
-                data: { citaId: citaId, consultaId: consultaId },
+                url: '/Cita/ObtenerDatosMedicoPorCita',
+                data: {
+                    citaId: citaId ? parseInt(citaId, 10) : 0,
+                    consultaId: consultaId ? parseInt(consultaId, 10) : 0
+                },
                 success: function (data) {
                     if (data.exitoso) {
-                        // Llenamos el campo del formulario para que el usuario lo vea
                         self.nombreMedico(data.nombreMedico);
-
-                        // Guardamos la especialidad y la firma de forma oculta para usarlos luego
                         self.especialidadMedico(data.especialidad);
                         self.urlFirmaMedico(data.urlFirma);
+                        if (data.colegiado && self.colegiadoMedico) {
+                            self.colegiadoMedico(data.colegiado);
+                        }
 
                         console.log("Datos del médico cargados exitosamente.");
                     } else {
@@ -163,27 +180,55 @@ var FormConsentimientoVM = function () {
         });
     };
 
+    self.resolverIdsConsentimiento = function () {
+        var urlParams = new URLSearchParams(window.location.search);
+
+        var pacienteId = parseInt(self.pacienteId(), 10);
+        if (!pacienteId || isNaN(pacienteId)) {
+            pacienteId = parseInt($("#consentimientoPacienteId").val(), 10);
+        }
+        if (!pacienteId || isNaN(pacienteId)) {
+            pacienteId = parseInt(urlParams.get("PacienteId"), 10);
+        }
+
+        var habitacionId = parseInt(self.habitacionId(), 10);
+        if (!habitacionId || isNaN(habitacionId)) {
+            habitacionId = parseInt($("#consentimientoHabitacionId").val(), 10);
+        }
+        if (!habitacionId || isNaN(habitacionId)) {
+            habitacionId = parseInt(urlParams.get("HabitacionId"), 10);
+        }
+
+        return {
+            pacienteId: pacienteId && !isNaN(pacienteId) ? pacienteId : 0,
+            habitacionId: habitacionId && !isNaN(habitacionId) ? habitacionId : 0,
+        };
+    };
+
     self.guardarFirmaRegistro = function (rutaFirma) {
-        showLoading();
+        if (!rutaFirma) return;
+
+        var ids = self.resolverIdsConsentimiento();
+        if (!ids.pacienteId) {
+            console.warn("No se pudo determinar el paciente para guardar la firma de registro.");
+            return;
+        }
+
         $.ajax({
             method: "POST",
-            url: '/Pacientes/ActualizarFirmaRegistro',
+            url: "/Pacientes/ActualizarFirmaRegistro",
             data: {
-                pacienteId: parseInt(self.numeroPaciente(), 10),
-                rutaFirma: rutaFirma
+                pacienteId: ids.pacienteId,
+                rutaFirma: rutaFirma,
             },
             success: function (data) {
-                if (data.exitoso) {
-                    // alert("La firma del paciente se actualizo correctamente");
-                } else {
-                    hideLoading();
-                    alert(data.mensaje);
+                if (!data.exitoso) {
+                    alert(data.mensaje || "No se pudo actualizar la firma del paciente.");
                 }
             },
-            error: function (data) {
-                hideLoading();
-                alert(data.error);
-            }
+            error: function () {
+                alert("Error de conexión al actualizar la firma del paciente.");
+            },
         });
     };
 
@@ -543,42 +588,21 @@ var FormConsentimientoVM = function () {
 
 
     // Función para guardar el formulario de consentimiento
-    self.guardarFormConsentimientoHospi = function () {
-        if (self.edadResponsable() < 18) {
-            alert("El responsable de la cuenta debe ser mayor de edad.");
-            return;
-        }
-
-        showLoading();
-
-        // Verificar campos obligatorios
-        var camposInvalidos = self.verificarCamposObligatorios();
-
-        if (camposInvalidos.length > 0) {
-            hideLoading();
-            alert(
-                "Por favor, complete todos los campos. Si algún campo no aplica, ingrese 'No aplica' en lugar de dejarlo vacío.\n\n" +
-                "Campos faltantes:\n- " +
-                camposInvalidos.join("\n- ")
-            );
-            return;
-        }
-
-        // 1. CAPTURAR LOS PARÁMETROS DE LA URL
+    self.construirDatosConsentimiento = function () {
         const urlParams = new URLSearchParams(window.location.search);
-        const consultaIdDesdeUrl = urlParams.get('ConsultaId') || "";
-        const citaIdDesdeUrl = urlParams.get('CitaId') || "";
+        const consultaIdDesdeUrl = urlParams.get("ConsultaId") || "";
+        const citaIdDesdeUrl = urlParams.get("CitaId") || "";
+        const ids = self.resolverIdsConsentimiento();
 
-        const datosConsentimiento =
-        {
-            PacienteId: parseInt(self.numeroPaciente(), 10),
-            HabitacionId: parseInt(self.habitacionId(), 10),
+        return {
+            PacienteId: ids.pacienteId,
+            HabitacionId: ids.habitacionId,
 
             HospitalizacionId: "No se especifica",
 
             // Datos del Paciente
             HoraIngreso: self.horaIngreso(),
-            NumeroPaciente: self.numeroPaciente(),
+            NumeroPaciente: String(ids.pacienteId || self.numeroPaciente() || ""),
             NumeroHabitacion: self.numeroHabitacion(),
             NombreCompleto: self.nombreCompleto(),
             EstadoCivil: self.estadoCivil(),
@@ -642,34 +666,72 @@ var FormConsentimientoVM = function () {
 
             // 2. NUEVOS CAMPOS ENVIADOS AL BACKEND
             ConsultaId: consultaIdDesdeUrl ? parseInt(consultaIdDesdeUrl, 10) : null,
-            CitaId: citaIdDesdeUrl ? parseInt(citaIdDesdeUrl, 10) : null
-        }
+            CitaId: citaIdDesdeUrl ? parseInt(citaIdDesdeUrl, 10) : null,
+        };
+    };
 
-        // return console.log(JSON.stringify(datosConsentimiento, null, 4));
-        self.guardarFirmaRegistro(self.urlFirmaPaciente());
-        console.log("Normal", datosConsentimiento);
-
-        // Proceder con el guardado si todos los campos son válidos
-        // Aquí iría el resto de la lógica para guardar el formulario, como la llamada AJAX
+    self.enviarConsentimiento = function (datosConsentimiento) {
         $.ajax({
             method: "POST",
-            url: '/ConsentimientoHospi/Nuevo',
-            data: datosConsentimiento,
+            url: "/ConsentimientoHospi/Nuevo",
+            contentType: "application/json",
+            data: JSON.stringify(datosConsentimiento),
+            dataType: "json",
             success: function (data) {
                 hideLoading();
                 if (data.exitoso) {
-                    // alert("Formulario guardado correctamente.");
-                    generarPDFConsentimiento(parseInt(self.numeroPaciente(), 10), parseInt(self.habitacionId(), 10))
-                    window.close()
+                    generarPDFConsentimiento(
+                        datosConsentimiento.PacienteId,
+                        datosConsentimiento.HabitacionId,
+                    );
+                    window.close();
                 } else {
-                    alert(data.mensaje);
+                    alert(data.mensaje || "No se pudo guardar el consentimiento.");
                 }
             },
-            error: function () {
+            error: function (xhr) {
                 hideLoading();
-                alert("Hubo un error al guardar los datos. Ver consola para detalles.");
-            }
+                console.error(xhr);
+                var msg = "Hubo un error al guardar el consentimiento.";
+                if (xhr.status === 415) {
+                    msg = "Error de formato en la solicitud (415). Recargue la página con Ctrl+F5 e intente de nuevo.";
+                } else if (xhr.responseJSON && xhr.responseJSON.mensaje) {
+                    msg = xhr.responseJSON.mensaje;
+                }
+                alert(msg);
+            },
         });
+    };
+
+    self.guardarFormConsentimientoHospi = function () {
+        var edadResp = parseInt(self.edadResponsable(), 10);
+        if (!isNaN(edadResp) && edadResp < 18) {
+            alert("El responsable de la cuenta debe ser mayor de edad.");
+            return;
+        }
+
+        showLoading();
+
+        var camposInvalidos = self.verificarCamposObligatorios();
+        if (camposInvalidos.length > 0) {
+            hideLoading();
+            alert(
+                "Por favor, complete todos los campos. Si algún campo no aplica, ingrese 'No aplica' en lugar de dejarlo vacío.\n\n" +
+                "Campos faltantes:\n- " +
+                camposInvalidos.join("\n- "),
+            );
+            return;
+        }
+
+        var datosConsentimiento = self.construirDatosConsentimiento();
+        if (!datosConsentimiento.PacienteId || !datosConsentimiento.HabitacionId) {
+            hideLoading();
+            alert("No se pudo identificar el paciente o la habitación. Cierre esta ventana y vuelva a abrirla desde el paso 5 del asistente.");
+            return;
+        }
+
+        self.guardarFirmaRegistro(self.urlFirmaPaciente());
+        self.enviarConsentimiento(datosConsentimiento);
     };
 
     self.guardarFormConsentimientoConDefaults = function () {
@@ -694,109 +756,15 @@ var FormConsentimientoVM = function () {
         //     return;
         // }
 
-        // 1. CAPTURAR LOS PARÁMETROS DE LA URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const consultaIdDesdeUrl = urlParams.get('ConsultaId') || "";
-        const citaIdDesdeUrl = urlParams.get('CitaId') || "";
-
-        const datosConsentimiento =
-        {
-            PacienteId: parseInt(self.numeroPaciente(), 10),
-            HabitacionId: parseInt(self.habitacionId(), 10),
-
-            HospitalizacionId: "No se especifica",
-
-            // Datos del Paciente
-            HoraIngreso: self.horaIngreso(),
-            NumeroPaciente: self.numeroPaciente(),
-            NumeroHabitacion: self.numeroHabitacion(),
-            NombreCompleto: self.nombreCompleto(),
-            EstadoCivil: self.estadoCivil(),
-            DPI: self.dpi(),
-            FechaNacimiento: self.fechaNacimiento(),
-            Edad: self.edad(),
-            Nacionalidad: self.nacionalidad(),
-            Direccion: self.direccion(),
-            Celular: self.celular(),
-            Email: self.email(),
-            TipoSangre: self.tipoSangre(),
-            Genero: self.genero(),
-            Religion: self.religion(),
-            Ocupacion: self.ocupacion(),
-
-            // Información del seguro médico
-            PoseeSeguroMedico: self.poseeSeguroMedico(),
-            Aseguradora: self.aseguradora(),
-            TipoPoliza: self.tipoPoliza(),
-            NombreEmpresa: self.nombreEmpresa(),
-            FormularioPreAutorizacion: self.formularioPreAutorizacion(),
-            TratamientoMedico: self.tratamientoMedico(),
-
-            // Datos del Responsable de la Cuenta
-            NombreResponsable: self.nombreResponsable(),
-            DPIResponsable: self.dpiResponsable(),
-            EdadResponsable: self.edadResponsable(),
-            DireccionResponsable: self.direccionResponsable(),
-            CelularResponsable: self.celularResponsable(),
-            EmailResponsable: self.emailResponsable(),
-            NITResponsable: self.nitResponsable(),
-            NombreFacturacion: self.nombreFacturacion(),
-            NacionalidadResponsable: self.nacionalidadResponsable(),
-            OcupacionResponsable: self.ocupacionResponsable(),
-
-            // Contactos de Emergencia (múltiples)
-            ContactosEmergencia: self.contactosEmergencia().map(function (contacto) {
-                return {
-                    Nombre: contacto.nombre(),
-                    Telefono: contacto.celular(),
-                    Parentesco: contacto.parentesco()
-                };
-            }),
-
-            // Información Adicional
-            HospitalProporcionoMedico: self.hospitalProporcionoMedico(),
-            MedicoAfiliado: self.medicoAfiliado(),
-            NombreMedicoTratante: self.nombreMedico(),
-            RecetaMedica: self.recetaMedica(),
-
-            // Firmas y nombres de quienes firman
-            URLFirmaPaciente: self.urlFirmaPaciente(),
-            URLFirmaResponsable: self.urlFirmaResponsable(),
-            NombreNotaria: self.nombreNotaria(),
-            NombreRepresentanteNarajo: self.nombreRepresentanteNarajo(),
-            URLFirmaNotaria: self.urlFirmaNotaria(),
-            URLFirmaRepresentanteNaranjo: self.urlFirmaRepresentanteNaranjo(),
-
-            // 2. NUEVOS CAMPOS ENVIADOS AL BACKEND
-            ConsultaId: consultaIdDesdeUrl ? parseInt(consultaIdDesdeUrl, 10) : null,
-            CitaId: citaIdDesdeUrl ? parseInt(citaIdDesdeUrl, 10) : null
+        var datosConsentimiento = self.construirDatosConsentimiento();
+        if (!datosConsentimiento.PacienteId || !datosConsentimiento.HabitacionId) {
+            hideLoading();
+            alert("No se pudo identificar el paciente o la habitación.");
+            return;
         }
 
-        // return console.log(JSON.stringify(datosConsentimiento, null, 4));
         self.guardarFirmaRegistro(self.urlFirmaPaciente());
-        console.log("Normal", datosConsentimiento)
-
-        // Proceder con el guardado si todos los campos son válidos
-        // Aquí iría el resto de la lógica para guardar el formulario, como la llamada AJAX
-        $.ajax({
-            method: "POST",
-            url: '/ConsentimientoHospi/Nuevo',
-            data: datosConsentimiento,
-            success: function (data) {
-                hideLoading();
-                if (data.exitoso) {
-                    // alert("Formulario guardado correctamente.");
-                    generarPDFConsentimiento(parseInt(self.numeroPaciente(), 10), parseInt(self.habitacionId(), 10))
-                    window.close()
-                } else {
-                    alert(data.mensaje);
-                }
-            },
-            error: function () {
-                hideLoading();
-                alert("Hubo un error al guardar los datos. Ver consola para detalles.");
-            }
-        });
+        self.enviarConsentimiento(datosConsentimiento);
     };
 
     // Método para eliminar un contacto
@@ -846,17 +814,55 @@ var formConsentimientoVM = new FormConsentimientoVM();
 var viewModelData = JSON.parse(document.getElementById("viewModelData").textContent);
 // console.log(JSON.stringify(viewModelData, null, 4));
 
-function assignToObservables() {
-    for (var property in viewModelData) {
-        if (viewModelData.hasOwnProperty(property)) {
-            if (property.toLowerCase() === "contactosemergencia") continue;
+function findObservableKey(propertyName) {
+    if (!propertyName) return null;
+    if (typeof formConsentimientoVM[propertyName] === "function") return propertyName;
 
-            if (viewModelData[property] !== null && viewModelData[property] !== "") {
-                if (formConsentimientoVM.hasOwnProperty(property)) {
-                    formConsentimientoVM[property](viewModelData[property]);
-                }
-            }
+    var lower = propertyName.toLowerCase();
+    for (var key in formConsentimientoVM) {
+        if (
+            formConsentimientoVM.hasOwnProperty(key) &&
+            key.toLowerCase() === lower &&
+            typeof formConsentimientoVM[key] === "function" &&
+            ko.isObservable(formConsentimientoVM[key])
+        ) {
+            return key;
         }
+    }
+    return null;
+}
+
+function assignToObservables() {
+    if (viewModelData.PacienteId) {
+        formConsentimientoVM.pacienteId(viewModelData.PacienteId);
+    }
+    if (viewModelData.HabitacionId) {
+        formConsentimientoVM.habitacionId(String(viewModelData.HabitacionId));
+    }
+
+    for (var property in viewModelData) {
+        if (!viewModelData.hasOwnProperty(property)) continue;
+        if (property.toLowerCase() === "contactosemergencia") continue;
+        if (property === "PacienteId" || property === "HabitacionId") continue;
+
+        var value = viewModelData[property];
+        if (value === null || value === undefined || value === "") continue;
+
+        var observableKey = findObservableKey(property);
+        if (observableKey) {
+            formConsentimientoVM[observableKey](value);
+        }
+    }
+
+    var ids = formConsentimientoVM.resolverIdsConsentimiento();
+    if (ids.pacienteId) {
+        formConsentimientoVM.pacienteId(ids.pacienteId);
+        if (!formConsentimientoVM.numeroPaciente()) {
+            formConsentimientoVM.numeroPaciente(String(ids.pacienteId));
+        }
+    }
+    if (ids.habitacionId && !formConsentimientoVM.habitacionId()) {
+        formConsentimientoVM.habitacionId(String(ids.habitacionId));
     }
 
     var contactosData = viewModelData.ContactosEmergencia || viewModelData.contactosEmergencia;
@@ -1076,7 +1082,8 @@ function generarPDFConsentimiento(idPaciente, idHabitacion, idHospi = null) {
     const consultaIdDesdeUrl = urlParams.get('ConsultaId') || "";
     const citaIdDesdeUrl = urlParams.get('CitaId') || "";
 
-    const url = `/CrearPDF/GenerarPDFConsentimientoHospi?idPaciente=${idPaciente}&idHabitacion=${idHabitacion}&idHospi=${idHospi}&ConsultaId=${consultaIdDesdeUrl}&CitaId=${citaIdDesdeUrl}`;
+    const citaParam = citaIdDesdeUrl || consultaIdDesdeUrl || "";
+    const url = `/CrearPDF/GenerarPDFConsentimientoHospi?idPaciente=${idPaciente}&idHabitacion=${idHabitacion}&idHospi=${idHospi ?? ""}&citaId=${citaParam}`;
 
     window.open(url);
 }

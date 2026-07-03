@@ -69,23 +69,16 @@ namespace sistema.Models
         public void Init(IBodega bodegaRepository, bool rolFarmacia)
         {
             var bodegas = bodegaRepository.GetList();
-
-            var bodegasOrigen = bodegas
-                .Where(b => b.Id == 40 || b.Id == 41 || b.Id == 42 || b.Id == 4)
-                .ToList();
-
+            var bodegasOrigen = bodegas;
             var bodegasDestino = bodegas;
 
             if (rolFarmacia)
             {
-                // El rol farmacia filtrará cualquier bodega de la lista anterior que se llame exactamente "Bodega"
                 bodegasOrigen = bodegasOrigen.Where(a => a.NombreBodega != "Bodega").ToList();
             }
 
-            this.BodegaOrigenId = 40;
-
-            ListaBodegasOrigen = new SelectList(bodegasOrigen, "Id", "BodegaSucursalText");
-            ListaBodegasDestino = new SelectList(bodegasDestino, "Id", "BodegaSucursalText");
+            ListaBodegasOrigen = new SelectList(bodegasOrigen, "Id", "BodegaSucursalText", BodegaOrigenId);
+            ListaBodegasDestino = new SelectList(bodegasDestino, "Id", "BodegaSucursalText", BodegaDestinoId);
         }
     }
 }

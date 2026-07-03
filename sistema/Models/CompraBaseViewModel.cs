@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Database.Shared.Data;
 using System;
 using farmamest.Models;
+using sistema.Utilidades;
 
 namespace sistema.Models
 {
@@ -72,6 +73,11 @@ namespace sistema.Models
             ListaTipoCompra = new SelectList(compraRepository.TipoCompraLista(), "Id", "Tipo");
             ListaSucursales = new SelectList(sucursalRepository.GetList(), "Id", "NombreSucursal");
             ListaTipoDocumento = new SelectList(compraRepository.GetListTipoDocumento(), "Id", "NombreTipoDocumento");
+        }
+
+        public void Init(IEmpleado empleadoRepository)
+        {
+            ListaEmpleados = EmpleadoSelectListHelper.Crear(empleadoRepository);
         }
 
         //Campos pendientes normalizaci�n

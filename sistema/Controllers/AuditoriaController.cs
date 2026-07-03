@@ -206,7 +206,7 @@ namespace sistema.Controllers
             try
             {
                 var userId = _userManager.GetUserId(HttpContext.User);
-                var personaCreacionAuditoria = _userRepository.GetbyId(userId).NormalizedUserName;
+                var personaCreacionAuditoria = _userRepository.GetUserNameOrDefault(userId);
 
                 // Filtrar productos con stock ingresado
                 productos = productos.Where(a => a.StockIngresado != null).ToList();
@@ -278,7 +278,7 @@ namespace sistema.Controllers
         public IActionResult NuevoSinActualizarStock([FromBody] List<AuditoriaProductoStock> productos)
         {
             var userId = _userManager.GetUserId(HttpContext.User);
-            var personaCreacionAuditoria = (_userRepository.GetbyId(_userManager.GetUserId(HttpContext.User))).NormalizedUserName;
+            var personaCreacionAuditoria = _userRepository.GetUserNameOrDefault(_userManager.GetUserId(HttpContext.User));
 
             var productosArray = productos.Select(p => new
             {

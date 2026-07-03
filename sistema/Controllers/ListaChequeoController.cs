@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using Database.Shared.Models;
 using Database.Shared.IRepository;
+using farmamest.Helpers;
 using farmamest.Service.IService;
 
 namespace farmamest.Controllers
@@ -20,6 +22,12 @@ namespace farmamest.Controllers
             ReferenceHandler     = ReferenceHandler.IgnoreCycles
         };
 
+        private static readonly JsonSerializerOptions _jsonInputOpts = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            ReferenceHandler = ReferenceHandler.IgnoreCycles
+        };
+
         public ListaChequeoController(
             IListaChequeoService listaChequeoService,
             UserManager<User> userManager)
@@ -29,10 +37,12 @@ namespace farmamest.Controllers
         }
 
         [HttpPost]
-        public string AgregarListaChequeo([FromBody] ListaChequeoInputVM model)
+        public async Task<string> AgregarListaChequeo()
         {
             try
             {
+                var model = await HttpRequestJsonHelper.LeerCuerpoJsonAsync<ListaChequeoInputVM>(
+                    Request, this, _jsonInputOpts);
                 if (model == null)
                     return JsonSerializer.Serialize(new { exitoso = false, resultado = "Datos inválidos." }, _jsonOpts);
 
@@ -51,6 +61,7 @@ namespace farmamest.Controllers
                     FechaNacimiento     = model.FechaNacimiento,
                     FechaChequeo        = model.FechaChequeo,
                     HoraChequeo         = model.HoraChequeo,
+                    MedicoTratante      = model.MedicoTratante,
 
                     // ENTRADA — Paciente
                     CI_NombreConfirma        = model.CI_NombreConfirma,
@@ -74,6 +85,8 @@ namespace farmamest.Controllers
                     // PAUSA — Cirujano
                     CP_Presentacion          = model.CP_Presentacion,
                     CP_NombrePacienteCirujano = model.CP_NombrePacienteCirujano,
+                    CP_ApellidoPacienteCirujano = model.CP_ApellidoPacienteCirujano,
+                    CP_FechaNacCirujano      = model.CP_FechaNacCirujano,
                     CP_NombreCirugia         = model.CP_NombreCirugia,
                     CP_EventosCriticos       = model.CP_EventosCriticos,
                     CP_TiempoDuracion        = model.CP_TiempoDuracion,
@@ -137,10 +150,12 @@ namespace farmamest.Controllers
         }
 
         [HttpPost]
-        public string ActualizarListaChequeo([FromBody] ListaChequeoInputVM model)
+        public async Task<string> ActualizarListaChequeo()
         {
             try
             {
+                var model = await HttpRequestJsonHelper.LeerCuerpoJsonAsync<ListaChequeoInputVM>(
+                    Request, this, _jsonInputOpts);
                 if (model == null || model.Id == 0)
                     return JsonSerializer.Serialize(new { exitoso = false, resultado = "Id inválido." }, _jsonOpts);
 
@@ -155,6 +170,7 @@ namespace farmamest.Controllers
                     FechaNacimiento   = model.FechaNacimiento,
                     FechaChequeo      = model.FechaChequeo,
                     HoraChequeo       = model.HoraChequeo,
+                    MedicoTratante    = model.MedicoTratante,
 
                     // ENTRADA — Paciente
                     CI_NombreConfirma   = model.CI_NombreConfirma,
@@ -178,6 +194,8 @@ namespace farmamest.Controllers
                     // PAUSA — Cirujano
                     CP_Presentacion           = model.CP_Presentacion,
                     CP_NombrePacienteCirujano = model.CP_NombrePacienteCirujano,
+                    CP_ApellidoPacienteCirujano = model.CP_ApellidoPacienteCirujano,
+                    CP_FechaNacCirujano      = model.CP_FechaNacCirujano,
                     CP_NombreCirugia          = model.CP_NombreCirugia,
                     CP_EventosCriticos        = model.CP_EventosCriticos,
                     CP_TiempoDuracion         = model.CP_TiempoDuracion,
@@ -235,6 +253,7 @@ namespace farmamest.Controllers
         public DateTime? FechaNacimiento { get; set; }
         public DateTime? FechaChequeo    { get; set; }
         public string   HoraChequeo      { get; set; }
+        public string   MedicoTratante   { get; set; }
 
         // ENTRADA — Paciente
         public string CI_NombreConfirma   { get; set; }
@@ -258,6 +277,8 @@ namespace farmamest.Controllers
         // PAUSA — Cirujano
         public string CP_Presentacion           { get; set; }
         public string CP_NombrePacienteCirujano { get; set; }
+        public string CP_ApellidoPacienteCirujano { get; set; }
+        public DateTime? CP_FechaNacCirujano   { get; set; }
         public string CP_NombreCirugia          { get; set; }
         public string CP_EventosCriticos        { get; set; }
         public string CP_TiempoDuracion         { get; set; }

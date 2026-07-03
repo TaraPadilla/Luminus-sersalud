@@ -9,14 +9,14 @@ actualizarPreciosVenta();
 /// Funciones Venta /////////
 $('#boton').click(function(){
 var fecha = document.getElementById('reservationtime').value;
-var empleadoid = document.getElementById('empleadoselect').vaalue;
+var empleadoid = document.getElementById('empleadoselect').value;
 
 var datos = "";
 $.ajax({
     method: "POST",
     data: datos,
     dataType: 'json',
-    url: '/CrearPDF/VentasPdf?fecha= '+fecha+'&empleadoid='+empleadoid,
+    url: '/Reportes/ReporteVentas?fecha=' + encodeURIComponent(fecha) + '&empleadoid=' + empleadoid,
     traditional: true,
     success: function (data, state) {
 
@@ -47,7 +47,7 @@ $('#buscartxt').keypress(function (e) {
             method: "POST",
             data: datos,
             dataType: 'json',
-            url: '/Productos/RetornarProducto ',
+            url: '/Productos/RetornarProducto',
             traditional: true,
             success: function (data, state) {
                 agregarATabla(data);
@@ -74,7 +74,7 @@ function agregardetalle(codigo) {
         method: "POST",
         data: datos,
         dataType: 'json',
-        url: '/Productos/RetornarProducto ',
+        url: '/Productos/RetornarProducto',
         traditional: true,
         success: function (data, state) {
             agregarATabla(data);
@@ -541,7 +541,7 @@ function GuardarEnvio() {
             // si tiene exito, reiniciemos la pag
             // pero marquemos que tuvo exito
             console.log(data);
-            window.location.href = '/Venta/Nuevo/';
+            window.location.href = '/Venta/NuevaVentaFarmacia/';
 
         },
         error: function (data) {

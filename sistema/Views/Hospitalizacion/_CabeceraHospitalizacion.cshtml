@@ -3,18 +3,27 @@
 @inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 
 @{
-    var logoBase64 = Config["ImagenLogoBase64"];
+    var logoUrl = Config["ImagenLogoBase64"];
+    if (string.IsNullOrWhiteSpace(logoUrl))
+    {
+        var clienteLogo = Configuration["Cliente"];
+        logoUrl = !string.IsNullOrWhiteSpace(clienteLogo)
+            ? $"/assets/images/logos/logo{clienteLogo}.png"
+            : "/assets/images/logos/logoAVM.png";
+    }
     var idHospi = @Model.HospitalizacionId.ToString();
     string cliente = Configuration["Cliente"]; 
     var usuarioMedicoExterno = User.IsInRole("Medico Externo");
     bool quitarDataTarget = (cliente == "M14" && usuarioMedicoExterno);
 
-
+    var tipoSangreDisplay = string.IsNullOrWhiteSpace(Model.PacienteTipoSangre) ? "No registrado" : Model.PacienteTipoSangre;
+    var pesoDisplay = string.IsNullOrWhiteSpace(Model.PacientePeso) ? "No registrado" : Model.PacientePeso;
+    var tallaDisplay = string.IsNullOrWhiteSpace(Model.PacienteTalla) ? "No registrado" : Model.PacienteTalla;
 }
 
 
 <input type="hidden" id="MedicoAsignadoNombre"       value="@(Model.MedicoAsignado ?? "")" />
-<input type="hidden" id="CitaCirujanoId"              value="@Model.CitaIdPDF" />
+<input type="hidden" id="CitaCirujanoId"              value="@(Model.CitaCirujanoId?.ToString() ?? Model.MedicoAsignadoEmpleadoId?.ToString() ?? Model.Consulta?.Citas?.EmpleadoId?.ToString() ?? "")" />
 <input type="hidden" id="CodigoSeguro"                value="@(Model.CodigoSeguro ?? "")" />
 <input type="hidden" id="CitaPrimerAyudanteNombre"    value="@(Model.CitaPrimerAyudante ?? "")" />
 
@@ -25,7 +34,7 @@
 @* #Region Cabecera Hospitalización *@
 <div class="main-card mb-3 card">
     <div class="d-flex flex-column align-items-center pt-4" style="height: auto;">
-        <img src="@logoBase64" alt="Logo" style="width: 350px; max-width: 90%; height: auto;" class="d-block"> 
+        <img src="@logoUrl" alt="Logo" style="width: 350px; max-width: 90%; height: auto;" class="d-block"> 
         <div class="text-center mb-2">
             <h4 class="display-5 font-weight-bold text-primary mb-1">
                 Admisión #@Model.HospitalizacionId
@@ -41,13 +50,13 @@
 
 @if (!Model.Pagada)
 {
-    <div class="mb-4 p-3 border rounded" style="background-color: #f8f9fa; border-left: 5px solid #28a745 !important;">
+    <div class="mb-4 p-3 border rounded" id="acciones-cuenta-hosp" style="background-color: #f8f9fa; border-left: 5px solid #28a745 !important; position: relative; z-index: 5;">
         <h6 class="text-success small text-uppercase font-weight-bold">Acciones de Cuenta</h6>
         <div class="d-flex flex-wrap mt-2" style="gap: 12px;">
             
             @if (!User.IsInRole("Enfermeria"))
             {
-                <button class="btn btn-shadow btn-success btn-lg px-4" data-bind="click:pagarCuenta">
+                <button type="button" class="btn btn-shadow btn-success btn-lg px-4" data-hosp-accion="pagarCuenta">
                     <i class="fas fa-money-check-alt mr-2"></i>
                     Pagar Q <span data-bind="text:totalPagar" class="font-weight-bold"></span>
                 </button>
@@ -57,7 +66,7 @@
                     || (User.IsInRole("Enfermeria") && (cliente == "SS" || cliente == "M14"))
                     || (User.IsInRole("Medico Interno") && cliente == "M14"))
                 {
-                    <button class="btn btn-shadow btn-outline-primary btn-lg px-4" data-bind="click:verModalCambioHabitacion">
+                    <button type="button" class="btn btn-shadow btn-outline-primary btn-lg px-4" data-hosp-accion="verModalCambioHabitacion">
                         <i class="fas fa-exchange-alt mr-2"></i> Cambiar habitación
                     </button>
                 }
@@ -65,39 +74,47 @@
                 @if (!User.IsInRole("Enfermeria"))
                 {
                    
-                        <button class="btn btn-shadow btn-outline-success btn-lg px-4" data-bind="click:verModalDetalleTotales">
+                        <button type="button" class="btn btn-shadow btn-outline-success btn-lg px-4" data-hosp-accion="verModalDetalleTotales">
                             <i class="fas fa-list-alt mr-2"></i> Detalle de totales
                         </button>
-                    
 
-
-                    
-
-
-                    <button class="btn btn-danger" onclick="enviarHospitalizacionEmail('@Model.HospitalizacionId', '@Model.PacienteNombre', 'carloskpote.25@gmail.com', '@Model.PacienteIdPDF', '@Model.HabitacionIdPDF', '@Context.Request.Query["citaId"]')" title="Enviar por Correo">
+                    <button type="button" class="btn btn-danger btn-hosp-email-paciente"
+                            data-hosp-id="@Model.HospitalizacionId"
+                            data-paciente="@Model.PacienteNombre"
+                            data-email="@(Model.PacienteEmail ?? "")"
+                            data-paciente-id="@Model.PacienteIdPDF"
+                            data-habitacion-id="@Model.HabitacionIdPDF"
+                            data-cita-id="@Context.Request.Query["citaId"]"
+                            title="Enviar por Correo">
                         <i class="fas fa-envelope"></i>
                     </button>
 
-                    <button class="btn btn-danger" onclick="enviarAlertaInventarioEmail('carloskpote.25@gmail.com')" title="Enviar por Correo">
+                    <button type="button" class="btn btn-danger btn-hosp-email-inventario"
+                            data-email="@(Config["EstablecimientoCorreoElectronico"] ?? "")"
+                            title="Enviar alerta de inventario por correo">
                         <i class="fas fa-envelope"></i>
                     </button>
 
-                    <button class="btn btn-success" onclick="enviarResultadosLaboratorioWhatsApp('@Model.HospitalizacionId','@Model.PacienteNombre','+584120122517')" title="Enviar por WhatsApp">
+                    <button type="button" class="btn btn-success btn-hosp-whatsapp"
+                            data-hosp-id="@Model.HospitalizacionId"
+                            data-paciente="@Model.PacienteNombre"
+                            data-celular="@(Model.PacienteCelular ?? Model.PacienteTelefono ?? "")"
+                            title="Enviar por WhatsApp">
                         <i class="fab fa-whatsapp"></i>
                     </button>
                 }
-                    <button class="btn btn-shadow btn-outline-info btn-lg px-4"
-                            data-bind="click: verModalHistorialMedicamentos">
+                    <button type="button" class="btn btn-shadow btn-outline-info btn-lg px-4"
+                            data-hosp-accion="verModalHistorialMedicamentos">
                         <i class="fas fa-pills mr-2"></i> Historial Medicamentos
                     </button>
 
-                    <button class="btn btn-shadow btn-outline-info btn-lg px-4"
-                            data-bind="click: verModalHistorialServicios">
+                    <button type="button" class="btn btn-shadow btn-outline-info btn-lg px-4"
+                            data-hosp-accion="verModalHistorialServicios">
                         <i class="fas fa-hand-holding-medical mr-2"></i> Historial Servicios
                     </button>
 
-                    <button class="btn btn-shadow btn-outline-info btn-lg px-4"
-                            data-bind="click: verModalHistorialExamenes">
+                    <button type="button" class="btn btn-shadow btn-outline-info btn-lg px-4"
+                            data-hosp-accion="verModalHistorialExamenes">
                         <i class="fas fa-microscope mr-2"></i> Historial Exámenes
                     </button>
         </div>
@@ -115,23 +132,23 @@ else
         <div class="d-flex flex-wrap" style="gap: 12px;">
             @if (!User.IsInRole("Enfermeria"))
             {
-                <button class="btn btn-shadow btn-outline-success btn-lg px-4" data-bind="click: verPagosCuenta">
+                <button type="button" class="btn btn-shadow btn-outline-success btn-lg px-4" data-hosp-accion="verPagosCuenta">
                     <i class="fas fa-receipt mr-2"></i> Ver pagos realizados
                 </button>
             }
 
-            <button class="btn btn-shadow btn-outline-info btn-lg px-4"
-                    data-bind="click: verModalHistorialMedicamentos">
+            <button type="button" class="btn btn-shadow btn-outline-info btn-lg px-4"
+                    data-hosp-accion="verModalHistorialMedicamentos">
                 <i class="fas fa-pills mr-2"></i> Historial Medicamentos
             </button>
 
-            <button class="btn btn-shadow btn-outline-info btn-lg px-4"
-                    data-bind="click: verModalHistorialServicios">
+            <button type="button" class="btn btn-shadow btn-outline-info btn-lg px-4"
+                    data-hosp-accion="verModalHistorialServicios">
                 <i class="fas fa-hand-holding-medical mr-2"></i> Historial Servicios
             </button>
 
-            <button class="btn btn-shadow btn-outline-info btn-lg px-4"
-                    data-bind="click: verModalHistorialExamenes">
+            <button type="button" class="btn btn-shadow btn-outline-info btn-lg px-4"
+                    data-hosp-accion="verModalHistorialExamenes">
                 <i class="fas fa-microscope mr-2"></i> Historial Exámenes
             </button>
         </div>
@@ -163,26 +180,23 @@ else
 
                 @if (!User.IsInRole("Enfermeria"))
                 {
-                    if (cliente != "SS")
-                    {
-                        <button class="btn btn-shadow btn-outline-success btn-lg px-4" data-bind="click:verModalDetalleTotales">
-                            <i class="fas fa-list-alt mr-2"></i> Detalle de totales
-                        </button>
-                    }
+                    <button class="btn btn-shadow btn-outline-success btn-lg px-4" data-bind="click:verModalDetalleTotales">
+                        <i class="fas fa-list-alt mr-2"></i> Detalle de totales
+                    </button>
 
 
                     
 
 
-                    <button class="btn btn-danger" onclick="enviarHospitalizacionEmail('@Model.HospitalizacionId', '@Model.PacienteNombre', 'carloskpote.25@gmail.com', '@Model.PacienteIdPDF', '@Model.HabitacionIdPDF', '@Context.Request.Query["citaId"]')" title="Enviar por Correo">
+                    <button class="btn btn-danger" onclick="enviarHospitalizacionEmail('@Model.HospitalizacionId', '@Model.PacienteNombre', '@(Model.PacienteEmail ?? "")', '@Model.PacienteIdPDF', '@Model.HabitacionIdPDF', '@Context.Request.Query["citaId"]')" title="Enviar por Correo">
                         <i class="fas fa-envelope"></i>
                     </button>
 
-                    <button class="btn btn-danger" onclick="enviarAlertaInventarioEmail('carloskpote.25@gmail.com')" title="Enviar por Correo">
+                    <button class="btn btn-danger" onclick="enviarAlertaInventarioEmail('@(Config["EstablecimientoCorreoElectronico"] ?? "")')" title="Enviar alerta de inventario por correo">
                         <i class="fas fa-envelope"></i>
                     </button>
 
-                    <button class="btn btn-success" onclick="enviarResultadosLaboratorioWhatsApp('@Model.HospitalizacionId','@Model.PacienteNombre','+584120122517')" title="Enviar por WhatsApp">
+                    <button class="btn btn-success" onclick="enviarNotificacionHospitalizacionWhatsApp('@Model.HospitalizacionId','@Model.PacienteNombre','@(Model.PacienteCelular ?? Model.PacienteTelefono ?? "")')" title="Enviar por WhatsApp">
                         <i class="fab fa-whatsapp"></i>
                     </button>
                 }
@@ -225,41 +239,104 @@ else
 
                 <div class="mb-4">
                     <h6 class="text-muted small text-uppercase font-weight-bold mb-3">Documentos y Reportes PDF</h6>
-                    <div class="d-flex flex-wrap" style="gap: 10px;">
+
+                    <small class="text-muted d-block mb-2 font-weight-bold">Impresión total</small>
+                    <div class="d-flex flex-wrap mb-3" style="gap: 10px;">
+                        <a class="btn btn-hover-shine btn-danger font-weight-bold" target="_blank"
+                           href="@Url.Action("ExpedienteCompletoPDF", "CrearPDF", new { hospitalizacionId = Model.HospitalizacionId, citaId = Model.CitaIdPDF > 0 ? Model.CitaIdPDF : (int?)null })">
+                            <i class="fas fa-print mr-1"></i> Expediente Completo
+                        </a>
                         @if (!User.IsInRole("Enfermeria"))
                         {
-                            <button class="btn btn-hover-shine btn-outline-danger" data-bind="click:verInformeGeneral">
+                            <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
+                               href="@Url.Action("HospitalizacionInformeGeneralPDF", "CrearPDF", new { hospitalizacionId = Model.HospitalizacionId })">
                                 <i class="fas fa-file-pdf mr-1"></i> Informe Gral.
-                            </button>
-                            <button class="btn btn-hover-shine btn-outline-danger" data-bind="click:verExpedientePaciente">
+                            </a>
+                            <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
+                               href="@Url.Action("HospitalizacionInformeHospitalizacionPDF", "CrearPDF", new { hospitalizacionId = Model.HospitalizacionId })">
+                                <i class="fas fa-file-pdf mr-1"></i> Informe Hosp.
+                            </a>
+                            <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
+                               href="@Url.Action("HospitalizacionInformeDetalladoPDF", "CrearPDF", new { hospitalizacionId = Model.HospitalizacionId })">
+                                <i class="fas fa-file-pdf mr-1"></i> Informe Detallado
+                            </a>
+                            <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
+                               href="@Url.Action("ExpedientePacientePDF", "CrearPDF", new { hospitalizacionId = Model.HospitalizacionId })">
                                 <i class="fas fa-notes-medical mr-1"></i> Expediente
-                            </button>
+                            </a>
                         }
-                        
-                       <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
-   href="@Url.Action("GenerarPDFConsentimientoHospi", "CrearPDF", new { idPaciente = Model.PacienteIdPDF, idHabitacion = Model.HabitacionIdPDF, idHospi = 0, citaId = Context.Request.Query["citaId"] })">
-    <i class="fas fa-file-signature mr-1"></i> Consentimiento
-</a>
+                    </div>
 
-                         <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
+                    <small class="text-muted d-block mb-2 font-weight-bold">Documentos individuales</small>
+                    <div class="d-flex flex-wrap" style="gap: 10px;">
+                        <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
+                           href="@Url.Action("GenerarPDFConsentimientoHospi", "CrearPDF", new { idPaciente = Model.PacienteIdPDF, idHabitacion = Model.HabitacionIdPDF, idHospi = idHospi, citaId = Context.Request.Query["citaId"] })">
+                            <i class="fas fa-file-signature mr-1"></i> Consentimiento
+                        </a>
+
+                        <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
+                           href="@Url.Action("CuestionarioPreAnestesicoPDF", "CrearPDF", new { hospitalizacionId = Model.HospitalizacionId })">
+                            <i class="fas fa-file-medical mr-1"></i> Cuestionario Pre-Anest.
+                        </a>
+
+                        <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
                            href="@Url.Action("GenerarPDFHospiReports","CrearPDF", new { idPaciente = @Model.PacienteIdPDF, idHabitacion = @Model.HabitacionIdPDF, idHospi = @idHospi, report = 1, citaId = Context.Request.Query["citaId"] })">
                             <i class="fas fa-print mr-1"></i> Autorizacion a Sala
                         </a>
 
-                         <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
+                        <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
                            href="@Url.Action("GenerarPDFHospiReports","CrearPDF", new { idPaciente = @Model.PacienteIdPDF, idHabitacion = @Model.HabitacionIdPDF, idHospi = @idHospi, report = 2, citaId = Context.Request.Query["citaId"] })">
                             <i class="fas fa-print mr-1"></i> Asignacion de medico Anes.
                         </a>
 
-                         @* <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
-                           href="@Url.Action("GenerarPDFHospiReports","CrearPDF", new { idPaciente = @Model.PacienteIdPDF, idHabitacion = @Model.HabitacionIdPDF, idHospi = @idHospi, report = 3, citaId = Context.Request.Query["citaId"] })">
-                            <i class="fas fa-print mr-1"></i> Medicamentos Controlados
-                        </a> *@
+                        <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
+                           href="@Url.Action("ListaChequeoPDF", "CrearPDF", new { hospitalizacionId = Model.HospitalizacionId })">
+                            <i class="fas fa-clipboard-check mr-1"></i> Check List
+                        </a>
+
+                        <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
+                           href="@Url.Action("SignosVitalesHospPDF", "CrearPDF", new { hospitalizacionId = Model.HospitalizacionId })">
+                            <i class="fas fa-heartbeat mr-1"></i> Signos Vitales
+                        </a>
+
+                        <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
+                           href="@Url.Action("RegistroAnestesiaPDF", "CrearPDF", new { hospitalizacionId = Model.HospitalizacionId })">
+                            <i class="fas fa-syringe mr-1"></i> Registro Anestésico
+                        </a>
+
+                        <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
+                           href="@Url.Action("HospitalizacionNotaMedicaPDFGetAll", "CrearPDF", new { hospitalizacionId = Model.HospitalizacionId })">
+                            <i class="fas fa-file-medical-alt mr-1"></i> Notas Evolución
+                        </a>
+                        <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
+                           href="@Url.Action("NotasEnfermeriaAllPDF", "CrearPDF", new { hospitalizacionId = Model.HospitalizacionId })">
+                            <i class="fas fa-user-nurse mr-1"></i> Notas Enfermería
+                        </a>
+                        <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
+                           href="@Url.Action("HospitalizacionNotaOperatoriaPDFGetAll", "CrearPDF", new { hospitalizacionId = Model.HospitalizacionId })">
+                            <i class="fas fa-procedures mr-1"></i> Nota Operatoria
+                        </a>
+                        <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
+                           href="@Url.Action("OrdenesMedicasHospPDF", "CrearPDF", new { hospitalizacionId = Model.HospitalizacionId })">
+                            <i class="fas fa-prescription mr-1"></i> Órdenes Médicas
+                        </a>
+                        <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
+                           href="@Url.Action("DocumentosCargadosHospPDF", "CrearPDF", new { hospitalizacionId = Model.HospitalizacionId })">
+                            <i class="fas fa-folder-open mr-1"></i> Documentos Cargados
+                        </a>
 
                         @if(cliente != "M14"){
                         <a class="btn btn-hover-shine btn-outline-success" target="_blank"
                            href="@Url.Action("MedicamentosControladosHospiExcel", "CrearExcel", new { hospitalizacionId = @Model.HospitalizacionId })">
                             <i class="fas fa-file-excel mr-1"></i> Medicamentos Controlados
+                        </a>
+                        <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
+                           href="@Url.Action("MedicamentosControladosHospiPDF", "CrearPDF", new { hospitalizacionId = Model.HospitalizacionId })">
+                            <i class="fas fa-file-pdf mr-1"></i> Medicamentos Controlados PDF
+                        </a>
+                        <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
+                           href="@Url.Action("GenerarPDFHospiReports","CrearPDF", new { idPaciente = @Model.PacienteIdPDF, idHabitacion = @Model.HabitacionIdPDF, idHospi = @idHospi, report = 3, citaId = Context.Request.Query["citaId"] })">
+                            <i class="fas fa-print mr-1"></i> Medicamentos (consentimiento)
                         </a>
                         }
                         else{
@@ -268,6 +345,14 @@ else
                             <a class="btn btn-hover-shine btn-outline-success" target="_blank"
                                 href="@Url.Action("MedicamentosControladosHospiExcel", "CrearExcel", new { hospitalizacionId = @Model.HospitalizacionId })">
                                  <i class="fas fa-file-excel mr-1"></i> Medicamentos Controlados
+                            </a>
+                            <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
+                               href="@Url.Action("MedicamentosControladosHospiPDF", "CrearPDF", new { hospitalizacionId = Model.HospitalizacionId })">
+                                <i class="fas fa-file-pdf mr-1"></i> Medicamentos Controlados PDF
+                            </a>
+                            <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
+                               href="@Url.Action("GenerarPDFHospiReports","CrearPDF", new { idPaciente = @Model.PacienteIdPDF, idHabitacion = @Model.HabitacionIdPDF, idHospi = @idHospi, report = 3, citaId = Context.Request.Query["citaId"] })">
+                                <i class="fas fa-print mr-1"></i> Medicamentos (consentimiento)
                             </a>
                             }
                         }
@@ -341,6 +426,62 @@ else
                         </div>
                     </div>
                 </div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.CitaAnestesista)
+                    || !string.IsNullOrWhiteSpace(Model.CitaPrimerAyudante)
+                    || !string.IsNullOrWhiteSpace(Model.CitaSegundoAyudante)
+                    || !string.IsNullOrWhiteSpace(Model.CitaInstrumentista)
+                    || !string.IsNullOrWhiteSpace(Model.CitaCirculante)
+                    || !string.IsNullOrWhiteSpace(Model.CitaProcedimiento))
+                {
+                    <div class="row no-gutters border-top pt-3 mt-2">
+                        <div class="col-12 mb-2">
+                            <small class="text-muted d-block text-uppercase font-weight-bold">Equipo Quir&uacute;rgico</small>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(Model.CitaProcedimiento))
+                        {
+                            <div class="col-md-12 mb-2">
+                                <span class="text-muted small d-block">Procedimiento</span>
+                                <span class="font-weight-bold">@Model.CitaProcedimiento</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.CitaAnestesista))
+                        {
+                            <div class="col-md-4 mb-2">
+                                <span class="text-muted small d-block">Anestesista</span>
+                                <span class="font-weight-bold"><i class="fas fa-syringe mr-1 text-info"></i>@Model.CitaAnestesista</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.CitaPrimerAyudante))
+                        {
+                            <div class="col-md-4 mb-2">
+                                <span class="text-muted small d-block">1er. Ayudante</span>
+                                <span class="font-weight-bold">@Model.CitaPrimerAyudante</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.CitaSegundoAyudante))
+                        {
+                            <div class="col-md-4 mb-2">
+                                <span class="text-muted small d-block">2do. Ayudante</span>
+                                <span class="font-weight-bold">@Model.CitaSegundoAyudante</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.CitaInstrumentista))
+                        {
+                            <div class="col-md-4 mb-2">
+                                <span class="text-muted small d-block">Instrumentista</span>
+                                <span class="font-weight-bold">@Model.CitaInstrumentista</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.CitaCirculante))
+                        {
+                            <div class="col-md-4 mb-2">
+                                <span class="text-muted small d-block">Circulante</span>
+                                <span class="font-weight-bold">@Model.CitaCirculante</span>
+                            </div>
+                        }
+                    </div>
+                }
             </div>
         </div>
     </div>
@@ -348,6 +489,8 @@ else
 
 @if (!User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio") && !User.IsInRole("Enfermeria"))
 {
+    var seguroActual = (Model.CodigoSeguro ?? "").Trim();
+    var medicoActualId = Model.CitaCirujanoId?.ToString() ?? Model.MedicoAsignadoEmpleadoId?.ToString() ?? Model.Consulta?.Citas?.EmpleadoId?.ToString() ?? "";
     <div class="row">
         <div class="col-12 col-md-4">
             <div class="main-card mb-3 card border-info shadow-sm">
@@ -357,7 +500,12 @@ else
                         <option value="">Seleccionar seguro...</option>
                         @foreach (var item in Model.SegurosSelectListItem)
                         {
-                            <option value="@item.Text">@item.Text</option>
+                            if (string.IsNullOrWhiteSpace(item.Text) || string.IsNullOrWhiteSpace(item.Value))
+                            {
+                                continue;
+                            }
+                            var seguroSeleccionado = string.Equals(item.Text.Trim(), seguroActual, StringComparison.OrdinalIgnoreCase);
+                            <option value="@item.Text" selected="@(seguroSeleccionado ? "selected" : null)">@item.Text</option>
                         }
                     </select>
                     <button class="btn btn-info btn-block mt-2 font-weight-bold" onclick="actualizarSeguro(@Model.CitaIdPDF, @Model.HospitalizacionId)">
@@ -375,7 +523,12 @@ else
                         <option value="">Seleccionar médico principal...</option>
                         @foreach (var item in Model.DoctoresSelectListItem)
                         {
-                            <option value="@item.Value">@item.Text</option>
+                            if (string.IsNullOrWhiteSpace(item.Text) || string.IsNullOrWhiteSpace(item.Value))
+                            {
+                                continue;
+                            }
+                            var medicoSeleccionado = item.Value == medicoActualId;
+                            <option value="@item.Value" selected="@(medicoSeleccionado ? "selected" : null)">@item.Text</option>
                         }
                     </select>
                     <button class="btn btn-secondary btn-block mt-2 font-weight-bold" onclick="actualizarMedicoAsignado(@Model.CitaIdPDF)">
@@ -393,6 +546,10 @@ else
                         <option value="">Seleccionar médico secundario...</option>
                         @foreach (var item in Model.DoctoresSelectListItem)
                         {
+                            if (string.IsNullOrWhiteSpace(item.Text) || string.IsNullOrWhiteSpace(item.Value))
+                            {
+                                continue;
+                            }
                             <option value="@item.Value">@item.Text</option>
                         }
                     </select>
@@ -447,7 +604,7 @@ else
                     <div class="col-md-4 p-1">
                         <div class="p-3 border rounded shadow-sm bg-white" style="border-left: 4px solid #6c757d !important;">
                             <small class="text-muted d-block text-uppercase font-weight-bold">Nombre Completo</small>
-                            <span class="h6 font-weight-bold text-dark mb-0">@Model.PacienteNombre</span>
+                            <span class="h6 font-weight-bold text-dark mb-0" id="hospPacienteNombreDisplay">@Model.PacienteNombre</span>
                         </div>
                     </div>
 
@@ -488,20 +645,13 @@ else
                     </div> *@
 
                     <div class="col-md-4 p-1">
-
-                        <div class="p-3 border rounded shadow-sm bg-white collapsible-card" style="border-left: 4px solid #dc3545 !important; cursor:pointer"  
-                        
-                        
-                        @if (!(cliente == "M14" && usuarioMedicoExterno))
-                        {
-                            @:data-target="collapseBloodType"
-                        }>
+                        <div class="p-3 border rounded shadow-sm bg-white collapsible-card" style="border-left: 4px solid #dc3545 !important; cursor:pointer;" data-target="collapseBloodType">
                         
                             <small class="text-muted d-block text-uppercase font-weight-bold">Tipo de Sangre</small>
                             <span class="h6 font-weight-bold text-danger mb-0" id="spanTipoSangre">
-                                <i class="fas fa-tint mr-2"></i>@Model.PacienteTipoSangre
+                                <i class="fas fa-tint mr-2"></i>@tipoSangreDisplay
                             </span>
-                            <div class="collapse mt-2" id="collapseBloodType">
+                            <div class="collapse mt-2" id="collapseBloodType" onclick="event.stopPropagation();" onmousedown="event.stopPropagation();">
                                 <select id="bloodTypeSelect" class="form-control form-control-sm">
                                     <option value="A+">A+</option>
                                     <option value="A-">A-</option>
@@ -544,20 +694,14 @@ else
                     </div> *@
 
                     <div class="col-md-4 p-1">
-                        <div class="p-3 border rounded shadow-sm bg-white collapsible-card" style="border-left: 4px solid #6c757d !important; cursor: pointer;" 
-                        
-                        @if (!(cliente == "M14" && usuarioMedicoExterno))
-                        {
-                            @:data-target="collapsePeso"
-                        }
-                        >
+                        <div class="p-3 border rounded shadow-sm bg-white collapsible-card" style="border-left: 4px solid #6c757d !important; cursor: pointer;" data-target="collapsePeso">
                             <small class="text-muted d-block text-uppercase font-weight-bold">Peso</small>
                             <span class="h6 font-weight-bold text-dark mb-0" id="spanPeso">
-                                <i class="fas fa-weight mr-2"></i>@Model.PacientePeso
+                                <i class="fas fa-weight mr-2"></i>@pesoDisplay
                             </span>
-                            <div class="collapse mt-2" id="collapsePeso">
+                            <div class="collapse mt-2" id="collapsePeso" onclick="event.stopPropagation();" onmousedown="event.stopPropagation();">
                                 <div class="input-group input-group-sm">
-                                    <input type="number" id="pesoInput" step="0.1" value="@Model.PacientePeso" class="form-control" placeholder="Peso en kg">
+                                    <input type="number" id="pesoInput" step="0.01" min="0" value="@Model.PacientePeso" class="form-control" placeholder="Peso en kg" onclick="event.stopPropagation();" onmousedown="event.stopPropagation();">
                                     <div class="input-group-append">
                                         <span class="input-group-text">kg</span>
                                     </div>
@@ -577,20 +721,14 @@ else
                     </div> *@
 
                     <div class="col-md-4 p-1">
-                        <div class="p-3 border rounded shadow-sm bg-white collapsible-card" style="border-left: 4px solid #6c757d !important; cursor: pointer;" 
-                                                
-                        @if (!(cliente == "M14" && usuarioMedicoExterno))
-                        {
-                            @:data-target="collapseEstatura"
-                        }
-                        >
+                        <div class="p-3 border rounded shadow-sm bg-white collapsible-card" style="border-left: 4px solid #6c757d !important; cursor: pointer;" data-target="collapseEstatura">
                             <small class="text-muted d-block text-uppercase font-weight-bold">Estatura</small>
                             <span class="h6 font-weight-bold text-dark mb-0" id="spanEstatura">
-                                <i class="fas fa-ruler-vertical mr-2"></i>@Model.PacienteTalla
+                                <i class="fas fa-ruler-vertical mr-2"></i>@tallaDisplay
                             </span>
-                            <div class="collapse mt-2" id="collapseEstatura">
+                            <div class="collapse mt-2" id="collapseEstatura" onclick="event.stopPropagation();" onmousedown="event.stopPropagation();">
                                 <div class="input-group input-group-sm">
-                                    <input type="number" id="estaturaInput" step="0.01" value="@Model.PacienteTalla" class="form-control" placeholder="Estatura en metros">
+                                    <input type="number" id="estaturaInput" step="0.01" min="0" value="@Model.PacienteTalla" class="form-control" placeholder="Estatura en metros" onclick="event.stopPropagation();" onmousedown="event.stopPropagation();">
                                     <div class="input-group-append">
                                         <span class="input-group-text">m</span>
                                     </div>
@@ -607,24 +745,40 @@ else
 <script>
     window.EmpresaConfig = {
         Nombre: "@Config["EstablecimientoNombreEmpresa"]",
-        Logo: "@Config["ImagenLogoBase64"]",
+        Logo: "@logoUrl",
         Direccion: "@Config["EstablecimientoDireccion"]",
         Telefono: "@Config["EstablecimientoTelefono"]"
     };
 </script>
 
 <script>
-    document.querySelectorAll('.collapsible-card').forEach(card => {
-        card.addEventListener('click', function(e) {
-            if (e.target.closest('.collapse') || e.target.closest('button') || e.target.closest('select') || e.target.closest('input')) {
-                return;
-            }
-            const targetId = this.getAttribute('data-target');
-            const collapseEl = document.getElementById(targetId);
-            if (collapseEl) {
-                $(collapseEl).collapse('toggle');
-            }
+    hospWhenReady(function ($) {
+        document.querySelectorAll('.collapsible-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                if (e.target.closest('.collapse') || e.target.closest('button') || e.target.closest('select') || e.target.closest('input')) {
+                    return;
+                }
+                const targetId = this.getAttribute('data-target');
+                const collapseEl = document.getElementById(targetId);
+                if (collapseEl) {
+                    $(collapseEl).collapse('toggle');
+                }
+            });
         });
+
+        $('#collapsePeso').on('shown.bs.collapse', function () {
+            var input = document.getElementById('pesoInput');
+            if (input) { input.focus(); input.select(); }
+        });
+        $('#collapseEstatura').on('shown.bs.collapse', function () {
+            var input = document.getElementById('estaturaInput');
+            if (input) { input.focus(); input.select(); }
+        });
+
+        var sangreActual = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PacienteTipoSangre ?? ""));
+        if (sangreActual) {
+            $('#bloodTypeSelect').val(sangreActual);
+        }
     });
 
     function actualizarTipoSangre(pacienteId) {
@@ -633,10 +787,17 @@ else
         $.ajax({
             url: '/Pacientes/ActualizarCampo',
             type: 'POST',
+            dataType: 'json',
             data: { pacienteId: pacienteId, campo: 'TipoSangre', valor: nuevoValor },
             success: function(resp) {
-                if (resp.success) {
+                resp = (window.HospAjax && HospAjax.parseHospJson) ? HospAjax.parseHospJson(resp) : resp;
+                if (resp && resp.success) {
                     document.getElementById('spanTipoSangre').innerHTML = '<i class="fas fa-tint mr-2"></i>' + nuevoValor;
+                    var sangreHidden = document.getElementById('PacienteTipoSangre');
+                    if (sangreHidden) sangreHidden.value = nuevoValor;
+                    if (window.detallesVm && typeof detallesVm.syncMedNoControladosDatosPaciente === 'function') {
+                        detallesVm.syncMedNoControladosDatosPaciente();
+                    }
                     $('#collapseBloodType').collapse('hide');
                     toastr.success('Tipo de sangre actualizado');
                 } else {
@@ -653,11 +814,18 @@ else
         $.ajax({
             url: '/Pacientes/ActualizarCampo',
             type: 'POST',
+            dataType: 'json',
             data: { pacienteId: pacienteId, campo: 'Peso', valor: nuevoValor },
             success: function(resp) {
-                if (resp.success) {
+                resp = (window.HospAjax && HospAjax.parseHospJson) ? HospAjax.parseHospJson(resp) : resp;
+                if (resp && resp.success) {
                     document.getElementById('spanPeso').innerHTML = '<i class="fas fa-weight mr-2"></i>' + nuevoValor;
                     $('#collapsePeso').collapse('hide');
+                    var pesoHidden = document.getElementById('PacientePeso');
+                    if (pesoHidden) pesoHidden.value = nuevoValor;
+                    if (window.detallesVm && typeof detallesVm.syncMedNoControladosDatosPaciente === 'function') {
+                        detallesVm.syncMedNoControladosDatosPaciente();
+                    }
                     toastr.success('Peso actualizado');
                 } else {
                     toastr.error('Error al actualizar');
@@ -673,11 +841,18 @@ else
         $.ajax({
             url: '/Pacientes/ActualizarCampo',
             type: 'POST',
+            dataType: 'json',
             data: { pacienteId: pacienteId, campo: 'Estatura', valor: nuevoValor },
             success: function(resp) {
-                if (resp.success) {
+                resp = (window.HospAjax && HospAjax.parseHospJson) ? HospAjax.parseHospJson(resp) : resp;
+                if (resp && resp.success) {
                     document.getElementById('spanEstatura').innerHTML = '<i class="fas fa-ruler-vertical mr-2"></i>' + nuevoValor;
                     $('#collapseEstatura').collapse('hide');
+                    var tallaHidden = document.getElementById('PacienteTalla');
+                    if (tallaHidden) tallaHidden.value = nuevoValor;
+                    if (window.detallesVm && typeof detallesVm.syncMedNoControladosDatosPaciente === 'function') {
+                        detallesVm.syncMedNoControladosDatosPaciente();
+                    }
                     toastr.success('Estatura actualizada');
                 } else {
                     toastr.error('Error al actualizar');
@@ -689,36 +864,18 @@ else
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════
-     MODAL — HISTORIAL DE MEDICAMENTOS E INSUMOS (CON PAGINACIÓN Y BADGES CORREGIDOS)
+     MODAL — HISTORIAL DE MEDICAMENTOS E INSUMOS (solo APLICADOS)
 ══════════════════════════════════════════════════════════════ -->
-<div id="mdl-historial-medicamentos" title="Historial de Medicamentos e Insumos" style="display:none;">
+<div id="mdl-historial-medicamentos" title="Historial de Medicamentos e Insumos (Aplicados)" style="display:none;">
     <div class="mb-3 d-flex align-items-center" style="gap:10px; flex-wrap:wrap;">
-        <!-- Filtros de estado -->
-        <div class="btn-group btn-group-sm" role="group">
-            <button type="button" class="btn btn-outline-secondary active" id="btnFiltroTodos"
-                    onclick="filtrarHistorialMed('todos')">
-                <i class="fas fa-list mr-1"></i> Todos
-            </button>
-            <button type="button" class="btn btn-outline-success" id="btnFiltroAplicados"
-                    onclick="filtrarHistorialMed('aplicados')">
-                <i class="fas fa-check mr-1"></i> Aplicados
-            </button>
-            <button type="button" class="btn btn-outline-danger" id="btnFiltroPendientes"
-                    onclick="filtrarHistorialMed('pendientes')">
-                <i class="fas fa-clock mr-1"></i> Pendientes
-            </button>
-        </div>
-        <!-- Filtro por origen -->
         <select id="selectFiltroOrigenMed" class="form-control form-control-sm" style="width:220px;"
-                onchange="filtrarHistorialMed(getFiltroEstadoActivo())">
+                onchange="filtrarHistorialMed('aplicados')">
             <option value="">Todos los orígenes</option>
             <option value="Control de Medicamentos">Control de Medicamentos</option>
             <option value="Control de Insumos">Control de Insumos</option>
         </select>
-        <!-- Contadores (badges) sobre el TOTAL de datos (sin filtros) -->
         <span class="badge badge-secondary ml-auto" id="badgeTotalMed">Total: 0</span>
         <span class="badge badge-success" id="badgeAplicadosMed">Aplicados: 0</span>
-        <span class="badge badge-danger" id="badgePendientesMed">Pendientes: 0</span>
     </div>
 
     <div class="table-responsive">
@@ -1023,7 +1180,7 @@ else
             method: 'POST',
             data: { aplicacionId: _aplicacionIdADevolver, motivoDevolucion: motivo },
             success: function(resp) {
-                const data = (typeof resp === 'string') ? JSON.parse(resp) : resp;
+                const data = (window.HospAjax && HospAjax.parseHospJson) ? HospAjax.parseHospJson(resp) : resp;
                 if (data.Exitoso) {
                     const idx = allData.findIndex(r => r.Id === _aplicacionIdADevolver && r.Origen === 'Control de Insumos');
                     if (idx !== -1) {
@@ -1051,34 +1208,16 @@ else
     }
     // ──────────────────────────────────────────────────────
 
-    function getFiltroEstadoActivo() {
-        const activeBtn = document.querySelector('.btn-group .active');
-        if (!activeBtn) return 'todos';
-        const id = activeBtn.id;
-        if (id === 'btnFiltroTodos') return 'todos';
-        if (id === 'btnFiltroAplicados') return 'aplicados';
-        if (id === 'btnFiltroPendientes') return 'pendientes';
-        return 'todos';
-    }
-
     function actualizarBadges() {
-        const total      = allData.length;
-        const aplicados  = allData.filter(r => r.Aplicado).length;
-        const pendientes = total - aplicados;
-        document.getElementById('badgeTotalMed').textContent     = `Total: ${total}`;
-        document.getElementById('badgeAplicadosMed').textContent  = `Aplicados: ${aplicados}`;
-        document.getElementById('badgePendientesMed').textContent = `Pendientes: ${pendientes}`;
+        const total = allData.length;
+        document.getElementById('badgeTotalMed').textContent = `Total: ${total}`;
+        document.getElementById('badgeAplicadosMed').textContent = `Aplicados: ${total}`;
     }
 
     function aplicarFiltros() {
-        const estadoFiltro = getFiltroEstadoActivo();
         const origenFiltro = document.getElementById('selectFiltroOrigenMed').value;
         currentFilteredData = allData.filter(r => {
-            const pasaOrigen = !origenFiltro || r.Origen === origenFiltro;
-            let pasaEstado = true;
-            if (estadoFiltro === 'aplicados')  pasaEstado = r.Aplicado === true;
-            else if (estadoFiltro === 'pendientes') pasaEstado = r.Aplicado === false;
-            return pasaOrigen && pasaEstado;
+            return !origenFiltro || r.Origen === origenFiltro;
         });
     }
 
@@ -1095,31 +1234,22 @@ else
         tbody.innerHTML   = '';
 
         if (datosPagina.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted py-3">No hay registros con este filtro.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted py-3">No hay medicamentos o insumos aplicados.</td></tr>';
         } else {
             datosPagina.forEach(r => {
-                const estadoBadge = r.Aplicado
-                    ? '<span class="badge badge-success"><i class="fas fa-check mr-1"></i>Aplicado</span>'
-                    : '<span class="badge badge-warning text-dark"><i class="fas fa-clock mr-1"></i>Pendiente</span>';
+                const estadoBadge = '<span class="badge badge-success"><i class="fas fa-check mr-1"></i>Aplicado</span>';
 
                 const origenBadge = r.Origen === 'Control de Medicamentos'
                     ? '<span class="badge badge-primary" style="font-size:0.72rem;">Control de Medicamentos</span>'
                     : '<span class="badge badge-info"    style="font-size:0.72rem;">Control de Insumos</span>';
 
                 const hospitalizacionPagada = document.getElementById('HospitalizacionPagada')?.value === 'true';
-                let accionesCell = '-';
+                let accionesCell = '<span class="text-muted">—</span>';
                 if (!hospitalizacionPagada && r.Origen === 'Control de Insumos') {
-                    if (!r.Aplicado) {
-                        accionesCell = `<button class="btn btn-danger btn-sm" title="Eliminar"
-                                            onclick="eliminarInsumoDirectoHistorial(${r.Id}, this)">
-                                            <i class="fas fa-trash"></i>
-                                        </button>`;
-                    } else {
-                        accionesCell = `<button class="btn btn-warning btn-sm text-dark font-weight-bold"
-                                            onclick="abrirPanelDevolucion(${r.Id}, this)">
-                                            <i class="fas fa-undo-alt mr-1"></i>Devolver
-                                        </button>`;
-                    }
+                    accionesCell = `<button class="btn btn-warning btn-sm text-dark font-weight-bold"
+                                        onclick="abrirPanelDevolucion(${r.Id}, this)">
+                                        <i class="fas fa-undo-alt mr-1"></i>Devolver
+                                    </button>`;
                 }
 
                 tbody.innerHTML += `
@@ -1150,12 +1280,6 @@ else
     }
 
     function filtrarHistorialMed(estado) {
-        document.querySelectorAll('.btn-group .btn').forEach(btn => btn.classList.remove('active'));
-        let btnActivo = null;
-        if (estado === 'todos')      btnActivo = document.getElementById('btnFiltroTodos');
-        else if (estado === 'aplicados')  btnActivo = document.getElementById('btnFiltroAplicados');
-        else if (estado === 'pendientes') btnActivo = document.getElementById('btnFiltroPendientes');
-        if (btnActivo) btnActivo.classList.add('active');
         aplicarFiltros();
         currentPage = 1;
         renderizarHistorialMedPaginated();
@@ -1183,34 +1307,18 @@ else
         renderizarHistorialMedPaginated();
     }
 
-    function eliminarInsumoDirectoHistorial(insumoId, btn) {
-        if (!confirm('¿Está seguro de que desea eliminar este insumo pendiente?')) return;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    function recargarHistorialMedicamentos() {
+        const hospId = $("#HospitalizacionId").val();
+        if (!hospId) return;
         $.ajax({
-            url: '/Hospitalizacion/EliminarInsumoDirectoAplicacion',
+            url: '/Hospitalizacion/ConsultarHistorialMedicamentosHospitalizacion',
             method: 'POST',
-            data: { aplicacionId: insumoId },
+            data: { hospitalizacionId: hospId },
             success: function(resp) {
-                const data = (typeof resp === 'string') ? JSON.parse(resp) : resp;
-                if (data.Exitoso) {
-                    allData = allData.filter(r => !(r.Id === insumoId && r.Origen === 'Control de Insumos'));
-                    actualizarBadges();
-                    aplicarFiltros();
-                    const totalPages = Math.ceil(currentFilteredData.length / pageSize) || 1;
-                    if (currentPage > totalPages) currentPage = totalPages;
-                    renderizarHistorialMedPaginated();
-                    toastr.success('Insumo eliminado');
-                } else {
-                    alert('Error: ' + (data.Mensaje || 'No se pudo eliminar.'));
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-trash"></i>';
+                const data = (window.HospAjax && HospAjax.parseHospJson) ? HospAjax.parseHospJson(resp) : resp;
+                if (data.Exitoso && typeof window.cargarDatosHistorial === 'function') {
+                    window.cargarDatosHistorial(data.Resultado || []);
                 }
-            },
-            error: function() {
-                alert('Error de conexión al intentar eliminar el insumo.');
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-trash"></i>';
             }
         });
     }
@@ -1227,8 +1335,11 @@ else
 
     window.cargarDatosHistorial = function(datosDesdeServidor) {
         cerrarPanelDevolucion();
-        allData = datosDesdeServidor.map(item => ({
+        allData = (datosDesdeServidor || [])
+            .filter(item => item.Aplicado === true)
+            .map(item => ({
             Id:               item.Id,
+            HospitalizacionProductoId: item.HospitalizacionProductoId,
             Origen:           item.Origen,
             Nombre:           item.Nombre,
             CantidadTotal:    item.CantidadTotal,
@@ -1387,7 +1498,7 @@ function cargarHistorialServicios() {
         method: 'POST',
         data: { hospitalizacionId: hospitalizacionId },
         success: function(response) {
-            let data = (typeof response === 'string') ? JSON.parse(response) : response;
+            let data = (window.HospAjax && HospAjax.parseHospJson) ? HospAjax.parseHospJson(response) : response;
             if (data.Exitoso && data.Resultado) {
                 // Mapear campos para mantener consistencia
                 allDataServ = data.Resultado.map(s => ({
@@ -1433,6 +1544,7 @@ function verModalHistorialServicios() {
 }
 
 // Evento delegado para aplicar servicio desde el historial
+hospWhenReady(function ($) {
 $(document).on('click', '.aplicarServicioDesdeHistorial', function() {
     const servicioId = $(this).data('id');
     if (!servicioId) return;
@@ -1446,7 +1558,7 @@ $(document).on('click', '.aplicarServicioDesdeHistorial', function() {
             cuentaId: document.getElementById('CuentaId')?.value || 0
         },
         success: function(response) {
-            let data = (typeof response === 'string') ? JSON.parse(response) : response;
+            let data = (window.HospAjax && HospAjax.parseHospJson) ? HospAjax.parseHospJson(response) : response;
             if (data.Exitoso) {
                 // Recargar el historial para reflejar cambio
                 cargarHistorialServicios();
@@ -1467,6 +1579,7 @@ $(document).on('click', '.aplicarServicioDesdeHistorial', function() {
             toastr.error('Error de comunicación al aplicar servicio');
         }
     });
+});
 });
 </script>
 
@@ -1606,7 +1719,7 @@ function cargarHistorialExamenes() {
         method: 'POST',
         data: { hospitalizacionId: hospitalizacionId },
         success: function(response) {
-            let data = (typeof response === 'string') ? JSON.parse(response) : response;
+            let data = (window.HospAjax && HospAjax.parseHospJson) ? HospAjax.parseHospJson(response) : response;
             if (data.Exitoso && data.Resultado) {
              
                 allDataExa = (data.Resultado || []).map(ex => ({
@@ -1659,7 +1772,7 @@ function eliminarServicioHistorial(servicioId) {
         method: 'POST',
         data: { hospitalizacionServicioId: servicioId },
         success: function(response) {
-            let data = (typeof response === 'string') ? JSON.parse(response) : response;
+            let data = (window.HospAjax && HospAjax.parseHospJson) ? HospAjax.parseHospJson(response) : response;
             if (data.Exitoso) {
                 toastr.success('Servicio eliminado correctamente');
                 cargarHistorialServicios();  
@@ -1680,9 +1793,11 @@ function eliminarServicioHistorial(servicioId) {
 }
 
 // Delegar evento para los botones de eliminar (se agregan dinámicamente)
+hospWhenReady(function ($) {
 $(document).on('click', '.eliminarServicioHistorial', function() {
     const servicioId = $(this).data('id');
     if (servicioId) eliminarServicioHistorial(servicioId);
+});
 });
 
 
@@ -1694,7 +1809,7 @@ function eliminarExamenHistorial(examenId) {
         method: 'POST',
         data: { hospitalizacionExamenId: examenId },
         success: function(response) {
-            let data = (typeof response === 'string') ? JSON.parse(response) : response;
+            let data = (window.HospAjax && HospAjax.parseHospJson) ? HospAjax.parseHospJson(response) : response;
             if (data.Exitoso) {
                 toastr.success('Examen eliminado correctamente');
                 cargarHistorialExamenes();
@@ -1711,11 +1826,20 @@ function eliminarExamenHistorial(examenId) {
     });
 }
 
+hospWhenReady(function ($) {
 $(document).on('click', '.eliminarExamenHistorial', function() {
     const examenId = $(this).data('id');
     if (examenId) eliminarExamenHistorial(examenId);
 });
-</script>
 
-<script src="~/js-utilidades-wp-email/SendEmail.js"></script>
-<script src="~/js-utilidades-wp-email/SendWhatsApp.js"></script>
+    var seguroActual = $('#CodigoSeguro').val();
+    if (seguroActual) {
+        $('#seguroSelect').val(seguroActual).trigger('change');
+    }
+
+    var medicoActualId = $('#CitaCirujanoId').val();
+    if (medicoActualId) {
+        $('#medicoAsignadoSelect').val(medicoActualId).trigger('change');
+    }
+});
+</script>

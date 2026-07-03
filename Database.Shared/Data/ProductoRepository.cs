@@ -27,6 +27,7 @@ namespace Database.Shared.Data
             return _context.Productos
                 .Include(p => p.ProductosInventario)
                 .ThenInclude(pi => pi.ProductosInventarioPrecios)
+                .Include(p => p.ProductoEquivalencias)
                 .FirstOrDefault(p => p.CodigoReferencia == codigo && !p.Eliminado);
         }
 
@@ -271,7 +272,7 @@ namespace Database.Shared.Data
         public List<Producto> GetListPdf() => _context.Productos.Include(a => a.GrupoTProducto)
                   .Include(a => a.LaboratorioProducto)
                   .OrderBy(a => a.NombreProducto)
-                  .Where(a => a.Eliminado == false && a.TipoBodegaId == 2 && a.TipoProductoId == 10)
+                  .Where(a => a.Eliminado == false && a.TipoBodegaId == 2 && a.TipoProductoId == (int)TipoProductoEnum.Medicamentos)
                   .ToList();
 
         public IList<ProductoYCodigo> GetListParaCotizacion()
@@ -468,7 +469,7 @@ namespace Database.Shared.Data
             .Include(a => a.GrupoTProducto)
             .Include(a => a.LaboratorioProducto)
             .OrderBy(a => a.NombreProducto)
-            .Where(a => a.Eliminado == false && a.TipoBodegaId == 1 && a.TipoProductoId == 10),
+            .Where(a => a.Eliminado == false && a.TipoBodegaId == 1 && a.TipoProductoId == (int)TipoProductoEnum.Medicamentos),
             pageNumber ?? 1, pageSize);
         }
 
@@ -490,7 +491,7 @@ namespace Database.Shared.Data
             .Include(a => a.GrupoTProducto)
             .Include(a => a.PresentacionProducto)
             .OrderBy(a => a.NombreProducto)
-            .Where(a => a.Eliminado == false && a.TipoBodegaId == tipoBodega && a.TipoProductoId == 10).ToList();
+            .Where(a => a.Eliminado == false && a.TipoBodegaId == tipoBodega && a.TipoProductoId == (int)TipoProductoEnum.Medicamentos).ToList();
         }
 
         public IList<Producto> FiltrarPorBusquedaYCategoria(string searchString, int? categoriaId, int tipoBodega)
@@ -511,7 +512,7 @@ namespace Database.Shared.Data
             .Include(a => a.Categoria)
             .Include(a => a.Marca)
             .OrderBy(a => a.NombreProducto)
-            .Where(a => a.Eliminado == false && a.TipoBodegaId == tipoBodega && a.TipoProductoId == 11).ToList();
+            .Where(a => a.Eliminado == false && a.TipoBodegaId == tipoBodega && a.TipoProductoId == (int)TipoProductoEnum.InsumosMedicos).ToList();
         }
 
         public PaginacionList<Producto> PaginacionProductosFarmaciaInsumosMedicos(string searchString, int? pageNumber, int pageSize, int? categoriaId)
@@ -532,7 +533,7 @@ namespace Database.Shared.Data
             return PaginacionList<Producto>.CreateAsyncc(productos
             .Include(a => a.Categoria)
             .OrderBy(a => a.NombreProducto)
-            .Where(a => a.Eliminado == false && a.TipoBodegaId == 1 && a.TipoProductoId == 11),
+            .Where(a => a.Eliminado == false && a.TipoBodegaId == 1 && a.TipoProductoId == (int)TipoProductoEnum.InsumosMedicos),
 
             pageNumber ?? 1, pageSize);
         }
@@ -576,7 +577,7 @@ namespace Database.Shared.Data
             return PaginacionList<Producto>.CreateAsyncc(productos
             .Include(a => a.GrupoTProducto)
             .OrderBy(a => a.NombreProducto)
-            .Where(a => a.Eliminado == false && a.TipoBodegaId == 4 && a.TipoProductoId == 10),
+            .Where(a => a.Eliminado == false && a.TipoBodegaId == 4 && a.TipoProductoId == (int)TipoProductoEnum.Medicamentos),
             pageNumber ?? 1, pageSize);
         }
 
@@ -598,7 +599,7 @@ namespace Database.Shared.Data
             .Include(a => a.GrupoTProducto)
             .Include(a => a.LaboratorioProducto)
             .OrderBy(a => a.NombreProducto)
-            .Where(a => a.Eliminado == false && a.TipoBodegaId == 3 && a.TipoProductoId == 10),
+            .Where(a => a.Eliminado == false && a.TipoBodegaId == 3 && a.TipoProductoId == (int)TipoProductoEnum.Medicamentos),
             pageNumber ?? 1, pageSize);
         }
 
@@ -620,7 +621,7 @@ namespace Database.Shared.Data
             return PaginacionList<Producto>.CreateAsyncc(productos
             .Include(a => a.Categoria)
             .OrderBy(a => a.NombreProducto)
-            .Where(a => a.Eliminado == false && a.TipoBodegaId == 3 && a.TipoProductoId == 11),
+            .Where(a => a.Eliminado == false && a.TipoBodegaId == 3 && a.TipoProductoId == (int)TipoProductoEnum.InsumosMedicos),
 
             pageNumber ?? 1, pageSize);
         }
@@ -630,11 +631,32 @@ namespace Database.Shared.Data
         }
         public List<Producto> GetInventarioSP(int? tipoProductoId, int? grupoTerapeuticoId, int? bodegaId, int? sucursalId, int? ambienteId)
         {
-            var productoIds = _context.Productos
-                .FromSqlInterpolated($"SELECT * FROM inventario_productos({tipoProductoId},{grupoTerapeuticoId},{bodegaId},{sucursalId},{ambienteId})")
-                .Select(p => p.Id)
-                .ToList();
+            // Use LINQ instead of mapping inventario_productos to Producto: the SP does not return
+            // every Producto column (e.g. PresentacionProductoId2), which breaks FromSql materialization.
+            var productoQuery = _context.Productos
+                .AsNoTracking()
+                .Where(p => !p.Eliminado);
 
+            if (tipoProductoId.HasValue)
+                productoQuery = productoQuery.Where(p => p.TipoProductoId == tipoProductoId);
+
+            if (grupoTerapeuticoId.HasValue)
+                productoQuery = productoQuery.Where(p => p.GrupoTProductoId == grupoTerapeuticoId);
+
+            if (ambienteId.HasValue)
+                productoQuery = productoQuery.Where(p => p.AmbienteId == ambienteId);
+
+            if (bodegaId.HasValue || sucursalId.HasValue)
+            {
+                productoQuery = productoQuery.Where(p => p.ProductosInventario.Any(pi =>
+                    (!bodegaId.HasValue || pi.BodegaId == bodegaId) &&
+                    (!sucursalId.HasValue || (pi.Bodega != null && pi.Bodega.SucursalId == sucursalId))));
+            }
+
+            var productoIds = productoQuery
+                .Select(p => p.Id)
+                .Distinct()
+                .ToList();
 
             if (!productoIds.Any()) return new List<Producto>();
 
@@ -945,7 +967,7 @@ namespace Database.Shared.Data
             return PaginacionList<Producto>.CreateAsyncc(productos
             .Include(a => a.Categoria)
             .OrderBy(a => a.NombreProducto)
-            .Where(a => a.Eliminado == false && a.TipoBodegaId == 4 && a.TipoProductoId == 11),
+            .Where(a => a.Eliminado == false && a.TipoBodegaId == 4 && a.TipoProductoId == (int)TipoProductoEnum.InsumosMedicos),
 
             pageNumber ?? 1, pageSize);
         }
@@ -996,8 +1018,8 @@ namespace Database.Shared.Data
 
             //return PaginacionList<Producto>.CreateAsyncc(productos
             //.Where(a => a.Eliminado == false)
-            //.Where(a => a.Stock <= 1 && a.TipoBodegaId == 2 && a.TipoProductoId == 10
-            //    || a.Stock <= 5 && a.TipoBodegaId == 2 && a.TipoProductoId == 11),
+            //.Where(a => a.Stock <= 1 && a.TipoBodegaId == 2 && a.TipoProductoId == (int)TipoProductoEnum.Medicamentos
+            //    || a.Stock <= 5 && a.TipoBodegaId == 2 && a.TipoProductoId == (int)TipoProductoEnum.InsumosMedicos),
             //pageNumber ?? 1, pageSize);
 
             var productos = _context.ProductosInventario.AsQueryable()
@@ -1240,11 +1262,12 @@ namespace Database.Shared.Data
         public PaginacionList<ProductoInventario> PaginacionProximosAVencerFarmacia(string sortOrder, string searchString, int? pageNumber, int pageSize)
         {
             var productos = _context.ProductosInventario
+                .Where(a => !a.Eliminado && !a.Producto.Eliminado)
                 .Where(a => a.FechaVencimientoArticuloCompra > DateTime.Now)
                 .Where(a => a.FechaVencimientoArticuloCompra.HasValue &&
                 (a.FechaVencimientoArticuloCompra.Value - DateTime.Now).Days >= 0 &&
                  (a.FechaVencimientoArticuloCompra.Value - DateTime.Now).Days <= 90)
-                .Where(a => a.BodegaId == 1)
+                .Where(a => a.Bodega != null && a.Bodega.AmbienteId == (int)AmbienteEnum.Farmacia)
                 .AsQueryable();
 
 
@@ -1303,11 +1326,12 @@ namespace Database.Shared.Data
         {
 
             var productos = _context.ProductosInventario
+                .Where(a => !a.Eliminado && !a.Producto.Eliminado)
                 .Where(a => a.FechaVencimientoArticuloCompra > DateTime.Now)
                 .Where(a => a.FechaVencimientoArticuloCompra.HasValue &&
                 (a.FechaVencimientoArticuloCompra.Value - DateTime.Now).Days >= 0 &&
                  (a.FechaVencimientoArticuloCompra.Value - DateTime.Now).Days <= 90)
-                .Where(a => a.BodegaId == 2)
+                .Where(a => a.Bodega != null && a.Bodega.AmbienteId == (int)AmbienteEnum.Clinica)
                 .AsQueryable();
 
 
@@ -1407,12 +1431,12 @@ namespace Database.Shared.Data
 
         public int GetTotalMedicamentosFarmacia()
         {
-            return _context.Productos.Count(a => a.Eliminado == false && a.TipoBodegaId == 1 && a.TipoProductoId == 10);
+            return _context.Productos.Count(a => a.Eliminado == false && a.TipoBodegaId == 1 && a.TipoProductoId == (int)TipoProductoEnum.Medicamentos);
         }
 
         public int GetTotalInsumosFarmacia()
         {
-            return _context.Productos.Count(a => a.Eliminado == false && a.TipoBodegaId == 1 && a.TipoProductoId == 11);
+            return _context.Productos.Count(a => a.Eliminado == false && a.TipoBodegaId == 1 && a.TipoProductoId == (int)TipoProductoEnum.InsumosMedicos);
         }
 
         public int GetTotalMedicamentosClinica(int? grupoTerapeuticoId, int? sucursalId)
@@ -1442,7 +1466,7 @@ namespace Database.Shared.Data
 
         public int GetTotalMedicamentosLab()
         {
-            return _context.Productos.Count(a => a.Eliminado == false && a.TipoBodegaId == 4 && a.TipoProductoId == 10);
+            return _context.Productos.Count(a => a.Eliminado == false && a.TipoBodegaId == 4 && a.TipoProductoId == (int)TipoProductoEnum.Medicamentos);
         }
 
         public int GetTotalInsumosClinica(int? categoriaId)
@@ -1461,17 +1485,17 @@ namespace Database.Shared.Data
 
         public int GetTotalInsumosLab()
         {
-            return _context.Productos.Count(a => a.Eliminado == false && a.TipoBodegaId == 4 && a.TipoProductoId == 11);
+            return _context.Productos.Count(a => a.Eliminado == false && a.TipoBodegaId == 4 && a.TipoProductoId == (int)TipoProductoEnum.InsumosMedicos);
         }
 
         public int GetTotalMedicamentosBodega()
         {
-            return _context.Productos.Count(a => a.Eliminado == false && a.TipoBodegaId == 3 && a.TipoProductoId == 10);
+            return _context.Productos.Count(a => a.Eliminado == false && a.TipoBodegaId == 3 && a.TipoProductoId == (int)TipoProductoEnum.Medicamentos);
         }
 
         public int GetTotalInsumosBodega()
         {
-            return _context.Productos.Count(a => a.Eliminado == false && a.TipoBodegaId == 3 && a.TipoProductoId == 11);
+            return _context.Productos.Count(a => a.Eliminado == false && a.TipoBodegaId == 3 && a.TipoProductoId == (int)TipoProductoEnum.InsumosMedicos);
         }
 
         public IList<Producto> GetProductosLaboratorio(int? laboratorioId = null)
@@ -1533,7 +1557,7 @@ namespace Database.Shared.Data
 
         public IList<Producto> GetMedicamentosFarmaciaList()
         {
-            return _context.Productos.Where(a => a.Eliminado == false && a.TipoBodegaId == 1 && a.TipoProductoId == 10).ToList();
+            return _context.Productos.Where(a => a.Eliminado == false && a.TipoBodegaId == 1 && a.TipoProductoId == (int)TipoProductoEnum.Medicamentos).ToList();
         }
 
         #region Unidades
@@ -1841,10 +1865,12 @@ namespace Database.Shared.Data
 
             var data = _context.ProductosInventarioPrecios
                 .Include(x => x.ProductoInventario)
+                    .ThenInclude(pi => pi.Bodega)
                 .Include(x => x.Precio)
                 .Where(x => x.ProductoInventario.ProductoId == productoId
-                    && (x.ProductoInventario.BodegaId == (int)AmbienteEnum.Hospital
-                    || x.ProductoInventario.BodegaId == (int)AmbienteEnum.Farmacia)
+                    && x.ProductoInventario.Bodega != null
+                    && (x.ProductoInventario.Bodega.AmbienteId == (int)AmbienteEnum.Hospital
+                        || x.ProductoInventario.Bodega.AmbienteId == (int)AmbienteEnum.Farmacia)
                     && !x.Precio.Eliminado).ToList();
 
             return data;
@@ -1925,16 +1951,20 @@ namespace Database.Shared.Data
                 .FirstOrDefault();
         }
 
-        public List<ProductoInventarioDto> GetProductosHospitalizacion()
+        public List<ProductoInventarioDto> GetProductosHospitalizacion(int? bodegaId = null)
         {
+            var bodega = bodegaId.GetValueOrDefault(8);
             return _context.ProductosInventario
                 .Include(pi => pi.Producto)
+                    .ThenInclude(p => p.GrupoTProducto)
                 .Include(pi => pi.Bodega)
-                .Where(pi => pi.BodegaId == 8
+                .Where(pi => pi.BodegaId == bodega
                           && pi.Stock > 0
-                          && pi.Bodega.AmbienteId == 3
-                          && pi.Producto.TipoProductoId == 1
-                          && !pi.Eliminado)
+                          && !pi.Eliminado
+                          && (pi.Producto.TipoProductoId == 1
+                              || (pi.Producto.GrupoTProducto != null
+                                  && pi.Producto.GrupoTProducto.NombreGrupoT != null
+                                  && pi.Producto.GrupoTProducto.NombreGrupoT.ToLower().Contains("psicotrop"))))
                 .GroupBy(pi => pi.ProductoId)
                 .Select(g => new ProductoInventarioDto
                 {

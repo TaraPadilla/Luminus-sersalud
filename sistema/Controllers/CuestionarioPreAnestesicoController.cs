@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using Database.Shared.Models;
+using farmamest.Helpers;
 using farmamest.Service.IService;
 
 namespace farmamest.Controllers
@@ -19,6 +22,12 @@ namespace farmamest.Controllers
             ReferenceHandler = ReferenceHandler.IgnoreCycles
         };
 
+        private static readonly JsonSerializerOptions _jsonInputOpts = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            ReferenceHandler = ReferenceHandler.IgnoreCycles
+        };
+
         public CuestionarioPreAnestesicoController(
             ICuestionarioPreAnestesicoService service,
             UserManager<User> userManager)
@@ -27,11 +36,24 @@ namespace farmamest.Controllers
             _userManager = userManager;
         }
 
+        private static DateTime? NormalizarFechaCalendario(DateTime? fecha)
+        {
+            if (!fecha.HasValue) return null;
+            return DateTime.SpecifyKind(fecha.Value.Date, DateTimeKind.Unspecified);
+        }
+
+        private static string FormatearFechaCalendario(DateTime? fecha)
+        {
+            return fecha.HasValue ? fecha.Value.ToString("yyyy-MM-dd") : null;
+        }
+
         [HttpPost]
-        public string AgregarCuestionario([FromBody] CuestionarioPreAnestesicoInputVM model)
+        public async Task<string> AgregarCuestionario()
         {
             try
             {
+                var model = await HttpRequestJsonHelper.LeerCuerpoJsonAsync<CuestionarioPreAnestesicoInputVM>(
+                    Request, this, _jsonInputOpts);
                 if (model == null)
                     return JsonSerializer.Serialize(new { exitoso = false, resultado = "Datos inválidos." }, _jsonOpts);
 
@@ -48,11 +70,11 @@ namespace farmamest.Controllers
                     NombreCompleto = model.NombreCompleto,
                     RegistroMedico = model.RegistroMedico,
                     Edad = model.Edad,
-                    FechaCuestionario = model.FechaCuestionario,
+                    FechaCuestionario = NormalizarFechaCalendario(model.FechaCuestionario),
                     Peso = model.Peso,
                     Estatura = model.Estatura,
-                    FechaUltimaRegla = model.FechaUltimaRegla,
-                    FechaProcedimiento = model.FechaProcedimiento,
+                    FechaUltimaRegla = NormalizarFechaCalendario(model.FechaUltimaRegla),
+                    FechaProcedimiento = NormalizarFechaCalendario(model.FechaProcedimiento),
                     ProcedimientoProgramado = model.ProcedimientoProgramado,
                     Cirujano = model.Cirujano,
 
@@ -127,7 +149,71 @@ namespace farmamest.Controllers
         {
             try
             {
-                var result = _service.GetByHospitalizacionId(idHospitalizacion);
+                var result = _service.GetByHospitalizacionId(idHospitalizacion)
+                    .Select(c => new
+                    {
+                        c.Id,
+                        c.HospitalizacionId,
+                        FechaRegistro = c.FechaRegistro.ToString("yyyy-MM-dd HH:mm:ss"),
+                        FechaCuestionario = FormatearFechaCalendario(c.FechaCuestionario),
+                        FechaProcedimiento = FormatearFechaCalendario(c.FechaProcedimiento),
+                        FechaUltimaRegla = FormatearFechaCalendario(c.FechaUltimaRegla),
+                        c.NombreCompleto,
+                        c.RegistroMedico,
+                        c.Edad,
+                        c.Peso,
+                        c.Estatura,
+                        c.ProcedimientoProgramado,
+                        c.Cirujano,
+                        c.PA_Alergia,
+                        c.PA_AlergiaCual,
+                        c.PA_Fuma,
+                        c.PA_FumaCuanto,
+                        c.PA_Drogas,
+                        c.PA_DrogasCuales,
+                        c.PA_Alcohol,
+                        c.PA_AlcoholCuanto,
+                        c.PA_Embarazo,
+                        c.PA_EmbarazoCual,
+                        c.PA_Transfusion,
+                        c.PA_TransfusionCual,
+                        c.PA_Asma,
+                        c.PA_AsmaCual,
+                        c.PA_Pulmones,
+                        c.PA_PulmonesCual,
+                        c.PA_Corazon,
+                        c.PA_CorazonCual,
+                        c.PA_AtaqueCardiaco,
+                        c.PA_AtaqueCardiacoCual,
+                        c.PA_Angina,
+                        c.PA_AnginaCual,
+                        c.PA_Soplo,
+                        c.PA_SoploCual,
+                        c.PA_Presion,
+                        c.PA_PresionCual,
+                        c.PA_Higado,
+                        c.PA_HigadoCual,
+                        c.PA_Rinones,
+                        c.PA_RinonesCual,
+                        c.PA_Diabetes,
+                        c.PA_DiabetesCual,
+                        c.PA_Epilepsia,
+                        c.PA_EpilepsiaCual,
+                        c.PA_Derrame,
+                        c.PA_DerrameCual,
+                        c.PA_Tiroides,
+                        c.PA_TiroidesCual,
+                        c.PA_Anestesico,
+                        c.PA_AnestesicoCual,
+                        c.PA_AceptaTransfusion,
+                        c.PA_AceptaTransfusionCual,
+                        c.AI_Medicamentos,
+                        c.AI_Actividad,
+                        c.AI_ActividadDetalle,
+                        c.AI_OperacionesPrevias,
+                        c.AI_Comentarios
+                    })
+                    .ToList();
                 return JsonSerializer.Serialize(new { exitoso = true, resultado = result }, _jsonOpts);
             }
             catch (Exception ex)
@@ -141,10 +227,12 @@ namespace farmamest.Controllers
         }
 
         [HttpPost]
-        public string ActualizarCuestionario([FromBody] CuestionarioPreAnestesicoInputVM model)
+        public async Task<string> ActualizarCuestionario()
         {
             try
             {
+                var model = await HttpRequestJsonHelper.LeerCuerpoJsonAsync<CuestionarioPreAnestesicoInputVM>(
+                    Request, this, _jsonInputOpts);
                 if (model == null || model.Id == 0)
                     return JsonSerializer.Serialize(new { exitoso = false, resultado = "Id inválido." }, _jsonOpts);
 
@@ -157,11 +245,11 @@ namespace farmamest.Controllers
                     NombreCompleto = model.NombreCompleto,
                     RegistroMedico = model.RegistroMedico,
                     Edad = model.Edad,
-                    FechaCuestionario = model.FechaCuestionario,
+                    FechaCuestionario = NormalizarFechaCalendario(model.FechaCuestionario),
                     Peso = model.Peso,
                     Estatura = model.Estatura,
-                    FechaUltimaRegla = model.FechaUltimaRegla,
-                    FechaProcedimiento = model.FechaProcedimiento,
+                    FechaUltimaRegla = NormalizarFechaCalendario(model.FechaUltimaRegla),
+                    FechaProcedimiento = NormalizarFechaCalendario(model.FechaProcedimiento),
                     ProcedimientoProgramado = model.ProcedimientoProgramado,
                     Cirujano = model.Cirujano,
 

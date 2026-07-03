@@ -54,28 +54,45 @@
                                 <span class="badge badge-warning">Pendiente</span>
                                 <!-- /ko -->
                             </td>
-                            <td>
-                                <a data-bind="attr: { href: UrlDescarga }" target="_blank" class="btn btn-sm btn-info">
-                                    <i class="fas fa-eye"></i> Ver
+                            <td class="text-nowrap">
+                                <button type="button" class="btn btn-sm btn-info" data-bind="click: function() { $root.visualizarDocumentoHospitalizacion($data); }">
+                                    <i class="fas fa-eye"></i> Visualizar
+                                </button>
+                                <a data-bind="attr: { href: UrlDescarga }" target="_blank" class="btn btn-sm btn-secondary">
+                                    <i class="fas fa-external-link-alt"></i> Abrir
                                 </a>
                                 @if(!User.IsInRole("Medico Externo")){
                                 <button class="btn btn-sm btn-danger" data-bind="click: $root.eliminarDocumento">
                                     <i class="fas fa-trash-alt"></i> Eliminar
                                 </button>
-                                
-
-
                                 <!-- ko ifnot: Autorizado -->
-                                <button class="btn btn-sm btn-warning" data-bind="click: $root.autorizarDocumento">
-                                    <i class="fas fa-fingerprint"></i> Autorizar
+                                <button class="btn btn-sm btn-warning" data-bind="click: $root.autorizarDocumento" title="Firma digital con huella">
+                                    <i class="fas fa-fingerprint"></i> Firmar
                                 </button>
                                 <!-- /ko -->
-
                                 }
                             </td>
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <div class="border rounded p-2 bg-light mt-3" style="min-height:320px;">
+                <h6 class="text-muted small text-uppercase font-weight-bold mb-2">Vista previa del documento</h6>
+                <!--ko if: documentoPreviewUrl()-->
+                <div class="embed-responsive embed-responsive-16by9 bg-white border rounded">
+                    <iframe class="embed-responsive-item" data-bind="attr: { src: documentoPreviewUrl() }" title="Vista previa documento"></iframe>
+                </div>
+                <p class="small text-muted mt-2 mb-0" data-bind="text: documentoPreviewNombre"></p>
+                <!--/ko-->
+                <!--ko ifnot: documentoPreviewUrl()-->
+                <div class="d-flex align-items-center justify-content-center text-muted" style="min-height:260px;">
+                    <div class="text-center">
+                        <i class="fas fa-file-alt fa-3x mb-2 opacity-50"></i>
+                        <p class="mb-0">Use <strong>Visualizar</strong> para ver el documento aquí. Los pendientes requieren firma con huella.</p>
+                    </div>
+                </div>
+                <!--/ko-->
             </div>
         </div>
     </div>

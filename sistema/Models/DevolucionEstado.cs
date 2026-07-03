@@ -18,6 +18,7 @@ namespace sistema.Models
             EnProceso => "En Proceso",
             Completado => "Completado",
             Rechazado => "Rechazado",
+            _ => "Borrador"
         };
 
         public static IEnumerable<(int Id, string Nombre)> ObtenerTodos()

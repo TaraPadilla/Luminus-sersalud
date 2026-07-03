@@ -28,6 +28,13 @@ using System.IO;
 using static farmamest.Models.ConsentimientoHospiVM;
 using fmModels = farmamest.Models;
 using Microsoft.AspNetCore.Authorization;
+using farmamest.Service;
+using farmamest.Service.IService;
+using farmamest.Utilidades;
+using Database.Shared.SqlDataSeed;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 
 namespace sistema.Controllers
@@ -71,6 +78,10 @@ namespace sistema.Controllers
 
         private readonly INotaOperatoriaService _notaOperatoriaService;
         private readonly IMedicamentoNoControladoRepository _medicamentoNoControladoRepository;
+        private readonly ICuestionarioPreAnestesicoService _cuestionarioPreAnestesicoService;
+        private readonly IRegistroAnestesiaService _registroAnestesiaService;
+        private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly ILogger<CrearPdfController> _logger;
 
 
         public CrearPdfController(
@@ -107,10 +118,11 @@ namespace sistema.Controllers
             IRequision requisicionRepository,
             IDevolucionNacional devolucionRepository,
             INotaOperatoriaService notaOperatoriaService,
-            IMedicamentoNoControladoRepository medicamentoNoControladoRepository
-
-
-
+            IMedicamentoNoControladoRepository medicamentoNoControladoRepository,
+            ICuestionarioPreAnestesicoService cuestionarioPreAnestesicoService,
+            IRegistroAnestesiaService registroAnestesiaService,
+            IWebHostEnvironment webHostEnvironment,
+            ILogger<CrearPdfController> logger
         )
         {
             _context = context;
@@ -147,7 +159,28 @@ namespace sistema.Controllers
             _devolucionRepository = devolucionRepository;
             _notaOperatoriaService = notaOperatoriaService;
             _medicamentoNoControladoRepository = medicamentoNoControladoRepository;
+            _cuestionarioPreAnestesicoService = cuestionarioPreAnestesicoService;
+            _registroAnestesiaService = registroAnestesiaService;
+            _webHostEnvironment = webHostEnvironment;
+            _logger = logger;
 
+        }
+
+        private string ContentRoot =>
+            _webHostEnvironment?.ContentRootPath ?? Directory.GetCurrentDirectory();
+
+        private Task<IActionResult> RenderPdfAsync(
+            string viewPath,
+            object model,
+            ConvertOptions convertOptions = null)
+        {
+            return PdfGenerationHelper.GetPdfSafeAsync(
+                _generatePdf,
+                _webHostEnvironment,
+                _logger,
+                viewPath,
+                model,
+                convertOptions);
         }
 
         // public async Task<IActionResult> ReciboVentaPdf(int? id)
@@ -176,7 +209,7 @@ namespace sistema.Controllers
 
         //     _generatePdf.SetConvertOptions(options);
 
-        //     return await _generatePdf.GetPdf("Views/CrearPDF/ReciboVentaPdf.cshtml", venta);
+        //     return await RenderPdfAsync("Views/CrearPDF/ReciboVentaPdf.cshtml", venta);
         // }
 
 
@@ -276,15 +309,15 @@ namespace sistema.Controllers
                             // ── 3. Medicamentos / insumos aplicados ──────────────────
                             if (hospi.HospitalizacionesProductos != null)
                             {
-                                foreach (var prod in hospi.HospitalizacionesProductos
-                                                              .Where(p => p.HospitalizacionesProductosAplicaciones != null
-                                                                       && p.HospitalizacionesProductosAplicaciones.Any(a => a.Aplicado)))
+                                foreach (var prod in hospi.HospitalizacionesProductos)
                                 {
-                                    var cantidad = prod.HospitalizacionesProductosAplicaciones
-                                                       .Where(a => a.Aplicado)
-                                                       .Sum(a => a.Cantidad);
+                                    var aplicadas = HospitalizacionCargosHelper
+                                        .AplicacionesVigentes(prod.HospitalizacionesProductosAplicaciones)
+                                        .ToList();
+                                    if (!aplicadas.Any()) continue;
 
-                                    if (cantidad <= 0) continue; // ← solo saltar si no hay cantidad real
+                                    var cantidad = aplicadas.Sum(a => a.Cantidad);
+                                    if (cantidad <= 0) continue;
 
                                     var subtotal = Math.Round(cantidad * prod.PrecioValor, 2);
                                     detallesGenerados.Add(new DetalleVenta
@@ -303,19 +336,50 @@ namespace sistema.Controllers
                                 }
                             }
 
+                            // ── 3b. Control de insumos directos (hospitalización) ──
+                            if (hospi.HospitalizacionInsumosDirectos != null)
+                            {
+                                foreach (var insumo in hospi.HospitalizacionInsumosDirectos.Where(i => !i.Eliminado))
+                                {
+                                    var aplicadas = HospitalizacionCargosHelper
+                                        .AplicacionesVigentesInsumoDirecto(insumo.Aplicaciones)
+                                        .ToList();
+                                    if (!aplicadas.Any()) continue;
+
+                                    var cantidad = aplicadas.Sum(a => a.Cantidad);
+                                    if (cantidad <= 0) continue;
+
+                                    var subtotal = Math.Round(aplicadas.Sum(a => a.Cantidad * insumo.PrecioValor), 2);
+                                    detallesGenerados.Add(new DetalleVenta
+                                    {
+                                        BienOServicio = "B",
+                                        Cantidad = cantidad,
+                                        Precio = Math.Round(insumo.PrecioValor, 2),
+                                        Subtotal = subtotal,
+                                        Total = subtotal,
+                                        Descuento = 0,
+                                        Producto = new Producto
+                                        {
+                                            NombreProducto = insumo.Producto?.NombreProducto ?? "Insumo/Medicamento"
+                                        }
+                                    });
+                                }
+                            }
+
                             // ── 4. Servicios clínicos ────────────────────────────────
                             if (hospi.HospitalizacionesServicios != null)
                             {
                                 foreach (var svc in hospi.HospitalizacionesServicios
                                                          .Where(s => !s.Eliminado)) // ✅ sin filtro de Aplicado
                                 {
-                                    var subtotal = Math.Round(svc.Cantidad * svc.Precio, 2);
+                                    decimal precioSvc = ObtenerPrecioUnitarioHospitalizacionServicio(svc);
+                                    var subtotal = Math.Round(svc.Cantidad * precioSvc, 2);
 
                                     detallesGenerados.Add(new DetalleVenta
                                     {
                                         BienOServicio = "S",
                                         Cantidad = (int)Math.Round(svc.Cantidad, 0),
-                                        Precio = Math.Round(svc.Precio, 2),
+                                        Precio = Math.Round(precioSvc, 2),
                                         Subtotal = subtotal,
                                         Total = subtotal,
                                         Descuento = 0,
@@ -382,7 +446,7 @@ namespace sistema.Controllers
 
             _generatePdf.SetConvertOptions(options);
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/ReciboVentaPdf.cshtml", venta);
+            return await RenderPdfAsync("Views/CrearPDF/ReciboVentaPdf.cshtml", venta);
         }
 
 
@@ -412,7 +476,7 @@ namespace sistema.Controllers
 
             _generatePdf.SetConvertOptions(options);
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/TurnoPDF.cshtml", cita);
+            return await RenderPdfAsync("Views/CrearPDF/TurnoPDF.cshtml", cita);
         }
 
 
@@ -494,7 +558,7 @@ namespace sistema.Controllers
             _generatePdf.SetConvertOptions(options);
 
             // 4. Generar el PDF con la vista actual (comparativa)
-            return await _generatePdf.GetPdf("Views/CrearPDF/CotizacionPDF.cshtml", model);
+            return await RenderPdfAsync("Views/CrearPDF/CotizacionPDF.cshtml", model);
         }
 
 
@@ -544,7 +608,7 @@ namespace sistema.Controllers
 
             _generatePdf.SetConvertOptions(options);
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/CuentasPorCobrarReciboPagoPDF.cshtml", venta);
+            return await RenderPdfAsync("Views/CrearPDF/CuentasPorCobrarReciboPagoPDF.cshtml", venta);
         }
 
         //public async Task<IActionResult> ReciboServicios(int? id)
@@ -571,7 +635,7 @@ namespace sistema.Controllers
 
         //    _generatePdf.SetConvertOptions(options);
 
-        //    return await _generatePdf.GetPdf("Views/CrearPDF/ReciboServicios.cshtml", ventaServicio);
+        //    return await RenderPdfAsync("Views/CrearPDF/ReciboServicios.cshtml", ventaServicio);
         //}
 
         public IActionResult Utilidad()
@@ -623,7 +687,7 @@ namespace sistema.Controllers
 
             var proveedores = _proveedorRepository.GetList();
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/ProveedoresPdf.cshtml", proveedores);
+            return await RenderPdfAsync("Views/CrearPDF/ProveedoresPdf.cshtml", proveedores);
         }
 
         public async Task<IActionResult> EmpleadosPdf()
@@ -631,7 +695,7 @@ namespace sistema.Controllers
 
             var empleados = _empleadoRepository.GetList();
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/EmpleadosPdf.cshtml", empleados);
+            return await RenderPdfAsync("Views/CrearPDF/EmpleadosPdf.cshtml", empleados);
         }
 
         public async Task<IActionResult> MedicosPdf()
@@ -639,7 +703,7 @@ namespace sistema.Controllers
 
             var medicos = _empleadoRepository.GetList();
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/MedicosPdf.cshtml", medicos);
+            return await RenderPdfAsync("Views/CrearPDF/MedicosPdf.cshtml", medicos);
         }
 
         public async Task<IActionResult> ProductosPdf()
@@ -647,14 +711,14 @@ namespace sistema.Controllers
 
             var producto = _productoRepository.GetListPdf();
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/ProductosPdf.cshtml", producto);
+            return await RenderPdfAsync("Views/CrearPDF/ProductosPdf.cshtml", producto);
         }
 
         public async Task<IActionResult> ClientesPdf()
         {
 
             var clientes = _clienteRepository.GetList(); // Asegúrate de que esto devuelve List<Clientes>
-            return await _generatePdf.GetPdf("Views/CrearPDF/ClientesPdf.cshtml", clientes);
+            return await RenderPdfAsync("Views/CrearPDF/ClientesPdf.cshtml", clientes);
 
         }
 
@@ -817,7 +881,7 @@ namespace sistema.Controllers
             };
             //return Json (ventas);
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/CajasPdf.cshtml", model);
+            return await RenderPdfAsync("Views/CrearPDF/CajasPdf.cshtml", model);
         }
 
 
@@ -843,25 +907,21 @@ namespace sistema.Controllers
         //    return new ViewAsPdf("CajaDetalleClinicaPDF", model);
         //}
 
-        //public IActionResult EnviosPdf(string fecha)
-        //{
+        public async Task<IActionResult> EnviosPdf(string fecha)
+        {
+            var fechas = fecha.Split('-');
+            var inicio = DateTime.ParseExact(fechas[0].Trim(), "MM/dd/yyyy hh:mm tt", CultureInfo.InvariantCulture);
+            var fin = DateTime.ParseExact(fechas[1].Trim(), "MM/dd/yyyy hh:mm tt", CultureInfo.InvariantCulture).AddDays(1);
+            var envios = _envioRepository.GetListadoFecha(inicio, fin);
 
-        //    var fechas = fecha.Split('-');
-
-
-
-        //    var ventas = _ventaServicioRepository.GetListadoFecha(Convert.ToDateTime(fechas[0]), Convert.ToDateTime(fechas[1]).AddDays(1));
-        //    //return Json (ventas);
-
-
-        //    return new ViewAsPdf("VentasServiciosPdf", ventas);
-        //}
+            return await RenderPdfAsync("Views/CrearPDF/EnviosPdf.cshtml", envios);
+        }
 
         public async Task<IActionResult> CategoriasLabClinico()
         {
 
             var lista = _laboratorioClinico.GetListCategoriasLab();
-            return await _generatePdf.GetPdf("Views/CrearPDF/CategoriasLabClinicoPDF.cshtml", lista);
+            return await RenderPdfAsync("Views/CrearPDF/CategoriasLabClinicoPDF.cshtml", lista);
 
         }
 
@@ -869,7 +929,7 @@ namespace sistema.Controllers
         {
             var lista = _laboratorioClinico.GetExamenRealizado(id);
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/GenerarReporteExamen.cshtml", lista);
+            return await RenderPdfAsync("Views/CrearPDF/GenerarReporteExamen.cshtml", lista);
         }
 
 
@@ -910,7 +970,7 @@ namespace sistema.Controllers
             }
             #endregion
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/OrdenCompraPDF.cshtml", ordenCompraDetalles);
+            return await RenderPdfAsync("Views/CrearPDF/OrdenCompraPDF.cshtml", ordenCompraDetalles);
         }
 
         public async Task<IActionResult> PaqueteCotizacionPDF(int paqueteId, int? pacienteId)
@@ -987,7 +1047,7 @@ namespace sistema.Controllers
                 }
             }
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/PaqueteCotizacionPDF.cshtml", model);
+            return await RenderPdfAsync("Views/CrearPDF/PaqueteCotizacionPDF.cshtml", model);
         }
 
 
@@ -1037,7 +1097,87 @@ namespace sistema.Controllers
             return $"{years} {yearText} {months} {monthText} y {days} {dayText}";
         }
 
+        private NotaOperatoriaVM MapNotaOperatoriaToPdfVm(
+            NotaOperatoria notaOperatoria,
+            string contentRoot,
+            (string Nombre, string Especialidad, string Colegiado, string FirmaBase64)? medicoTratante = null)
+        {
+            if (notaOperatoria == null)
+                return null;
 
+            string empleadoText = notaOperatoria.Hospitalizacion?.Consultas?
+                .FirstOrDefault()?.Citas?.EmpleadoText ?? "Sin asignar";
+
+            string colegioEmpleado = notaOperatoria.Hospitalizacion?.Consultas?
+                .FirstOrDefault()?.Citas?.Empleado?.Colegiado ?? "No disponible";
+
+            string nombreProfesional = "Sin asignar";
+            if (notaOperatoria.User?.Persona != null)
+                nombreProfesional = notaOperatoria.User.Persona.NombreYApellidos;
+
+            string firmaBase64 = PdfReportHelper.ObtenerFirmaEmpleadoPorUser(notaOperatoria.User, _empleadoRepository, contentRoot);
+            if (string.IsNullOrEmpty(firmaBase64) && !string.IsNullOrWhiteSpace(notaOperatoria.Cirujano))
+            {
+                var empCirujano = _empleadoRepository.GetList()
+                    .FirstOrDefault(e => string.Equals(e.NombreYApellidos, notaOperatoria.Cirujano, StringComparison.OrdinalIgnoreCase));
+                if (empCirujano != null)
+                    firmaBase64 = PdfReportHelper.ObtenerFirmaBase64Local(empCirujano.FirmaEmpleado, contentRoot);
+            }
+
+            if (string.IsNullOrEmpty(firmaBase64) && medicoTratante.HasValue && !string.IsNullOrEmpty(medicoTratante.Value.FirmaBase64))
+                firmaBase64 = medicoTratante.Value.FirmaBase64;
+
+            if (string.IsNullOrEmpty(firmaBase64) && notaOperatoria.Hospitalizacion != null)
+            {
+                var medicoFallback = PdfReportHelper.ResolverMedicoTratanteHospitalizacion(
+                    notaOperatoria.Hospitalizacion, _empleadoRepository, contentRoot);
+                firmaBase64 = medicoFallback.FirmaBase64;
+                if (string.IsNullOrWhiteSpace(empleadoText) || empleadoText == "Sin asignar")
+                    empleadoText = medicoFallback.Nombre;
+            }
+
+            var nombreCirujano = !string.IsNullOrWhiteSpace(notaOperatoria.Cirujano)
+                ? notaOperatoria.Cirujano
+                : nombreProfesional;
+
+            empleadoText = PdfReportHelper.ResolverNombreMedicoPdf(empleadoText, nombreCirujano, empleadoText);
+            if (string.IsNullOrEmpty(firmaBase64) && !string.IsNullOrWhiteSpace(nombreCirujano))
+                firmaBase64 = PdfReportHelper.ObtenerFirmaEmpleadoPorNombre(nombreCirujano, _empleadoRepository, contentRoot);
+
+            if ((colegioEmpleado == "No disponible" || string.IsNullOrWhiteSpace(colegioEmpleado)) && !string.IsNullOrWhiteSpace(empleadoText))
+                colegioEmpleado = PdfReportHelper.ObtenerColegiadoPorNombre(empleadoText, _empleadoRepository, colegioEmpleado);
+
+            if ((colegioEmpleado == "No disponible" || string.IsNullOrWhiteSpace(colegioEmpleado))
+                && medicoTratante.HasValue
+                && !string.IsNullOrWhiteSpace(medicoTratante.Value.Colegiado))
+                colegioEmpleado = medicoTratante.Value.Colegiado;
+
+            return new NotaOperatoriaVM
+            {
+                Id = notaOperatoria.Id,
+                HospitalizacionId = notaOperatoria.HospitalizacionId,
+                DiagnosticoPreOperatorio = notaOperatoria.DiagnosticoPreOperatorio ?? notaOperatoria.Diagnostico,
+                DiagnosticoPostOperatorio = notaOperatoria.DiagnosticoPostOperatorio,
+                OperacionEfectuada = notaOperatoria.OperacionEfectuada ?? notaOperatoria.Evolucion,
+                HallazgosTransOperatorios = notaOperatoria.HallazgosTransOperatorios,
+                FechaOperacion = notaOperatoria.FechaOperacion?.ToString("dd/MM/yyyy"),
+                HoraComenzo = notaOperatoria.HoraComenzo,
+                HoraTermino = notaOperatoria.HoraTermino,
+                Cirujano = nombreCirujano,
+                PrimerAyudante = notaOperatoria.PrimerAyudante,
+                SegundoAyudante = notaOperatoria.SegundoAyudante,
+                Anestesista = notaOperatoria.Anestesista,
+                Instrumentista = notaOperatoria.Instrumentista,
+                Circulante = notaOperatoria.Circulante,
+                FechaRegistro = HospitalTimeHelper.ToGuatemalaDisplay(notaOperatoria.FechaRegistro).ToString("dd/MM/yyyy hh:mm tt"),
+                Profesional = nombreCirujano,
+                PacienteNombre = notaOperatoria.Hospitalizacion?.Paciente?.Nombre ?? "Sin asignar",
+                PacienteEdad = CalcularEdad(notaOperatoria.Hospitalizacion?.Paciente?.FechaNacimiento),
+                PacienteSexoText = notaOperatoria.Hospitalizacion?.Paciente?.sexoText ?? "Sin asignar",
+                Colegiado = colegioEmpleado,
+                FirmaBase64 = firmaBase64
+            };
+        }
 
         public async Task<IActionResult> ConsultaExamenesPDF(int consultaId)
         {
@@ -1067,7 +1207,7 @@ namespace sistema.Controllers
             }
 
 
-            string directorio = Directory.GetCurrentDirectory();
+            string directorio = ContentRoot;
             string rutaRelativa = firma.firmaEmpleado.TrimStart('/');
 
             string rutaFinal = Path.Combine(directorio, "wwwroot", rutaRelativa);
@@ -1085,7 +1225,7 @@ namespace sistema.Controllers
             model.EstablecimientoTelefono = _configuration["EstablecimientoTelefono"];
             model.EstablecimientoCorreoElectronico = _configuration["EstablecimientoCorreoElectronico"];
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/ConsultaExamenesPDF.cshtml", model);
+            return await RenderPdfAsync("Views/CrearPDF/ConsultaExamenesPDF.cshtml", model);
         }
 
         public async Task<IActionResult> generarExamenesSolicitarPdf(int prescripcionId)
@@ -1120,7 +1260,7 @@ namespace sistema.Controllers
                 }
             }
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/generarExamenesSolicitarPdf.cshtml", model);
+            return await RenderPdfAsync("Views/CrearPDF/generarExamenesSolicitarPdf.cshtml", model);
         }
         public async Task<IActionResult> generarExamenesSolicitarAlergologiaPdf(int prescripcionId)
         {
@@ -1163,7 +1303,7 @@ namespace sistema.Controllers
                 }
             }
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/generarExamenesSolicitarAPdf.cshtml", model);
+            return await RenderPdfAsync("Views/CrearPDF/generarExamenesSolicitarAPdf.cshtml", model);
         }
 
         [Microsoft.AspNetCore.Authorization.AllowAnonymous]
@@ -1208,7 +1348,7 @@ namespace sistema.Controllers
                     PageSize = Wkhtmltopdf.NetCore.Options.Size.A4
                 });
 
-                return await _generatePdf.GetPdf("Views/CrearPDF/GenerarResultados.cshtml", model);
+                return await RenderPdfAsync("Views/CrearPDF/GenerarResultados.cshtml", model);
             }
             catch (Exception ex)
             {
@@ -1218,7 +1358,7 @@ namespace sistema.Controllers
         }
 
 
-        public IActionResult HospitalizacionNotaMedica2PDF(int notaMedicaId)
+        public async Task<IActionResult> HospitalizacionNotaMedica2PDF(int notaMedicaId)
         {
             var notaMedica = _hospitalizacionRepository.GetNotaMedica2(notaMedicaId);
 
@@ -1227,24 +1367,43 @@ namespace sistema.Controllers
                 return NotFound("No se encontró la nota médica solicitada.");
             }
 
-            string empleadoText = notaMedica.Hospitalizacion?.Consultas?
-                .FirstOrDefault()?.Citas?.EmpleadoText ?? "Sin asignar";
+            var contentRoot = ContentRoot;
+            var medicoTratante = PdfReportHelper.ResolverMedicoTratanteHospitalizacion(
+                notaMedica.Hospitalizacion, _empleadoRepository, contentRoot);
 
-            string colegioEmpleado = notaMedica?.Hospitalizacion?.Consultas?.FirstOrDefault()?.Citas?.Empleado.Colegiado ?? "No disponible";
+            var consentimientoNm = ResolverConsentimientoHospitalizacion(notaMedica.Hospitalizacion);
+            medicoTratante = PdfReportHelper.ComplementarMedicoTratante(medicoTratante, consentimientoNm, null, null);
+
+            User autorizador = null;
+            if (notaMedica.Autorizado && !string.IsNullOrWhiteSpace(notaMedica.UsuarioAutoriza))
+            {
+                autorizador = _context.Users.AsNoTracking()
+                    .FirstOrDefault(u => u.Id == notaMedica.UsuarioAutoriza);
+            }
 
             var model = new NotaMedica2ViewModel
             {
                 HistoriaProblema = notaMedica?.HistoriaProblema ?? "No disponible",
                 Sintomas = notaMedica?.Sintomas ?? "No disponibles",
                 Diagnostico = notaMedica?.Diagnostico ?? "No disponible",
-                FechaRegistro = notaMedica.FechaRegistro.ToString("dd/MM/yyyy hh:mm: tt"),
-                Profesional = notaMedica?.Profesional?.Persona?.Nombre ?? "Sin asignar",
+                FechaRegistro = HospitalTimeHelper.ToGuatemalaDisplay(notaMedica.FechaRegistro).ToString("dd/MM/yyyy hh:mm tt"),
                 PacienteNombre = notaMedica?.Hospitalizacion?.Paciente?.Nombre ?? "Sin asignar",
                 PacienteEdad = CalcularEdad(notaMedica?.Hospitalizacion?.Paciente?.FechaNacimiento),
                 PacienteSexoText = notaMedica?.Hospitalizacion?.Paciente?.sexoText ?? "Sin asignar",
-                EmpleadoText = empleadoText,
-                ColegioEmpleado = colegioEmpleado
+                Autorizado = notaMedica.Autorizado,
             };
+
+            PdfReportHelper.CompletarProfesionalNotaMedicaPdf(
+                model,
+                notaMedica.Profesional,
+                medicoTratante,
+                notaMedica.Autorizado,
+                notaMedica.UsuarioAutoriza,
+                autorizador == null
+                    ? null
+                    : new Dictionary<string, User> { { autorizador.Id, autorizador } },
+                _empleadoRepository,
+                contentRoot);
 
             var options = new ConvertOptions
             {
@@ -1252,13 +1411,10 @@ namespace sistema.Controllers
                 PageOrientation = Orientation.Portrait,
             };
 
-            _generatePdf.SetConvertOptions(options);
-            var pdf = _generatePdf.GetPdf("Views/CrearPDF/HospitalizacionNotaMedicaPDF.cshtml", model).Result;
-
-            return pdf;
+            return await RenderPdfAsync("Views/CrearPDF/HospitalizacionNotaMedicaPDF.cshtml", model, options);
         }
 
-        public IActionResult HospitalizacionNotaMedicaPDFGetAll(int hospitalizacionId)
+        public async Task<IActionResult> HospitalizacionNotaMedicaPDFGetAll(int hospitalizacionId)
         {
             var notasMedicas = _hospitalizacionRepository.GetNotasMedicasByHospitalizacion(hospitalizacionId);
 
@@ -1268,6 +1424,7 @@ namespace sistema.Controllers
             }
 
             var paciente = notasMedicas.FirstOrDefault()?.Hospitalizacion?.Paciente;
+            var hospitalizacion = notasMedicas.FirstOrDefault()?.Hospitalizacion;
 
             var empleadoText = notasMedicas.FirstOrDefault()?.Hospitalizacion?.Consultas?
                 .FirstOrDefault()?.Citas?.EmpleadoText ?? "Sin asignar";
@@ -1279,20 +1436,57 @@ namespace sistema.Controllers
             var colegioEmpleado = notasMedicas.FirstOrDefault()?.Hospitalizacion?.Consultas?
                 .FirstOrDefault()?.Citas?.Empleado?.Colegiado ?? "No disponible";
 
+            var contentRoot = ContentRoot;
+            var medicoTratante = PdfReportHelper.ResolverMedicoTratanteHospitalizacion(
+                hospitalizacion, _empleadoRepository, contentRoot);
+
+            var consentimientoNm = ResolverConsentimientoHospitalizacion(hospitalizacion);
+            medicoTratante = PdfReportHelper.ComplementarMedicoTratante(medicoTratante, consentimientoNm, null, null);
+
+            var autorizadorIds = notasMedicas
+                .Where(n => n.Autorizado && !string.IsNullOrWhiteSpace(n.UsuarioAutoriza))
+                .Select(n => n.UsuarioAutoriza)
+                .Distinct()
+                .ToList();
+            var autorizadores = autorizadorIds.Any()
+                ? _context.Users.AsNoTracking()
+                    .Where(u => autorizadorIds.Contains(u.Id))
+                    .ToDictionary(u => u.Id)
+                : new Dictionary<string, User>();
+
             var model = new NotaMedica2ListaViewModel
             {
                 PacienteNombre = paciente?.Nombre ?? "Sin asignar",
                 PacienteEdad = CalcularEdad(paciente?.FechaNacimiento),
-                PacienteSexoText = paciente?.sexoText ?? "Sin asignar",
-                EmpleadoText = empleadoText,
-                EmpleadoEspecialidad = empleadoEspecialidad,
-                ColegioEmpleado = colegioEmpleado,
-                NotasMedicas = notasMedicas.Select(nm => new NotaMedica2ViewModel
+                PacienteSexoText = paciente?.Sexo?.DescripcionSexo ?? paciente?.sexoText ?? "Sin asignar",
+                EmpleadoText = medicoTratante.Nombre,
+                EmpleadoEspecialidad = empleadoEspecialidad != "Sin asignar" ? empleadoEspecialidad : medicoTratante.Especialidad,
+                ColegioEmpleado = medicoTratante.Colegiado,
+                NotasMedicas = notasMedicas.Select(nm =>
                 {
-                    Id = nm.Id,
-                    Diagnostico = nm.Diagnostico ?? "No disponible",
-                    FechaRegistro = nm.FechaRegistro.ToString("dd/MM/yyyy hh:mm tt"),
-                    Profesional = nm.Profesional?.Persona?.NombreYApellidos ?? "Sin asignar"
+                    User autorizador = null;
+                    if (nm.Autorizado && !string.IsNullOrWhiteSpace(nm.UsuarioAutoriza))
+                        autorizadores.TryGetValue(nm.UsuarioAutoriza, out autorizador);
+
+                    var notaVm = new NotaMedica2ViewModel
+                    {
+                        Id = nm.Id,
+                        Diagnostico = nm.Diagnostico ?? "No disponible",
+                        FechaRegistro = HospitalTimeHelper.ToGuatemalaDisplay(nm.FechaRegistro).ToString("dd/MM/yyyy hh:mm tt"),
+                        Autorizado = nm.Autorizado,
+                    };
+
+                    PdfReportHelper.CompletarProfesionalNotaMedicaPdf(
+                        notaVm,
+                        nm.Profesional,
+                        medicoTratante,
+                        nm.Autorizado,
+                        nm.UsuarioAutoriza,
+                        autorizador == null ? null : new Dictionary<string, User> { { autorizador.Id, autorizador } },
+                        _empleadoRepository,
+                        contentRoot);
+
+                    return notaVm;
                 }).ToList()
             };
 
@@ -1302,14 +1496,11 @@ namespace sistema.Controllers
                 PageOrientation = Orientation.Portrait,
             };
 
-            _generatePdf.SetConvertOptions(options);
-            var pdf = _generatePdf.GetPdf("Views/CrearPDF/HospitalizacionNotasMedicasPDFGetAll.cshtml", model).Result;
-
-            return pdf;
+            return await RenderPdfAsync("Views/CrearPDF/HospitalizacionNotasMedicasPDFGetAll.cshtml", model, options);
         }
 
         [HttpGet]
-        public IActionResult HospitalizacionNotaOperatoria2PDF(int notaOperatoriaId)
+        public async Task<IActionResult> HospitalizacionNotaOperatoria2PDF(int notaOperatoriaId)
         {
             var notaOperatoria = _hospitalizacionRepository.GetNotaOperatoria(notaOperatoriaId);
 
@@ -1318,34 +1509,8 @@ namespace sistema.Controllers
                 return NotFound("No se encontró la nota operatoria solicitada.");
             }
 
-            string empleadoText = notaOperatoria.Hospitalizacion?.Consultas?
-                .FirstOrDefault()?.Citas?.EmpleadoText ?? "Sin asignar";
-
-            string colegioEmpleado = notaOperatoria.Hospitalizacion?.Consultas?
-                .FirstOrDefault()?.Citas?.Empleado?.Colegiado ?? "No disponible";
-
-            string empleadoEspecialidad = notaOperatoria.Hospitalizacion?.Consultas?
-                .FirstOrDefault()?.Citas?.Empleado?.Especialidad?.NombreEspecialidad ?? "Sin asignar";
-
-            string nombreProfesional = "Sin asignar";
-            if (notaOperatoria.User != null && notaOperatoria.User.Persona != null)
-            {
-                nombreProfesional = notaOperatoria.User.Persona.NombreYApellidos;
-            }
-
-            var model = new NotaMedica2ViewModel
-            {
-                Sintomas = notaOperatoria.Sintomas ?? "No disponibles",
-                Diagnostico = notaOperatoria.Diagnostico ?? "No disponible",
-                Evolucion = notaOperatoria.Evolucion ?? "No disponible",
-                FechaRegistro = notaOperatoria.FechaRegistro.ToString("dd/MM/yyyy hh:mm tt"),
-                Profesional = nombreProfesional,
-                PacienteNombre = notaOperatoria.Hospitalizacion?.Paciente?.Nombre ?? "Sin asignar",
-                PacienteEdad = CalcularEdad(notaOperatoria.Hospitalizacion?.Paciente?.FechaNacimiento),
-                PacienteSexoText = notaOperatoria.Hospitalizacion?.Paciente?.sexoText ?? "Sin asignar",
-                EmpleadoText = empleadoText,
-                ColegioEmpleado = colegioEmpleado,
-            };
+            var contentRoot = ContentRoot;
+            var model = MapNotaOperatoriaToPdfVm(notaOperatoria, contentRoot);
 
             var options = new ConvertOptions
             {
@@ -1353,15 +1518,15 @@ namespace sistema.Controllers
                 PageOrientation = Orientation.Portrait,
             };
 
-            _generatePdf.SetConvertOptions(options);
-            var pdf = _generatePdf.GetPdf("Views/CrearPDF/HospitalizacionNotaOperatoriaPDF.cshtml", model).Result;
-            return pdf;
+            return await RenderPdfAsync("Views/CrearPDF/HospitalizacionNotaOperatoriaPDF.cshtml", model, options);
         }
 
         [HttpGet]
-        public IActionResult HospitalizacionNotaOperatoriaPDFGetAll(int hospitalizacionId)
+        public async Task<IActionResult> HospitalizacionNotaOperatoriaPDFGetAll(int hospitalizacionId)
         {
-            var notas = _hospitalizacionRepository.GetNotasOperatoriasByHospitalizacion(hospitalizacionId);
+            var notas = _hospitalizacionRepository.GetNotasOperatoriasByHospitalizacion(hospitalizacionId)
+                ?.OrderBy(n => n.FechaRegistro)
+                .ToList();
 
             if (notas == null || !notas.Any())
             {
@@ -1372,31 +1537,27 @@ namespace sistema.Controllers
             var paciente = primeraNota.Hospitalizacion?.Paciente;
             var consultaBase = primeraNota.Hospitalizacion?.Consultas?.FirstOrDefault();
 
-            var model = new NotaMedica2ListaViewModel
+            var contentRoot = ContentRoot;
+            var medicoTratante = PdfReportHelper.ResolverMedicoTratanteHospitalizacion(
+                primeraNota.Hospitalizacion, _empleadoRepository, contentRoot);
+
+            var consentimientoOp = ResolverConsentimientoHospitalizacion(primeraNota.Hospitalizacion);
+            medicoTratante = PdfReportHelper.ComplementarMedicoTratante(medicoTratante, consentimientoOp, null, null);
+
+            var model = new NotaOperatoriaListaViewModel
             {
                 PacienteNombre = paciente?.Nombre ?? "Sin asignar",
                 PacienteEdad = CalcularEdad(paciente?.FechaNacimiento),
-                PacienteSexoText = paciente?.sexoText ?? "Sin asignar",
-                EmpleadoText = consultaBase?.Citas?.EmpleadoText ?? "Sin asignar",
-                EmpleadoEspecialidad = consultaBase?.Citas?.Empleado?.Especialidad?.NombreEspecialidad ?? "Sin asignar",
-                ColegioEmpleado = consultaBase?.Citas?.Empleado?.Colegiado ?? "No disponible",
-                NotasMedicas = notas.Select(n =>
-                {
-
-                    string nombreProfesional = "Sin asignar";
-                    if (n.User != null && n.User.Persona != null)
-                    {
-                        nombreProfesional = n.User.Persona.NombreYApellidos;
-                    }
-
-                    return new NotaMedica2ViewModel
-                    {
-                        Id = n.Id,
-                        Diagnostico = n.Diagnostico ?? "No disponible",
-                        FechaRegistro = n.FechaRegistro.ToString("dd/MM/yyyy hh:mm tt"),
-                        Profesional = nombreProfesional
-                    };
-                }).ToList()
+                PacienteSexoText = paciente?.Sexo?.DescripcionSexo ?? paciente?.sexoText ?? "Sin asignar",
+                EmpleadoText = medicoTratante.Nombre,
+                EmpleadoEspecialidad = consultaBase?.Citas?.Empleado?.Especialidad?.NombreEspecialidad
+                    ?? medicoTratante.Especialidad
+                    ?? "Sin asignar",
+                Colegiado = medicoTratante.Colegiado,
+                Notas = notas
+                    .Select(n => MapNotaOperatoriaToPdfVm(n, contentRoot, medicoTratante))
+                    .Where(n => n != null)
+                    .ToList()
             };
 
             var options = new ConvertOptions
@@ -1405,12 +1566,10 @@ namespace sistema.Controllers
                 PageOrientation = Orientation.Portrait,
             };
 
-            _generatePdf.SetConvertOptions(options);
-            var pdf = _generatePdf.GetPdf("Views/CrearPDF/HospitalizacionNotasOperatoriasPDFGetAll.cshtml", model).Result;
-            return pdf;
+            return await RenderPdfAsync("Views/CrearPDF/HospitalizacionNotasOperatoriasPDFGetAll.cshtml", model, options);
         }
 
-        public IActionResult HospitalizacionOrdenMedicaPDF(int ordenMedicaId)
+        public async Task<IActionResult> HospitalizacionOrdenMedicaPDF(int ordenMedicaId)
         {
             var ordenMedica = _hospitalizacionRepository.GetOrdenMedica(ordenMedicaId);
             if (ordenMedica == null)
@@ -1422,19 +1581,69 @@ namespace sistema.Controllers
                 .FirstOrDefault()?.Citas?.EmpleadoText ?? "Sin asignar";
 
             string colegioEmpleado = ordenMedica?.Hospitalizacion?.Consultas?
-                .FirstOrDefault()?.Citas?.Empleado.Colegiado ?? "No disponible";
+                .FirstOrDefault()?.Citas?.Empleado?.Colegiado ?? "No disponible";
+
+            var contentRoot = ContentRoot;
+            var medicoTratante = PdfReportHelper.ResolverMedicoTratanteHospitalizacion(
+                ordenMedica.Hospitalizacion, _empleadoRepository, contentRoot);
+
+            var registradoPorOrden = ordenMedica?.Profesional ?? "Sin asignar";
+
+            string firmaOrden = "";
+            string nombreFirmante = registradoPorOrden;
+            string autorizadoPor = null;
+
+            User profesionalOrden = null;
+            if (!string.IsNullOrWhiteSpace(ordenMedica.Profesional))
+            {
+                profesionalOrden = _context.Users.AsNoTracking()
+                    .Include(u => u.Persona)
+                    .FirstOrDefault(u => u.UserName == ordenMedica.Profesional || u.Email == ordenMedica.Profesional);
+            }
+
+            User autorizador = null;
+            if (ordenMedica.Autorizado && !string.IsNullOrWhiteSpace(ordenMedica.UsuarioAutoriza))
+            {
+                autorizador = _context.Users.AsNoTracking()
+                    .Include(u => u.Persona)
+                    .FirstOrDefault(u => u.Id == ordenMedica.UsuarioAutoriza);
+            }
+
+            var firmante = PdfReportHelper.ResolverFirmanteClinico(
+                ordenMedica.Autorizado,
+                ordenMedica.UsuarioAutoriza,
+                autorizador ?? profesionalOrden,
+                autorizador == null
+                    ? null
+                    : new Dictionary<string, User> { { autorizador.Id, autorizador } },
+                _empleadoRepository,
+                medicoTratante.FirmaBase64,
+                contentRoot,
+                registradoPorOrden);
+            firmaOrden = firmante.FirmaBase64;
+            nombreFirmante = firmante.NombreFirmante;
+            autorizadoPor = firmante.AutorizadoPor;
+
+            var nombreMedicoAsignado = PdfReportHelper.ResolverNombreMedicoPdf(empleadoText, registradoPorOrden, medicoTratante.Nombre);
+            var colegiadoMedico = colegioEmpleado;
+            if (colegiadoMedico == "No disponible" || string.IsNullOrWhiteSpace(colegiadoMedico) || colegiadoMedico == "-")
+                colegiadoMedico = PdfReportHelper.ObtenerColegiadoPorNombre(nombreMedicoAsignado, _empleadoRepository, medicoTratante.Colegiado);
 
             var model = new OrdenMedicaViewModel
             {
-                FechaHora = ordenMedica.FechaHora.ToString("dd/MM/yyyy hh:mm tt"),
-                Profesional = ordenMedica?.Profesional ?? "Sin asignar",
-                Descripcion = ordenMedica?.Descripcion ?? "No disponible",
+                FechaHora = HospitalTimeHelper.ToGuatemalaDisplay(ordenMedica.FechaHora).ToString("dd/MM/yyyy hh:mm tt"),
+                Profesional = registradoPorOrden,
+                Descripcion = PdfReportHelper.NormalizarHtmlParaPdf(ordenMedica?.Descripcion ?? "No disponible"),
                 PacienteNombre = ordenMedica?.Hospitalizacion?.Paciente?.Nombre ?? "Sin asignar",
                 PacienteEdad = CalcularEdad(ordenMedica?.Hospitalizacion?.Paciente?.FechaNacimiento),
                 PacienteSexoText = ordenMedica?.Hospitalizacion?.Paciente?.sexoText ?? "Sin asignar",
-                EmpleadoText = empleadoText,
-                ColegioEmpleado = colegioEmpleado,
-                Realizada = ordenMedica.Realizada ? "Sí" : "No"
+                EmpleadoText = nombreMedicoAsignado,
+                ColegioEmpleado = colegiadoMedico,
+                Realizada = ordenMedica.Realizada ? "Sí" : "No",
+                Autorizado = ordenMedica.Autorizado,
+                FirmaBase64 = firmaOrden,
+                NombreFirmante = nombreFirmante,
+                AutorizadoPor = autorizadoPor
             };
 
 
@@ -1444,10 +1653,7 @@ namespace sistema.Controllers
                 PageOrientation = Orientation.Portrait,
             };
 
-            _generatePdf.SetConvertOptions(options);
-            var pdf = _generatePdf.GetPdf("Views/CrearPDF/HospitalizacionOrdenMedicaPDF.cshtml", model).Result;
-
-            return pdf;
+            return await RenderPdfAsync("Views/CrearPDF/HospitalizacionOrdenMedicaPDF.cshtml", model, options);
         }
 
 
@@ -1513,7 +1719,7 @@ namespace sistema.Controllers
                 FechaProximaConsulta = fechaProximaConsulta
             };
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/PrescripcionPDF.cshtml", model);
+            return await RenderPdfAsync("Views/CrearPDF/PrescripcionPDF.cshtml", model);
         }
 
 
@@ -1562,7 +1768,7 @@ namespace sistema.Controllers
 
         //     };
 
-        //     return await _generatePdf.GetPdf("Views/CrearPDF/PrescripcionPDF.cshtml", model);
+        //     return await RenderPdfAsync("Views/CrearPDF/PrescripcionPDF.cshtml", model);
         // }
 
         public async Task<IActionResult> GinecologiaConsultaPDF(int consultaId)
@@ -1649,7 +1855,7 @@ namespace sistema.Controllers
                 #endregion
             };
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/GenerarGinecologiaConsultaPDF.cshtml", model);
+            return await RenderPdfAsync("Views/CrearPDF/GenerarGinecologiaConsultaPDF.cshtml", model);
         }
 
         public async Task<IActionResult> generarObstetricaPDF(int consultaId)
@@ -1829,7 +2035,7 @@ namespace sistema.Controllers
                 #endregion
             };
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/generarObstetricaPDF.cshtml", model);
+            return await RenderPdfAsync("Views/CrearPDF/generarObstetricaPDF.cshtml", model);
         }
 
         public async Task<IActionResult> generarObstetricaBiometriaPDF(int consultaId)
@@ -1887,7 +2093,7 @@ namespace sistema.Controllers
             model.ObsteBiometriaComentario = consulta.ObsteBiometriaComentario ?? "-";
 
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/generarObstetricaBiometriaPDF.cshtml", model);
+            return await RenderPdfAsync("Views/CrearPDF/generarObstetricaBiometriaPDF.cshtml", model);
         }
 
         public async Task<IActionResult> generarObstetricaBiometriaPDF2(int consultaId)
@@ -1942,7 +2148,7 @@ namespace sistema.Controllers
             model.ObsteBiometriaFechaParto2 = consulta.ObsteBiometriaFechaParto2 ?? "-";
             model.ObsteBiometriaComentario2 = consulta.ObsteBiometriaComentario2 ?? "-";
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/generarObstetricaBiometriaPDF2.cshtml", model);
+            return await RenderPdfAsync("Views/CrearPDF/generarObstetricaBiometriaPDF2.cshtml", model);
         }
 
 
@@ -1998,7 +2204,7 @@ namespace sistema.Controllers
             model.ObsteBiometriaFechaParto3 = consulta.ObsteBiometriaFechaParto3 ?? "-";
             model.ObsteBiometriaComentario3 = consulta.ObsteBiometriaComentario3 ?? "-";
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/generarObstetricaBiometriaPDF3.cshtml", model);
+            return await RenderPdfAsync("Views/CrearPDF/generarObstetricaBiometriaPDF3.cshtml", model);
         }
 
         public async Task<IActionResult> generarObstetricaBiometriaPDF4(int consultaId)
@@ -2053,7 +2259,7 @@ namespace sistema.Controllers
             model.ObsteBiometriaFechaParto4 = consulta.ObsteBiometriaFechaParto4 ?? "-";
             model.ObsteBiometriaComentario4 = consulta.ObsteBiometriaComentario4 ?? "-";
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/generarObstetricaBiometriaPDF4.cshtml", model);
+            return await RenderPdfAsync("Views/CrearPDF/generarObstetricaBiometriaPDF4.cshtml", model);
         }
 
 
@@ -2125,7 +2331,7 @@ namespace sistema.Controllers
                 #endregion
             };
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/generarEndocavitarioPDF.cshtml", model);
+            return await RenderPdfAsync("Views/CrearPDF/generarEndocavitarioPDF.cshtml", model);
         }
 
 
@@ -2154,6 +2360,11 @@ namespace sistema.Controllers
 
         public async Task<IActionResult> HospitalizacionInformeGeneralPDF(int hospitalizacionId)
         {
+            if (hospitalizacionId <= 0)
+            {
+                return BadRequest("Debe indicar hospitalizacionId en la URL.");
+            }
+
             var hospitalizacion = _hospitalizacionRepository.Get(hospitalizacionId);
             if (hospitalizacion == null)
             {
@@ -2171,16 +2382,91 @@ namespace sistema.Controllers
             model.EstablecimientoImagenLogo = _configuration["ImagenLogoBase64"];
             model.EstablecimientoImagenFirma = _configuration["EstablecimientoImagenFirma"];
             model.EstablecimientoDireccion = _configuration["EstablecimientoDireccion"];
-            return await _generatePdf.GetPdf
-                ("Views/CrearPDF/HospitalizacionInformeGeneralPDF.cshtml", model);
+            return await RenderPdfAsync(
+                "Views/CrearPDF/HospitalizacionInformeGeneralPDF.cshtml",
+                model);
         }
         public async Task<IActionResult> HospitalizacionInformeDetalladoPDF(int hospitalizacionId)
         {
-            var hospitalizacion = _hospitalizacionRepository.Get(hospitalizacionId);
-            return await _generatePdf.GetPdf
-                ("Views/CrearPDF/HospitalizacionInformeDetalladoPDF.cshtml", hospitalizacion);
+            if (hospitalizacionId <= 0)
+            {
+                return BadRequest("Debe indicar hospitalizacionId en la URL.");
+            }
+
+            var hospitalizacion = _hospitalizacionRepository.Get(
+                hospitalizacionId,
+                includeMedicamentos: true,
+                includeServicios: true,
+                includeExamenes: true,
+                includePaquetes: true);
+
+            if (hospitalizacion == null)
+            {
+                TempData["Message"] = "La hospitalizacion no existe";
+                return RedirectToAction("Index", "Home");
+            }
+
+            return await RenderPdfAsync(
+                "Views/CrearPDF/HospitalizacionInformeDetalladoPDF.cshtml",
+                hospitalizacion);
         }
 
+        public async Task<IActionResult> HospitalizacionInformeHospitalizacionPDF(int hospitalizacionId)
+        {
+            if (hospitalizacionId <= 0)
+            {
+                return BadRequest("Debe indicar hospitalizacionId en la URL.");
+            }
+
+            var hospitalizacion = _hospitalizacionRepository.Get(
+                hospitalizacionId,
+                includeMedicamentos: true,
+                includeServicios: true,
+                includeExamenes: true,
+                includePaquetes: true,
+                includeConsultas: true,
+                includeOrdenesMedicas: true
+            );
+
+            if (hospitalizacion == null)
+            {
+                TempData["Message"] = "La hospitalizacion no existe";
+                return RedirectToAction("Index", "Home");
+            }
+
+            var archivos = new List<PacienteArchivoVM>();
+            if (!string.IsNullOrWhiteSpace(hospitalizacion.UrlArchivoConsentimiento))
+            {
+                archivos.Add(new PacienteArchivoVM
+                {
+                    ArchivoId = hospitalizacion.Id,
+                    ArchivoFecha = hospitalizacion.FechaInicio.ToString("yyyy-MM-dd"),
+                    ArchivoNombre = "Archivo de Consentimiento",
+                    ArchivoUrl = hospitalizacion.UrlArchivoConsentimiento
+                });
+            }
+
+            var pacienteArchivos = await _context.PacienteArchivos
+                .Where(a => a.PacienteId == hospitalizacion.PacienteId)
+                .ToListAsync();
+
+            foreach (var archivo in pacienteArchivos)
+            {
+                archivos.Add(new PacienteArchivoVM
+                {
+                    ArchivoId = archivo.Id,
+                    ArchivoFecha = "-",
+                    ArchivoNombre = archivo.NombreArchivo ?? "-",
+                    ArchivoUrl = archivo.UrlArchivo
+                });
+            }
+
+            ViewBag.ArchivosPaciente = archivos;
+            ViewBag.InformeSecciones = await ConstruirInformeHospitalizacionSeccionesAsync(hospitalizacion);
+            return await RenderPdfAsync(
+                "Views/CrearPDF/HospitalizacionInformeHospitalizacionPDF.cshtml",
+                hospitalizacion);
+        }
 
         public async Task<IActionResult> ExpedientePacientePDF(int hospitalizacionId)
         {
@@ -2194,9 +2480,923 @@ namespace sistema.Controllers
                 includeOrdenesMedicas: true
             );
 
-            return await _generatePdf.GetPdf
+            if (hospitalizacion == null)
+                return NotFound("No se encontró la hospitalización solicitada.");
+
+            var contentRoot = ContentRoot;
+            var medico = PdfReportHelper.ResolverMedicoTratanteHospitalizacion(
+                hospitalizacion, _empleadoRepository, contentRoot);
+
+            ViewBag.MedicoTratanteNombre = medico.Nombre;
+            ViewBag.MedicoTratanteEspecialidad = medico.Especialidad;
+            ViewBag.MedicoTratanteColegiado = medico.Colegiado;
+            ViewBag.CodigoSeguro = hospitalizacion.Consultas?.FirstOrDefault()?.Citas?.CodigoDeCita ?? "-";
+            ViewBag.MotivoIngreso = hospitalizacion.Consultas?.FirstOrDefault()?.Citas?.Motivo ?? "-";
+
+            return await RenderPdfAsync
                 ("Views/CrearPDF/ExpedientePacientePDF.cshtml", hospitalizacion);
         }
+
+        public async Task<IActionResult> ExpedienteCompletoPDF(int hospitalizacionId, int? citaId = null)
+        {
+            var webRoot = Path.Combine(ContentRoot, "wwwroot");
+            DevelopmentDemoSeedGuard.EnsureExpedientePdfAssets(_webHostEnvironment, webRoot);
+            DevelopmentDemoSeedGuard.EnsureExpedienteHospitalizacion(_webHostEnvironment, _context, hospitalizacionId);
+
+            var hospitalizacion = _hospitalizacionRepository.Get(
+                hospitalizacionId,
+                includeMedicamentos: true,
+                includeServicios: true,
+                includeExamenes: true,
+                includePaquetes: true,
+                includeConsultas: true,
+                includeOrdenesMedicas: true
+            );
+
+            if (hospitalizacion == null)
+                return NotFound("No se encontró la hospitalización solicitada.");
+
+            if (hospitalizacion.Consultas == null || !hospitalizacion.Consultas.Any())
+            {
+                Consulta consultaHosp = _consultasRepository.GetConsultaPorHospitalizacion(hospitalizacionId);
+
+                if (consultaHosp == null && citaId.HasValue && citaId.Value > 0)
+                    consultaHosp = _consultasRepository.GetConsultaPorCita(citaId.Value);
+
+                if (consultaHosp == null)
+                {
+                    var citaRecienteId = await _context.Citass
+                        .Where(c => c.PacienteId == hospitalizacion.PacienteId && !c.Eliminado)
+                        .OrderByDescending(c => c.Id)
+                        .Select(c => c.Id)
+                        .FirstOrDefaultAsync();
+
+                    if (citaRecienteId > 0)
+                        consultaHosp = _consultasRepository.GetConsultaPorCita(citaRecienteId);
+                }
+
+                if (consultaHosp == null)
+                    consultaHosp = _consultasRepository.GetUltimaConsultaPaciente(hospitalizacion.PacienteId);
+
+                if (consultaHosp != null)
+                    hospitalizacion.Consultas = new List<Consulta> { consultaHosp };
+            }
+
+            var contentRoot = ContentRoot;
+            var cirujanoFallback = _hospitalizacionRepository.GetNotasOperatoriasByHospitalizacion(hospitalizacionId)
+                ?.OrderByDescending(n => n.FechaRegistro)
+                .Select(n => n.Cirujano)
+                .FirstOrDefault(s => !string.IsNullOrWhiteSpace(s));
+
+            var consentimiento = ResolverConsentimientoHospitalizacion(hospitalizacion)
+                ?? new ConsentimientoHospiVM
+                {
+                    NombrePaciente = hospitalizacion.Paciente?.Nombre ?? "-",
+                    NombreCompleto = hospitalizacion.Paciente?.Nombre ?? "-"
+                };
+
+            var medico = PdfReportHelper.ResolverMedicoTratanteHospitalizacion(
+                hospitalizacion,
+                _empleadoRepository,
+                contentRoot,
+                _citasRepository,
+                citaId,
+                cirujanoFallback,
+                consentimiento?.NombreMedicoTratante);
+
+            var pacienteExp = hospitalizacion.Paciente;
+            var edadExp = pacienteExp?.FechaNacimiento != null
+                ? ((int)((DateTime.Now - pacienteExp.FechaNacimiento.Value).TotalDays / 365.25)).ToString()
+                : "-";
+
+            var notasEntities = _hospitalizacionRepository.GetNotasMedicasByHospitalizacion(hospitalizacionId)
+                ?.OrderBy(n => n.FechaRegistro)
+                .ToList() ?? new List<NotaMedica2>();
+
+            var notasEnfermeriaEntities = await _context.NotaEnfermeria2
+                .Include(n => n.User).ThenInclude(u => u.Persona)
+                .Where(n => n.HospitalizacionId == hospitalizacionId)
+                .OrderBy(n => n.FechaRegistro)
+                .ToListAsync();
+
+            var userIdsAutorizacion = notasEntities
+                .Where(n => n.Autorizado && !string.IsNullOrWhiteSpace(n.UsuarioAutoriza))
+                .Select(n => n.UsuarioAutoriza)
+                .Concat(hospitalizacion.OrdenesMedicas?
+                    .Where(o => o.Autorizado && !string.IsNullOrWhiteSpace(o.UsuarioAutoriza))
+                    .Select(o => o.UsuarioAutoriza) ?? Enumerable.Empty<string>())
+                .Concat(notasEnfermeriaEntities
+                    .Where(n => !string.IsNullOrWhiteSpace(n.UsuarioFirmaId))
+                    .Select(n => n.UsuarioFirmaId))
+                .Distinct()
+                .ToList();
+
+            var usuariosAutorizadores = await ObtenerUsuariosAutorizadoresAsync(userIdsAutorizacion);
+
+            var notasEvolucion = notasEntities.Select(n =>
+                {
+                    User autorizador = null;
+                    if (n.Autorizado && !string.IsNullOrWhiteSpace(n.UsuarioAutoriza))
+                        usuariosAutorizadores.TryGetValue(n.UsuarioAutoriza, out autorizador);
+
+                    var notaVm = new NotaMedica2ViewModel
+                    {
+                        Id = n.Id,
+                        Diagnostico = n.Diagnostico ?? "",
+                        HistoriaProblema = n.HistoriaProblema ?? "",
+                        Sintomas = n.Sintomas ?? "",
+                        FechaRegistro = n.FechaRegistro.ToString("dd/MM/yyyy HH:mm"),
+                        PacienteNombre = hospitalizacion.Paciente?.Nombre ?? "-",
+                        PacienteEdad = edadExp,
+                        PacienteSexoText = hospitalizacion.Paciente?.Sexo?.DescripcionSexo ?? hospitalizacion.Paciente?.sexoText ?? "-",
+                        Autorizado = n.Autorizado,
+                        TipoNota = n.TipoNota
+                    };
+
+                    PdfReportHelper.CompletarProfesionalNotaMedicaPdf(
+                        notaVm,
+                        n.Profesional,
+                        medico,
+                        n.Autorizado,
+                        n.UsuarioAutoriza,
+                        autorizador == null ? null : new Dictionary<string, User> { { autorizador.Id, autorizador } },
+                        _empleadoRepository,
+                        contentRoot);
+
+                    return notaVm;
+                }).ToList();
+
+            var notasEnfermeria = notasEnfermeriaEntities.Select(n =>
+            {
+                User firmanteUser = null;
+                if (!string.IsNullOrWhiteSpace(n.UsuarioFirmaId))
+                    usuariosAutorizadores.TryGetValue(n.UsuarioFirmaId, out firmanteUser);
+
+                var firmadoPor = n.Firmado
+                    ? PdfReportHelper.ObtenerNombreEmpleadoPorUser(firmanteUser ?? n.User, _empleadoRepository, _userRepository)
+                    : null;
+
+                return new NotaEnfermeriaPdfViewModel
+                {
+                    Id = n.Id,
+                    Diagnostico = n.Diagnostico ?? "",
+                    FechaRegistro = n.FechaRegistro.ToString("dd/MM/yyyy HH:mm:ss"),
+                    Profesional = n.User?.Persona?.NombreYApellidos ?? "Enfermero(a) no especificado",
+                    Firmado = n.Firmado,
+                    FechaFirma = n.FechaFirma.HasValue ? n.FechaFirma.Value.ToString("dd/MM/yyyy HH:mm:ss") : "",
+                    FirmadoPor = firmadoPor,
+                    PacienteNombre = hospitalizacion.Paciente?.Nombre ?? "-",
+                    HospitalizacionId = hospitalizacionId,
+                    EstablecimientoDireccion = _configuration["EstablecimientoDireccion"],
+                    EstablecimientoTelefono = _configuration["EstablecimientoTelefono"],
+                    EstablecimientoCorreo = _configuration["EstablecimientoCorreoElectronico"],
+                    ImagenLogoBase64 = _configuration["ImagenLogoBase64"],
+                    FirmaBase64 = n.Firmado && !string.IsNullOrEmpty(n.FirmaRuta)
+                        ? PdfReportHelper.ObtenerFirmaBase64Local(n.FirmaRuta, contentRoot)
+                        : null,
+                    TipoNota = n.TipoNota
+                };
+            }).ToList() ?? new List<NotaEnfermeriaPdfViewModel>();
+
+            var ordenes = hospitalizacion.OrdenesMedicas?
+                .OrderBy(o => o.FechaHora)
+                .Select(o =>
+                {
+                    var profesionalUser = PdfReportHelper.ResolverUsuarioProfesionalTexto(o.Profesional, _userRepository);
+                    var registradoPor = PdfReportHelper.ResolverNombreProfesionalTexto(
+                        o.Profesional,
+                        _userRepository,
+                        _empleadoRepository);
+                    var firmante = PdfReportHelper.ResolverFirmanteClinico(
+                        o.Autorizado,
+                        o.UsuarioAutoriza,
+                        profesionalUser,
+                        usuariosAutorizadores,
+                        _empleadoRepository,
+                        medico.FirmaBase64,
+                        contentRoot,
+                        registradoPor);
+                    return new OrdenMedicaViewModel
+                    {
+                        FechaHora = o.FechaHora.ToString("dd/MM/yyyy HH:mm"),
+                        Profesional = registradoPor,
+                        Descripcion = PdfReportHelper.NormalizarHtmlParaPdf(o.Descripcion ?? ""),
+                        Realizada = o.Realizada ? "Sí" : "No",
+                        Autorizado = o.Autorizado,
+                        EmpleadoText = medico.Nombre,
+                        ColegioEmpleado = medico.Colegiado,
+                        FirmaBase64 = firmante.FirmaBase64,
+                        NombreFirmante = firmante.NombreFirmante,
+                        AutorizadoPor = firmante.AutorizadoPor
+                    };
+                }).ToList() ?? new List<OrdenMedicaViewModel>();
+
+            var notasOperatoriasRaw = _hospitalizacionRepository.GetNotasOperatoriasByHospitalizacion(hospitalizacionId)
+                ?.OrderBy(n => n.FechaRegistro)
+                .ToList();
+            var anestesistaNotaOp = notasOperatoriasRaw?
+                .OrderByDescending(n => n.FechaRegistro)
+                .FirstOrDefault()
+                ?.Anestesista;
+
+            var notasOperatorias = notasOperatoriasRaw
+                ?.Select(n => MapNotaOperatoriaToPdfVm(n, contentRoot, medico))
+                .Where(n => n != null)
+                .ToList() ?? new List<NotaOperatoriaVM>();
+
+            var documentos = await _context.PacienteArchivos
+                .Where(a => a.PacienteId == hospitalizacion.PacienteId)
+                .Select(a => new PacienteArchivoVM
+                {
+                    ArchivoId = a.Id,
+                    ArchivoNombre = a.NombreArchivo ?? "-",
+                    ArchivoUrl = a.UrlArchivo
+                }).ToListAsync();
+
+            var documentosHospitalizacion = await _context.DocumentosHospitalizacion
+                .Where(d => !d.Eliminado
+                    && (d.HospitalizacionId == hospitalizacionId || d.PacienteId == hospitalizacion.PacienteId))
+                .Select(d => new PacienteArchivoVM
+                {
+                    ArchivoId = d.Id,
+                    ArchivoNombre = d.NombreArchivo ?? "-",
+                    ArchivoUrl = d.RutaArchivo
+                }).ToListAsync();
+
+            foreach (var docHosp in documentosHospitalizacion)
+            {
+                if (!documentos.Any(d => string.Equals(d.ArchivoUrl, docHosp.ArchivoUrl, StringComparison.OrdinalIgnoreCase)))
+                    documentos.Add(docHosp);
+            }
+
+            var cuestionarioPreAnestesico = _cuestionarioPreAnestesicoService
+                .GetByHospitalizacionId(hospitalizacionId)?
+                .OrderByDescending(c => c.FechaRegistro)
+                .FirstOrDefault();
+
+            var autorizacionAnestesia = PdfReportHelper.BuildAutorizacionAnestesia(
+                hospitalizacion,
+                consentimiento,
+                _citasRepository,
+                _empleadoRepository,
+                contentRoot,
+                hospitalizacion.Consultas?.FirstOrDefault()?.Citas?.Id,
+                anestesistaNotaOp);
+
+            var listasChequeo = await _context.ListasChequeo
+                .Where(l => l.HospitalizacionId == hospitalizacionId)
+                .OrderByDescending(l => l.FechaRegistro)
+                .ToListAsync();
+
+            var signosVitales = await MapSignosVitalesHospitalizacionPdfAsync(hospitalizacionId, hospitalizacion);
+
+            var historialMedsExp = _medicamentoNoControladoRepository
+                .GetHistorialByHospitalizacion(hospitalizacionId)
+                .Where(m => !m.Eliminado)
+                .ToList();
+            var ultimaFechaRegistroExp = historialMedsExp.FirstOrDefault()?.FechaRegistro;
+            var medicamentosControlados = historialMedsExp
+                .Where(m => ultimaFechaRegistroExp == null || m.FechaRegistro == ultimaFechaRegistroExp)
+                .Select(m => new MedicamentoNoControladoPdfVM
+                {
+                    ProductoNombre = m.ProductoNombre,
+                    UnidadesIniciales = m.UnidadesIniciales,
+                    UnidadesExtra = m.UnidadesExtra,
+                    Utilizado = m.Utilizado,
+                    Descartado = m.Descartado,
+                    Retornadas = m.Retornadas,
+                    FechaProcedimiento = m.FechaProcedimiento ?? m.FechaRegistro
+                })
+                .ToList();
+
+            var registroAnestesia = _registroAnestesiaService.GetByHospitalizacionId(hospitalizacionId);
+
+            PdfReportHelper.CompletarConsentimientoPdfVm(
+                consentimiento,
+                hospitalizacion,
+                _citasRepository,
+                _empleadoRepository,
+                contentRoot,
+                hospitalizacion.Consultas?.FirstOrDefault()?.Citas?.Id,
+                medicamentosControlados,
+                anestesistaNotaOp);
+
+            if (consentimiento == null && medicamentosControlados.Any())
+            {
+                consentimiento = new ConsentimientoHospiVM
+                {
+                    NombrePaciente = hospitalizacion.Paciente?.Nombre ?? "-",
+                    NombreCompleto = hospitalizacion.Paciente?.Nombre ?? "-",
+                    MedicamentosNoControlados = medicamentosControlados
+                };
+            }
+
+            PdfReportHelper.AsignarFirmaFarmaciaMedicamentos(
+                consentimiento,
+                _configuration["EstablecimientoImagenFirma"],
+                contentRoot);
+
+            if (consentimiento != null && string.IsNullOrEmpty(consentimiento.FirmaMedicoBase64))
+                consentimiento.FirmaMedicoBase64 = medico.FirmaBase64;
+            if (consentimiento != null && string.IsNullOrEmpty(consentimiento.UrlFirmaMedico))
+                consentimiento.UrlFirmaMedico = medico.FirmaBase64;
+            if (consentimiento != null && string.IsNullOrWhiteSpace(consentimiento.NombreMedicoTratante))
+                consentimiento.NombreMedicoTratante = medico.Nombre;
+            if (consentimiento != null && string.IsNullOrWhiteSpace(consentimiento.ColegiadoMedico))
+                consentimiento.ColegiadoMedico = medico.Colegiado;
+
+            medico = PdfReportHelper.ComplementarMedicoTratante(
+                medico,
+                consentimiento,
+                cuestionarioPreAnestesico,
+                autorizacionAnestesia,
+                _empleadoRepository,
+                contentRoot);
+
+            ExpedienteClinicalPdfEnricher.CompletarCuestionario(cuestionarioPreAnestesico, hospitalizacion, medico.Nombre);
+            foreach (var lista in listasChequeo)
+                ExpedienteClinicalPdfEnricher.CompletarListaChequeo(lista, hospitalizacion, medico.Nombre);
+            ExpedienteClinicalPdfEnricher.EnriquecerConsentimientoRadiologia(
+                consentimiento, hospitalizacion, cuestionarioPreAnestesico);
+
+            PdfReportHelper.AplicarMedicoTratanteEnNotas(notasEvolucion, medico.Nombre, medico.Colegiado, medico.FirmaBase64);
+            PdfReportHelper.AplicarMedicoTratanteEnOrdenes(ordenes, medico.Nombre, medico.Colegiado);
+
+            if (consentimiento != null)
+            {
+                if (string.IsNullOrWhiteSpace(consentimiento.NombreMedicoTratante) || consentimiento.NombreMedicoTratante == "-")
+                    consentimiento.NombreMedicoTratante = medico.Nombre;
+                if (string.IsNullOrWhiteSpace(consentimiento.ColegiadoMedico) || consentimiento.ColegiadoMedico == "-")
+                    consentimiento.ColegiadoMedico = medico.Colegiado;
+
+                PdfReportHelper.CompletarDatosAnestesista(
+                    consentimiento,
+                    autorizacionAnestesia,
+                    _empleadoRepository,
+                    contentRoot,
+                    anestesistaNotaOp,
+                    medico.Nombre,
+                    _citasRepository,
+                    hospitalizacion.Consultas?.FirstOrDefault()?.Citas?.Id
+                        ?? hospitalizacion.Consultas?.FirstOrDefault()?.CitasId,
+                    hospitalizacion);
+
+                PdfReportHelper.SincronizarAutorizacionAnestesiaDesdeConsentimiento(
+                    autorizacionAnestesia,
+                    consentimiento);
+            }
+
+            if (consentimiento != null)
+            {
+                PdfReportHelper.CompletarFirmasConsentimientoSerSalud(
+                    consentimiento,
+                    medico.FirmaBase64,
+                    contentRoot,
+                    _configuration["EstablecimientoImagenFirma"],
+                    _configuration["EstablecimientoFirmaRepresentante"],
+                    string.Equals(_webHostEnvironment.EnvironmentName, Environments.Development, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (autorizacionAnestesia != null)
+            {
+                if (string.IsNullOrWhiteSpace(autorizacionAnestesia.NombreMedicoTratante))
+                    autorizacionAnestesia.NombreMedicoTratante = medico.Nombre;
+                if (string.IsNullOrWhiteSpace(autorizacionAnestesia.ColegiadoMedico))
+                    autorizacionAnestesia.ColegiadoMedico = medico.Colegiado;
+                if (string.IsNullOrEmpty(autorizacionAnestesia.FirmaMedicoBase64))
+                    autorizacionAnestesia.FirmaMedicoBase64 = medico.FirmaBase64;
+            }
+
+            double? pesoCtx = cuestionarioPreAnestesico?.Peso;
+            double? estCtx = cuestionarioPreAnestesico?.Estatura;
+            if (!pesoCtx.HasValue && double.TryParse(pacienteExp?.Peso?.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var pesoPac))
+                pesoCtx = pesoPac;
+            if (!estCtx.HasValue && double.TryParse(pacienteExp?.Talla?.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var estPac))
+                estCtx = estPac;
+            string imcCtx = "-";
+            if (pesoCtx.HasValue && estCtx.HasValue && estCtx.Value > 0)
+                imcCtx = (pesoCtx.Value / (estCtx.Value * estCtx.Value)).ToString("0.00");
+
+            var alergiasCtx = cuestionarioPreAnestesico == null
+                ? "-"
+                : string.IsNullOrWhiteSpace(cuestionarioPreAnestesico.PA_Alergia)
+                    ? "-"
+                    : $"{cuestionarioPreAnestesico.PA_Alergia} {cuestionarioPreAnestesico.PA_AlergiaCual}".Trim();
+
+            var contexto = new ExpedienteHospitalizacionContextoVm
+            {
+                FechaInicio = hospitalizacion.FechaInicio.ToString("dd/MM/yyyy HH:mm"),
+                FechaFin = hospitalizacion.FechaFin.ToString("dd/MM/yyyy HH:mm"),
+                Habitacion = hospitalizacion.Habitacion?.NombreNumeroHabitacion ?? consentimiento?.NumeroHabitacion ?? "-",
+                CategoriaHabitacion = hospitalizacion.CategoriaHabitacionTarifa?.NombreTarifa ?? hospitalizacion.Habitacion?.CategoriaHabitacion?.NombreCategoria ?? "-",
+                Observaciones = hospitalizacion.Observaciones ?? "",
+                Procedimiento = cuestionarioPreAnestesico?.ProcedimientoProgramado
+                    ?? autorizacionAnestesia?.Procedimiento
+                    ?? consentimiento?.TratamientoMedico
+                    ?? consentimiento?.ProcedimientoProgramado
+                    ?? "-",
+                MedicoTratante = medico.Nombre,
+                ColegiadoMedico = medico.Colegiado,
+                Anestesiologo = autorizacionAnestesia?.NombreAnestesista ?? "-",
+                HoraIngreso = consentimiento?.HoraIngreso ?? hospitalizacion.FechaInicio.ToString("dd/MM/yyyy HH:mm"),
+                ResponsableCuenta = consentimiento?.NombreResponsable ?? "-",
+                DpiPaciente = consentimiento?.DPI ?? pacienteExp?.Dpi ?? "-",
+                EdadPaciente = consentimiento?.Edad ?? edadExp,
+                TipoSangre = consentimiento?.TipoSangre ?? pacienteExp?.TipoDeSangre ?? "-",
+                Seguro = string.IsNullOrWhiteSpace(consentimiento?.Aseguradora)
+                    ? (consentimiento?.PoseeSeguroMedico ?? "-")
+                    : $"{consentimiento.PoseeSeguroMedico} — {consentimiento.Aseguradora}",
+                Peso = pesoCtx?.ToString("0.##") ?? pacienteExp?.Peso ?? "-",
+                Estatura = estCtx?.ToString("0.##") ?? pacienteExp?.Talla ?? "-",
+                Imc = imcCtx,
+                MedicamentosActuales = cuestionarioPreAnestesico?.AI_Medicamentos ?? "-",
+                Alergias = alergiasCtx,
+                ComentariosClinicos = cuestionarioPreAnestesico?.AI_Comentarios ?? "",
+                UrlArchivoConsentimiento = hospitalizacion.UrlArchivoConsentimiento ?? ""
+            };
+
+            var notasEvoAsignadas = PdfReportHelper.AsignarNotasEvolucionExpediente(notasEvolucion);
+            var notasEnfAsignadas = PdfReportHelper.AsignarNotasEnfermeriaExpediente(notasEnfermeria);
+
+            if (autorizacionAnestesia != null && consentimiento != null)
+                PdfReportHelper.SincronizarAutorizacionAnestesiaDesdeConsentimiento(autorizacionAnestesia, consentimiento);
+
+            var anestesistaExpediente = PdfReportHelper.ResolverAnestesistaParaPdf(
+                hospitalizacion,
+                consentimiento,
+                autorizacionAnestesia,
+                _empleadoRepository,
+                _citasRepository,
+                contentRoot,
+                anestesistaNotaOp,
+                medico.Nombre,
+                citaId ?? hospitalizacion.Consultas?.FirstOrDefault()?.Citas?.Id
+                    ?? hospitalizacion.Consultas?.FirstOrDefault()?.CitasId);
+
+            var registroAnestesiaPdf = RegistroAnestesiaPdfHelper.Build(
+                hospitalizacionId,
+                hospitalizacion,
+                registroAnestesia,
+                consentimiento,
+                cuestionarioPreAnestesico,
+                autorizacionAnestesia,
+                anestesistaExpediente.Nombre,
+                anestesistaExpediente.FirmaBase64);
+
+            if (autorizacionAnestesia != null && consentimiento != null)
+                PdfReportHelper.SincronizarAutorizacionAnestesiaDesdeConsentimiento(autorizacionAnestesia, consentimiento);
+
+            var documentosEmbebidos = PdfReportHelper.ResolverDocumentosEmbebidos(
+                documentos.Select(d => (d.ArchivoNombre, d.ArchivoUrl)),
+                contentRoot);
+
+            var documentoConsentimientoEmbebido = !string.IsNullOrWhiteSpace(contexto.UrlArchivoConsentimiento)
+                ? PdfReportHelper.ResolverDocumentoEmbebido(
+                    contexto.UrlArchivoConsentimiento,
+                    "Consentimiento firmado",
+                    contentRoot)
+                : null;
+
+            var historialMedicamentos = MedicamentoHistorialPdfBuilder.Build(_context, hospitalizacionId);
+
+            var model = new ExpedienteCompletoViewModel
+            {
+                HospitalizacionId = hospitalizacionId,
+                PacienteId = hospitalizacion.PacienteId,
+                HabitacionId = hospitalizacion.HabitacionId,
+                CitaId = citaId ?? hospitalizacion.Consultas?.FirstOrDefault()?.Citas?.Id
+                    ?? hospitalizacion.Consultas?.FirstOrDefault()?.CitasId,
+                PacienteNombre = hospitalizacion.Paciente?.Nombre ?? "-",
+                MedicoTratanteNombre = medico.Nombre,
+                MedicoTratanteEspecialidad = medico.Especialidad,
+                MedicoTratanteColegiado = medico.Colegiado,
+                MedicoTratanteFirmaBase64 = medico.FirmaBase64,
+                Consentimiento = consentimiento,
+                CuestionarioPreAnestesico = cuestionarioPreAnestesico,
+                NotasEvolucion = notasEvolucion,
+                NotasEnfermeria = notasEnfermeria,
+                OrdenesMedicas = ordenes,
+                NotasOperatorias = notasOperatorias,
+                Documentos = documentos,
+                DocumentosEmbebidos = documentosEmbebidos,
+                DocumentoConsentimientoEmbebido = documentoConsentimientoEmbebido,
+                AutorizacionAnestesia = autorizacionAnestesia,
+                ListasChequeo = listasChequeo,
+                SignosVitales = signosVitales,
+                MedicamentosControlados = medicamentosControlados,
+                HistorialMedicamentos = historialMedicamentos,
+                RegistroAnestesia = registroAnestesia,
+                RegistroAnestesiaPdf = registroAnestesiaPdf,
+                Contexto = contexto,
+                NotaIngresoEvolucion = notasEvoAsignadas.Ingreso,
+                NotaIngresoEnfermeria = notasEnfAsignadas.Ingreso,
+                NotaTrasladoEvolucion = notasEvoAsignadas.Traslado,
+                NotaTrasladoEnfermeria = notasEnfAsignadas.Traslado,
+                NotaRecepcionEvolucion = notasEvoAsignadas.Recepcion,
+                NotaRecepcionEnfermeria = notasEnfAsignadas.Recepcion,
+                NotasEgresoEvolucion = notasEvoAsignadas.Egreso,
+                NotasEgresoEnfermeria = notasEnfAsignadas.Egreso
+            };
+
+            var pdfOptions = new ConvertOptions
+            {
+                PageMargins = new Margins(10, 10, 10, 10),
+                PageOrientation = Orientation.Portrait
+            };
+
+            return await RenderPdfAsync(
+                "Views/CrearPDF/ExpedienteCompletoPDF.cshtml", model, pdfOptions);
+        }
+
+        public async Task<IActionResult> MedicamentosControladosHospiPDF(int hospitalizacionId)
+        {
+            var hospitalizacion = _hospitalizacionRepository.Get(
+                hospitalizacionId,
+                includeConsultas: true);
+
+            if (hospitalizacion == null)
+                return NotFound("No se encontró la hospitalización solicitada.");
+
+            var contentRoot = ContentRoot;
+            var consentimiento = ResolverConsentimientoHospitalizacion(hospitalizacion)
+                ?? new ConsentimientoHospiVM
+                {
+                    NombrePaciente = hospitalizacion.Paciente?.Nombre ?? "-",
+                    NombreCompleto = hospitalizacion.Paciente?.Nombre ?? "-"
+                };
+
+            var historialMeds = _medicamentoNoControladoRepository
+                .GetHistorialByHospitalizacion(hospitalizacionId)
+                .Where(m => !m.Eliminado)
+                .ToList();
+            var ultimaFechaRegistro = historialMeds.FirstOrDefault()?.FechaRegistro;
+            var medicamentosControlados = historialMeds
+                .Where(m => ultimaFechaRegistro == null || m.FechaRegistro == ultimaFechaRegistro)
+                .Select(m => new MedicamentoNoControladoPdfVM
+                {
+                    ProductoNombre = m.ProductoNombre,
+                    UnidadesIniciales = m.UnidadesIniciales,
+                    UnidadesExtra = m.UnidadesExtra,
+                    Utilizado = m.Utilizado,
+                    Descartado = m.Descartado,
+                    Retornadas = m.Retornadas,
+                    FechaProcedimiento = m.FechaProcedimiento ?? m.FechaRegistro
+                })
+                .ToList();
+
+            var anestesistaNotaOp = _hospitalizacionRepository.GetNotasOperatoriasByHospitalizacion(hospitalizacionId)
+                ?.OrderByDescending(n => n.FechaRegistro)
+                .FirstOrDefault()
+                ?.Anestesista;
+
+            PdfReportHelper.CompletarConsentimientoPdfVm(
+                consentimiento,
+                hospitalizacion,
+                _citasRepository,
+                _empleadoRepository,
+                contentRoot,
+                hospitalizacion.Consultas?.FirstOrDefault()?.Citas?.Id,
+                medicamentosControlados,
+                anestesistaNotaOp);
+
+            PdfReportHelper.AsignarFirmaFarmaciaMedicamentos(
+                consentimiento,
+                _configuration["EstablecimientoImagenFirma"],
+                contentRoot);
+
+            var medOptions = new ConvertOptions
+            {
+                PageMargins = new Margins(10, 10, 10, 10),
+                PageOrientation = Orientation.Portrait
+            };
+
+            return await RenderPdfAsync(
+                "Views/CrearPDF/MedicamentosContrladosHospiPDF.cshtml", consentimiento, medOptions);
+        }
+
+        public async Task<IActionResult> CuestionarioPreAnestesicoPDF(int hospitalizacionId)
+        {
+            DevelopmentDemoSeedGuard.EnsureExpedienteHospitalizacion(_webHostEnvironment, _context, hospitalizacionId);
+
+            var hospitalizacion = _hospitalizacionRepository.Get(hospitalizacionId, includeConsultas: true);
+            var cuestionario = _cuestionarioPreAnestesicoService
+                .GetByHospitalizacionId(hospitalizacionId)?
+                .OrderByDescending(c => c.FechaRegistro)
+                .FirstOrDefault();
+
+            if (cuestionario == null)
+                return NotFound("No se encontró cuestionario pre-anestésico para esta hospitalización.");
+
+            var medicoNombre = PdfReportHelper.ResolverMedicoTratanteHospitalizacion(
+                hospitalizacion, _empleadoRepository, ContentRoot, _citasRepository).Nombre;
+            ExpedienteClinicalPdfEnricher.CompletarCuestionario(cuestionario, hospitalizacion, medicoNombre);
+
+            var cuestOptions = new ConvertOptions
+            {
+                PageMargins = { Top = 10, Left = 10, Right = 10, Bottom = 10 },
+                PageOrientation = Orientation.Portrait
+            };
+
+            return await RenderPdfAsync(
+                "Views/CrearPDF/CuestionarioPreAnestesicoPDF.cshtml", cuestionario, cuestOptions);
+        }
+
+        public async Task<IActionResult> ListaChequeoPDF(int hospitalizacionId)
+        {
+            DevelopmentDemoSeedGuard.EnsureExpedienteHospitalizacion(_webHostEnvironment, _context, hospitalizacionId);
+
+            var hospitalizacion = _hospitalizacionRepository.Get(hospitalizacionId, includeConsultas: true);
+            if (hospitalizacion == null)
+                return NotFound("Hospitalización no encontrada.");
+
+            var listas = await _context.ListasChequeo
+                .Where(l => l.HospitalizacionId == hospitalizacionId)
+                .OrderByDescending(l => l.FechaRegistro)
+                .ToListAsync();
+
+            if (!listas.Any())
+                return NotFound("No hay listas de chequeo registradas para esta hospitalización.");
+
+            var medicoNombre = PdfReportHelper.ResolverMedicoTratanteHospitalizacion(
+                hospitalizacion, _empleadoRepository, ContentRoot, _citasRepository).Nombre;
+            foreach (var lista in listas)
+                ExpedienteClinicalPdfEnricher.CompletarListaChequeo(lista, hospitalizacion, medicoNombre);
+
+            ViewBag.PacienteNombre = hospitalizacion.Paciente?.Nombre ?? "-";
+            ViewBag.HospitalizacionId = hospitalizacionId;
+
+            _generatePdf.SetConvertOptions(new ConvertOptions
+            {
+                PageMargins = { Top = 10, Left = 10, Right = 10, Bottom = 10 },
+                PageOrientation = Orientation.Portrait
+            });
+
+            return await RenderPdfAsync("Views/CrearPDF/ListaChequeoPDF.cshtml", listas);
+        }
+
+        public async Task<IActionResult> OrdenesMedicasHospPDF(int hospitalizacionId)
+        {
+            var hospitalizacion = _hospitalizacionRepository.Get(hospitalizacionId, includeConsultas: true);
+            if (hospitalizacion == null)
+                return NotFound("Hospitalización no encontrada.");
+
+            var ordenes = await _context.OrdenesMedicas
+                .Where(o => o.HospitalizacionId == hospitalizacionId)
+                .OrderBy(o => o.FechaHora)
+                .ToListAsync();
+
+            if (ordenes == null || !ordenes.Any())
+                return NotFound("No hay órdenes médicas para esta hospitalización.");
+
+            var contentRoot = ContentRoot;
+            var medicoTratante = PdfReportHelper.ResolverMedicoTratanteHospitalizacion(
+                hospitalizacion, _empleadoRepository, contentRoot);
+            var paciente = hospitalizacion.Paciente;
+            var empleadoTextCita = hospitalizacion.Consultas?
+                .FirstOrDefault()?.Citas?.EmpleadoText ?? "Sin asignar";
+
+            var autorizadorIds = ordenes
+                .Where(o => o.Autorizado && !string.IsNullOrWhiteSpace(o.UsuarioAutoriza))
+                .Select(o => o.UsuarioAutoriza)
+                .Distinct()
+                .ToList();
+            var autorizadores = await ObtenerUsuariosAutorizadoresAsync(autorizadorIds);
+
+            var model = new OrdenesMedicasListaPdfViewModel
+            {
+                PacienteNombre = paciente?.Nombre ?? "-",
+                PacienteEdad = CalcularEdad(paciente?.FechaNacimiento),
+                PacienteSexoText = paciente?.sexoText ?? "-",
+                EmpleadoText = medicoTratante.Nombre,
+                ColegioEmpleado = medicoTratante.Colegiado,
+                Ordenes = ordenes.Select(o =>
+                {
+                    var profesionalUser = PdfReportHelper.ResolverUsuarioProfesionalTexto(o.Profesional, _userRepository);
+                    var registradoPor = PdfReportHelper.ResolverNombreProfesionalTexto(
+                        o.Profesional,
+                        _userRepository,
+                        _empleadoRepository);
+                    User autorizador = null;
+                    if (o.Autorizado && !string.IsNullOrWhiteSpace(o.UsuarioAutoriza))
+                        autorizadores.TryGetValue(o.UsuarioAutoriza, out autorizador);
+
+                    var firmante = PdfReportHelper.ResolverFirmanteClinico(
+                        o.Autorizado,
+                        o.UsuarioAutoriza,
+                        profesionalUser ?? autorizador,
+                        autorizador == null ? null : new Dictionary<string, User> { { autorizador.Id, autorizador } },
+                        _empleadoRepository,
+                        medicoTratante.FirmaBase64,
+                        contentRoot,
+                        registradoPor);
+
+                    var firmaOrden = firmante.FirmaBase64;
+                    if (string.IsNullOrEmpty(firmaOrden) && !string.IsNullOrWhiteSpace(registradoPor))
+                        firmaOrden = PdfReportHelper.ObtenerFirmaEmpleadoPorNombre(registradoPor, _empleadoRepository, contentRoot);
+
+                    var nombreMedico = PdfReportHelper.ResolverNombreMedicoPdf(empleadoTextCita, registradoPor, medicoTratante.Nombre);
+                    var colegiado = PdfReportHelper.ObtenerColegiadoPorNombre(
+                        nombreMedico, _empleadoRepository, medicoTratante.Colegiado);
+
+                    return new OrdenMedicaViewModel
+                    {
+                        FechaHora = o.FechaHora.ToString("dd/MM/yyyy hh:mm tt"),
+                        Profesional = registradoPor,
+                        Descripcion = PdfReportHelper.NormalizarHtmlParaPdf(o.Descripcion ?? ""),
+                        PacienteNombre = paciente?.Nombre ?? "-",
+                        PacienteEdad = CalcularEdad(paciente?.FechaNacimiento),
+                        PacienteSexoText = paciente?.sexoText ?? "-",
+                        EmpleadoText = nombreMedico,
+                        ColegioEmpleado = colegiado,
+                        Realizada = o.Realizada ? "Sí" : "No",
+                        Autorizado = o.Autorizado,
+                        FirmaBase64 = firmaOrden,
+                        NombreFirmante = firmante.NombreFirmante,
+                        AutorizadoPor = firmante.AutorizadoPor
+                    };
+                }).ToList()
+            };
+
+            _generatePdf.SetConvertOptions(new ConvertOptions
+            {
+                PageMargins = { Top = 10, Left = 10, Right = 10, Bottom = 10 },
+                PageOrientation = Orientation.Portrait
+            });
+
+            return await RenderPdfAsync("Views/CrearPDF/HospitalizacionOrdenesMedicasPDF.cshtml", model);
+        }
+
+        public async Task<IActionResult> DocumentosCargadosHospPDF(int hospitalizacionId)
+        {
+            var hospitalizacion = _hospitalizacionRepository.Get(hospitalizacionId);
+            if (hospitalizacion == null)
+                return NotFound("Hospitalización no encontrada.");
+
+            var contentRoot = ContentRoot;
+            var documentos = await _context.PacienteArchivos
+                .Where(a => a.PacienteId == hospitalizacion.PacienteId)
+                .Select(a => new PacienteArchivoVM
+                {
+                    ArchivoId = a.Id,
+                    ArchivoNombre = a.NombreArchivo ?? "-",
+                    ArchivoUrl = a.UrlArchivo
+                }).ToListAsync();
+
+            var documentosHospitalizacion = await _context.DocumentosHospitalizacion
+                .Where(d => !d.Eliminado
+                    && (d.HospitalizacionId == hospitalizacionId || d.PacienteId == hospitalizacion.PacienteId))
+                .Select(d => new PacienteArchivoVM
+                {
+                    ArchivoId = d.Id,
+                    ArchivoNombre = d.NombreArchivo ?? "-",
+                    ArchivoUrl = d.RutaArchivo
+                }).ToListAsync();
+
+            foreach (var docHosp in documentosHospitalizacion)
+            {
+                if (!documentos.Any(d => string.Equals(d.ArchivoUrl, docHosp.ArchivoUrl, StringComparison.OrdinalIgnoreCase)))
+                    documentos.Add(docHosp);
+            }
+
+            if (!documentos.Any() && string.IsNullOrWhiteSpace(hospitalizacion.UrlArchivoConsentimiento))
+                return NotFound("No hay documentos cargados para esta hospitalización.");
+
+            var documentosEmbebidos = PdfReportHelper.ResolverDocumentosEmbebidos(
+                documentos.Select(d => (d.ArchivoNombre, d.ArchivoUrl)),
+                contentRoot);
+
+            DocumentoEmbebidoVm consentimientoEmbebido = null;
+            if (!string.IsNullOrWhiteSpace(hospitalizacion.UrlArchivoConsentimiento))
+            {
+                consentimientoEmbebido = PdfReportHelper.ResolverDocumentoEmbebido(
+                    hospitalizacion.UrlArchivoConsentimiento,
+                    "Consentimiento firmado",
+                    contentRoot);
+            }
+
+            var model = new DocumentosCargadosPdfViewModel
+            {
+                HospitalizacionId = hospitalizacionId,
+                PacienteNombre = hospitalizacion.Paciente?.Nombre ?? "-",
+                DocumentosEmbebidos = documentosEmbebidos,
+                DocumentoConsentimientoEmbebido = consentimientoEmbebido
+            };
+
+            var options = new ConvertOptions
+            {
+                PageMargins = { Top = 10, Left = 10, Right = 10, Bottom = 10 },
+                PageOrientation = Orientation.Portrait
+            };
+
+            return await RenderPdfAsync("Views/CrearPDF/DocumentosCargadosHospPDF.cshtml", model, options);
+        }
+
+        public async Task<IActionResult> SignosVitalesHospPDF(int hospitalizacionId)
+        {
+            var hospitalizacion = _hospitalizacionRepository.Get(hospitalizacionId);
+            if (hospitalizacion == null)
+                return NotFound("Hospitalización no encontrada.");
+
+            var signos = await MapSignosVitalesHospitalizacionPdfAsync(hospitalizacionId, hospitalizacion);
+
+            if (!signos.Any())
+                return NotFound("No hay registros de signos vitales para esta hospitalización.");
+
+            ViewBag.PacienteNombre = hospitalizacion.Paciente?.Nombre ?? "-";
+            ViewBag.HospitalizacionId = hospitalizacionId;
+
+            var signosOptions = new ConvertOptions
+            {
+                PageMargins = { Top = 10, Left = 10, Right = 10, Bottom = 10 },
+                PageOrientation = Orientation.Landscape
+            };
+
+            return await RenderPdfAsync(
+                "Views/CrearPDF/SignosVitalesHospPDF.cshtml", signos, signosOptions);
+        }
+
+        public async Task<IActionResult> RegistroAnestesiaPDF(int hospitalizacionId)
+        {
+            DevelopmentDemoSeedGuard.EnsureExpedienteHospitalizacion(_webHostEnvironment, _context, hospitalizacionId);
+
+            var hospitalizacion = _hospitalizacionRepository.Get(hospitalizacionId, includeConsultas: true);
+            if (hospitalizacion == null)
+                return NotFound("Hospitalización no encontrada.");
+
+            var contentRoot = ContentRoot;
+            var consentimiento = ResolverConsentimientoHospitalizacion(hospitalizacion)
+                ?? new ConsentimientoHospiVM
+                {
+                    NombrePaciente = hospitalizacion.Paciente?.Nombre ?? "-",
+                    NombreCompleto = hospitalizacion.Paciente?.Nombre ?? "-"
+                };
+            var cuestionario = _cuestionarioPreAnestesicoService
+                .GetByHospitalizacionId(hospitalizacionId)?
+                .OrderByDescending(c => c.FechaRegistro)
+                .FirstOrDefault();
+
+            var anestesistaNotaOp = _hospitalizacionRepository.GetNotasOperatoriasByHospitalizacion(hospitalizacionId)
+                ?.OrderByDescending(n => n.FechaRegistro)
+                .FirstOrDefault()
+                ?.Anestesista;
+
+            var medicoTratante = PdfReportHelper.ResolverMedicoTratanteHospitalizacion(
+                hospitalizacion, _empleadoRepository, contentRoot, _citasRepository);
+
+            var citaId = hospitalizacion.Consultas?.FirstOrDefault()?.Citas?.Id
+                ?? hospitalizacion.Consultas?.FirstOrDefault()?.CitasId;
+
+            PdfReportHelper.CompletarConsentimientoPdfVm(
+                consentimiento,
+                hospitalizacion,
+                _citasRepository,
+                _empleadoRepository,
+                contentRoot,
+                citaId,
+                null,
+                anestesistaNotaOp);
+
+            var anest = PdfReportHelper.BuildAutorizacionAnestesia(
+                hospitalizacion,
+                consentimiento,
+                _citasRepository,
+                _empleadoRepository,
+                contentRoot,
+                citaId,
+                anestesistaNotaOp);
+
+            var anestesistaResuelto = PdfReportHelper.ResolverAnestesistaParaPdf(
+                hospitalizacion,
+                consentimiento,
+                anest,
+                _empleadoRepository,
+                _citasRepository,
+                contentRoot,
+                anestesistaNotaOp,
+                medicoTratante.Nombre,
+                citaId);
+
+            var registroGuardado = _registroAnestesiaService.GetByHospitalizacionId(hospitalizacionId);
+
+            var model = RegistroAnestesiaPdfHelper.Build(
+                hospitalizacionId,
+                hospitalizacion,
+                registroGuardado,
+                consentimiento,
+                cuestionario,
+                anest,
+                anestesistaResuelto.Nombre,
+                anestesistaResuelto.FirmaBase64);
+
+            _generatePdf.SetConvertOptions(new ConvertOptions
+            {
+                PageMargins = { Top = 10, Left = 10, Right = 10, Bottom = 10 },
+                PageOrientation = Orientation.Portrait
+            });
+
+            return await RenderPdfAsync("Views/CrearPDF/RegistroAnestesiaPDF.cshtml", model);
+        }
+
         public IActionResult DetalleCotizacionListaPdf()
         {
 
@@ -2226,7 +3426,7 @@ namespace sistema.Controllers
         //     {
         //         PageOrientation = Orientation.Landscape
         //     });
-        //     return await _generatePdf.GetPdf("Views/CrearPDF/HistoricoProductosPDF.cshtml", model);
+        //     return await RenderPdfAsync("Views/CrearPDF/HistoricoProductosPDF.cshtml", model);
         // }
         public async Task<IActionResult> HistoricoProductosPDF(
     DateTime? fechaInicio,
@@ -2252,7 +3452,7 @@ namespace sistema.Controllers
             {
                 PageOrientation = Orientation.Landscape,
             });
-            return await _generatePdf.GetPdf("Views/CrearPDF/HistoricoProductosPDF.cshtml", vm);
+            return await RenderPdfAsync("Views/CrearPDF/HistoricoProductosPDF.cshtml", vm);
         }
 
         public async Task<IActionResult> HistoricoProductosPDFNacional(
@@ -2279,7 +3479,7 @@ namespace sistema.Controllers
             {
                 PageOrientation = Orientation.Landscape,
             });
-            return await _generatePdf.GetPdf("Views/CrearPDF/HistoricoProductosPDFNacional.cshtml", vm);
+            return await RenderPdfAsync("Views/CrearPDF/HistoricoProductosPDFNacional.cshtml", vm);
         }
 
         private static List<MovimientoProductoViewModel> AplicarFiltrosHistorico(
@@ -2367,19 +3567,19 @@ namespace sistema.Controllers
             model.VacunasPaciente = vacunas;
             model.Paciente = paciente;
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/CarneVacunacionJovenes.cshtml", model);
+            return await RenderPdfAsync("Views/CrearPDF/CarneVacunacionJovenes.cshtml", model);
         }
         public async Task<IActionResult> PacientesExpedientePDF(int pacienteId)
         {
             var paciente = _pacientesRepository.Get(pacienteId);
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/PacientesExpedientePDF.cshtml", paciente);
+            return await RenderPdfAsync("Views/CrearPDF/PacientesExpedientePDF.cshtml", paciente);
         }
         public async Task<IActionResult> PacientesPresupuestoDentalPDF(int presupuestoId)
         {
             var presupuesto = _pacientesRepository.GetPresupuestoDental(presupuestoId);
 
-            return await _generatePdf.GetPdf
+            return await RenderPdfAsync
                 ("Views/CrearPDF/PacientesPresupuestoDentalPDF.cshtml", presupuesto);
         }
 
@@ -2408,7 +3608,7 @@ namespace sistema.Controllers
 
             _generatePdf.SetConvertOptions(options);
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/AmbulanciaPDF.cshtml", ambulancia);
+            return await RenderPdfAsync("Views/CrearPDF/AmbulanciaPDF.cshtml", ambulancia);
         }
         public async Task<IActionResult> PacientesCompromisoMembresiaPDF(int? pacienteId)
         {
@@ -2429,7 +3629,7 @@ namespace sistema.Controllers
                 return RedirectToAction("Lista", "Pacientes");
             }
 
-            return await _generatePdf.GetPdf("PacientesCompromisoMembresiaPDF", paciente);
+            return await RenderPdfAsync("PacientesCompromisoMembresiaPDF", paciente);
         }
         #endregion
         public async Task<IActionResult> CitasPorFechasPdf(string fecha, int? sucursalId, int? empleadoId, int? especialidadId)
@@ -2466,8 +3666,7 @@ namespace sistema.Controllers
                     .ToList();
             }
 
-            var user = await _userManager.GetUserAsync(HttpContext.User);
-            var u = _userRepository.GetbyId(user.Id).Persona.Nombre;
+            var u = _userRepository.GetDisplayName(_userManager.GetUserId(HttpContext.User));
 
             var model = new ReporteCitasViewModel()
             {
@@ -2475,14 +3674,18 @@ namespace sistema.Controllers
                 Usuario = u
             };
 
-            return await _generatePdf.GetPdf("Views/Cita/ReporteCitasCalendarioPDF.cshtml", model);
+            return await RenderPdfAsync("Views/Cita/ReporteCitasCalendarioPDF.cshtml", model);
         }
 
 
         public async Task<IActionResult> generarPdfExamenesLaboratorio(int examenLaboratorioId, int? pacienteId, string TipoPDF)
         {
             var examenLaboratorio = _laboratorioClinico.GetExamenLab(examenLaboratorioId);
-            var pacienteAsociado = _pacientesRepository.GetPacientePorId((int)pacienteId);
+            if (examenLaboratorio == null)
+                return NotFound("Examen de laboratorio no encontrado.");
+            var pacienteAsociado = pacienteId.HasValue
+                ? _pacientesRepository.GetPacientePorId(pacienteId.Value)
+                : null;
 
             var paciente = new Paciente();
             if (pacienteAsociado != null)
@@ -2522,7 +3725,7 @@ namespace sistema.Controllers
 
             _generatePdf.SetConvertOptions(options);
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/generarPdfExamenesLaboratorio.cshtml", model);
+            return await RenderPdfAsync("Views/CrearPDF/generarPdfExamenesLaboratorio.cshtml", model);
         }
 
         public async Task<IActionResult> GenerarPdfLaboratorioClinicoExamenesClinicos(string fechaInicial, string fechaFinal, string estado,
@@ -2599,7 +3802,7 @@ namespace sistema.Controllers
                     x.UsuarioIngreso.ToLower().Trim() == usuarioIngresoRequest.ToLower().Trim()).ToList();
             }
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/LaboratorioClinicoExamenesClinicosPDF.cshtml", modeloLista);
+            return await RenderPdfAsync("Views/CrearPDF/LaboratorioClinicoExamenesClinicosPDF.cshtml", modeloLista);
 
         }
 
@@ -2609,7 +3812,7 @@ namespace sistema.Controllers
 
             var data = _compraRepository.PaginacionOrdenesCompra(null, null, null, 25, fechaInicial, fechaFinal, comprobante, proveedor, vendedor);
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/CompraPDF.cshtml", data);
+            return await RenderPdfAsync("Views/CrearPDF/CompraPDF.cshtml", data);
         }
 
         public async Task<IActionResult> GenerarPdfCompraCompras(string fechaInicial, string fechaFinal, string comprobante, string proveedor, string vendedor,
@@ -2618,13 +3821,13 @@ namespace sistema.Controllers
 
             var data = _compraRepository.PaginacionCompras(null, null, null, 1000, fechaInicial, fechaFinal, comprobante, proveedor, vendedor, numeroCompra);
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/ComprasPDF.cshtml", data);
+            return await RenderPdfAsync("Views/CrearPDF/ComprasPDF.cshtml", data);
         }
         public async Task<IActionResult> GenerarPdfVentasClinica(string fechaInicial, string fechaFinal, int numeroVenta,
             string comprobante, int formaPago, string origenVenta)
         {
             var lista = _ventaRepository.PaginacionVentasClinica(null, null, null, 25, fechaInicial, fechaFinal, numeroVenta, comprobante, formaPago, origenVenta);
-            return await _generatePdf.GetPdf("Views/CrearPDF/VentasPDF.cshtml", lista);
+            return await RenderPdfAsync("Views/CrearPDF/VentasPDF.cshtml", lista);
         }
 
         public async Task<IActionResult> GenerarPdfInventarioProductos(int? tipoProductoId, int? grupoTerapeuticoId, int? bodegaId, int? sucursalId, int? ambienteId)
@@ -2635,7 +3838,7 @@ namespace sistema.Controllers
                 ProductosInventario = data,
                 Precios = _precioRepository.GetList().ToList()
             };
-            return await _generatePdf.GetPdf("Views/CrearPDF/InventarioProductosPdf.cshtml", viewModel);
+            return await RenderPdfAsync("Views/CrearPDF/InventarioProductosPdf.cshtml", viewModel);
         }
 
         public async Task<IActionResult> GenerarPDFAdmisionPacientes(int? id)
@@ -2808,7 +4011,7 @@ namespace sistema.Controllers
             // Console.WriteLine(modelJson);
 
             model.Init(_citasRepository, _pacientesRepository, _empleadoRepository, _servicioRepository, _sucursalRepository);
-            return await _generatePdf.GetPdf("Views/CrearPDF/AdmisionPacientePDF.cshtml", model);
+            return await RenderPdfAsync("Views/CrearPDF/AdmisionPacientePDF.cshtml", model);
         }
 
         // Método para convertir URL de imagen a Base64
@@ -2936,17 +4139,33 @@ namespace sistema.Controllers
         //     };
 
         //     // Console.WriteLine($"Generando PDF para PacienteId: {idPaciente}, HospitalizacionId: {idHabitacion}");
-        //     return await _generatePdf.GetPdf("Views/CrearPDF/ConsentimientoHospiPDF.cshtml", model);
+        //     return await RenderPdfAsync("Views/CrearPDF/ConsentimientoHospiPDF.cshtml", model);
         // }
 
         public async Task<IActionResult> GenerarPDFConsentimientoHospi(int idPaciente, int idHabitacion, string idHospi = null, int? citaId = null)
         {
             ConsentimientoHospiVM consentimiento = null;
-            for (int intento = 0; intento < 5; intento++)
+
+            if (!string.IsNullOrEmpty(idHospi) && idHospi != "0")
+            {
+                consentimiento = _consentimientoHospiService.GetConsentimientoByPacienteHabitacionAndHospitalizacion(idPaciente, idHabitacion, idHospi);
+            }
+
+            for (int intento = 0; intento < 5 && consentimiento == null; intento++)
             {
                 consentimiento = _consentimientoHospiService.GetConsentimientoByPacienteAndHabitacion(idPaciente, idHabitacion);
                 if (consentimiento != null) break;
                 await Task.Delay(500);
+            }
+
+            if (consentimiento == null && !string.IsNullOrEmpty(idHospi) && idHospi != "0")
+            {
+                consentimiento = _consentimientoHospiService.GetConsentimientoByPacienteAndHospitalizacion(idPaciente, idHospi);
+            }
+
+            if (consentimiento == null)
+            {
+                consentimiento = _consentimientoHospiService.GetLatestConsentimientoByPaciente(idPaciente);
             }
 
             if (consentimiento == null)
@@ -2955,7 +4174,7 @@ namespace sistema.Controllers
             }
 
             // --- NUEVO MÉTODO CORRECTO PARA OBTENER LAS FIRMAS DESDE LA CARPETA LOCAL ---
-            string directorio = Directory.GetCurrentDirectory();
+            string directorio = ContentRoot;
 
 
             string ObtenerFirmaBase64Local(string rutaFirma)
@@ -3051,27 +4270,36 @@ namespace sistema.Controllers
             }
             // ----------------------------------------------------
             string dpiPaciente = consentimiento?.DPI ?? "";
-            if (string.IsNullOrWhiteSpace(dpiPaciente) && (consentimiento?.PacienteId ?? 0) > 0)
-            {
-                var paciente = _pacientesRepository.Get(consentimiento.PacienteId);
-                dpiPaciente = paciente?.Dpi ?? "";
-            }
+            var pacienteRecord = _pacientesRepository.Get(idPaciente);
+            if (string.IsNullOrWhiteSpace(dpiPaciente))
+                dpiPaciente = pacienteRecord?.Dpi ?? "";
 
             string dpiResponsable = consentimiento?.DPIResponsable ?? "";
+
+            var tipoSangrePdf = HospitalizacionPacienteVitalsHelper.FirstNonEmptyValue(
+                consentimiento?.TipoSangre,
+                pacienteRecord?.TipoDeSangre);
+            var nombreCompletoPdf = HospitalizacionPacienteVitalsHelper.FirstNonEmptyValue(
+                consentimiento?.NombreCompleto,
+                pacienteRecord?.Nombre);
+            var nombrePacientePdf = HospitalizacionPacienteVitalsHelper.FirstNonEmptyValue(
+                consentimiento?.NombrePaciente,
+                consentimiento?.NombreCompleto,
+                pacienteRecord?.Nombre);
 
             var model = new ConsentimientoHospiVM()
             {
                 // Relación con Paciente
-                PacienteId = consentimiento?.PacienteId ?? 0,
-                NombrePaciente = consentimiento?.NombrePaciente ?? "",
-                HabitacionId = consentimiento?.HabitacionId ?? 0,
+                PacienteId = consentimiento?.PacienteId ?? idPaciente,
+                NombrePaciente = nombrePacientePdf ?? "",
+                HabitacionId = consentimiento?.HabitacionId ?? idHabitacion,
                 NumeroHabitacion = consentimiento?.NumeroHabitacion ?? "",
                 HospitalizacionId = consentimiento?.HospitalizacionId ?? "",
 
                 // Datos del Paciente
                 HoraIngreso = consentimiento?.HoraIngreso ?? "",
                 NumeroPaciente = consentimiento?.NumeroPaciente ?? "",
-                NombreCompleto = consentimiento?.NombreCompleto ?? "",
+                NombreCompleto = nombreCompletoPdf ?? "",
                 EstadoCivil = consentimiento?.EstadoCivil ?? "",
                 DPI = dpiPaciente,
                 FechaNacimiento = consentimiento?.FechaNacimiento ?? "",
@@ -3080,7 +4308,7 @@ namespace sistema.Controllers
                 Direccion = consentimiento?.Direccion ?? "",
                 Celular = consentimiento?.Celular ?? "",
                 Email = consentimiento?.Email ?? "",
-                TipoSangre = consentimiento?.TipoSangre ?? "",
+                TipoSangre = tipoSangrePdf ?? "",
                 Genero = consentimiento?.Genero ?? "",
                 Religion = consentimiento?.Religion ?? "",
                 Ocupacion = consentimiento?.Ocupacion ?? "",
@@ -3135,10 +4363,15 @@ namespace sistema.Controllers
                 URLFirmaPaciente = firmaPacienteBase64,
                 URLFirmaResponsable = firmaResponsableBase64,
                 URLFirmaNotaria = firmaNotariaBase64,
-                URLFirmaRepresentanteNaranjo = firmaRepresentanteBase64
+                URLFirmaRepresentanteNaranjo = firmaRepresentanteBase64,
+                FirmaPacienteBase64 = firmaPacienteBase64,
+                FirmaResponsableBase64 = firmaResponsableBase64,
+                FirmaNotariaBase64 = firmaNotariaBase64,
+                FirmaRepresentanteBase64 = firmaRepresentanteBase64,
+                FirmaMedicoBase64 = firmaMedicoBase64
             };
 
-            // return await _generatePdf.GetPdf("Views/CrearPDF/ConsentimientoHospiPDF.cshtml", model);
+            // return await RenderPdfAsync("Views/CrearPDF/ConsentimientoHospiPDF.cshtml", model);
             // 1. Leer la variable Cliente desde el appsettings.json
             string clienteApp = _configuration["Cliente"];
 
@@ -3158,7 +4391,18 @@ namespace sistema.Controllers
             }
 
             // 4. Retornar el PDF usando la vista dinámica
-            return await _generatePdf.GetPdf(rutaVistaPDF, model);
+            if (string.Equals(clienteApp, "SS", StringComparison.OrdinalIgnoreCase))
+            {
+                PdfReportHelper.CompletarFirmasConsentimientoSerSalud(
+                    model,
+                    firmaMedicoBase64,
+                    directorio,
+                    _configuration["EstablecimientoImagenFirma"],
+                    _configuration["EstablecimientoFirmaRepresentante"],
+                    string.Equals(_webHostEnvironment.EnvironmentName, Environments.Development, StringComparison.OrdinalIgnoreCase));
+            }
+
+            return await RenderPdfAsync(rutaVistaPDF, model);
         }
 
         public async Task<IActionResult> GenerarPDFConsentimientoHospiHospi(int idPaciente, int idHabitacion, string idHospi = null)
@@ -3246,7 +4490,7 @@ namespace sistema.Controllers
             };
 
             // Console.WriteLine($"Generando PDF para PacienteId: {idPaciente}, HospitalizacionId: {idHabitacion}");
-            return await _generatePdf.GetPdf("Views/CrearPDF/ConsentimientoHospiPDF.cshtml", model);
+            return await RenderPdfAsync("Views/CrearPDF/ConsentimientoHospiPDF.cshtml", model);
         }
 
         // [HttpPost]
@@ -3264,7 +4508,7 @@ namespace sistema.Controllers
         //     // Console.WriteLine(estadoCuentaJson);
 
         //     // Opcional: Devolver una vista vacía o un resultado simple
-        //     return await _generatePdf.GetPdf("Views/CrearPDF/EstadoDeCuentaHopsPDF.cshtml", estadoCuenta);
+        //     return await RenderPdfAsync("Views/CrearPDF/EstadoDeCuentaHopsPDF.cshtml", estadoCuenta);
         // }
 
 
@@ -3338,7 +4582,7 @@ namespace sistema.Controllers
                     model.GastosAdministrativos = new List<GastoAdministrativoViewModel>(); // ← nuevo
                 }
 
-                return await _generatePdf.GetPdf("Views/CrearPDF/EstadoDeCuentaHopsPDF.cshtml", model);
+                return await RenderPdfAsync("Views/CrearPDF/EstadoDeCuentaHopsPDF.cshtml", model);
             }
             catch
             {
@@ -3417,6 +4661,12 @@ namespace sistema.Controllers
                 if (hospitalizacion == null)
                     return NotFound($"No se encontró la hospitalización con Id {hospitalizacionId}.");
 
+                hospitalizacion.HospitalizacionInsumosDirectos = _context.HospitalizacionInsumosDirectos
+                    .Include(i => i.Producto)
+                    .Include(i => i.Aplicaciones)
+                    .Where(i => i.HospitalizacionId == hospitalizacionId && !i.Eliminado)
+                    .ToList();
+
                 // 3. Construir modelo (usando alias fmModels)
                 var model = new fmModels.EstadoCuentaViewModel();
 
@@ -3481,27 +4731,60 @@ namespace sistema.Controllers
                     });
                 }
 
-                // 3.2 Medicamentos / insumos aplicados
+                // 3.2 Medicamentos / insumos aplicados (clasificados por tipo de producto)
                 if (hospitalizacion.HospitalizacionesProductos != null)
                 {
-                    foreach (var prod in hospitalizacion.HospitalizacionesProductos
-                        .Where(p => p.HospitalizacionesProductosAplicaciones != null &&
-                                    p.HospitalizacionesProductosAplicaciones.Any(a => a.Aplicado)))
+                    foreach (var prod in hospitalizacion.HospitalizacionesProductos)
                     {
-                        var cantidad = prod.HospitalizacionesProductosAplicaciones
-                            .Where(a => a.Aplicado)
-                            .Sum(a => a.Cantidad);
+                        var aplicadas = HospitalizacionCargosHelper
+                            .AplicacionesVigentes(prod.HospitalizacionesProductosAplicaciones)
+                            .ToList();
+                        if (!aplicadas.Any()) continue;
+
+                        var cantidad = aplicadas.Sum(a => a.Cantidad);
                         if (cantidad <= 0) continue;
 
                         var subtotal = Math.Round(cantidad * prod.PrecioValor, 2);
-                        string fechaStr = prod.FechaHoraAplicacionManual ?? DateTime.Now.ToString("dd/MM/yyyy");
                         productosList.Add(new fmModels.ProductoViewModel
                         {
-                            Fecha = fechaStr,
-                            Tipo = "Medicamentos",
-                            Item = prod.Producto?.NombreProducto ?? "Medicamento/Insumo",
+                            Fecha = HospitalizacionCargosHelper.FormatearFechaAplicacionProducto(
+                                aplicadas,
+                                prod.FechaHoraAplicacionManual),
+                            Tipo = HospitalizacionCargosHelper.ObtenerTipoProductoCuenta(prod.Producto?.TipoProductoId),
+                            Item = prod.Producto?.NombreProducto ?? "Producto",
                             Cantidad = (int)cantidad,
                             PrecioUnitario = Math.Round(prod.PrecioValor, 2),
+                            Subtotal = subtotal,
+                            DescPct = 0m,
+                            Cargo = 0m
+                        });
+                    }
+                }
+
+                // 3.2b Control de insumos directos (misma clasificación por tipo de producto)
+                if (hospitalizacion.HospitalizacionInsumosDirectos != null)
+                {
+                    foreach (var insumo in hospitalizacion.HospitalizacionInsumosDirectos.Where(i => !i.Eliminado))
+                    {
+                        var aplicadas = HospitalizacionCargosHelper
+                            .AplicacionesVigentesInsumoDirecto(insumo.Aplicaciones)
+                            .ToList();
+                        if (!aplicadas.Any()) continue;
+
+                        var cantidad = aplicadas.Sum(a => a.Cantidad);
+                        if (cantidad <= 0) continue;
+
+                        var subtotal = Math.Round(aplicadas.Sum(a => a.Cantidad * insumo.PrecioValor), 2);
+
+                        productosList.Add(new fmModels.ProductoViewModel
+                        {
+                            Fecha = HospitalizacionCargosHelper.FormatearFechaAplicacionInsumoDirecto(
+                                aplicadas,
+                                insumo.FechaHoraAplicacionManual),
+                            Tipo = HospitalizacionCargosHelper.ObtenerTipoProductoCuenta(insumo.Producto?.TipoProductoId),
+                            Item = insumo.Producto?.NombreProducto ?? "Producto",
+                            Cantidad = (int)cantidad,
+                            PrecioUnitario = Math.Round(insumo.PrecioValor, 2),
                             Subtotal = subtotal,
                             DescPct = 0m,
                             Cargo = 0m
@@ -3514,14 +4797,15 @@ namespace sistema.Controllers
                 {
                     foreach (var svc in hospitalizacion.HospitalizacionesServicios.Where(s => !s.Eliminado))
                     {
-                        var subtotal = Math.Round(svc.Cantidad * svc.Precio, 2);
+                        decimal precioSvc = ObtenerPrecioUnitarioHospitalizacionServicio(svc);
+                        var subtotal = Math.Round(svc.Cantidad * precioSvc, 2);
                         productosList.Add(new fmModels.ProductoViewModel
                         {
                             Fecha = svc.FechaAplicacionFormateada ?? DateTime.Now.ToString("dd/MM/yyyy"),
                             Tipo = "Servicios",
                             Item = svc.Servicio?.NombreServicio ?? "Servicio clínico",
                             Cantidad = (int)Math.Round(svc.Cantidad, 0),
-                            PrecioUnitario = Math.Round(svc.Precio, 2),
+                            PrecioUnitario = Math.Round(precioSvc, 2),
                             Subtotal = subtotal,
                             DescPct = 0m,
                             Cargo = 0m
@@ -3643,7 +4927,7 @@ namespace sistema.Controllers
 
                 model.DescuentoGlobal = 0;
 
-                return await _generatePdf.GetPdf("Views/CrearPDF/EstadoDeCuentaHopsPDF.cshtml", model);
+                return await RenderPdfAsync("Views/CrearPDF/EstadoDeCuentaHopsPDF.cshtml", model);
             }
             catch (Exception ex)
             {
@@ -3717,7 +5001,7 @@ namespace sistema.Controllers
             };
 
 
-            string directorio = Directory.GetCurrentDirectory();
+            string directorio = ContentRoot;
 
             string rutaRelativa = requisicion.FirmaSolicitante.TrimStart('/');
             string rutaFinal = Path.Combine(directorio, "wwwroot", rutaRelativa);
@@ -3793,7 +5077,7 @@ namespace sistema.Controllers
 
             ViewData["NombreBodega"] = requisicion.BodegaOrigen?.NombreBodega;
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/generarPDFRequisicionDespacho.cshtml", model);
+            return await RenderPdfAsync("Views/CrearPDF/generarPDFRequisicionDespacho.cshtml", model);
         }
 
 
@@ -3808,7 +5092,7 @@ namespace sistema.Controllers
 
             if (devolucion == null) return NotFound($"No se encontró la devolución con ID: {id}");
 
-            string directorio = Directory.GetCurrentDirectory();
+            string directorio = ContentRoot;
 
             if (!string.IsNullOrEmpty(devolucion.FirmaSolicitante))
             {
@@ -3851,7 +5135,7 @@ namespace sistema.Controllers
             };
             _generatePdf.SetConvertOptions(options);
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/generarPDFDevolucion.cshtml", devolucion);
+            return await RenderPdfAsync("Views/CrearPDF/generarPDFDevolucion.cshtml", devolucion);
         }
 
         public async Task<IActionResult> GenerarPDFHospiReports(int idPaciente, int idHabitacion, string idHospi = null, int report = 0, int? citaId = null)
@@ -3859,7 +5143,7 @@ namespace sistema.Controllers
             var consentimiento = _consentimientoHospiService.GetConsentimientoByPacienteHabitacionAndHospitalizacion(idPaciente, idHabitacion, idHospi);
 
             // --- Función local para leer imágenes a Base64 ---
-            string directorio = Directory.GetCurrentDirectory();
+            string directorio = ContentRoot;
             string ObtenerFirmaBase64Local(string rutaFirma)
             {
                 if (string.IsNullOrEmpty(rutaFirma)) return "";
@@ -3938,38 +5222,68 @@ namespace sistema.Controllers
                         firmaMedicoBase64 = ObtenerFirmaBase64Local(cita.Empleado.FirmaEmpleado);
                     }
 
-                    // Función interna para resolver ayudantes
-                    void ResolverMedicoSecundario(string datoCita, out string nombre, out string colegiado)
+                    void ResolverMedicoSecundario(string datoCita, out string nombre, out string colegiado, out string firma)
                     {
-                        nombre = datoCita ?? ""; colegiado = "";
-                        if (int.TryParse(datoCita, out int idEmp))
-                        {
-                            var emp = _empleadoRepository.Get(idEmp, false);
-                            if (emp != null) { nombre = emp.NombreYApellidos; colegiado = emp.Colegiado ?? ""; }
-                        }
+                        PdfReportHelper.ResolverMedicoSecundarioCita(
+                            datoCita,
+                            _empleadoRepository,
+                            out nombre,
+                            out colegiado,
+                            out firma,
+                            directorio);
                     }
 
-                    ResolverMedicoSecundario(cita.PrimerAyudante, out nombre1erAyudante, out col1erAyudante);
-                    ResolverMedicoSecundario(cita.SegundoAyudante, out nombre2doAyudante, out col2doAyudante);
-                    ResolverMedicoSecundario(cita.Anestesista, out nombreAnestesista, out colAnestesista);
+                    ResolverMedicoSecundario(cita.PrimerAyudante, out nombre1erAyudante, out col1erAyudante, out _);
+                    ResolverMedicoSecundario(cita.SegundoAyudante, out nombre2doAyudante, out col2doAyudante, out _);
 
-                    if (int.TryParse(cita.Anestesista, out int idAnestesista))
+                    if (cita.AnestesistaId is > 0)
                     {
-                        var anestesista = _empleadoRepository.Get(idAnestesista, false);
+                        var anestesista = _empleadoRepository.Get(cita.AnestesistaId.Value, false);
                         if (anestesista != null)
                         {
+                            nombreAnestesista = anestesista.NombreYApellidos;
+                            colAnestesista = anestesista.Colegiado ?? "";
                             firmaAnestesistaBase64 = ObtenerFirmaBase64Local(anestesista.FirmaEmpleado);
                         }
                     }
+                    else
+                    {
+                        ResolverMedicoSecundario(cita.Anestesista, out nombreAnestesista, out colAnestesista, out firmaAnestesistaBase64);
+                    }
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(nombreAnestesista)
+                && !string.IsNullOrEmpty(idHospi)
+                && int.TryParse(idHospi, out int hospiIdAnest))
+            {
+                var anestNota = _hospitalizacionRepository.GetNotasOperatoriasByHospitalizacion(hospiIdAnest)
+                    ?.OrderByDescending(n => n.FechaRegistro)
+                    .FirstOrDefault()
+                    ?.Anestesista;
+                if (!string.IsNullOrWhiteSpace(anestNota)
+                    && !anestNota.Equals("Anestesiólogo asignado", StringComparison.OrdinalIgnoreCase))
+                {
+                    PdfReportHelper.ResolverMedicoSecundarioCita(
+                        anestNota,
+                        _empleadoRepository,
+                        out nombreAnestesista,
+                        out colAnestesista,
+                        out firmaAnestesistaBase64,
+                        directorio);
                 }
             }
 
             var medicamentosNoControlados = new List<MedicamentoNoControladoPdfVM>();
             if (!string.IsNullOrEmpty(idHospi) && int.TryParse(idHospi, out int hospiIdParaMeds))
             {
-                medicamentosNoControlados = _medicamentoNoControladoRepository
+                var historialMedsConsent = _medicamentoNoControladoRepository
                     .GetHistorialByHospitalizacion(hospiIdParaMeds)
                     .Where(m => !m.Eliminado)
+                    .ToList();
+                var ultimaFechaMeds = historialMedsConsent.FirstOrDefault()?.FechaRegistro;
+                medicamentosNoControlados = historialMedsConsent
+                    .Where(m => ultimaFechaMeds == null || m.FechaRegistro == ultimaFechaMeds)
                     .Select(m => new MedicamentoNoControladoPdfVM
                     {
                         ProductoNombre = m.ProductoNombre,
@@ -4073,11 +5387,40 @@ namespace sistema.Controllers
                 MedicamentosNoControlados = medicamentosNoControlados,
             };
 
+            PdfReportHelper.AsignarFirmaFarmaciaMedicamentos(
+                model,
+                _configuration["EstablecimientoImagenFirma"],
+                directorio);
+
+            if (report == 2 || report == 3)
+            {
+                Hospitalizacion hospitalizacionReport = null;
+                string anestNotaReport = null;
+                if (!string.IsNullOrEmpty(idHospi) && int.TryParse(idHospi, out int hospiIdReport3))
+                {
+                    hospitalizacionReport = _hospitalizacionRepository.Get(hospiIdReport3, includeConsultas: true);
+                    anestNotaReport = _hospitalizacionRepository.GetNotasOperatoriasByHospitalizacion(hospiIdReport3)
+                        ?.OrderByDescending(n => n.FechaRegistro)
+                        .FirstOrDefault()
+                        ?.Anestesista;
+                }
+
+                PdfReportHelper.CompletarConsentimientoPdfVm(
+                    model,
+                    hospitalizacionReport,
+                    _citasRepository,
+                    _empleadoRepository,
+                    directorio,
+                    citaIdResuelto > 0 ? citaIdResuelto : null,
+                    medicamentosNoControlados,
+                    anestNotaReport);
+            }
+
             // Selección de Vista
-            if (report == 1) return await _generatePdf.GetPdf("Views/CrearPDF/AutorizacionSalaOperacionesHospiPDF.cshtml", model);
-            else if (report == 2) return await _generatePdf.GetPdf("Views/CrearPDF/MedicoAnestesiaHospiPDF.cshtml", model);
-            else if (report == 3) return await _generatePdf.GetPdf("Views/CrearPDF/MedicamentosContrladosHospiPDF.cshtml", model);
-            else return await _generatePdf.GetPdf("Views/CrearPDF/ConsentimientoHospiPDF.cshtml", model);
+            if (report == 1) return await RenderPdfAsync("Views/CrearPDF/AutorizacionSalaOperacionesHospiPDF.cshtml", model);
+            else if (report == 2) return await RenderPdfAsync("Views/CrearPDF/MedicoAnestesiaHospiPDF.cshtml", model);
+            else if (report == 3) return await RenderPdfAsync("Views/CrearPDF/MedicamentosContrladosHospiPDF.cshtml", model);
+            else return await RenderPdfAsync("Views/CrearPDF/ConsentimientoHospiPDF.cshtml", model);
         }
 
 
@@ -4086,7 +5429,7 @@ namespace sistema.Controllers
         [Authorize]
         public async Task<IActionResult> ReporteVentasGeneralPDF(
             string desde, string hasta, int ambienteId = 0, int empleadoId = 0,
-            string modoDetalle = "monto", bool incluirConsolidadoItems = false,
+            string modoDetalle = "monto", bool incluirConsolidadoItems = true,
             bool incluirConsolidadoMedicos = false)
         {
             // ── 1. Parsear fechas ────────────────────────────────────────────────
@@ -4094,7 +5437,15 @@ namespace sistema.Controllers
                 !DateTime.TryParse(hasta, out var fechaHasta))
                 return BadRequest("Formato de fecha inválido. Use yyyy-MM-dd.");
 
+            try
+            {
             var fechaHastaFin = fechaHasta.Date.AddDays(1).AddSeconds(-1);
+
+            // modoDetalle: monto = montos por categoría (sin detalle línea a línea en cada venta)
+            //              descripcion = descripción de ítems e insumos por venta
+            // Los checkboxes controlan consolidados globales (categorías / médicos / especialidades)
+            bool modoDescripcion = string.Equals(modoDetalle, "descripcion", StringComparison.OrdinalIgnoreCase);
+            modoDetalle = modoDescripcion ? "descripcion" : "monto";
 
             // ── 2. Consultar ventas (sin navegaciones pesadas inicialmente) ─────
             List<Venta> ventasBd = empleadoId > 0
@@ -4106,41 +5457,43 @@ namespace sistema.Controllers
             if (ambienteId > 0)
                 ventasBd = ventasBd.Where(v => v.AmbienteId == ambienteId).ToList();
 
-            // ── 3. Cargar información completa de cada venta ─────────────────────
-            foreach (var v in ventasBd)
+            // ── 3. Completar nombres de paciente (ventas ya traen Detalle, Pagos, Empleado) ──
+            var pacienteIds = ventasBd
+                .Where(v => (v.Clientes == null || string.IsNullOrWhiteSpace(v.Clientes.Nombre)) && v.PacienteId != null)
+                .Select(v => v.PacienteId!.Value)
+                .Distinct()
+                .ToList();
+
+            if (pacienteIds.Count > 0)
             {
-                // Asignar nombre real del paciente si la venta tiene PacienteId pero clientes nulo
-                if ((v.Clientes == null || string.IsNullOrWhiteSpace(v.Clientes.Nombre)) && v.PacienteId != null)
+                var pacientesPorId = await _context.Pacientes.AsNoTracking()
+                    .Where(p => pacienteIds.Contains(p.Id))
+                    .ToDictionaryAsync(p => p.Id);
+
+                foreach (var v in ventasBd)
                 {
-                    var paciente = _pacientesRepository.Get(v.PacienteId.Value);
-                    if (paciente != null)
+                    if ((v.Clientes == null || string.IsNullOrWhiteSpace(v.Clientes.Nombre))
+                        && v.PacienteId != null
+                        && pacientesPorId.TryGetValue(v.PacienteId.Value, out var paciente))
                     {
-                        if (v.Clientes == null)
-                            v.Clientes = new Clientes();
+                        v.Clientes ??= new Clientes();
                         v.Clientes.Nombre = paciente.Nombre;
                         v.Clientes.Nit = v.Nit ?? "CF";
                         v.Clientes.Direccion = v.Direccion ?? "N/A";
                     }
                 }
-
-                var vCompleta = _ventaRepository.Get(v.Id);
-                if (vCompleta != null)
-                {
-                    v.DetalleVenta = vCompleta.DetalleVenta?.ToList() ?? new List<DetalleVenta>();
-                    v.Pagos = vCompleta.Pagos?.ToList() ?? new List<Pagos>();
-                    if (v.Empleado == null && vCompleta.Empleado != null)
-                        v.Empleado = vCompleta.Empleado;
-                    if (v.Clientes == null && vCompleta.Clientes != null)
-                        v.Clientes = vCompleta.Clientes;
-                }
-                else
-                {
-                    var detalles = _ventaRepository.GetDetalle(v.Id);
-                    v.DetalleVenta = detalles?.ToList() ?? new List<DetalleVenta>();
-                    var vTemp = _ventaRepository.Get(v.Id);
-                    v.Pagos = vTemp?.Pagos?.ToList() ?? new List<Pagos>();
-                }
             }
+
+            var hospitalizacionPorVenta = PrecargarHospitalizacionIdPorVentas(ventasBd);
+            var costoProductoCache = PrecargarCostosProductos(ventasBd);
+
+            var ventaIds = ventasBd.Select(v => v.Id).ToList();
+            var ingresosCajaPorVenta = ventaIds.Count == 0
+                ? new Dictionary<int, decimal>()
+                : _context.DetalleCajas.AsNoTracking()
+                    .Where(d => d.VentaId != null && ventaIds.Contains(d.VentaId.Value))
+                    .GroupBy(d => d.VentaId!.Value)
+                    .ToDictionary(g => g.Key, g => g.Sum(d => d.Ingreso));
 
             // ── 4. Nombre del empleado filtrado ──────────────────────────────────
             string empleadoNombreFiltro = null;
@@ -4164,25 +5517,69 @@ namespace sistema.Controllers
 
             // ── 7. Diccionario para acumular items consolidados (con costo unitario y total) ──
             var itemsConsolidadosDict = new Dictionary<string, (decimal cantidad, decimal total, decimal costoTotal, decimal? costoUnitario)>(StringComparer.OrdinalIgnoreCase);
+            var ambienteCostos = new Dictionary<int, (decimal costoTotal, decimal cantidad)>();
+            var ambienteCategoriaMontos = new Dictionary<int, (decimal productos, decimal servicios, decimal examenes, decimal hospital)>();
+            var montosHospitalPorEspecialidad = new Dictionary<string, (decimal productos, decimal servicios, decimal examenes, decimal hospital)>(StringComparer.OrdinalIgnoreCase);
 
-            void AgregarItem(string categoria, string nombre, decimal cantidad, decimal total, decimal? costoUnitario = null)
+            void AcumularMontoAmbiente(int ambienteIdItem, string categoria, decimal total)
             {
-                if (!incluirConsolidadoItems) return;
+                if (ambienteIdItem <= 0 || total == 0) return;
+                categoria = NormalizarCategoriaConsolidado(categoria);
+                if (!ambienteCategoriaMontos.TryGetValue(ambienteIdItem, out var montos))
+                    montos = (0, 0, 0, 0);
+
+                if (categoria == "Producto")
+                    montos.productos += total;
+                else if (categoria == "Servicio")
+                    montos.servicios += total;
+                else if (categoria == "Examen")
+                    montos.examenes += total;
+                else
+                    montos.hospital += total;
+
+                ambienteCategoriaMontos[ambienteIdItem] = montos;
+            }
+
+            void AgregarItem(string categoria, string nombre, decimal cantidad, decimal total, decimal? costoUnitario, int ambienteIdItem)
+            {
                 if (string.IsNullOrWhiteSpace(nombre)) nombre = "No especificado";
-                var key = $"{categoria}|{nombre}";
-                if (!itemsConsolidadosDict.TryGetValue(key, out var item))
+                categoria = NormalizarCategoriaConsolidado(categoria);
+
+                decimal cu = costoUnitario ?? 0;
+                AcumularMontoAmbiente(ambienteIdItem, categoria, total);
+
+                if (incluirConsolidadoItems)
                 {
-                    item = (0, 0, 0, costoUnitario);
+                    var key = $"{categoria}|{nombre}";
+                    if (!itemsConsolidadosDict.TryGetValue(key, out var item))
+                    {
+                        item = (0, 0, 0, costoUnitario > 0 ? costoUnitario : null);
+                        itemsConsolidadosDict[key] = item;
+                    }
+                    item.cantidad += cantidad;
+                    item.total += total;
+                    item.costoTotal += cantidad * cu;
+                    if (costoUnitario.HasValue && costoUnitario.Value > 0 && !item.costoUnitario.HasValue)
+                        item.costoUnitario = costoUnitario;
                     itemsConsolidadosDict[key] = item;
                 }
-                item.cantidad += cantidad;
-                item.total += total;
-                if (costoUnitario.HasValue)
+
+                if (ambienteIdItem > 0 && cu > 0)
                 {
-                    item.costoTotal += cantidad * costoUnitario.Value;
-                    if (!item.costoUnitario.HasValue) item.costoUnitario = costoUnitario;
+                    if (ambienteCostos.TryGetValue(ambienteIdItem, out var ac))
+                        ambienteCostos[ambienteIdItem] = (ac.costoTotal + cantidad * cu, ac.cantidad + cantidad);
+                    else
+                        ambienteCostos[ambienteIdItem] = (cantidad * cu, cantidad);
                 }
-                itemsConsolidadosDict[key] = item;
+            }
+
+            // ── 7b. Consolidado hospital (insumos aplicados, paquetes, estadía) — independiente de ventas en caja
+            bool incluirHospitalEnReporte = ambienteId == 0 || ambienteId == (int)AmbienteEnum.Hospital;
+            if (incluirConsolidadoItems && incluirHospitalEnReporte)
+            {
+                ConsolidarHospitalizacionesEnPeriodo(
+                    ventasBd, fechaDesde.Date, fechaHastaFin, AgregarItem, ambienteCostos,
+                    (int)AmbienteEnum.Hospital, montosHospitalPorEspecialidad, hospitalizacionPorVenta, costoProductoCache);
             }
 
             // ── 8. Construir bloques por ambiente ────────────────────────────────
@@ -4198,7 +5595,11 @@ namespace sistema.Controllers
                     .OrderBy(v => v.FechaVenta)
                     .ToList();
 
-                if (!ventasAmb.Any()) continue;
+                bool tieneMontosHospital = idAmb == (int)AmbienteEnum.Hospital
+                    && ambienteCategoriaMontos.TryGetValue(idAmb, out var mh)
+                    && (mh.productos + mh.servicios + mh.examenes + mh.hospital) > 0;
+
+                if (!ventasAmb.Any() && !tieneMontosHospital) continue;
 
                 var items = new List<ReporteVentaItemViewModel>();
 
@@ -4212,7 +5613,7 @@ namespace sistema.Controllers
                     if (esHospitalizacion)
                     {
                         // ── OBTENER HOSPITALIZACION ID ──
-                        int? hospitalizacionId = ObtenerHospitalizacionIdPorVenta(v);
+                        int? hospitalizacionId = ObtenerHospitalizacionIdPorVenta(v, hospitalizacionPorVenta);
 
                         if (hospitalizacionId != null)
                         {
@@ -4240,76 +5641,83 @@ namespace sistema.Controllers
                                 // ---- Productos (medicamentos/insumos aplicados) con costo unitario ----
                                 decimal subProductos = 0m, cantProductos = 0m;
                                 var listadoProductos = new List<ReporteVentaDetalleItemViewModel>();
+                                bool hospEnPeriodoVenta = hosp.FechaInicio <= fechaHastaFin && hosp.FechaFin >= fechaDesde.Date;
                                 foreach (var prod in hosp.HospitalizacionesProductos ?? Enumerable.Empty<HospitalizacionProducto>())
                                 {
-                                    var aplicadas = prod.HospitalizacionesProductosAplicaciones?.Where(a => a.Aplicado).ToList() ?? new List<HospitalizacionProductoAplicacion>();
+                                    var aplicadas = prod.HospitalizacionesProductosAplicaciones?
+                                        .Where(a => a.Aplicado && !a.Eliminado
+                                            && FechaAplicacionEnRango(a, fechaDesde.Date, fechaHastaFin, hospEnPeriodoVenta, tieneVentaEnPeriodo: true))
+                                        .ToList() ?? new List<HospitalizacionProductoAplicacion>();
                                     if (!aplicadas.Any()) continue;
                                     decimal cantidad = aplicadas.Sum(a => a.Cantidad);
                                     decimal subtotalProd = cantidad * prod.PrecioValor;
                                     subProductos += subtotalProd;
                                     cantProductos += cantidad;
 
-                                    // Costo: prioridad → ProductoInventario.PrecioCosto → Producto.PrecioCosto → DetallePaquete.PrecioCosto
-                                    decimal? costoUnitario = null;
-                                    // 1) Buscar en inventario por ProductoId (precio de compra real del lote)
-                                    var invRecord = _context.ProductosInventario
-                                        .Where(i => i.ProductoId == prod.ProductoId && !i.Eliminado)
-                                        .OrderByDescending(i => i.Id)
-                                        .Select(i => (decimal?)i.PrecioCosto)
-                                        .FirstOrDefault();
-                                    if (invRecord.HasValue && invRecord.Value > 0)
-                                        costoUnitario = invRecord.Value;
-                                    // 2) Fallback: PrecioCosto del catálogo
-                                    else if (prod.Producto?.PrecioCosto > 0)
-                                        costoUnitario = prod.Producto.PrecioCosto;
-                                    else if (prod.ProductoId > 0)
-                                    {
-                                        var prodBd = _productoRepository.GetProdutoById(prod.ProductoId);
-                                        if (prodBd?.PrecioCosto > 0) costoUnitario = prodBd.PrecioCosto;
-                                    }
+                                    decimal? costoUnitario = ObtenerCostoUnitarioProducto(prod.ProductoId, prod.Producto, costoProductoCache);
 
-                                    if (modoDetalle == "descripcion")
-                                        listadoProductos.Add(new ReporteVentaDetalleItemViewModel
-                                        {
-                                            Descripcion = prod.Producto?.NombreProducto ?? "Producto",
-                                            Categoria = "Producto",
-                                            Cantidad = cantidad,
-                                            PrecioUnit = prod.PrecioValor,
-                                            Subtotal = subtotalProd,
-                                            Descuento = 0
-                                        });
+                                    listadoProductos.Add(CrearDetalleItemVenta(
+                                        prod.Producto?.NombreProducto ?? "Producto",
+                                        "Producto",
+                                        cantidad,
+                                        prod.PrecioValor,
+                                        subtotalProd,
+                                        0,
+                                        costoUnitario));
 
-                                    AgregarItem("Producto", prod.Producto?.NombreProducto ?? "Producto", cantidad, subtotalProd, costoUnitario);
                                 }
 
-                                // ---- Servicios aplicados ----
+                                var detInsumosDirectos = ConstruirDetalleInsumosDirectosHospitalizacion(
+                                    hosp.HospitalizacionInsumosDirectos,
+                                    fechaDesde.Date,
+                                    fechaHastaFin,
+                                    hospEnPeriodoVenta,
+                                    tieneVentaEnPeriodo: true,
+                                    costoProductoCache);
+                                subProductos += detInsumosDirectos.subProductos;
+                                cantProductos += detInsumosDirectos.cantProductos;
+                                listadoProductos.AddRange(detInsumosDirectos.lineas);
+
+                                // ---- Servicios aplicados (misma lógica que facturación: !Eliminado, sin exigir Aplicado) ----
                                 decimal subServicios = 0m, cantServicios = 0m;
+                                decimal subExamenes = 0m, cantExamenes = 0m;
+                                decimal subHospitalDesdeServicios = 0m;
                                 var listadoServicios = new List<ReporteVentaDetalleItemViewModel>();
                                 foreach (var svc in hosp.HospitalizacionesServicios ?? Enumerable.Empty<HospitalizacionServicio>())
                                 {
-                                    if (svc.Aplicado)
+                                    if (!ServicioHospitalizacionEnRango(svc, fechaDesde.Date, fechaHastaFin, hospEnPeriodoVenta, tieneVentaEnPeriodo: true))
+                                        continue;
+
+                                    decimal precioSvc = ObtenerPrecioUnitarioHospitalizacionServicio(svc);
+                                    decimal subtotalSvc = Math.Round(svc.Cantidad * precioSvc, 2);
+                                    string categoriaSvc = CategoriaMontosHospitalizacionServicio(svc);
+                                    if (categoriaSvc == "Servicio")
                                     {
-                                        decimal subtotalSvc = svc.Cantidad * svc.Precio;
                                         subServicios += subtotalSvc;
                                         cantServicios += svc.Cantidad;
-
-                                        if (modoDetalle == "descripcion")
-                                            listadoServicios.Add(new ReporteVentaDetalleItemViewModel
-                                            {
-                                                Descripcion = svc.Servicio?.NombreServicio ?? "Servicio",
-                                                Categoria = "Servicio",
-                                                Cantidad = svc.Cantidad,
-                                                PrecioUnit = svc.Precio,
-                                                Subtotal = subtotalSvc,
-                                                Descuento = 0
-                                            });
-
-                                        AgregarItem("Servicio", svc.Servicio?.NombreServicio ?? "Servicio", svc.Cantidad, subtotalSvc, null);
                                     }
+                                    else if (categoriaSvc == "Examen")
+                                    {
+                                        subExamenes += subtotalSvc;
+                                        cantExamenes += svc.Cantidad;
+                                    }
+                                    else
+                                        subHospitalDesdeServicios += subtotalSvc;
+
+                                    string categoriaDetalle = categoriaSvc == "Servicio" ? "Servicio" : categoriaSvc;
+                                    listadoServicios.Add(CrearDetalleItemVenta(
+                                        svc.Servicio?.NombreServicio ?? "Servicio",
+                                        categoriaDetalle,
+                                        svc.Cantidad,
+                                        precioSvc,
+                                        subtotalSvc,
+                                        0,
+                                        ObtenerCostoUnitarioServicio(svc.ServicioId, svc.Servicio)));
+                                    if (modoDetalle == "descripcion" && categoriaSvc == "Servicio")
+                                        listadoServicios.AddRange(ObtenerDetalleInsumosServicio(svc.ServicioId, svc.Cantidad));
                                 }
 
                                 // ---- Exámenes (con categoría real) ----
-                                decimal subExamenes = 0m, cantExamenes = 0m;
                                 var listadoExamenes = new List<ReporteVentaDetalleItemViewModel>();
                                 foreach (var examHosp in hosp.HospitalizacionesExamenes ?? Enumerable.Empty<HospitalizacionExamen>())
                                 {
@@ -4326,18 +5734,16 @@ namespace sistema.Controllers
 
                                             subExamenes += det.PrecioValor;
                                             cantExamenes += det.Cantidad;
-                                            if (modoDetalle == "descripcion")
-                                                listadoExamenes.Add(new ReporteVentaDetalleItemViewModel
-                                                {
-                                                    Descripcion = labClinico?.NombreExamen ?? "Examen",
-                                                    Categoria = nombreCategoria,
-                                                    Cantidad = det.Cantidad,
-                                                    PrecioUnit = det.PrecioValor,
-                                                    Subtotal = det.PrecioValor,
-                                                    Descuento = 0
-                                                });
+                                            decimal? costoExam = ObtenerCostoUnitarioExamen(labClinico?.Id, labClinico);
+                                            listadoExamenes.Add(CrearDetalleItemVenta(
+                                                labClinico?.NombreExamen ?? "Examen",
+                                                nombreCategoria,
+                                                det.Cantidad,
+                                                det.PrecioValor,
+                                                det.PrecioValor,
+                                                0,
+                                                costoExam));
 
-                                            AgregarItem(nombreCategoria, labClinico?.NombreExamen ?? "Examen", det.Cantidad, det.PrecioValor, null);
                                         }
                                     }
                                 }
@@ -4352,106 +5758,75 @@ namespace sistema.Controllers
                                         decimal precioPaq = paq.PaqueteHospitalizacion.Precio ?? 0;
                                         subPaquetes += precioPaq;
 
-                                        // Costo del paquete: suma de PrecioCosto de cada línea de detalle
-                                        decimal? costoPaq = paq.PaqueteHospitalizacion.DetallePaquetesHospitalizacion != null
-                                            ? paq.PaqueteHospitalizacion.DetallePaquetesHospitalizacion
-                                                .Where(d => !d.Eliminado)
-                                                .Sum(d => (d.PrecioCosto) * d.Cantidad)
-                                            : paq.PaqueteHospitalizacion.PrecioCosto;
+                                        decimal? costoPaq = ObtenerCostoPaqueteHospitalizacion(paq.PaqueteHospitalizacion);
 
-                                        if (modoDetalle == "descripcion")
-                                            listadoPaquetes.Add(new ReporteVentaDetalleItemViewModel
-                                            {
-                                                Descripcion = $"Paquete: {paq.PaqueteHospitalizacion.NombrePaquete}",
-                                                Categoria = "Hospital",
-                                                Cantidad = 1,
-                                                PrecioUnit = precioPaq,
-                                                Subtotal = precioPaq,
-                                                Descuento = 0
-                                            });
-
-                                        AgregarItem("Paquete", paq.PaqueteHospitalizacion.NombrePaquete, 1, precioPaq, costoPaq);
+                                        listadoPaquetes.Add(CrearDetalleItemVenta(
+                                            $"Paquete: {paq.PaqueteHospitalizacion.NombrePaquete}",
+                                            "Hospital",
+                                            1,
+                                            precioPaq,
+                                            precioPaq,
+                                            0,
+                                            costoPaq));
                                     }
                                 }
 
                                 // ---- Gastos administrativos ----
                                 decimal subGastosAdmin = _hospitalizacionRepository.GetGastosAdministrativos(hosp.Id)?.Sum(g => g.Monto) ?? 0;
-                                if (subGastosAdmin > 0)
-                                    AgregarItem("Hospital", "Gastos administrativos", 1, subGastosAdmin, null);
 
                                 // ---- Honorarios ----
                                 decimal subHonorarios = _context.HospitalizacionHonorarios.Where(h => h.HospitalizacionId == hosp.Id).Sum(h => h.Monto);
-                                if (subHonorarios > 0)
-                                    AgregarItem("Hospital", "Honorarios médicos", 1, subHonorarios, null);
 
                                 // ---- Ambulancias ----
                                 decimal subAmbulancias = _context.Ambulancias.Where(a => a.HospitalizacionId == hosp.Id).Sum(a => a.Precio);
-                                if (subAmbulancias > 0)
-                                    AgregarItem("Hospital", "Ambulancia", 1, subAmbulancias, null);
 
                                 // ---- Total categoría Hospital ----
-                                decimal subHospital = subtotalEstadia + subPaquetes + subGastosAdmin + subHonorarios + subAmbulancias;
+                                decimal subHospital = subtotalEstadia + subPaquetes + subGastosAdmin + subHonorarios + subAmbulancias + subHospitalDesdeServicios;
                                 decimal totalDescuento = 0m;
                                 decimal totalNeto = subProductos + subServicios + subExamenes + subHospital - totalDescuento;
 
-                                // ---- Detalle de ítems para modoDescripcion ----
-                                var detalleItems = new List<ReporteVentaDetalleItemViewModel>();
-                                if (modoDetalle == "descripcion")
+                                // Detalle interno (especialidad/consolidados); insumos solo en modo descripción
+                                var detalleItems = new List<ReporteVentaDetalleItemViewModel>
                                 {
-                                    detalleItems.Add(new ReporteVentaDetalleItemViewModel
-                                    {
-                                        Descripcion = $"Estadía en habitación ({noches} noche(s))",
-                                        Categoria = "Hospital",
-                                        Cantidad = noches,
-                                        PrecioUnit = tarifaBase,
-                                        Subtotal = subtotalEstadia,
-                                        Descuento = 0
-                                    });
-                                    foreach (var cambio in cambios)
-                                        detalleItems.Add(new ReporteVentaDetalleItemViewModel
-                                        {
-                                            Descripcion = "Cambio de habitación",
-                                            Categoria = "Hospital",
-                                            Cantidad = cambio.Dias,
-                                            PrecioUnit = cambio.ValorTarifa,
-                                            Subtotal = cambio.ValorTarifa * cambio.Dias,
-                                            Descuento = 0
-                                        });
-                                    detalleItems.AddRange(listadoProductos);
-                                    detalleItems.AddRange(listadoServicios);
-                                    detalleItems.AddRange(listadoExamenes);
-                                    detalleItems.AddRange(listadoPaquetes);
-                                    if (subGastosAdmin > 0)
-                                        detalleItems.Add(new ReporteVentaDetalleItemViewModel
-                                        {
-                                            Descripcion = "Gastos administrativos",
-                                            Categoria = "Hospital",
-                                            Cantidad = 1,
-                                            PrecioUnit = subGastosAdmin,
-                                            Subtotal = subGastosAdmin,
-                                            Descuento = 0
-                                        });
-                                    if (subHonorarios > 0)
-                                        detalleItems.Add(new ReporteVentaDetalleItemViewModel
-                                        {
-                                            Descripcion = "Honorarios médicos",
-                                            Categoria = "Hospital",
-                                            Cantidad = 1,
-                                            PrecioUnit = subHonorarios,
-                                            Subtotal = subHonorarios,
-                                            Descuento = 0
-                                        });
-                                    if (subAmbulancias > 0)
-                                        detalleItems.Add(new ReporteVentaDetalleItemViewModel
-                                        {
-                                            Descripcion = "Ambulancia",
-                                            Categoria = "Hospital",
-                                            Cantidad = 1,
-                                            PrecioUnit = subAmbulancias,
-                                            Subtotal = subAmbulancias,
-                                            Descuento = 0
-                                        });
-                                }
+                                    CrearDetalleItemVenta(
+                                        $"Estadía en habitación ({noches} noche(s))",
+                                        "Hospital",
+                                        noches,
+                                        tarifaBase,
+                                        subtotalEstadia)
+                                };
+                                foreach (var cambio in cambios)
+                                    detalleItems.Add(CrearDetalleItemVenta(
+                                        "Cambio de habitación",
+                                        "Hospital",
+                                        cambio.Dias,
+                                        cambio.ValorTarifa,
+                                        cambio.ValorTarifa * cambio.Dias));
+                                detalleItems.AddRange(listadoProductos);
+                                detalleItems.AddRange(listadoServicios);
+                                detalleItems.AddRange(listadoExamenes);
+                                detalleItems.AddRange(listadoPaquetes);
+                                if (subGastosAdmin > 0)
+                                    detalleItems.Add(CrearDetalleItemVenta(
+                                        "Gastos administrativos",
+                                        "Hospital",
+                                        1,
+                                        subGastosAdmin,
+                                        subGastosAdmin));
+                                if (subHonorarios > 0)
+                                    detalleItems.Add(CrearDetalleItemVenta(
+                                        "Honorarios médicos",
+                                        "Hospital",
+                                        1,
+                                        subHonorarios,
+                                        subHonorarios));
+                                if (subAmbulancias > 0)
+                                    detalleItems.Add(CrearDetalleItemVenta(
+                                        "Ambulancia",
+                                        "Hospital",
+                                        1,
+                                        subAmbulancias,
+                                        subAmbulancias));
 
                                 var medicosAsignados = ObtenerMedicosDeHospitalizacion(hosp);
 
@@ -4489,28 +5864,44 @@ namespace sistema.Controllers
                             }
                             else
                             {
-                                item = ConstruirItemDesdeDetalleVenta(v, modoDetalle, AgregarItem, _productoRepository);
+                                item = ConstruirItemDesdeDetalleVenta(v, modoDetalle, AgregarItem, _productoRepository, idAmb, ingresosCajaPorVenta);
                             }
                         }
                         else
                         {
-                            item = ConstruirItemDesdeDetalleVenta(v, modoDetalle, AgregarItem, _productoRepository);
+                            item = ConstruirItemDesdeDetalleVenta(v, modoDetalle, AgregarItem, _productoRepository, idAmb, ingresosCajaPorVenta);
                         }
                     }
                     else
                     {
-                        item = ConstruirItemDesdeDetalleVenta(v, modoDetalle, AgregarItem, _productoRepository);
+                        item = ConstruirItemDesdeDetalleVenta(v, modoDetalle, AgregarItem, _productoRepository, idAmb, ingresosCajaPorVenta);
                     }
+
+                    AplicarFallbackMontoCobradoSiVacio(item, v, idAmb, ingresosCajaPorVenta, AgregarItem);
 
                     // Agregar médicos para ventas normales (Clínica, etc.)
                     if (item.MedicosAsignados == null || !item.MedicosAsignados.Any())
+                        item.MedicosAsignados = ObtenerMedicosDeVenta(v);
+
+                    var espDesdeDetalle = InferirEspecialidadDesdeDetalleItems(item.DetalleItems);
+                    if (!string.IsNullOrWhiteSpace(espDesdeDetalle) && item.MedicosAsignados != null)
                     {
-                        var medicosVenta = ObtenerMedicosDeVenta(v);
-                        item.MedicosAsignados = medicosVenta;
+                        foreach (var med in item.MedicosAsignados.Where(m => string.IsNullOrWhiteSpace(m.Especialidad)))
+                            med.Especialidad = espDesdeDetalle;
                     }
+
+                    item.DetalleItemsPdf = modoDescripcion
+                        ? (item.DetalleItems ?? new List<ReporteVentaDetalleItemViewModel>()).ToList()
+                        : new List<ReporteVentaDetalleItemViewModel>();
 
                     items.Add(item);
                 }
+
+                ambienteCategoriaMontos.TryGetValue(idAmb, out var montosAmb);
+                decimal vProd = items.Sum(i => i.SubtotalProductos);
+                decimal vServ = items.Sum(i => i.SubtotalServicios);
+                decimal vExam = items.Sum(i => i.SubtotalExamenes);
+                decimal vHosp = items.Sum(i => i.SubtotalHospital);
 
                 // Resumen por forma de pago del ambiente
                 var resumenFP = ventasAmb
@@ -4529,18 +5920,47 @@ namespace sistema.Controllers
                     AmbienteId = idAmb,
                     AmbienteNombre = nomAmb,
                     Ventas = items,
+                    AdicionalProductos = Math.Max(0, montosAmb.productos - vProd),
+                    AdicionalServicios = Math.Max(0, montosAmb.servicios - vServ),
+                    AdicionalExamenes = Math.Max(0, montosAmb.examenes - vExam),
+                    AdicionalHospital = Math.Max(0, montosAmb.hospital - vHosp),
                     ResumenFormasPago = resumenFP,
-                    // Total efectivamente cobrado en pagos (suma de v.Pagos.Monto)
                     TotalCobrado = ventasAmb
                         .SelectMany(v => v.Pagos ?? new List<Pagos>())
                         .Sum(p => Convert.ToDecimal(p.Monto)),
+                    TotalCosto = ambienteCostos.TryGetValue(idAmb, out var costoAmb) ? costoAmb.costoTotal : 0,
+                    TotalCantidadConCosto = ambienteCostos.TryGetValue(idAmb, out var cantAmb) ? cantAmb.cantidad : 0,
                 });
             }
 
-            // ── 9. Consolidado de médicos ─────────────────────────────────────────
-            var consolidadoMedicos = incluirConsolidadoMedicos
+            if (incluirHospitalEnReporte
+                && !ambientesVM.Any(a => a.AmbienteId == (int)AmbienteEnum.Hospital)
+                && ambienteCategoriaMontos.TryGetValue((int)AmbienteEnum.Hospital, out var montosHospSolo)
+                && (montosHospSolo.productos + montosHospSolo.servicios + montosHospSolo.examenes + montosHospSolo.hospital) > 0)
+            {
+                ambientesVM.Add(new ReporteVentasAmbienteViewModel
+                {
+                    AmbienteId = (int)AmbienteEnum.Hospital,
+                    AmbienteNombre = "Hospital",
+                    Ventas = new List<ReporteVentaItemViewModel>(),
+                    AdicionalProductos = montosHospSolo.productos,
+                    AdicionalServicios = montosHospSolo.servicios,
+                    AdicionalExamenes = montosHospSolo.examenes,
+                    AdicionalHospital = montosHospSolo.hospital,
+                    TotalCosto = ambienteCostos.TryGetValue((int)AmbienteEnum.Hospital, out var ch) ? ch.costoTotal : 0,
+                    TotalCantidadConCosto = ambienteCostos.TryGetValue((int)AmbienteEnum.Hospital, out var cantH) ? cantH.cantidad : 0,
+                });
+                ambientesVM = ambientesVM.OrderBy(a => a.AmbienteId).ToList();
+            }
+
+            // ── 9. Consolidado de médicos y especialidades ───────────────────────
+            var consolidadoMedicos = incluirConsolidadoMedicos && modoDescripcion
                 ? CalcularConsolidadoMedicos(ambientesVM)
                 : new List<ConsolidadoMedicoViewModel>();
+
+            var consolidadoEspecialidades = incluirConsolidadoMedicos
+                ? CalcularConsolidadoEspecialidades(ambientesVM, montosHospitalPorEspecialidad)
+                : new List<ConsolidadoEspecialidadViewModel>();
 
             // ── 10. Resumen global de formas de pago ─────────────────────────────
             var totalGlobalFormasPago = ventasBd
@@ -4565,11 +5985,20 @@ namespace sistema.Controllers
                 EmpleadoIdFiltro = empleadoId > 0 ? empleadoId : (int?)null,
                 EmpleadoNombre = empleadoNombreFiltro,
                 Ambientes = ambientesVM,
-                MostrarDetalle = modoDetalle == "descripcion",
+                MostrarDetalle = modoDescripcion,
+                MostrarResumenCobro = !modoDescripcion,
+                MostrarColumnasCostoResultado = incluirConsolidadoItems,
+                MostrarCostoEnConsolidadoItems = incluirConsolidadoItems,
+                MostrarCostoGananciaEnResumenAmbiente = incluirConsolidadoItems,
+                MostrarPrecioCostoUnitarioResumen = modoDescripcion,
+                MostrarConsolidadoItems = incluirConsolidadoItems,
+                ModoReporteTexto = "Desglose por ambiente y categoría de ítem",
                 TotalGlobalFormasPago = totalGlobalFormasPago,
                 TotalGlobalCobrado = totalGlobalFormasPago.Sum(f => f.Total),
                 ConsolidadoMedicos = consolidadoMedicos,
-                MostrarConsolidadoMedicos = incluirConsolidadoMedicos,
+                MostrarConsolidadoMedicos = incluirConsolidadoMedicos && modoDescripcion,
+                ConsolidadoEspecialidades = consolidadoEspecialidades,
+                MostrarConsolidadoEspecialidades = incluirConsolidadoMedicos,
                 ItemsConsolidados = incluirConsolidadoItems
                     ? itemsConsolidadosDict.Select(kvp => new ItemConsolidadoViewModel
                     {
@@ -4578,109 +6007,1158 @@ namespace sistema.Controllers
                         Cantidad = kvp.Value.cantidad,
                         Total = kvp.Value.total,
                         CostoUnitario = kvp.Value.costoUnitario,
-                        CostoTotal = kvp.Value.costoTotal
+                        CostoTotal = kvp.Value.costoTotal > 0
+                            ? kvp.Value.costoTotal
+                            : kvp.Value.cantidad * (kvp.Value.costoUnitario ?? 0)
                     }).OrderBy(i => i.Categoria).ThenBy(i => i.Nombre).ToList()
                     : new List<ItemConsolidadoViewModel>()
             };
 
             // ── 11. Opciones de página A4 Portrait ────────────────────────────────
-            var options = new ConvertOptions
+            var ventasOptions = new ConvertOptions
             {
                 PageMargins = { Top = 10, Left = 10, Right = 10, Bottom = 12 },
                 PageOrientation = Wkhtmltopdf.NetCore.Options.Orientation.Portrait,
             };
-            _generatePdf.SetConvertOptions(options);
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/ReporteVentasGeneralPDF.cshtml", model);
+            return await RenderPdfAsync(
+                "Views/CrearPDF/ReporteVentasGeneralPDF.cshtml", model, ventasOptions);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en ReporteVentasGeneralPDF desde={Desde} hasta={Hasta}", desde, hasta);
+                return new ContentResult
+                {
+                    StatusCode = 503,
+                    ContentType = "text/plain; charset=utf-8",
+                    Content = PdfGenerationHelper.GetFriendlyErrorMessage(ex)
+                };
+            }
         }
 
-        // ── Método auxiliar para consolidar médicos (ya lo tenías) ─────────────
+        // ── Consolidado por médico tratante (no recepcionista de la venta) ─────
         private List<ConsolidadoMedicoViewModel> CalcularConsolidadoMedicos(List<ReporteVentasAmbienteViewModel> ambientesVM)
         {
             var dictMedicos = new Dictionary<string, ConsolidadoMedicoViewModel>(StringComparer.OrdinalIgnoreCase);
             foreach (var amb in ambientesVM)
             {
-                foreach (var vItem in amb.Ventas)
+                foreach (var vItem in amb.Ventas ?? Enumerable.Empty<ReporteVentaItemViewModel>())
                 {
-                    // Médico primario: el empleado directo de la venta
-                    string medicoPrincipal = string.IsNullOrWhiteSpace(vItem.EmpleadoNombre)
-                        ? null
-                        : vItem.EmpleadoNombre.Trim();
+                    if (vItem == null) continue;
+                    string medicoTratante = ObtenerNombreMedicoTratante(vItem);
+                    if (string.IsNullOrWhiteSpace(medicoTratante)) continue;
 
-                    // Médicos secundarios: los asignados (distintos al primario)
-                    var medicosSecundarios = vItem.MedicosAsignados?
-                        .Select(m => m.Nombre?.Trim())
-                        .Where(n => !string.IsNullOrWhiteSpace(n) &&
-                                    !string.Equals(n, medicoPrincipal, StringComparison.OrdinalIgnoreCase))
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .ToList() ?? new List<string>();
-
-                    // Si no hay médico primario, usar el primero de los asignados
-                    if (medicoPrincipal == null && medicosSecundarios.Any())
+                    if (!dictMedicos.TryGetValue(medicoTratante, out var row))
                     {
-                        medicoPrincipal = medicosSecundarios.First();
-                        medicosSecundarios.RemoveAt(0);
+                        row = new ConsolidadoMedicoViewModel { MedicoNombre = medicoTratante };
+                        dictMedicos[medicoTratante] = row;
                     }
 
-                    // Asignar importes SOLO al médico primario
-                    if (medicoPrincipal != null)
-                    {
-                        if (!dictMedicos.TryGetValue(medicoPrincipal, out var row))
-                        {
-                            row = new ConsolidadoMedicoViewModel { MedicoNombre = medicoPrincipal };
-                            dictMedicos[medicoPrincipal] = row;
-                        }
-                        row.CantidadVentas++;
-                        row.TotalProductos += vItem.SubtotalProductos;
-                        row.TotalServicios += vItem.SubtotalServicios;
-                        row.TotalExamenes += vItem.SubtotalExamenes;
-                        row.TotalHospital += vItem.SubtotalHospital;
-                        row.TotalDescuentos += vItem.TotalDescuento;
-                        row.TotalNeto += vItem.MontoNeto;
-                        row.CantidadProductos += vItem.CantidadItemsProductos;
-                        row.CantidadServicios += vItem.CantidadItemsServicios;
-                        row.CantidadExamenes += vItem.CantidadItemsExamenes;
-                        row.CantidadHospital += vItem.CantidadItemsHospital;
+                    row.CantidadVentas++;
+                    row.TotalProductos += vItem.SubtotalProductos;
+                    row.TotalServicios += vItem.SubtotalServicios;
+                    row.TotalExamenes += vItem.SubtotalExamenes;
+                    row.TotalHospital += vItem.SubtotalHospital;
+                    row.TotalDescuentos += vItem.TotalDescuento;
+                    row.TotalNeto += vItem.MontoNeto;
+                    row.CantidadProductos += vItem.CantidadItemsProductos;
+                    row.CantidadServicios += vItem.CantidadItemsServicios;
+                    row.CantidadExamenes += vItem.CantidadItemsExamenes;
+                    row.CantidadHospital += vItem.CantidadItemsHospital;
 
-                        // Tipo de atención: Hospitalización vs Consulta externa
-                        if (amb.AmbienteId == (int)AmbienteEnum.Hospital ||
-                            (vItem.TipoVenta?.IndexOf("hospitalizacion", StringComparison.OrdinalIgnoreCase) >= 0))
-                            row.CantidadHospitalizaciones++;
-                        else
-                            row.CantidadCitas++;
+                    if (amb.AmbienteId == (int)AmbienteEnum.Hospital ||
+                        (vItem.TipoVenta?.IndexOf("hospitalizacion", StringComparison.OrdinalIgnoreCase) >= 0))
+                        row.CantidadHospitalizaciones++;
+                    else
+                        row.CantidadCitas++;
 
-                        // Sub-tipo: Sala de Operaciones (la habitación de categoría SO) vs Consulta Externa
-                        if (vItem.EsSalaOperaciones)
-                            row.CantidadSalaOperaciones++;
-                        else if (amb.AmbienteId != (int)AmbienteEnum.Hospital)
-                            row.CantidadConsultaExterna++;
-                    }
-
-                    // Médicos secundarios: solo sumar el contador de ventas (sin montos para no inflar totales)
-                    foreach (var nombreSec in medicosSecundarios)
-                    {
-                        if (!dictMedicos.TryGetValue(nombreSec, out var rowSec))
-                        {
-                            rowSec = new ConsolidadoMedicoViewModel { MedicoNombre = nombreSec };
-                            dictMedicos[nombreSec] = rowSec;
-                        }
-                        rowSec.CantidadVentas++;
-                        // Los importes NO se duplican en médicos secundarios
-                    }
+                    if (vItem.EsSalaOperaciones)
+                        row.CantidadSalaOperaciones++;
+                    else if (amb.AmbienteId != (int)AmbienteEnum.Hospital)
+                        row.CantidadConsultaExterna++;
                 }
             }
             return dictMedicos.Values
-                .Where(m => m.TotalNeto > 0)   // excluir médicos secundarios sin importes
+                .Where(m => m.TotalNeto > 0)
                 .OrderByDescending(m => m.TotalNeto).ToList();
+        }
+
+        private List<ConsolidadoEspecialidadViewModel> CalcularConsolidadoEspecialidades(
+            List<ReporteVentasAmbienteViewModel> ambientesVM,
+            Dictionary<string, (decimal productos, decimal servicios, decimal examenes, decimal hospital)> montosHospitalPorEspecialidad = null)
+        {
+            var dict = new Dictionary<string, ConsolidadoEspecialidadViewModel>(StringComparer.OrdinalIgnoreCase);
+            foreach (var amb in ambientesVM)
+            {
+                bool esHospital = amb.AmbienteId == (int)AmbienteEnum.Hospital;
+                foreach (var vItem in amb.Ventas ?? Enumerable.Empty<ReporteVentaItemViewModel>())
+                {
+                    if (vItem == null) continue;
+                    string espFallback = ResolverEspecialidadVenta(vItem);
+                    var lineas = vItem.DetalleItems?
+                        .Where(d => d.Categoria != "Insumo")
+                        .ToList();
+
+                    if (lineas != null && lineas.Any())
+                    {
+                        var especialidadesProcesadas = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                        foreach (var linea in lineas)
+                        {
+                            string esp = MapearEspecialidadDesdeNombreItem(linea.Descripcion) ?? espFallback;
+                            decimal prod = 0, serv = 0, exam = 0, hosp = 0;
+                            switch (linea.Categoria)
+                            {
+                                case "Producto": prod = linea.Subtotal; break;
+                                case "Servicio": serv = linea.Subtotal; break;
+                                case "Hospital": hosp = linea.Subtotal; break;
+                                default:
+                                    if (linea.Categoria.Contains("Examen", StringComparison.OrdinalIgnoreCase))
+                                        exam = linea.Subtotal;
+                                    else
+                                        serv = linea.Subtotal;
+                                    break;
+                            }
+                            bool contarVenta = especialidadesProcesadas.Add(esp ?? "Sin especialidad");
+                            int cantLinea = (int)Math.Max(1, Math.Round(linea.Cantidad));
+                            AcumularEspecialidad(dict, esp, prod, serv, exam, hosp, 0, linea.Subtotal,
+                                esHospital, vItem, linea.Categoria, contarVenta, cantLinea);
+                        }
+                    }
+                    else
+                    {
+                        AcumularEspecialidad(dict, espFallback,
+                            vItem.SubtotalProductos, vItem.SubtotalServicios, vItem.SubtotalExamenes,
+                            vItem.SubtotalHospital, vItem.TotalDescuento, vItem.MontoNeto,
+                            esHospital, vItem, null, true);
+                    }
+                }
+            }
+
+            var ambHospital = ambientesVM.FirstOrDefault(a => a.AmbienteId == (int)AmbienteEnum.Hospital);
+            if (ambHospital != null
+                && (ambHospital.AdicionalProductos + ambHospital.AdicionalServicios + ambHospital.AdicionalExamenes + ambHospital.AdicionalHospital) > 0)
+                AgregarAdicionalesHospitalEspecialidad(dict, ambHospital, montosHospitalPorEspecialidad);
+
+            return dict.Values.OrderByDescending(e => e.TotalNeto).ToList();
+        }
+
+        private static void AgregarAdicionalesHospitalEspecialidad(
+            Dictionary<string, ConsolidadoEspecialidadViewModel> dict,
+            ReporteVentasAmbienteViewModel ambHospital,
+            Dictionary<string, (decimal productos, decimal servicios, decimal examenes, decimal hospital)> montosPorEsp)
+        {
+            if (ambHospital == null) return;
+
+            void Distribuir(
+                decimal adicional,
+                Func<(decimal productos, decimal servicios, decimal examenes, decimal hospital), decimal> selector,
+                string categoria)
+            {
+                if (adicional <= 0) return;
+
+                decimal totalRef = montosPorEsp?.Values.Sum(selector) ?? 0;
+                if (totalRef <= 0 || montosPorEsp == null || !montosPorEsp.Any())
+                {
+                    decimal prod = categoria == "Producto" ? adicional : 0;
+                    decimal serv = categoria == "Servicio" ? adicional : 0;
+                    decimal exam = categoria == "Examen" ? adicional : 0;
+                    decimal hosp = categoria == "Hospital" ? adicional : 0;
+                    string esp = (ambHospital.Ventas ?? new List<ReporteVentaItemViewModel>())
+                        .Select(ResolverEspecialidadVenta)
+                        .FirstOrDefault(e => !string.IsNullOrWhiteSpace(e) && !string.Equals(e, "Sin especialidad", StringComparison.OrdinalIgnoreCase))
+                        ?? "Sin especialidad";
+                    AcumularEspecialidad(dict, esp, prod, serv, exam, hosp, 0, adicional,
+                        true, null, categoria, false);
+                    if (categoria != "Producto" && dict.TryGetValue(esp, out var rowSin))
+                    {
+                        rowSin.CantidadHospitalizaciones++;
+                        rowSin.MontoHospitalizacion += adicional;
+                    }
+                    return;
+                }
+
+                foreach (var kvp in montosPorEsp.Where(k => selector(k.Value) > 0))
+                {
+                    decimal share = Math.Round(adicional * (selector(kvp.Value) / totalRef), 2);
+                    if (share <= 0) continue;
+                    decimal prod = categoria == "Producto" ? share : 0;
+                    decimal serv = categoria == "Servicio" ? share : 0;
+                    decimal exam = categoria == "Examen" ? share : 0;
+                    decimal hosp = categoria == "Hospital" ? share : 0;
+                    AcumularEspecialidad(dict, kvp.Key, prod, serv, exam, hosp, 0, share,
+                        true, null, categoria, false);
+                    if (categoria != "Producto" && dict.TryGetValue(kvp.Key, out var row))
+                    {
+                        row.CantidadHospitalizaciones++;
+                        row.MontoHospitalizacion += share;
+                    }
+                }
+            }
+
+            Distribuir(ambHospital.AdicionalProductos, m => m.productos, "Producto");
+            Distribuir(ambHospital.AdicionalServicios, m => m.servicios, "Servicio");
+            Distribuir(ambHospital.AdicionalExamenes, m => m.examenes, "Examen");
+            Distribuir(ambHospital.AdicionalHospital, m => m.hospital, "Hospital");
+        }
+
+        private static void AcumularEspecialidad(
+            Dictionary<string, ConsolidadoEspecialidadViewModel> dict,
+            string especialidad,
+            decimal productos, decimal servicios, decimal examenes, decimal hospital,
+            decimal descuentos, decimal neto,
+            bool esHospitalAmbiente, ReporteVentaItemViewModel vItem, string categoriaLinea,
+            bool contarVenta = true, int cantidadLinea = 1)
+        {
+            if (string.IsNullOrWhiteSpace(especialidad)) especialidad = "Sin especialidad";
+            if (!dict.TryGetValue(especialidad, out var row))
+            {
+                row = new ConsolidadoEspecialidadViewModel { EspecialidadNombre = especialidad };
+                dict[especialidad] = row;
+            }
+
+            if (contarVenta)
+                row.CantidadVentas++;
+            row.TotalProductos += productos;
+            row.TotalServicios += servicios;
+            row.TotalExamenes += examenes;
+            row.TotalHospital += hospital;
+            row.TotalDescuentos += descuentos;
+            row.TotalNeto += neto;
+
+            if (vItem == null)
+                return;
+
+            bool esHosp = esHospitalAmbiente
+                || (vItem.TipoVenta?.IndexOf("hospitalizacion", StringComparison.OrdinalIgnoreCase) >= 0);
+
+            if (categoriaLinea == null)
+            {
+                if (vItem.EsSalaOperaciones)
+                {
+                    row.CantidadSalaOperaciones++;
+                    row.MontoSalaOperaciones += neto;
+                }
+                else if (esHosp)
+                {
+                    row.CantidadHospitalizaciones++;
+                    row.MontoHospitalizacion += neto;
+                }
+                else
+                {
+                    row.CantidadConsultaExterna++;
+                    row.MontoConsultaExterna += neto;
+                    if (vItem.SubtotalServicios > 0)
+                    {
+                        row.CantidadCitas++;
+                        row.MontoCitas += vItem.SubtotalServicios;
+                    }
+                }
+                if (vItem.SubtotalExamenes > 0)
+                    row.CantidadExamenes += (int)Math.Max(1, vItem.CantidadItemsExamenes);
+                return;
+            }
+
+            if (vItem.EsSalaOperaciones)
+            {
+                row.CantidadSalaOperaciones++;
+                row.MontoSalaOperaciones += neto;
+            }
+            else if (categoriaLinea == "Hospital" || (esHosp && hospital > 0))
+            {
+                row.CantidadHospitalizaciones++;
+                row.MontoHospitalizacion += hospital > 0 ? hospital : neto;
+            }
+            else if (categoriaLinea.Contains("Examen", StringComparison.OrdinalIgnoreCase))
+            {
+                row.CantidadExamenes += cantidadLinea;
+                if (!esHosp)
+                {
+                    row.CantidadConsultaExterna++;
+                    row.MontoConsultaExterna += examenes > 0 ? examenes : neto;
+                }
+            }
+            else if (categoriaLinea == "Servicio")
+            {
+                row.CantidadCitas++;
+                row.MontoCitas += servicios > 0 ? servicios : neto;
+                if (!esHosp)
+                {
+                    row.CantidadConsultaExterna++;
+                    row.MontoConsultaExterna += servicios > 0 ? servicios : neto;
+                }
+            }
+            else if (categoriaLinea == "Producto" && !esHosp)
+            {
+                row.CantidadConsultaExterna++;
+                row.MontoConsultaExterna += productos > 0 ? productos : neto;
+            }
+            else if (categoriaLinea == "Producto" && esHosp && productos > 0)
+            {
+                row.CantidadHospitalizaciones++;
+                row.MontoHospitalizacion += productos;
+            }
+        }
+
+        private static string ObtenerNombreMedicoTratante(ReporteVentaItemViewModel vItem)
+        {
+            if (vItem == null) return null;
+            var tratante = vItem.MedicosAsignados?
+                .FirstOrDefault(m => string.Equals(m.Rol, "Tratante", StringComparison.OrdinalIgnoreCase)
+                                  && !string.IsNullOrWhiteSpace(m.Nombre));
+            if (tratante != null) return tratante.Nombre.Trim();
+
+            var asignado = vItem.MedicosAsignados?
+                .FirstOrDefault(m => !string.IsNullOrWhiteSpace(m.Nombre));
+            return asignado?.Nombre?.Trim();
+        }
+
+        private static string ResolverEspecialidadVenta(ReporteVentaItemViewModel vItem)
+        {
+            if (vItem == null) return "Sin especialidad";
+            var tratante = vItem.MedicosAsignados?
+                .FirstOrDefault(m => string.Equals(m.Rol, "Tratante", StringComparison.OrdinalIgnoreCase)
+                                  && !string.IsNullOrWhiteSpace(m.Especialidad));
+            if (!string.IsNullOrWhiteSpace(tratante?.Especialidad))
+                return tratante.Especialidad.Trim();
+
+            var espMedico = vItem.MedicosAsignados?
+                .FirstOrDefault(m => !string.IsNullOrWhiteSpace(m.Especialidad));
+            if (!string.IsNullOrWhiteSpace(espMedico?.Especialidad))
+                return espMedico.Especialidad.Trim();
+
+            var desdeItems = InferirEspecialidadDesdeDetalleItems(vItem.DetalleItems);
+            if (!string.IsNullOrWhiteSpace(desdeItems))
+                return desdeItems;
+
+            return "Sin especialidad";
+        }
+
+        private static string InferirEspecialidadDesdeDetalleItems(IEnumerable<ReporteVentaDetalleItemViewModel> items)
+        {
+            if (items == null) return null;
+            foreach (var item in items.Where(i => i.Categoria != "Insumo" && i.Categoria != "Producto"))
+            {
+                var esp = MapearEspecialidadDesdeNombreItem(item.Descripcion);
+                if (!string.IsNullOrWhiteSpace(esp))
+                    return esp;
+            }
+            foreach (var item in items.Where(i => i.Categoria == "Servicio"))
+            {
+                var esp = MapearEspecialidadDesdeNombreItem(item.Descripcion);
+                if (!string.IsNullOrWhiteSpace(esp))
+                    return esp;
+            }
+            return null;
+        }
+
+        private static string NormalizarCategoriaConsolidado(string categoria)
+        {
+            if (string.IsNullOrWhiteSpace(categoria)) return "Servicio";
+            if (categoria.Contains("Examen", StringComparison.OrdinalIgnoreCase)
+                || categoria.Contains("Lab", StringComparison.OrdinalIgnoreCase))
+                return "Examen";
+            if (categoria.Equals("Paquete", StringComparison.OrdinalIgnoreCase)
+                || categoria.Contains("Paquete", StringComparison.OrdinalIgnoreCase))
+                return "Paquete";
+            if (categoria.Equals("Dieta", StringComparison.OrdinalIgnoreCase)
+                || categoria.Contains("Dieta", StringComparison.OrdinalIgnoreCase)
+                || categoria.Contains("Nutric", StringComparison.OrdinalIgnoreCase))
+                return "Dieta";
+            if (categoria.Equals("Hospital", StringComparison.OrdinalIgnoreCase))
+                return "Hospital";
+            if (categoria.Equals("Producto", StringComparison.OrdinalIgnoreCase))
+                return "Producto";
+            if (categoria.Equals("Servicio", StringComparison.OrdinalIgnoreCase))
+                return "Servicio";
+            return categoria;
+        }
+
+        private static string ClasificarCategoriaServicio(string nombreServicio, string categoriaServicio)
+        {
+            var nombre = (nombreServicio ?? "").ToUpperInvariant();
+            var categoria = (categoriaServicio ?? "").ToUpperInvariant();
+            if (nombre.Contains("PAQUETE") || categoria.Contains("PAQUETE"))
+                return "Paquete";
+            if (nombre.Contains("DIETA") || categoria.Contains("DIETA") || categoria.Contains("NUTRIC"))
+                return "Dieta";
+            return "Servicio";
+        }
+
+        private static string MapearEspecialidadDesdeNombreItem(string nombre)
+        {
+            if (string.IsNullOrWhiteSpace(nombre)) return null;
+
+            var esp = ExtraerEspecialidadDeNombre(nombre);
+            if (!string.IsNullOrWhiteSpace(esp))
+                return NormalizarNombreEspecialidad(esp);
+
+            var prefijoNumerado = System.Text.RegularExpressions.Regex.Match(
+                nombre.Trim(),
+                @"^\d+\s*-\s*(.+)$",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (prefijoNumerado.Success)
+            {
+                var espNumerada = MapearEspecialidadDesdeNombreItem(prefijoNumerado.Groups[1].Value.Trim());
+                if (!string.IsNullOrWhiteSpace(espNumerada))
+                    return espNumerada;
+            }
+
+            var u = nombre.ToUpperInvariant();
+            if (u.Contains("GINECOL")) return "Ginecología y Obstetricia";
+            if (u.Contains("PEDIATR")) return "Pediatría";
+            if (u.Contains("TRAUMATOL")) return "Traumatología";
+            if (u.Contains("OFTALMOL") || u.Contains("OPTOMETR") || u.Contains("OPTÓMETR")) return "Oftalmología";
+            if (u.Contains("NEUMOL")) return "Neumología";
+            if (u.Contains("RADIOL")) return "Radiología";
+            if (u.Contains("CARDIOL")) return "Cardiología";
+            if (u.Contains("NUTRIC")) return "Nutrición";
+            if (u.Contains("MEDICINA GENERAL") || u.Contains("CONSULTA MEDICA") || u.Contains("MEDICA GENERAL"))
+                return "Medicina general";
+            if (u.StartsWith("CONSULTA") || u.Contains(" RE-CONSULTA"))
+                return "Medicina general";
+            return null;
+        }
+
+        private static string NormalizarNombreEspecialidad(string esp)
+        {
+            if (string.IsNullOrWhiteSpace(esp)) return esp;
+            if (esp.Equals("Ginecologia", StringComparison.OrdinalIgnoreCase)) return "Ginecología y Obstetricia";
+            if (esp.Equals("Traumatologia", StringComparison.OrdinalIgnoreCase)) return "Traumatología";
+            if (esp.Equals("Oftalmologia", StringComparison.OrdinalIgnoreCase)) return "Oftalmología";
+            if (esp.Equals("Neumología", StringComparison.OrdinalIgnoreCase) || esp.Equals("Neumologia", StringComparison.OrdinalIgnoreCase))
+                return "Neumología";
+            return esp.Trim();
+        }
+
+        private static string ExtraerEspecialidadDeNombre(string nombre)
+        {
+            if (string.IsNullOrWhiteSpace(nombre)) return null;
+            var idx = nombre.IndexOf(" - ", StringComparison.Ordinal);
+            if (idx <= 0) return null;
+            var parte = nombre[..idx].Trim();
+            return parte.Length > 2 ? parte : null;
+        }
+
+        private Empleado ObtenerEmpleadoConEspecialidad(int empleadoId) =>
+            _context.Empleados
+                .Include(e => e.Especialidad)
+                .AsNoTracking()
+                .FirstOrDefault(e => e.Id == empleadoId);
+
+        private Citas ObtenerCitaRelacionadaVenta(Venta v)
+        {
+            if (v.PacienteId == null) return null;
+            var fecha = v.FechaVenta.Date;
+            var fechaFin = fecha.AddDays(1);
+
+            IQueryable<Citas> baseQuery = _context.Citass
+                .Include(c => c.Empleado).ThenInclude(e => e.Especialidad)
+                .Include(c => c.Especialidad)
+                .Include(c => c.Servicio)
+                .Include(c => c.CitasServicios)
+                .AsNoTracking()
+                .Where(c => c.PacienteId == v.PacienteId && !c.Eliminado);
+
+            // 0) Orden de examen / ingreso con consulta vinculada
+            if (v.ExamenId != null)
+            {
+                var examenOrden = _context.Examenes
+                    .AsNoTracking()
+                    .Where(e => e.Id == v.ExamenId)
+                    .Select(e => new { e.ConsultaId, e.PacienteId })
+                    .FirstOrDefault();
+
+                if (examenOrden?.ConsultaId != null)
+                {
+                    var citaIngreso = _context.Consultas
+                        .Include(c => c.Citas).ThenInclude(c => c.Empleado).ThenInclude(e => e.Especialidad)
+                        .Include(c => c.Citas).ThenInclude(c => c.Especialidad)
+                        .Include(c => c.Citas).ThenInclude(c => c.Servicio)
+                        .AsNoTracking()
+                        .Where(c => c.Id == examenOrden.ConsultaId)
+                        .Select(c => c.Citas)
+                        .FirstOrDefault();
+                    if (citaIngreso != null) return citaIngreso;
+                }
+            }
+
+            // 1) Cita del mismo día vinculada por servicio facturado
+            var servicioIds = v.DetalleVenta?
+                .Where(d => d.ServicioId != null)
+                .Select(d => d.ServicioId.Value)
+                .Distinct()
+                .ToList() ?? new List<int>();
+
+            // 1b) Consulta del paciente con servicios facturados en la venta
+            if (servicioIds.Any())
+            {
+                var citaIdConsultaServicio = _context.ConsultasServicios
+                    .AsNoTracking()
+                    .Where(cs => servicioIds.Contains(cs.ServicioId))
+                    .Join(_context.Consultas.AsNoTracking(),
+                        cs => cs.ConsultaId,
+                        c => c.Id,
+                        (cs, c) => c)
+                    .Where(c => c.CitasId != null
+                             && c.FechaYHoraInicioConsulta >= fecha
+                             && c.FechaYHoraInicioConsulta < fechaFin)
+                    .Join(_context.Citass.AsNoTracking(),
+                        c => c.CitasId,
+                        cita => cita.Id,
+                        (c, cita) => cita)
+                    .Where(cita => cita.PacienteId == v.PacienteId && !cita.Eliminado)
+                    .OrderByDescending(cita => cita.Id)
+                    .Select(cita => cita.Id)
+                    .FirstOrDefault();
+
+                if (citaIdConsultaServicio > 0)
+                {
+                    var citaDesdeConsulta = baseQuery.FirstOrDefault(c => c.Id == citaIdConsultaServicio);
+                    if (citaDesdeConsulta != null) return citaDesdeConsulta;
+                }
+            }
+
+            if (servicioIds.Any())
+            {
+                var citaPorServicio = baseQuery
+                    .Where(c => c.FechaInicio.HasValue
+                             && c.FechaInicio.Value >= fecha
+                             && c.FechaInicio.Value < fechaFin
+                             && (servicioIds.Contains(c.ServicioId ?? 0)
+                                 || c.CitasServicios.Any(cs => servicioIds.Contains(cs.ServicioId))))
+                    .OrderByDescending(c => c.Id)
+                    .FirstOrDefault();
+                if (citaPorServicio != null) return citaPorServicio;
+            }
+
+            // 2) Cita pagada el mismo día (consulta clínica)
+            var citaMismoDia = baseQuery
+                .Where(c => c.FechaInicio.HasValue && c.FechaInicio.Value >= fecha && c.FechaInicio.Value < fechaFin)
+                .OrderByDescending(c => c.Id)
+                .FirstOrDefault();
+            if (citaMismoDia != null) return citaMismoDia;
+
+            // 3) Consulta del paciente en la fecha de la venta
+            var citaConsulta = _context.Consultas
+                .Include(c => c.Citas).ThenInclude(c => c.Empleado).ThenInclude(e => e.Especialidad)
+                .Include(c => c.Citas).ThenInclude(c => c.Especialidad)
+                .Include(c => c.Citas).ThenInclude(c => c.Servicio)
+                .AsNoTracking()
+                .Where(c => c.Citas != null
+                         && c.Citas.PacienteId == v.PacienteId
+                         && c.FechaYHoraInicioConsulta >= fecha
+                         && c.FechaYHoraInicioConsulta < fechaFin)
+                .OrderByDescending(c => c.Id)
+                .Select(c => c.Citas)
+                .FirstOrDefault();
+            if (citaConsulta != null) return citaConsulta;
+
+            // 4) Venta de laboratorio vinculada a orden de examen
+            if (v.ExamenId != null)
+            {
+                var citaExamen = _context.Examenes
+                    .Include(e => e.Paciente)
+                    .AsNoTracking()
+                    .Where(e => e.Id == v.ExamenId && e.PacienteId != null)
+                    .Select(e => e.PacienteId)
+                    .FirstOrDefault();
+
+                if (citaExamen != null)
+                {
+                    var citaLab = baseQuery
+                        .Where(c => c.FechaInicio.HasValue
+                                 && c.FechaInicio.Value >= fecha.AddDays(-7)
+                                 && c.FechaInicio.Value < fechaFin)
+                        .OrderByDescending(c => c.FechaInicio)
+                        .FirstOrDefault();
+                    if (citaLab != null) return citaLab;
+                }
+            }
+
+            // 5) Hospitalización activa del paciente
+            var hosp = _context.Hospitalizaciones
+                .AsNoTracking()
+                .Where(h => h.PacienteId == v.PacienteId
+                         && h.FechaInicio.Date <= fecha
+                         && (!h.Finalizada || h.FechaFin.Date >= fecha))
+                .OrderByDescending(h => h.Id)
+                .Select(h => h.Id)
+                .FirstOrDefault();
+
+            if (hosp > 0)
+            {
+                var citaHospi = baseQuery
+                    .Where(c => c.CitaTipoAtencion != null
+                             && c.CitaTipoAtencion.Contains("Hospital"))
+                    .OrderByDescending(c => c.Id)
+                    .FirstOrDefault();
+                if (citaHospi != null) return citaHospi;
+            }
+
+            // 6) Cita más reciente del paciente (±7 días)
+            return baseQuery
+                .Where(c => c.FechaInicio.HasValue
+                         && c.FechaInicio.Value >= fecha.AddDays(-7)
+                         && c.FechaInicio.Value < fechaFin.AddDays(7))
+                .OrderByDescending(c => c.FechaInicio)
+                .FirstOrDefault();
+        }
+
+        private string ResolverEspecialidadEmpleado(Empleado emp, Citas cita, Servicio servicio = null)
+        {
+            if (!string.IsNullOrWhiteSpace(cita?.Especialidad?.NombreEspecialidad))
+                return cita.Especialidad.NombreEspecialidad.Trim();
+            if (!string.IsNullOrWhiteSpace(emp?.Especialidad?.NombreEspecialidad))
+                return emp.Especialidad.NombreEspecialidad.Trim();
+            return ResolverEspecialidadServicio(servicio ?? cita?.Servicio);
+        }
+
+        private static string ResolverEspecialidadServicio(Servicio servicio)
+        {
+            if (servicio == null) return null;
+            var esp = MapearEspecialidadDesdeNombreItem(servicio.NombreServicio);
+            if (!string.IsNullOrWhiteSpace(esp)) return esp;
+            return servicio.CategoriaServicio?.NombreCategoria?.Trim();
+        }
+
+        private List<ReporteVentaDetalleItemViewModel> ObtenerDetalleInsumosServicio(int? servicioId, decimal cantidadServicio)
+        {
+            var resultado = new List<ReporteVentaDetalleItemViewModel>();
+            if (servicioId == null || cantidadServicio <= 0) return resultado;
+
+            var insumos = _context.ServiciosInsumos
+                .Include(si => si.Producto)
+                .AsNoTracking()
+                .Where(si => si.ServicioId == servicioId.Value && !si.Eliminado)
+                .ToList();
+
+            foreach (var insumo in insumos)
+            {
+                decimal cantidad = insumo.CantidadUtilizada * cantidadServicio;
+                if (cantidad <= 0) continue;
+
+                decimal? costoUnitario = null;
+                if (insumo.Producto?.PrecioCosto > 0)
+                    costoUnitario = insumo.Producto.PrecioCosto;
+                else if (insumo.ProductoId > 0)
+                {
+                    var prod = _productoRepository.GetProdutoById(insumo.ProductoId);
+                    if (prod?.PrecioCosto > 0) costoUnitario = prod.PrecioCosto;
+                }
+
+                resultado.Add(CrearDetalleItemVenta(
+                    $"↳ Insumo: {insumo.Producto?.NombreProducto ?? "Insumo"}",
+                    "Insumo",
+                    cantidad,
+                    costoUnitario ?? 0,
+                    cantidad * (costoUnitario ?? 0),
+                    0,
+                    costoUnitario));
+            }
+
+            return resultado;
+        }
+
+        private decimal? ObtenerCostoUnitarioExamen(int? examenLabClinicoId, ExamenLabClinico nav)
+        {
+            if (nav?.PrecioCosto > 0) return nav.PrecioCosto;
+            if (examenLabClinicoId.HasValue)
+            {
+                var exam = _context.ExamenLabClinicos
+                    .Where(e => e.Id == examenLabClinicoId.Value)
+                    .Select(e => (decimal?)e.PrecioCosto)
+                    .FirstOrDefault();
+                if (exam.HasValue && exam.Value > 0) return exam;
+            }
+            return null;
+        }
+
+        private decimal? ObtenerCostoUnitarioServicio(int? servicioId, Servicio nav)
+        {
+            if (servicioId == null) return null;
+            var insumos = _context.ServiciosInsumos
+                .Include(si => si.Producto)
+                .Where(si => si.ServicioId == servicioId.Value && !si.Eliminado)
+                .ToList();
+            if (insumos.Any())
+            {
+                decimal total = insumos.Sum(si =>
+                {
+                    decimal pc = si.Producto?.PrecioCosto ?? 0;
+                    if (pc <= 0 && si.ProductoId > 0)
+                    {
+                        var p = _productoRepository.GetProdutoById(si.ProductoId);
+                        pc = p?.PrecioCosto ?? 0;
+                    }
+                    return pc * si.CantidadUtilizada;
+                });
+                if (total > 0) return total;
+            }
+            return null;
+        }
+
+        private static ReporteVentaDetalleItemViewModel CrearDetalleItemVenta(
+            string descripcion,
+            string categoria,
+            decimal cantidad,
+            decimal precioUnit,
+            decimal subtotal,
+            decimal descuento = 0,
+            decimal? costoUnitario = null)
+        {
+            decimal costoTotal = Math.Round(cantidad * (costoUnitario ?? 0), 2);
+            return new ReporteVentaDetalleItemViewModel
+            {
+                Descripcion = descripcion,
+                Categoria = categoria,
+                Cantidad = cantidad,
+                PrecioUnit = precioUnit,
+                Subtotal = subtotal,
+                Descuento = descuento,
+                CostoUnitario = costoUnitario,
+                CostoTotal = costoTotal,
+                Ganancia = Math.Round(subtotal - costoTotal, 2)
+            };
         }
 
 
 
         // ────────────────────────────────────────────────────────────
+        // Consolidado hospital: insumos aplicados, paquetes, servicios (una vez por hospitalización)
+        // ────────────────────────────────────────────────────────────
+        private void ConsolidarHospitalizacionesEnPeriodo(
+            List<Venta> ventasBd,
+            DateTime desde,
+            DateTime hastaFin,
+            Action<string, string, decimal, decimal, decimal?, int> agregarItem,
+            Dictionary<int, (decimal costoTotal, decimal cantidad)> ambienteCostos,
+            int ambienteId,
+            Dictionary<string, (decimal productos, decimal servicios, decimal examenes, decimal hospital)> montosHospitalPorEspecialidad = null,
+            Dictionary<int, int?> hospitalizacionPorVenta = null,
+            Dictionary<int, decimal?> costoProductoCache = null)
+        {
+            var hospIds = ObtenerHospitalizacionIdsEnPeriodo(ventasBd, desde, hastaFin, hospitalizacionPorVenta);
+            foreach (var hospId in hospIds)
+                AgregarConsolidadoDesdeHospitalizacion(hospId, ventasBd, desde, hastaFin, agregarItem, ambienteCostos, ambienteId, montosHospitalPorEspecialidad, hospitalizacionPorVenta, costoProductoCache);
+        }
+
+        private HashSet<int> ObtenerHospitalizacionIdsEnPeriodo(List<Venta> ventasBd, DateTime desde, DateTime hastaFin, Dictionary<int, int?> hospitalizacionPorVenta = null)
+        {
+            var ids = new HashSet<int>();
+
+            foreach (var v in ventasBd.Where(v => v.AmbienteId == (int)AmbienteEnum.Hospital))
+            {
+                var id = ObtenerHospitalizacionIdPorVenta(v, hospitalizacionPorVenta);
+                if (id != null) ids.Add(id.Value);
+            }
+
+            var idsPorAplicacion = _context.HospitalizacionesProductosAplicaciones
+                .AsNoTracking()
+                .Where(a => a.Aplicado && !a.Eliminado)
+                .Where(a =>
+                    (a.FechaHoraAplicacionManual != null
+                        && a.FechaHoraAplicacionManual >= desde
+                        && a.FechaHoraAplicacionManual <= hastaFin)
+                    || (a.FechaHoraAplicacionManual == null
+                        && a.FechaHoraAplicacion != null
+                        && a.FechaHoraAplicacion >= desde
+                        && a.FechaHoraAplicacion <= hastaFin))
+                .Join(_context.HospitalizacionesProductos.AsNoTracking().Where(hp => !hp.Eliminado),
+                    a => a.HospitalizacionProductoId,
+                    hp => hp.Id,
+                    (a, hp) => hp.HospitalizacionId)
+                .Distinct();
+            foreach (var id in idsPorAplicacion) ids.Add(id);
+
+            var idsPorInsumoDirecto = _context.HospitalizacionInsumosDirectosAplicaciones
+                .AsNoTracking()
+                .Where(a => a.Aplicado)
+                .Where(a => a.FechaHoraAplicacion != null
+                    && a.FechaHoraAplicacion >= desde
+                    && a.FechaHoraAplicacion <= hastaFin)
+                .Join(_context.HospitalizacionInsumosDirectos.AsNoTracking().Where(i => !i.Eliminado),
+                    a => a.HospitalizacionInsumoDirectoId,
+                    i => i.Id,
+                    (a, i) => i.HospitalizacionId)
+                .Distinct();
+            foreach (var id in idsPorInsumoDirecto) ids.Add(id);
+
+            var idsPorEstadia = _context.Hospitalizaciones
+                .AsNoTracking()
+                .Where(h => !h.Eliminada
+                         && h.FechaInicio <= hastaFin
+                         && h.FechaFin >= desde)
+                .Select(h => h.Id);
+            foreach (var id in idsPorEstadia) ids.Add(id);
+
+            return ids;
+        }
+
+        private void AgregarConsolidadoDesdeHospitalizacion(
+            int hospitalizacionId,
+            List<Venta> ventasBd,
+            DateTime desde,
+            DateTime hastaFin,
+            Action<string, string, decimal, decimal, decimal?, int> agregarItem,
+            Dictionary<int, (decimal costoTotal, decimal cantidad)> ambienteCostos,
+            int ambienteId,
+            Dictionary<string, (decimal productos, decimal servicios, decimal examenes, decimal hospital)> montosHospitalPorEspecialidad = null,
+            Dictionary<int, int?> hospitalizacionPorVenta = null,
+            Dictionary<int, decimal?> costoProductoCache = null)
+        {
+            var hosp = _hospitalizacionRepository.Get(
+                hospitalizacionId,
+                includeMedicamentos: true,
+                includeServicios: true,
+                includeExamenes: true,
+                includePaquetes: true,
+                includeConsultas: false,
+                includeOrdenesMedicas: false);
+            if (hosp == null) return;
+
+            bool hospEnPeriodo = hosp.FechaInicio <= hastaFin && hosp.FechaFin >= desde;
+            bool tieneVentaEnPeriodo = ventasBd.Any(v =>
+                v.AmbienteId == (int)AmbienteEnum.Hospital
+                && ObtenerHospitalizacionIdPorVenta(v, hospitalizacionPorVenta) == hospitalizacionId);
+
+            string espHospital = hosp.Especialidad?.NombreEspecialidad ?? "Sin especialidad";
+            void RegistrarMontoHospital(string categoria, decimal subtotal)
+            {
+                if (montosHospitalPorEspecialidad == null || subtotal <= 0) return;
+                if (!montosHospitalPorEspecialidad.TryGetValue(espHospital, out var montos))
+                    montos = (0, 0, 0, 0);
+                categoria = NormalizarCategoriaConsolidado(categoria);
+                if (categoria == "Producto")
+                    montos.productos += subtotal;
+                else if (categoria == "Servicio")
+                    montos.servicios += subtotal;
+                else if (categoria == "Examen")
+                    montos.examenes += subtotal;
+                else
+                    montos.hospital += subtotal;
+                montosHospitalPorEspecialidad[espHospital] = montos;
+            }
+
+            decimal subtotalEstadia = CalcularSubtotalEstadiaEnPeriodo(hosp, desde, hastaFin, out int nochesEstadia);
+            if (subtotalEstadia > 0)
+            {
+                agregarItem("Hospital", $"Estadía en habitación ({nochesEstadia} noche(s))", nochesEstadia, subtotalEstadia, 0m, ambienteId);
+                RegistrarMontoHospital("Hospital", subtotalEstadia);
+            }
+
+            var cambiosHabitacion = _hospitalizacionRepository.GetCambiosHabitacion(hosp.Id);
+            foreach (var cambio in cambiosHabitacion)
+            {
+                var fechaCambio = cambio.FechaCambio;
+                if (fechaCambio < desde || fechaCambio > hastaFin) continue;
+                decimal montoCambio = cambio.ValorTarifa * cambio.Dias;
+                if (montoCambio > 0)
+                {
+                    agregarItem("Hospital", "Cambio de habitación", cambio.Dias, montoCambio, 0m, ambienteId);
+                    RegistrarMontoHospital("Hospital", montoCambio);
+                }
+            }
+
+            foreach (var prod in hosp.HospitalizacionesProductos ?? Enumerable.Empty<HospitalizacionProducto>())
+            {
+                var aplicadas = prod.HospitalizacionesProductosAplicaciones?
+                    .Where(a => a.Aplicado && !a.Eliminado
+                        && FechaAplicacionEnRango(a, desde, hastaFin, hospEnPeriodo, tieneVentaEnPeriodo))
+                    .ToList() ?? new List<HospitalizacionProductoAplicacion>();
+                if (!aplicadas.Any()) continue;
+
+                decimal cantidad = aplicadas.Sum(a => a.Cantidad);
+                decimal subtotalProd = cantidad * prod.PrecioValor;
+                decimal? costoUnitario = ObtenerCostoUnitarioProducto(prod.ProductoId, prod.Producto, costoProductoCache);
+                string nombre = prod.Producto?.NombreProducto ?? "Producto";
+                agregarItem("Producto", nombre, cantidad, subtotalProd, costoUnitario, ambienteId);
+                RegistrarMontoHospital("Producto", subtotalProd);
+            }
+
+            AgregarProductosConsolidadoInsumosDirectos(
+                hosp.HospitalizacionInsumosDirectos,
+                desde,
+                hastaFin,
+                hospEnPeriodo,
+                tieneVentaEnPeriodo,
+                agregarItem,
+                ambienteId,
+                subtotal => RegistrarMontoHospital("Producto", subtotal),
+                costoProductoCache);
+
+            foreach (var svc in hosp.HospitalizacionesServicios ?? Enumerable.Empty<HospitalizacionServicio>())
+            {
+                if (!ServicioHospitalizacionEnRango(svc, desde, hastaFin, hospEnPeriodo, tieneVentaEnPeriodo))
+                    continue;
+
+                decimal precioSvc = ObtenerPrecioUnitarioHospitalizacionServicio(svc);
+                decimal subtotalSvc = Math.Round(svc.Cantidad * precioSvc, 2);
+                string categoriaSvc = CategoriaMontosHospitalizacionServicio(svc);
+                decimal? costoSvc = ObtenerCostoUnitarioServicio(svc.ServicioId, svc.Servicio);
+                agregarItem(categoriaSvc, svc.Servicio?.NombreServicio ?? "Servicio", svc.Cantidad, subtotalSvc, costoSvc, ambienteId);
+                RegistrarMontoHospital(categoriaSvc, subtotalSvc);
+            }
+
+            foreach (var examHosp in hosp.HospitalizacionesExamenes ?? Enumerable.Empty<HospitalizacionExamen>())
+            {
+                if (examHosp.Examen?.DetalleExamenes == null) continue;
+                foreach (var det in examHosp.Examen.DetalleExamenes)
+                {
+                    var labClinico = det.ExamenLabClinico;
+                    decimal? costoExam = ObtenerCostoUnitarioExamen(labClinico?.Id, labClinico);
+                    if (!hospEnPeriodo && !tieneVentaEnPeriodo) continue;
+                    agregarItem("Examen", labClinico?.NombreExamen ?? "Examen", det.Cantidad, det.PrecioValor, costoExam, ambienteId);
+                    RegistrarMontoHospital("Examen", det.PrecioValor);
+                }
+            }
+
+            foreach (var paq in hosp.HospitalizacionesPaquetesHospitalizacion ?? Enumerable.Empty<HospitalizacionPaqueteHospitalizacion>())
+            {
+                if (paq.Eliminado || paq.PaqueteHospitalizacion == null) continue;
+                if (!FechaEnRango(paq.FechaHora, desde, hastaFin) && !hospEnPeriodo && !tieneVentaEnPeriodo) continue;
+
+                decimal precioPaq = paq.PaqueteHospitalizacion.Precio ?? 0;
+                decimal? costoPaq = ObtenerCostoPaqueteHospitalizacion(paq.PaqueteHospitalizacion);
+                agregarItem("Paquete", paq.PaqueteHospitalizacion.NombrePaquete, 1, precioPaq, costoPaq, ambienteId);
+                RegistrarMontoHospital("Paquete", precioPaq);
+            }
+
+            if (hospEnPeriodo || tieneVentaEnPeriodo)
+            {
+                decimal subGastosAdmin = _hospitalizacionRepository.GetGastosAdministrativos(hosp.Id)?.Sum(g => g.Monto) ?? 0;
+                if (subGastosAdmin > 0)
+                {
+                    agregarItem("Hospital", "Gastos administrativos", 1, subGastosAdmin, 0m, ambienteId);
+                    RegistrarMontoHospital("Hospital", subGastosAdmin);
+                }
+
+                decimal subHonorarios = _context.HospitalizacionHonorarios
+                    .Where(h => h.HospitalizacionId == hosp.Id).Sum(h => h.Monto);
+                if (subHonorarios > 0)
+                {
+                    agregarItem("Hospital", "Honorarios médicos", 1, subHonorarios, 0m, ambienteId);
+                    RegistrarMontoHospital("Hospital", subHonorarios);
+                }
+
+                decimal subAmbulancias = _context.Ambulancias
+                    .Where(a => a.HospitalizacionId == hosp.Id).Sum(a => a.Precio);
+                if (subAmbulancias > 0)
+                {
+                    agregarItem("Hospital", "Ambulancia", 1, subAmbulancias, 0m, ambienteId);
+                    RegistrarMontoHospital("Hospital", subAmbulancias);
+                }
+            }
+        }
+
+        private static decimal CalcularSubtotalEstadiaEnPeriodo(
+            Hospitalizacion hosp, DateTime desde, DateTime hastaFin, out int noches)
+        {
+            noches = 0;
+            if (hosp == null) return 0;
+
+            var finHosp = hosp.Finalizada ? hosp.FechaFin.Date : DateTime.Now.Date;
+            if (finHosp > hastaFin.Date) finHosp = hastaFin.Date;
+            var inicioCobro = hosp.FechaInicio.Date > desde.Date ? hosp.FechaInicio.Date : desde.Date;
+            var finCobro = finHosp;
+
+            if (finCobro < inicioCobro) return 0;
+
+            noches = (finCobro - inicioCobro).Days;
+            if (noches < 1) noches = 1;
+
+            decimal tarifaBase = hosp.CategoriaHabitacionTarifa?.ValorTarifa ?? 0;
+            return tarifaBase * noches;
+        }
+
+        private static bool FechaEnRango(DateTime fecha, DateTime desde, DateTime hastaFin)
+            => fecha >= desde && fecha <= hastaFin;
+
+        private static bool FechaAplicacionEnRango(
+            HospitalizacionProductoAplicacion a,
+            DateTime desde,
+            DateTime hastaFin,
+            bool hospEnPeriodo = false,
+            bool tieneVentaEnPeriodo = false)
+        {
+            if (hospEnPeriodo || tieneVentaEnPeriodo) return true;
+            var f = a.FechaHoraAplicacionManual ?? a.FechaHoraAplicacion;
+            return f.HasValue && FechaEnRango(f.Value, desde, hastaFin);
+        }
+
+        /// <summary>Precio unitario de un servicio en hospitalización (Precio o PrecioServicio.Valor).</summary>
+        private static decimal ObtenerPrecioUnitarioHospitalizacionServicio(HospitalizacionServicio svc)
+        {
+            if (svc == null) return 0m;
+            if (svc.Precio > 0) return svc.Precio;
+            if (svc.PrecioServicio?.Valor > 0) return svc.PrecioServicio.Valor;
+            return 0m;
+        }
+
+        /// <summary>Dieta y servicios clínicos van a columna Servicios; paquetes a Hospital.</summary>
+        private static string CategoriaMontosHospitalizacionServicio(HospitalizacionServicio svc)
+        {
+            var cat = ClasificarCategoriaServicio(
+                svc?.Servicio?.NombreServicio,
+                svc?.Servicio?.CategoriaServicio?.NombreCategoria);
+            return cat == "Dieta" ? "Servicio" : cat;
+        }
+
+        /// <summary>
+        /// Incluye servicios de hospitalización en el reporte (misma regla que facturación/recibos: no eliminados).
+        /// </summary>
+        private static bool ServicioHospitalizacionEnRango(
+            HospitalizacionServicio svc,
+            DateTime desde,
+            DateTime hastaFin,
+            bool hospEnPeriodo,
+            bool tieneVentaEnPeriodo)
+        {
+            if (svc == null || svc.Eliminado) return false;
+            if (hospEnPeriodo || tieneVentaEnPeriodo) return true;
+            if (svc.FechaHoraAplicacion.HasValue)
+                return FechaEnRango(svc.FechaHoraAplicacion.Value, desde, hastaFin);
+            return false;
+        }
+
+        private static bool FechaInsumoDirectoAplicacionEnRango(
+            HospitalizacionInsumoDirectoAplicacion a,
+            DateTime desde,
+            DateTime hastaFin,
+            bool hospEnPeriodo,
+            bool tieneVentaEnPeriodo)
+        {
+            if (hospEnPeriodo || tieneVentaEnPeriodo) return true;
+            if (a.FechaHoraAplicacion.HasValue)
+                return FechaEnRango(a.FechaHoraAplicacion.Value, desde, hastaFin);
+            return false;
+        }
+
+        private void AgregarProductosConsolidadoInsumosDirectos(
+            IEnumerable<HospitalizacionInsumoDirecto> insumosDirectos,
+            DateTime desde,
+            DateTime hastaFin,
+            bool hospEnPeriodo,
+            bool tieneVentaEnPeriodo,
+            Action<string, string, decimal, decimal, decimal?, int> agregarItem,
+            int ambienteId,
+            Action<decimal> registrarProductoHospital = null,
+            Dictionary<int, decimal?> costoProductoCache = null)
+        {
+            foreach (var insumo in insumosDirectos ?? Enumerable.Empty<HospitalizacionInsumoDirecto>())
+            {
+                if (insumo.Eliminado) continue;
+
+                var aplicadas = insumo.Aplicaciones?
+                    .Where(a => a.Aplicado && FechaInsumoDirectoAplicacionEnRango(a, desde, hastaFin, hospEnPeriodo, tieneVentaEnPeriodo))
+                    .ToList() ?? new List<HospitalizacionInsumoDirectoAplicacion>();
+                if (!aplicadas.Any()) continue;
+
+                decimal cantidad = aplicadas.Sum(a => a.Cantidad);
+                decimal subtotalProd = aplicadas.Sum(a => a.Cantidad * insumo.PrecioValor);
+                decimal? costoUnitario = ObtenerCostoUnitarioProducto(insumo.ProductoId, insumo.Producto, costoProductoCache);
+                string nombre = insumo.Producto?.NombreProducto ?? "Insumo/Medicamento";
+                agregarItem("Producto", nombre, cantidad, subtotalProd, costoUnitario, ambienteId);
+                registrarProductoHospital?.Invoke(subtotalProd);
+            }
+        }
+
+        private (decimal subProductos, decimal cantProductos, List<ReporteVentaDetalleItemViewModel> lineas)
+            ConstruirDetalleInsumosDirectosHospitalizacion(
+                IEnumerable<HospitalizacionInsumoDirecto> insumosDirectos,
+                DateTime desde,
+                DateTime hastaFin,
+                bool hospEnPeriodo,
+                bool tieneVentaEnPeriodo,
+                Dictionary<int, decimal?> costoProductoCache = null)
+        {
+            var lineas = new List<ReporteVentaDetalleItemViewModel>();
+            decimal subProductos = 0m;
+            decimal cantProductos = 0m;
+
+            foreach (var insumo in insumosDirectos ?? Enumerable.Empty<HospitalizacionInsumoDirecto>())
+            {
+                if (insumo.Eliminado) continue;
+
+                var aplicadas = insumo.Aplicaciones?
+                    .Where(a => a.Aplicado && FechaInsumoDirectoAplicacionEnRango(a, desde, hastaFin, hospEnPeriodo, tieneVentaEnPeriodo))
+                    .ToList() ?? new List<HospitalizacionInsumoDirectoAplicacion>();
+                if (!aplicadas.Any()) continue;
+
+                decimal cantidad = aplicadas.Sum(a => a.Cantidad);
+                decimal subtotalProd = aplicadas.Sum(a => a.Cantidad * insumo.PrecioValor);
+                subProductos += subtotalProd;
+                cantProductos += cantidad;
+
+                decimal? costoUnitario = ObtenerCostoUnitarioProducto(insumo.ProductoId, insumo.Producto, costoProductoCache);
+                lineas.Add(CrearDetalleItemVenta(
+                    insumo.Producto?.NombreProducto ?? "Insumo/Medicamento",
+                    "Producto",
+                    cantidad,
+                    insumo.PrecioValor,
+                    subtotalProd,
+                    0,
+                    costoUnitario));
+            }
+
+            return (subProductos, cantProductos, lineas);
+        }
+
+        private decimal? ObtenerCostoUnitarioProducto(int productoId, Producto nav, Dictionary<int, decimal?> costoProductoCache = null)
+        {
+            if (productoId > 0 && costoProductoCache != null
+                && costoProductoCache.TryGetValue(productoId, out var cached))
+                return cached;
+
+            if (productoId > 0)
+            {
+                var invRec = _context.ProductosInventario
+                    .AsNoTracking()
+                    .Where(i => i.ProductoId == productoId && !i.Eliminado)
+                    .OrderByDescending(i => i.Id)
+                    .Select(i => (decimal?)i.PrecioCosto)
+                    .FirstOrDefault();
+                if (invRec.HasValue && invRec.Value > 0) return invRec.Value;
+            }
+            if (nav?.PrecioCosto > 0) return nav.PrecioCosto;
+            if (productoId > 0)
+            {
+                var prodBd = _productoRepository.GetProdutoById(productoId);
+                if (prodBd?.PrecioCosto > 0) return prodBd.PrecioCosto;
+            }
+            return null;
+        }
+
+        private decimal? ObtenerCostoPaqueteHospitalizacion(PaqueteHospitalizacion paq)
+        {
+            if (paq == null) return null;
+            if (paq.PrecioCosto > 0) return paq.PrecioCosto;
+
+            var detalles = paq.DetallePaquetesHospitalizacion?
+                .Where(d => !d.Eliminado)
+                .ToList();
+            if (detalles != null && detalles.Any())
+            {
+                decimal suma = detalles.Sum(d => d.PrecioCosto * d.Cantidad);
+                if (suma > 0) return suma;
+            }
+
+            var sumaBd = _context.DetallePaqueteHospitalizacion
+                .AsNoTracking()
+                .Where(d => d.PaqueteHospitalizacionId == paq.Id && !d.Eliminado)
+                .Sum(d => (decimal?)(d.PrecioCosto * d.Cantidad));
+            return sumaBd > 0 ? sumaBd : null;
+        }
+
+        // ────────────────────────────────────────────────────────────
         // Método auxiliar para obtener el ID de hospitalización a partir de una venta
         // ────────────────────────────────────────────────────────────
-        private int? ObtenerHospitalizacionIdPorVenta(Venta venta)
+        private int? ObtenerHospitalizacionIdPorVenta(Venta venta, Dictionary<int, int?> hospitalizacionPorVenta = null)
         {
+            if (venta == null) return null;
+            if (hospitalizacionPorVenta != null
+                && hospitalizacionPorVenta.TryGetValue(venta.Id, out var cached))
+                return cached;
+
             // 1. Intentar por DetalleCaja (vínculo con CuentaPorCobrar)
             var detalleCaja = _context.DetalleCajas
                 .Include(dc => dc.CuentaPorCobrar)
@@ -4695,19 +7173,164 @@ namespace sistema.Controllers
                 if (hospId != null) return hospId;
             }
 
-            // 2. Si no, buscar hospitalización activa del paciente en la fecha de la venta
+            // 2. Cuenta por cobrar del paciente con hospitalización en la fecha de la venta
             if (venta.PacienteId != null)
             {
-                var hosp = _context.Hospitalizaciones
-                    .Where(h => h.PacienteId == venta.PacienteId
-                             && !h.Finalizada
-                             && venta.FechaVenta >= h.FechaInicio
-                             && venta.FechaVenta <= h.FechaFin)
-                    .OrderByDescending(h => h.Id)
-                    .FirstOrDefault();
-                if (hosp != null) return hosp.Id;
+                var hospIdCpc = (
+                    from d in _context.DetallesCuentaPorCobrar.AsNoTracking()
+                    join cpc in _context.CuentasPorCobrar.AsNoTracking() on d.CuentaPorCobrarId equals cpc.Id
+                    join h in _context.Hospitalizaciones.AsNoTracking() on d.HospitalizacionId equals h.Id
+                    where d.HospitalizacionId != null
+                       && cpc.PacienteId == venta.PacienteId
+                       && !h.Eliminada
+                       && h.FechaInicio <= venta.FechaVenta
+                       && h.FechaFin >= venta.FechaVenta
+                    orderby h.Id descending
+                    select (int?)h.Id
+                ).FirstOrDefault();
+                if (hospIdCpc != null) return hospIdCpc;
             }
+
+            // 3. Hospitalización del paciente en la fecha de la venta (activa o finalizada)
+            if (venta.PacienteId != null)
+            {
+                var fechaVenta = venta.FechaVenta;
+                var hospId = _context.Hospitalizaciones
+                    .AsNoTracking()
+                    .Where(h => h.PacienteId == venta.PacienteId
+                             && !h.Eliminada
+                             && h.FechaInicio <= fechaVenta
+                             && (h.FechaFin >= fechaVenta
+                                 || !h.Finalizada
+                                 || (h.FechaHoraFinalizada != null && h.FechaHoraFinalizada >= fechaVenta)))
+                    .OrderByDescending(h => h.Id)
+                    .Select(h => (int?)h.Id)
+                    .FirstOrDefault();
+                if (hospId != null) return hospId;
+            }
+
             return null;
+        }
+
+        /// <summary>Resuelve hospitalización por venta en lote (evita N+1 en reportes).</summary>
+        private Dictionary<int, int?> PrecargarHospitalizacionIdPorVentas(List<Venta> ventasBd)
+        {
+            var resultado = new Dictionary<int, int?>();
+            if (ventasBd == null || ventasBd.Count == 0) return resultado;
+
+            var ventaIds = ventasBd.Select(v => v.Id).ToList();
+
+            var detallesCaja = _context.DetalleCajas.AsNoTracking()
+                .Where(dc => dc.VentaId != null && ventaIds.Contains(dc.VentaId.Value) && dc.CuentaPorCobrarId != null)
+                .Select(dc => new { dc.VentaId, dc.CuentaPorCobrarId })
+                .ToList();
+
+            var cpcIds = detallesCaja
+                .Where(d => d.CuentaPorCobrarId != null)
+                .Select(d => d.CuentaPorCobrarId!.Value)
+                .Distinct()
+                .ToList();
+
+            var hospPorCpc = cpcIds.Count == 0
+                ? new Dictionary<int, int?>()
+                : _context.DetallesCuentaPorCobrar.AsNoTracking()
+                    .Where(d => cpcIds.Contains(d.CuentaPorCobrarId)
+                        && d.HospitalizacionId != null)
+                    .GroupBy(d => d.CuentaPorCobrarId)
+                    .ToDictionary(g => g.Key, g => g.Select(d => d.HospitalizacionId).FirstOrDefault());
+
+            foreach (var dc in detallesCaja)
+            {
+                if (dc.VentaId == null || dc.CuentaPorCobrarId == null) continue;
+                if (hospPorCpc.TryGetValue(dc.CuentaPorCobrarId.Value, out var hospId) && hospId != null)
+                    resultado[dc.VentaId.Value] = hospId;
+            }
+
+            var pendientes = ventasBd
+                .Where(v => !resultado.ContainsKey(v.Id) && v.PacienteId != null)
+                .ToList();
+            if (pendientes.Count == 0) return resultado;
+
+            var pacienteIds = pendientes.Select(v => v.PacienteId!.Value).Distinct().ToList();
+            var hospitalizaciones = _context.Hospitalizaciones.AsNoTracking()
+                .Where(h => pacienteIds.Contains(h.PacienteId) && !h.Eliminada)
+                .OrderByDescending(h => h.Id)
+                .Select(h => new
+                {
+                    h.Id,
+                    h.PacienteId,
+                    h.FechaInicio,
+                    h.FechaFin,
+                    h.Finalizada,
+                    h.FechaHoraFinalizada
+                })
+                .ToList();
+
+            foreach (var v in pendientes)
+            {
+                var fechaVenta = v.FechaVenta;
+                var hospId = hospitalizaciones
+                    .Where(h => h.PacienteId == v.PacienteId
+                        && h.FechaInicio <= fechaVenta
+                        && (h.FechaFin >= fechaVenta
+                            || !h.Finalizada
+                            || (h.FechaHoraFinalizada != null && h.FechaHoraFinalizada >= fechaVenta)))
+                    .Select(h => (int?)h.Id)
+                    .FirstOrDefault();
+                resultado[v.Id] = hospId;
+            }
+
+            foreach (var v in ventasBd)
+            {
+                if (!resultado.ContainsKey(v.Id))
+                    resultado[v.Id] = null;
+            }
+
+            return resultado;
+        }
+
+        /// <summary>Precarga costos de productos usados en ventas (evita consultas repetidas).</summary>
+        private Dictionary<int, decimal?> PrecargarCostosProductos(List<Venta> ventasBd)
+        {
+            var productoIds = ventasBd?
+                .SelectMany(v => v.DetalleVenta ?? Enumerable.Empty<DetalleVenta>())
+                .Where(d => d.ProductoId.HasValue && d.ProductoId.Value > 0)
+                .Select(d => d.ProductoId!.Value)
+                .Distinct()
+                .ToList() ?? new List<int>();
+
+            if (productoIds.Count == 0) return new Dictionary<int, decimal?>();
+
+            var costosInventario = _context.ProductosInventario.AsNoTracking()
+                .Where(i => productoIds.Contains(i.ProductoId) && !i.Eliminado)
+                .GroupBy(i => i.ProductoId)
+                .Select(g => new
+                {
+                    ProductoId = g.Key,
+                    PrecioCosto = g.OrderByDescending(i => i.Id).Select(i => (decimal?)i.PrecioCosto).FirstOrDefault()
+                })
+                .ToList()
+                .ToDictionary(x => x.ProductoId, x => x.PrecioCosto);
+
+            var faltantes = productoIds.Where(id => !costosInventario.ContainsKey(id) || !(costosInventario[id] > 0)).ToList();
+            var costosProducto = faltantes.Count == 0
+                ? new Dictionary<int, decimal?>()
+                : _context.Productos.AsNoTracking()
+                    .Where(p => faltantes.Contains(p.Id) && p.PrecioCosto > 0)
+                    .ToDictionary(p => p.Id, p => (decimal?)p.PrecioCosto);
+
+            var cache = new Dictionary<int, decimal?>();
+            foreach (var id in productoIds)
+            {
+                if (costosInventario.TryGetValue(id, out var inv) && inv > 0)
+                    cache[id] = inv;
+                else if (costosProducto.TryGetValue(id, out var prod))
+                    cache[id] = prod;
+                else
+                    cache[id] = null;
+            }
+
+            return cache;
         }
 
         // ────────────────────────────────────────────────────────────
@@ -4729,6 +7352,16 @@ namespace sistema.Controllers
                     medicos.Add(new ReporteMedicoViewModel { Rol = rol, Nombre = nombre, Especialidad = especialidad ?? "" });
             }
 
+            string especialidadHospi = null;
+            if (hosp.EspecialidadId != null)
+            {
+                especialidadHospi = _context.Especialidad
+                    .AsNoTracking()
+                    .Where(e => e.Id == hosp.EspecialidadId)
+                    .Select(e => e.NombreEspecialidad)
+                    .FirstOrDefault();
+            }
+
             // ── Fuente 1: Consultas incluidas en el objeto hosp ──────────────────────────
             if (hosp.Consultas != null)
             {
@@ -4739,28 +7372,32 @@ namespace sistema.Controllers
 
                     if (cita.EmpleadoId.HasValue)
                     {
-                        var emp = _empleadoRepository.Get(cita.EmpleadoId.Value, false);
+                        var emp = ObtenerEmpleadoConEspecialidad(cita.EmpleadoId.Value);
                         if (emp != null)
-                            AgregarMedico(emp.NombreYApellidos, emp.Especialidad?.NombreEspecialidad, "Tratante");
+                        {
+                            var esp = ResolverEspecialidadEmpleado(emp, cita) ?? especialidadHospi;
+                            AgregarMedico(emp.NombreYApellidos, esp, "Tratante");
+                        }
                     }
 
                     if (cita.MedicosSecundarios != null)
                     {
                         foreach (var medId in cita.MedicosSecundarios)
                         {
-                            var emp = _empleadoRepository.Get(medId, false);
+                            var emp = ObtenerEmpleadoConEspecialidad(medId);
                             if (emp != null)
-                                AgregarMedico(emp.NombreYApellidos, emp.Especialidad?.NombreEspecialidad, "Secundario");
+                                AgregarMedico(emp.NombreYApellidos, ResolverEspecialidadEmpleado(emp, cita) ?? especialidadHospi, "Secundario");
                         }
                     }
                 }
             }
 
             // ── Fuente 2 (fallback): Buscar la cita de hospitalización del paciente en BD ─
-            // Cubre el caso donde hosp.Consultas viene vacío o sin Citas cargadas
             if (!medicos.Any() && hosp.PacienteId > 0)
             {
                 var citaHospi = _context.Citass
+                    .Include(c => c.Especialidad)
+                    .AsNoTracking()
                     .Where(c => c.PacienteId == hosp.PacienteId
                              && !c.Eliminado
                              && c.CitaTipoAtencion == "Hospitalización")
@@ -4771,22 +7408,25 @@ namespace sistema.Controllers
                 {
                     if (citaHospi.EmpleadoId.HasValue)
                     {
-                        var emp = _empleadoRepository.Get(citaHospi.EmpleadoId.Value, false);
+                        var emp = ObtenerEmpleadoConEspecialidad(citaHospi.EmpleadoId.Value);
                         if (emp != null)
-                            AgregarMedico(emp.NombreYApellidos, emp.Especialidad?.NombreEspecialidad, "Tratante");
+                            AgregarMedico(emp.NombreYApellidos, ResolverEspecialidadEmpleado(emp, citaHospi) ?? especialidadHospi, "Tratante");
                     }
 
                     if (citaHospi.MedicosSecundarios != null)
                     {
                         foreach (var medId in citaHospi.MedicosSecundarios)
                         {
-                            var emp = _empleadoRepository.Get(medId, false);
+                            var emp = ObtenerEmpleadoConEspecialidad(medId);
                             if (emp != null)
-                                AgregarMedico(emp.NombreYApellidos, emp.Especialidad?.NombreEspecialidad, "Secundario");
+                                AgregarMedico(emp.NombreYApellidos, ResolverEspecialidadEmpleado(emp, citaHospi) ?? especialidadHospi, "Secundario");
                         }
                     }
                 }
             }
+
+            if (!medicos.Any() && !string.IsNullOrWhiteSpace(especialidadHospi))
+                AgregarMedico("Médico de ingreso", especialidadHospi, "Ingreso");
 
             return medicos;
         }
@@ -4809,42 +7449,35 @@ namespace sistema.Controllers
                     medicos.Add(new ReporteMedicoViewModel { Rol = rol, Nombre = nombre, Especialidad = especialidad ?? "" });
             }
 
-            // Caso 1: Origen explícito (se guardó al facturar desde Consulta/Cita)
-            if (v.Origen == "Consulta" || v.Origen == "Cita")
+            // Cita del paciente en la fecha de la venta (médico tratante real, no el cajero)
+            var cita = ObtenerCitaRelacionadaVenta(v);
+            if (cita != null)
             {
-                if (v.EmpleadoId != null)
+                if (cita.EmpleadoId.HasValue)
                 {
-                    var emp = _empleadoRepository.Get(v.EmpleadoId.Value, false);
+                    var emp = cita.Empleado ?? ObtenerEmpleadoConEspecialidad(cita.EmpleadoId.Value);
                     if (emp != null)
-                        AgregarMedico(emp.NombreYApellidos, emp.Especialidad?.NombreEspecialidad, "Tratante");
+                        AgregarMedico(emp.NombreYApellidos, ResolverEspecialidadEmpleado(emp, cita), "Tratante");
                 }
 
-                // Buscar médicos secundarios desde la cita del paciente en esa fecha
-                if (v.PacienteId != null)
+                if (cita.MedicosSecundarios != null)
                 {
-                    var cita = _context.Citass
-                        .Where(c => c.PacienteId == v.PacienteId
-                                 && !c.Eliminado
-                                 && c.FechaInicio == v.FechaVenta.Date)
-                        .OrderByDescending(c => c.Id)
-                        .FirstOrDefault();
-                    if (cita?.MedicosSecundarios != null)
+                    foreach (var medId in cita.MedicosSecundarios)
                     {
-                        foreach (var medId in cita.MedicosSecundarios)
-                        {
-                            var emp = _empleadoRepository.Get(medId, false);
-                            if (emp != null)
-                                AgregarMedico(emp.NombreYApellidos, emp.Especialidad?.NombreEspecialidad, "Secundario");
-                        }
+                        var emp = ObtenerEmpleadoConEspecialidad(medId);
+                        if (emp != null)
+                            AgregarMedico(emp.NombreYApellidos, ResolverEspecialidadEmpleado(emp, cita), "Secundario");
                     }
                 }
             }
-            // Caso 2: Inferir desde consulta del paciente en la misma fecha de la venta
-            else if (v.PacienteId != null)
+
+            // Consulta clínica vinculada (ingresos / exámenes con especialidad de la cita)
+            if (!medicos.Any() && v.PacienteId != null)
             {
                 var consulta = _context.Consultas
-                    .Include(c => c.Citas)
-                        .ThenInclude(c => c.Empleado)
+                    .Include(c => c.Citas).ThenInclude(c => c.Empleado).ThenInclude(e => e.Especialidad)
+                    .Include(c => c.Citas).ThenInclude(c => c.Especialidad)
+                    .AsNoTracking()
                     .Where(c => c.Citas.PacienteId == v.PacienteId
                              && c.FechaYHoraInicioConsulta.Date == v.FechaVenta.Date)
                     .OrderByDescending(c => c.Id)
@@ -4852,37 +7485,82 @@ namespace sistema.Controllers
 
                 if (consulta?.Citas != null)
                 {
-                    if (consulta.Citas.Empleado != null)
-                        AgregarMedico(consulta.Citas.Empleado.NombreYApellidos,
-                                      consulta.Citas.Empleado.Especialidad?.NombreEspecialidad, "Tratante");
-
-                    if (consulta.Citas.MedicosSecundarios != null)
+                    var citaConsulta = consulta.Citas;
+                    if (citaConsulta.Empleado != null)
+                        AgregarMedico(citaConsulta.Empleado.NombreYApellidos,
+                            ResolverEspecialidadEmpleado(citaConsulta.Empleado, citaConsulta), "Tratante");
+                    else if (citaConsulta.EmpleadoId.HasValue)
                     {
-                        foreach (var medId in consulta.Citas.MedicosSecundarios)
+                        var emp = ObtenerEmpleadoConEspecialidad(citaConsulta.EmpleadoId.Value);
+                        if (emp != null)
+                            AgregarMedico(emp.NombreYApellidos, ResolverEspecialidadEmpleado(emp, citaConsulta), "Tratante");
+                    }
+
+                    if (citaConsulta.MedicosSecundarios != null)
+                    {
+                        foreach (var medId in citaConsulta.MedicosSecundarios)
                         {
-                            var emp = _empleadoRepository.Get(medId, false);
+                            var emp = ObtenerEmpleadoConEspecialidad(medId);
                             if (emp != null)
-                                AgregarMedico(emp.NombreYApellidos, emp.Especialidad?.NombreEspecialidad, "Secundario");
+                                AgregarMedico(emp.NombreYApellidos, ResolverEspecialidadEmpleado(emp, citaConsulta), "Secundario");
                         }
                     }
                 }
             }
 
-            // Caso 3: Venta de Hospital sin consulta vinculada
-            // (cuando no se encontró hospitalizacionId por DetalleCaja y se cayó al flujo normal)
+            // Venta originada desde orden de examen — médico de ingreso solo si no hay tratante
+            if (v.ExamenId != null && !medicos.Any(m => string.Equals(m.Rol, "Tratante", StringComparison.OrdinalIgnoreCase)))
+            {
+                var examen = _context.Examenes
+                    .Include(e => e.Empleado).ThenInclude(em => em.Especialidad)
+                    .AsNoTracking()
+                    .FirstOrDefault(e => e.Id == v.ExamenId);
+                if (examen?.Empleado != null)
+                {
+                    string espExamen = examen.Empleado.Especialidad?.NombreEspecialidad;
+                    if (string.IsNullOrWhiteSpace(espExamen) && v.DetalleVenta != null)
+                    {
+                        foreach (var d in v.DetalleVenta)
+                        {
+                            espExamen = MapearEspecialidadDesdeNombreItem(
+                                d.Servicio?.NombreServicio ?? d.ExamenLabClinico?.NombreExamen);
+                            if (!string.IsNullOrWhiteSpace(espExamen)) break;
+                        }
+                    }
+                    AgregarMedico(examen.Empleado.NombreYApellidos, espExamen, "Ingreso");
+                }
+            }
+
+            // Hospitalización activa del paciente
             if (!medicos.Any() && v.PacienteId != null && v.AmbienteId == (int)AmbienteEnum.Hospital)
             {
                 var hospActiva = _context.Hospitalizaciones
                     .Include(h => h.Consultas).ThenInclude(c => c.Citas)
+                    .Include(h => h.Especialidad)
+                    .AsNoTracking()
                     .Where(h => h.PacienteId == v.PacienteId
                              && h.FechaInicio.Date <= v.FechaVenta.Date)
                     .OrderByDescending(h => h.Id)
                     .FirstOrDefault();
 
                 if (hospActiva != null)
+                    medicos.AddRange(ObtenerMedicosDeHospitalizacion(hospActiva));
+            }
+
+            // Especialidad inferida del detalle (ej. "Ginecologia - Consulta", "2-CONSULTA MEDICA GENERAL")
+            if (medicos.Any(m => string.IsNullOrWhiteSpace(m.Especialidad)) && v.DetalleVenta != null)
+            {
+                string espDetalle = null;
+                foreach (var d in v.DetalleVenta)
                 {
-                    var medicosHospi = ObtenerMedicosDeHospitalizacion(hospActiva);
-                    medicos.AddRange(medicosHospi);
+                    var nombre = d.Servicio?.NombreServicio ?? d.ExamenLabClinico?.NombreExamen;
+                    espDetalle = MapearEspecialidadDesdeNombreItem(nombre);
+                    if (!string.IsNullOrWhiteSpace(espDetalle)) break;
+                }
+                if (!string.IsNullOrWhiteSpace(espDetalle))
+                {
+                    foreach (var med in medicos.Where(m => string.IsNullOrWhiteSpace(m.Especialidad)))
+                        med.Especialidad = espDetalle;
                 }
             }
 
@@ -4892,11 +7570,46 @@ namespace sistema.Controllers
         // ────────────────────────────────────────────────────────────
         // Construir ítem desde detalle de venta (productos, servicios, exámenes)
         // ────────────────────────────────────────────────────────────
+        private static decimal CalcularLineaNetaDetalle(DetalleVenta d)
+        {
+            if (d == null) return 0m;
+            if (d.Subtotal > 0) return Convert.ToDecimal(d.Subtotal);
+            if (d.Total > 0) return Convert.ToDecimal(d.Total);
+            decimal bruto = Convert.ToDecimal(d.Precio) * Convert.ToDecimal(d.Cantidad);
+            decimal desc = Convert.ToDecimal(d.Descuento);
+            decimal neto = bruto - desc;
+            return neto > 0 ? neto : (bruto > 0 ? bruto : 0m);
+        }
+
+        private static decimal ObtenerMontoCobradoVenta(
+            Venta v,
+            IReadOnlyDictionary<int, decimal> ingresosCajaPorVentaId = null)
+        {
+            decimal monto = v.Pagos?
+                .Where(p => !p.Eliminado)
+                .Sum(p => p.Monto) ?? 0m;
+            if (monto <= 0 && v.Pagos != null && v.Pagos.Any())
+                monto = v.Pagos.Sum(p => p.Monto);
+
+            if (monto <= 0 && v.MontoPago > 0)
+                monto = v.MontoPago;
+
+            if (monto <= 0
+                && ingresosCajaPorVentaId != null
+                && ingresosCajaPorVentaId.TryGetValue(v.Id, out var ingresoCaja)
+                && ingresoCaja > 0)
+                monto = ingresoCaja;
+
+            return monto;
+        }
+
         private ReporteVentaItemViewModel ConstruirItemDesdeDetalleVenta(
             Venta v,
             string modoDetalle,
-            Action<string, string, decimal, decimal, decimal?> agregarItem,
-            IProducto productoRepo)
+            Action<string, string, decimal, decimal, decimal?, int> agregarItem,
+            IProducto productoRepo,
+            int ambienteId,
+            IReadOnlyDictionary<int, decimal> ingresosCajaPorVentaId = null)
         {
             decimal subProductos = 0m, subServicios = 0m, subExamenes = 0m, subHospital = 0m;
             decimal totalDesc = 0m, cantProductos = 0m, cantServicios = 0m, cantExamenes = 0m, cantHospital = 0m;
@@ -4906,7 +7619,7 @@ namespace sistema.Controllers
             {
                 foreach (var d in v.DetalleVenta)
                 {
-                    decimal lineaNeta = d.Subtotal > 0 ? Convert.ToDecimal(d.Subtotal) : Convert.ToDecimal(d.Total);
+                    decimal lineaNeta = CalcularLineaNetaDetalle(d);
                     decimal cantidad = Convert.ToDecimal(d.Cantidad);
                     totalDesc += Convert.ToDecimal(d.Descuento);
 
@@ -4919,7 +7632,6 @@ namespace sistema.Controllers
                         subProductos += lineaNeta;
                         cantProductos += cantidad;
 
-                        // Obtener costo unitario: prioridad → ProductoInventario → Producto.PrecioCosto
                         if (d.ProductoId.HasValue)
                         {
                             var invRec = _context.ProductosInventario
@@ -4943,21 +7655,19 @@ namespace sistema.Controllers
                     }
                     else if (d.BienOServicio == "S" && d.ExamenLabClinicoId != null)
                     {
-                        // Categoría real del examen
-                        if (d.ExamenLabClinico?.CategoriaLabClinico != null)
-                            categoria = d.ExamenLabClinico.CategoriaLabClinico.Nombre;
-                        else if (d.ExamenLabClinico != null)
-                            categoria = "Examen";
-                        else
-                            categoria = "Examen/Lab";
+                        categoria = d.ExamenLabClinico?.CategoriaLabClinico?.Nombre ?? "Examen";
                         subExamenes += lineaNeta;
                         cantExamenes += cantidad;
+                        costoUnitario = ObtenerCostoUnitarioExamen(d.ExamenLabClinicoId, d.ExamenLabClinico);
                     }
                     else if (d.BienOServicio == "S" && d.ServicioId != null)
                     {
-                        categoria = "Servicio";
+                        categoria = ClasificarCategoriaServicio(
+                            d.Servicio?.NombreServicio,
+                            d.Servicio?.CategoriaServicio?.NombreCategoria);
                         subServicios += lineaNeta;
                         cantServicios += cantidad;
+                        costoUnitario = ObtenerCostoUnitarioServicio(d.ServicioId, d.Servicio);
                     }
                     else
                     {
@@ -4967,22 +7677,29 @@ namespace sistema.Controllers
                     }
 
                     string nombre = d.Producto?.NombreProducto ?? d.Servicio?.NombreServicio ?? d.ExamenLabClinico?.NombreExamen ?? categoria;
-                    agregarItem(categoria, nombre, cantidad, lineaNeta, costoUnitario);
+                    string categoriaConsolidado = d.ExamenLabClinicoId != null ? "Examen" : categoria;
+                    agregarItem(categoriaConsolidado, nombre, cantidad, lineaNeta, costoUnitario, ambienteId);
 
-                    if (modoDetalle == "descripcion")
-                    {
-                        detalleItems.Add(new ReporteVentaDetalleItemViewModel
-                        {
-                            Descripcion = nombre,
-                            Categoria = categoria,
-                            Cantidad = cantidad,
-                            PrecioUnit = cantidad > 0 ? lineaNeta / cantidad : lineaNeta,
-                            Subtotal = lineaNeta,
-                            Descuento = Convert.ToDecimal(d.Descuento)
-                        });
-                    }
+                    detalleItems.Add(CrearDetalleItemVenta(
+                        nombre,
+                        categoria,
+                        cantidad,
+                        cantidad > 0 ? lineaNeta / cantidad : lineaNeta,
+                        lineaNeta,
+                        Convert.ToDecimal(d.Descuento),
+                        costoUnitario));
+
+                    if (modoDetalle == "descripcion" && d.BienOServicio == "S" && d.ServicioId != null)
+                        detalleItems.AddRange(ObtenerDetalleInsumosServicio(d.ServicioId, cantidad));
                 }
             }
+
+            CompletarMontosVentaSinDetalle(
+                v, ambienteId, ref subProductos, ref subServicios, ref subExamenes, ref subHospital,
+                ref cantProductos, ref cantServicios, ref cantExamenes, ref cantHospital,
+                detalleItems, agregarItem, ingresosCajaPorVentaId);
+
+            decimal totalBruto = subProductos + subServicios + subExamenes + subHospital + totalDesc;
 
             return new ReporteVentaItemViewModel
             {
@@ -4994,7 +7711,7 @@ namespace sistema.Controllers
                 EmpleadoNombre = v.Empleado?.NombreYApellidos ?? "",
                 TipoVenta = v.TipoVenta ?? "",
                 Origen = v.Origen ?? "",
-                MontoTotal = Convert.ToDecimal(v.MontoPago),
+                MontoTotal = Math.Round(totalBruto, 2),
                 TotalDescuento = totalDesc,
                 SubtotalProductos = Math.Round(subProductos, 2),
                 SubtotalServicios = Math.Round(subServicios, 2),
@@ -5008,6 +7725,147 @@ namespace sistema.Controllers
                 CantidadItemsExamenes = cantExamenes,
                 CantidadItemsHospital = cantHospital,
             };
+        }
+
+        /// <summary>
+        /// Ventas de caja sin líneas en DetalleVentas (pagos de cita, abonos, etc.): usa monto cobrado y cita/examen vinculado.
+        /// </summary>
+        private void AplicarFallbackMontoCobradoSiVacio(
+            ReporteVentaItemViewModel item,
+            Venta v,
+            int ambienteId,
+            IReadOnlyDictionary<int, decimal> ingresosCajaPorVentaId,
+            Action<string, string, decimal, decimal, decimal?, int> agregarItem)
+        {
+            if (item == null || v == null) return;
+            if (item.SubtotalProductos + item.SubtotalServicios + item.SubtotalExamenes + item.SubtotalHospital > 0)
+                return;
+
+            decimal subProductos = item.SubtotalProductos;
+            decimal subServicios = item.SubtotalServicios;
+            decimal subExamenes = item.SubtotalExamenes;
+            decimal subHospital = item.SubtotalHospital;
+            decimal cantProductos = item.CantidadItemsProductos;
+            decimal cantServicios = item.CantidadItemsServicios;
+            decimal cantExamenes = item.CantidadItemsExamenes;
+            decimal cantHospital = item.CantidadItemsHospital;
+            var detalleItems = item.DetalleItems?.ToList() ?? new List<ReporteVentaDetalleItemViewModel>();
+
+            CompletarMontosVentaSinDetalle(
+                v, ambienteId, ref subProductos, ref subServicios, ref subExamenes, ref subHospital,
+                ref cantProductos, ref cantServicios, ref cantExamenes, ref cantHospital,
+                detalleItems, agregarItem, ingresosCajaPorVentaId);
+
+            if (subProductos + subServicios + subExamenes + subHospital <= 0)
+                return;
+
+            item.SubtotalProductos = Math.Round(subProductos, 2);
+            item.SubtotalServicios = Math.Round(subServicios, 2);
+            item.SubtotalExamenes = Math.Round(subExamenes, 2);
+            item.SubtotalHospital = Math.Round(subHospital, 2);
+            item.CantidadItemsProductos = cantProductos;
+            item.CantidadItemsServicios = cantServicios;
+            item.CantidadItemsExamenes = cantExamenes;
+            item.CantidadItemsHospital = cantHospital;
+            item.DetalleItems = detalleItems;
+            item.MontoTotal = Math.Round(
+                subProductos + subServicios + subExamenes + subHospital + item.TotalDescuento, 2);
+        }
+
+        private void CompletarMontosVentaSinDetalle(
+            Venta v,
+            int ambienteId,
+            ref decimal subProductos,
+            ref decimal subServicios,
+            ref decimal subExamenes,
+            ref decimal subHospital,
+            ref decimal cantProductos,
+            ref decimal cantServicios,
+            ref decimal cantExamenes,
+            ref decimal cantHospital,
+            List<ReporteVentaDetalleItemViewModel> detalleItems,
+            Action<string, string, decimal, decimal, decimal?, int> agregarItem,
+            IReadOnlyDictionary<int, decimal> ingresosCajaPorVentaId = null)
+        {
+            if (subProductos + subServicios + subExamenes + subHospital > 0)
+                return;
+
+            decimal montoCobrado = ObtenerMontoCobradoVenta(v, ingresosCajaPorVentaId);
+            if (montoCobrado <= 0)
+                return;
+
+            int amb = v.AmbienteId ?? ambienteId;
+            string nombre = "Pago registrado";
+            string categoria = "Servicio";
+            string categoriaConsolidado = "Servicio";
+            decimal? costoUnitario = null;
+
+            if (v.ExamenId != null)
+            {
+                var examen = _context.Examenes
+                    .AsNoTracking()
+                    .Include(e => e.DetalleExamenes).ThenInclude(d => d.ExamenLabClinico)
+                    .FirstOrDefault(e => e.Id == v.ExamenId);
+
+                if (examen?.DetalleExamenes != null && examen.DetalleExamenes.Any())
+                {
+                    var primer = examen.DetalleExamenes.First();
+                    nombre = primer.ExamenLabClinico?.NombreExamen ?? "Examen de laboratorio";
+                    categoria = primer.ExamenLabClinico?.CategoriaLabClinico?.Nombre ?? "Examen";
+                    categoriaConsolidado = "Examen";
+                    costoUnitario = ObtenerCostoUnitarioExamen(primer.ExamenLabClinicoId, primer.ExamenLabClinico);
+                    subExamenes = montoCobrado;
+                    cantExamenes = 1;
+                }
+            }
+
+            if (subProductos + subServicios + subExamenes + subHospital == 0)
+            {
+                var cita = ObtenerCitaRelacionadaVenta(v);
+                if (cita != null)
+                {
+                    var svcCita = cita.CitasServicios?
+                        .Where(s => !s.Eliminado && s.Servicio != null)
+                        .FirstOrDefault();
+                    if (svcCita?.Servicio != null)
+                        nombre = svcCita.Servicio.NombreServicio;
+                    else if (cita.Servicio != null)
+                        nombre = cita.Servicio.NombreServicio;
+                }
+
+                if (amb == (int)AmbienteEnum.Farmacia)
+                {
+                    categoria = "Producto";
+                    categoriaConsolidado = "Producto";
+                    subProductos = montoCobrado;
+                    cantProductos = 1;
+                }
+                else if (amb == (int)AmbienteEnum.Laboratorio || v.ExamenId != null)
+                {
+                    categoria = "Examen";
+                    categoriaConsolidado = "Examen";
+                    subExamenes = montoCobrado;
+                    cantExamenes = 1;
+                }
+                else if (amb == (int)AmbienteEnum.Hospital
+                    || (v.TipoVenta?.IndexOf("hospitalizacion", StringComparison.OrdinalIgnoreCase) >= 0))
+                {
+                    categoria = "Hospital";
+                    categoriaConsolidado = "Hospital";
+                    subHospital = montoCobrado;
+                    cantHospital = 1;
+                }
+                else
+                {
+                    categoria = "Servicio";
+                    categoriaConsolidado = "Servicio";
+                    subServicios = montoCobrado;
+                    cantServicios = 1;
+                }
+            }
+
+            agregarItem(categoriaConsolidado, nombre, 1, montoCobrado, costoUnitario, ambienteId);
+            detalleItems.Add(CrearDetalleItemVenta(nombre, categoria, 1, montoCobrado, montoCobrado, 0, costoUnitario));
         }
 
 
@@ -5032,13 +7890,25 @@ namespace sistema.Controllers
             if (nota == null) return StatusCode(400);
 
             // Obtener el nombre del profesional que escribió la nota
-            string nombreProfesional = nota.User?.Persona?.NombreYApellidos ?? "Enfermero(a) no especificado";
+            string nombreProfesional = PdfReportHelper.ObtenerNombreEmpleadoPorUser(nota.User, _empleadoRepository, _userRepository);
+
+            User usuarioFirma = null;
+            if (!string.IsNullOrWhiteSpace(nota.UsuarioFirmaId))
+            {
+                usuarioFirma = await _context.Users.AsNoTracking()
+                    .Include(u => u.Persona)
+                    .FirstOrDefaultAsync(u => u.Id == nota.UsuarioFirmaId);
+            }
+
+            string firmadoPor = nota.Firmado
+                ? PdfReportHelper.ObtenerNombreEmpleadoPorUser(usuarioFirma ?? nota.User, _empleadoRepository, _userRepository)
+                : null;
 
             // Obtener la firma si está firmada y convertir a base64
             string firmaBase64 = null;
             if (nota.Firmado && !string.IsNullOrEmpty(nota.FirmaRuta))
             {
-                string directorio = Directory.GetCurrentDirectory();
+                string directorio = ContentRoot;
                 string rutaRelativa = nota.FirmaRuta.TrimStart('/');
                 string rutaFinal = Path.Combine(directorio, "wwwroot", rutaRelativa);
                 if (System.IO.File.Exists(rutaFinal))
@@ -5057,6 +7927,7 @@ namespace sistema.Controllers
                 Firmado = nota.Firmado,
                 FirmaBase64 = firmaBase64,
                 FechaFirma = nota.FechaFirma?.ToString("dd/MM/yyyy HH:mm:ss") ?? "",
+                FirmadoPor = firmadoPor,
                 PacienteNombre = nota.Hospitalizacion?.Paciente?.Nombre ?? "No especificado",
                 HospitalizacionId = nota.HospitalizacionId,
                 // Datos del establecimiento desde configuración
@@ -5073,7 +7944,7 @@ namespace sistema.Controllers
             };
             _generatePdf.SetConvertOptions(options);
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/NotaEnfermeriaPDF.cshtml", model);
+            return await RenderPdfAsync("Views/CrearPDF/NotaEnfermeriaPDF.cshtml", model);
         }
 
         public async Task<IActionResult> NotasEnfermeriaAllPDF(int hospitalizacionId)
@@ -5097,11 +7968,21 @@ namespace sistema.Controllers
 
             foreach (var nota in notas)
             {
-                string nombreProfesional = nota.User?.Persona?.NombreYApellidos ?? "Enfermero(a) no especificado";
+                string nombreProfesional = PdfReportHelper.ObtenerNombreEmpleadoPorUser(nota.User, _empleadoRepository, _userRepository);
+                User usuarioFirma = null;
+                if (!string.IsNullOrWhiteSpace(nota.UsuarioFirmaId))
+                {
+                    usuarioFirma = await _context.Users.AsNoTracking()
+                        .Include(u => u.Persona)
+                        .FirstOrDefaultAsync(u => u.Id == nota.UsuarioFirmaId);
+                }
+                string firmadoPor = nota.Firmado
+                    ? PdfReportHelper.ObtenerNombreEmpleadoPorUser(usuarioFirma ?? nota.User, _empleadoRepository, _userRepository)
+                    : null;
                 string firmaBase64 = null;
                 if (nota.Firmado && !string.IsNullOrEmpty(nota.FirmaRuta))
                 {
-                    string directorio = Directory.GetCurrentDirectory();
+                    string directorio = ContentRoot;
                     string rutaRelativa = nota.FirmaRuta.TrimStart('/');
                     string rutaFinal = Path.Combine(directorio, "wwwroot", rutaRelativa);
                     if (System.IO.File.Exists(rutaFinal))
@@ -5120,6 +8001,7 @@ namespace sistema.Controllers
                     Firmado = nota.Firmado,
                     FirmaBase64 = firmaBase64,
                     FechaFirma = nota.FechaFirma?.ToString("dd/MM/yyyy HH:mm:ss") ?? "",
+                    FirmadoPor = firmadoPor,
                     PacienteNombre = nota.Hospitalizacion?.Paciente?.Nombre ?? "No especificado",
                     HospitalizacionId = nota.HospitalizacionId,
                     EstablecimientoDireccion = _configuration["EstablecimientoDireccion"],
@@ -5148,7 +8030,311 @@ namespace sistema.Controllers
             };
             _generatePdf.SetConvertOptions(options);
 
-            return await _generatePdf.GetPdf("Views/CrearPDF/NotasEnfermeriaAllPDF.cshtml", model);
+            return await RenderPdfAsync("Views/CrearPDF/NotasEnfermeriaAllPDF.cshtml", model);
+        }
+
+        private async Task<HospitalizacionInformePdfSectionsVm> ConstruirInformeHospitalizacionSeccionesAsync(
+            Hospitalizacion hospitalizacion)
+        {
+            var hospitalizacionId = hospitalizacion.Id;
+            var contentRoot = ContentRoot;
+            var medico = PdfReportHelper.ResolverMedicoTratanteHospitalizacion(
+                hospitalizacion, _empleadoRepository, contentRoot);
+
+            var secciones = new HospitalizacionInformePdfSectionsVm
+            {
+                SignosVitales = await MapSignosVitalesHospitalizacionPdfAsync(hospitalizacionId, hospitalizacion)
+            };
+
+            var glucometriaDetalles = await _context.DetalleControlGlucometria2
+                .AsNoTracking()
+                .Include(x => x.ControlGlucometria2)
+                .Include(x => x.User).ThenInclude(u => u.Persona)
+                .Include(x => x.Profesional).ThenInclude(u => u.Persona)
+                .Where(x => x.ControlGlucometria2.HospitalizacionId == hospitalizacionId && !x.Eliminado)
+                .OrderByDescending(x => x.ControlGlucometria2.FechaHora)
+                .ToListAsync();
+
+            var glucometriaUserIds = glucometriaDetalles
+                .Where(x => x.ControlGlucometria2.Autorizado && !string.IsNullOrWhiteSpace(x.ControlGlucometria2.UsuarioAutoriza))
+                .Select(x => x.ControlGlucometria2.UsuarioAutoriza)
+                .Distinct()
+                .ToList();
+            var glucometriaAutorizadores = await ObtenerUsuariosAutorizadoresAsync(glucometriaUserIds);
+
+            secciones.Glucometria = glucometriaDetalles.Select(x =>
+            {
+                var ctrl = x.ControlGlucometria2;
+                var firmante = PdfReportHelper.ResolverFirmanteClinico(
+                    ctrl.Autorizado,
+                    ctrl.UsuarioAutoriza,
+                    x.Profesional,
+                    glucometriaAutorizadores,
+                    _empleadoRepository,
+                    medico.FirmaBase64,
+                    contentRoot,
+                    PdfReportHelper.ObtenerNombreEmpleadoPorUser(x.Profesional, _empleadoRepository, _userRepository));
+
+                return new InformeGlucometriaPdfRow
+                {
+                    FechaHora = ctrl.FechaHora.ToString("dd/MM/yyyy HH:mm"),
+                    GMT = ctrl.GMT ?? "-",
+                    InsulinaNombre = ctrl.Insulina ?? "-",
+                    Unidades = ctrl.Unidades ?? "-",
+                    FirmaTexto = !string.IsNullOrWhiteSpace(firmante.NombreFirmante) ? firmante.NombreFirmante : (ctrl.Firma ?? "-"),
+                    FirmaBase64 = firmante.FirmaBase64,
+                    Aplicado = x.Aplicado,
+                    FechaHoraAplicacion = x.FechaAplicacion?.ToString("dd/MM/yyyy HH:mm") ?? "-",
+                    NombrePersonaAplica = PdfReportHelper.ObtenerNombreEmpleadoPorUser(x.User, _empleadoRepository, _userRepository),
+                    NombreProfesional = PdfReportHelper.ObtenerNombreEmpleadoPorUser(x.Profesional, _empleadoRepository, _userRepository),
+                    Autorizado = ctrl.Autorizado,
+                    AutorizadoPor = firmante.AutorizadoPor
+                };
+            }).ToList();
+
+            var ingestas = await _context.IngestaExcreta2
+                .AsNoTracking()
+                .Include(x => x.User).ThenInclude(u => u.Persona)
+                .Where(x => x.HospitalizacionId == hospitalizacionId)
+                .OrderByDescending(x => x.FechaRegistro)
+                .ToListAsync();
+
+            secciones.IngestasExcretas = ingestas.Select(nota => new IngestaExcretaViewModel
+            {
+                FechaRegistro = nota.FechaRegistro.ToString("dd/MM/yyyy HH:mm"),
+                IngestaIV = nota.IngestaIV,
+                IngestaPO = nota.IngestaPO,
+                TotalIngesta = nota.TotalIngesta,
+                Excreta = nota.Excreta,
+                Heces = nota.Heces,
+                CuantasHoras = nota.CuantasHoras,
+                Enfermeria = PdfReportHelper.ObtenerNombreEmpleadoPorUser(nota.User, _empleadoRepository, _userRepository)
+            }).ToList();
+
+            var notasMedicas = _hospitalizacionRepository.GetNotasMedicasByHospitalizacion(hospitalizacionId)
+                ?.OrderByDescending(n => n.FechaRegistro)
+                .ToList() ?? new List<NotaMedica2>();
+
+            var notaAutorizadorIds = notasMedicas
+                .Where(n => n.Autorizado && !string.IsNullOrWhiteSpace(n.UsuarioAutoriza))
+                .Select(n => n.UsuarioAutoriza)
+                .Distinct()
+                .ToList();
+            var notaAutorizadores = await ObtenerUsuariosAutorizadoresAsync(notaAutorizadorIds);
+
+            secciones.NotasEvolucion = notasMedicas.Select(n =>
+            {
+                var registradoPor = n.Profesional?.Persona?.NombreYApellidos ?? n.Profesional?.UserName ?? "-";
+                var firmante = PdfReportHelper.ResolverFirmanteClinico(
+                    n.Autorizado,
+                    n.UsuarioAutoriza,
+                    n.Profesional,
+                    notaAutorizadores,
+                    _empleadoRepository,
+                    medico.FirmaBase64,
+                    contentRoot,
+                    registradoPor);
+
+                return new InformeNotaSimplePdfRow
+                {
+                    FechaRegistro = n.FechaRegistro.ToString("dd/MM/yyyy HH:mm"),
+                    Profesional = registradoPor,
+                    Descripcion = PdfReportHelper.TextoPlanoDesdeHtml(n.Diagnostico),
+                    Firmado = n.Autorizado,
+                    FirmadoPor = firmante.AutorizadoPor ?? firmante.NombreFirmante,
+                    FirmaBase64 = firmante.FirmaBase64
+                };
+            }).ToList();
+
+            var productosAplicacion = _hospitalizacionRepository.GetProductosAplicacion(hospitalizacionId);
+            var userIds = productosAplicacion
+                .SelectMany(p => new[] { p.UsuarioAplica, p.UsuarioCreaId })
+                .Where(id => id != null)
+                .Distinct()
+                .ToList();
+            var usuarios = _userRepository.GetByIds(userIds).ToDictionary(u => u.Id, u => u);
+            var empleadoIds = usuarios.Values
+                .Select(u => u.EmpleadoId)
+                .Where(id => id != null)
+                .Distinct()
+                .Select(id => (int)id)
+                .ToList();
+            var empleados = _empleadoRepository.GetByIds(empleadoIds).ToDictionary(e => e.Id, e => e);
+
+            foreach (var productoAplicacion in productosAplicacion)
+            {
+                if (!productoAplicacion.Aplicado
+                    || productoAplicacion.HospitalizacionProducto?.Eliminado == true)
+                    continue;
+
+                string personaAplica = "-";
+                if (productoAplicacion.UsuarioAplica != null && usuarios.TryGetValue(productoAplicacion.UsuarioAplica, out var userAplica))
+                {
+                    personaAplica = userAplica.EmpleadoId != null && empleados.TryGetValue((int)userAplica.EmpleadoId, out var empAplica)
+                        ? empAplica.NombreYApellidos
+                        : PdfReportHelper.ObtenerNombreEmpleadoPorUser(userAplica, _empleadoRepository, _userRepository);
+                }
+
+                string personaCrea = "-";
+                if (usuarios.TryGetValue(productoAplicacion.UsuarioCreaId, out var userCrea))
+                {
+                    personaCrea = userCrea.EmpleadoId != null && empleados.TryGetValue((int)userCrea.EmpleadoId, out var empCrea)
+                        ? empCrea.NombreYApellidos
+                        : PdfReportHelper.ObtenerNombreEmpleadoPorUser(userCrea, _empleadoRepository, _userRepository);
+                }
+
+                secciones.Aplicaciones.Add(new InformeAplicacionPdfRow
+                {
+                    TipoElemento = "Medicamento",
+                    Nombre = productoAplicacion.HospitalizacionProducto?.Producto?.NombreProducto ?? "-",
+                    Indicaciones = productoAplicacion.HospitalizacionProducto?.Indicaciones ?? "-",
+                    Cantidad = productoAplicacion.Cantidad,
+                    UnidadMedidaVentaNombre = productoAplicacion.HospitalizacionProducto?.UnidadMedidaVenta?.Nombre ?? "-",
+                    OrdenMedicaNumero = "-",
+                    PersonaCrea = personaCrea,
+                    Aplicado = productoAplicacion.Aplicado,
+                    FechaHoraAplicacion = productoAplicacion.Aplicado && productoAplicacion.FechaHoraAplicacion.HasValue
+                        ? productoAplicacion.FechaHoraAplicacion.Value.ToString("dd/MM/yyyy HH:mm")
+                        : "-",
+                    PersonaAplica = personaAplica
+                });
+            }
+
+            if (hospitalizacion.HospitalizacionesServicios != null)
+            {
+                foreach (var servicio in hospitalizacion.HospitalizacionesServicios.Where(s => !s.Eliminado && s.Aplicado))
+                {
+                    string personaAplica = "-";
+                    if (!string.IsNullOrWhiteSpace(servicio.UsuarioAplica))
+                    {
+                        var userAplica = _userRepository.GetbyId(servicio.UsuarioAplica);
+                        personaAplica = PdfReportHelper.ObtenerNombreEmpleadoPorUser(userAplica, _empleadoRepository, _userRepository);
+                    }
+
+                    secciones.Aplicaciones.Add(new InformeAplicacionPdfRow
+                    {
+                        TipoElemento = "Servicio",
+                        Nombre = servicio.Servicio?.NombreServicio ?? "-",
+                        Cantidad = servicio.Cantidad,
+                        PersonaCrea = "-",
+                        Aplicado = servicio.Aplicado,
+                        FechaHoraAplicacion = servicio.FechaHoraAplicacion?.ToString("dd/MM/yyyy HH:mm") ?? "-",
+                        PersonaAplica = personaAplica
+                    });
+                }
+            }
+
+            var notasEnfermeria = await _context.NotaEnfermeria2
+                .AsNoTracking()
+                .Include(n => n.User).ThenInclude(u => u.Persona)
+                .Where(n => n.HospitalizacionId == hospitalizacionId)
+                .OrderByDescending(n => n.FechaRegistro)
+                .ToListAsync();
+
+            var firmantesNotas = await ObtenerUsuariosAutorizadoresAsync(
+                notasEnfermeria.Where(n => !string.IsNullOrWhiteSpace(n.UsuarioFirmaId)).Select(n => n.UsuarioFirmaId));
+
+            secciones.NotasEnfermeria = notasEnfermeria.Select(n =>
+            {
+                var registradoPor = PdfReportHelper.ObtenerNombreEmpleadoPorUser(n.User, _empleadoRepository, _userRepository);
+                User firmanteUser = null;
+                if (!string.IsNullOrWhiteSpace(n.UsuarioFirmaId))
+                    firmantesNotas.TryGetValue(n.UsuarioFirmaId, out firmanteUser);
+
+                var firmadoPor = n.Firmado
+                    ? PdfReportHelper.ObtenerNombreEmpleadoPorUser(firmanteUser ?? n.User, _empleadoRepository, _userRepository)
+                    : null;
+
+                return new InformeNotaSimplePdfRow
+                {
+                    FechaRegistro = n.FechaRegistro.ToString("dd/MM/yyyy HH:mm"),
+                    Profesional = registradoPor,
+                    Descripcion = PdfReportHelper.TextoPlanoDesdeHtml(n.Diagnostico),
+                    Firmado = n.Firmado,
+                    FirmadoPor = firmadoPor,
+                    FirmaBase64 = n.Firmado && !string.IsNullOrEmpty(n.FirmaRuta)
+                        ? PdfReportHelper.ObtenerFirmaBase64Local(n.FirmaRuta, contentRoot)
+                        : null
+                };
+            }).ToList();
+
+            secciones.Examenes = hospitalizacion.HospitalizacionesExamenes?
+                .Where(e => !e.Eliminado)
+                .OrderByDescending(e => e.FechaHora)
+                .Select(e => new InformeExamenPdfRow
+                {
+                    FechaHora = e.FechaHora.ToString("dd/MM/yyyy HH:mm"),
+                    Nombre = e.Examen?.DetalleExamenes != null && e.Examen.DetalleExamenes.Any()
+                        ? string.Join(", ", e.Examen.DetalleExamenes.Select(d => d.ExamenLabClinico?.NombreExamen ?? "-"))
+                        : (e.Examen?.NumeroOrden ?? "-")
+                }).ToList() ?? new List<InformeExamenPdfRow>();
+
+            return secciones;
+        }
+
+        private ConsentimientoHospiVM ResolverConsentimientoHospitalizacion(Hospitalizacion hospitalizacion)
+        {
+            if (hospitalizacion == null)
+                return null;
+
+            var hospiIdStr = hospitalizacion.Id.ToString();
+            var consentimiento = _consentimientoHospiService.GetConsentimientoByPacienteHabitacionAndHospitalizacion(
+                    hospitalizacion.PacienteId, hospitalizacion.HabitacionId, hospiIdStr)
+                ?? _consentimientoHospiService.GetConsentimientoByPacienteAndHospitalizacion(
+                    hospitalizacion.PacienteId, hospiIdStr)
+                ?? _consentimientoHospiService.GetConsentimientoByPacienteAndHabitacion(
+                    hospitalizacion.PacienteId, hospitalizacion.HabitacionId)
+                ?? _consentimientoHospiService.GetLatestConsentimientoByPaciente(hospitalizacion.PacienteId);
+
+            if (consentimiento != null && string.IsNullOrWhiteSpace(consentimiento.HospitalizacionId))
+            {
+                _consentimientoHospiService.UpdateHospitalizacionId(
+                    hospitalizacion.PacienteId,
+                    hospitalizacion.HabitacionId,
+                    hospiIdStr);
+                consentimiento.HospitalizacionId = hospiIdStr;
+            }
+
+            return consentimiento;
+        }
+
+        private async Task<Dictionary<string, User>> ObtenerUsuariosAutorizadoresAsync(IEnumerable<string> userIds)
+        {
+            var ids = userIds?
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Distinct()
+                .ToList() ?? new List<string>();
+
+            if (!ids.Any())
+                return new Dictionary<string, User>();
+
+            return await _context.Users.AsNoTracking()
+                .Where(u => ids.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id);
+        }
+
+        private async Task<List<SignosVitalesHospPdfRow>> MapSignosVitalesHospitalizacionPdfAsync(
+            int hospitalizacionId,
+            Hospitalizacion hospitalizacion = null)
+        {
+            var examenes = _hospitalizacionRepository.GetExamenesFisicosHosp(hospitalizacionId);
+            var contentRoot = ContentRoot;
+            hospitalizacion ??= _hospitalizacionRepository.Get(hospitalizacionId);
+            var medico = PdfReportHelper.ResolverMedicoTratanteHospitalizacion(
+                hospitalizacion, _empleadoRepository, contentRoot);
+
+            var autorizadorIds = examenes
+                .Where(e => e.Autorizado && !string.IsNullOrWhiteSpace(e.UsuarioAutoriza))
+                .Select(e => e.UsuarioAutoriza);
+            var autorizadores = await ObtenerUsuariosAutorizadoresAsync(autorizadorIds);
+
+            return PdfReportHelper.MapSignosVitalesHosp(
+                examenes,
+                _userRepository,
+                _empleadoRepository,
+                contentRoot,
+                medico.FirmaBase64,
+                autorizadores);
         }
 
 

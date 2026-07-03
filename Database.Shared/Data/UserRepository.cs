@@ -79,6 +79,28 @@ namespace Database.Shared.Data
             .Where(a => a.Id == id).SingleOrDefault();
         }
 
+        public string GetDisplayName(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id)) return "-";
+            var user = GetbyId(id);
+            if (user == null) return "-";
+            if (user.Persona != null)
+            {
+                if (!string.IsNullOrWhiteSpace(user.Persona.NombreYApellidos))
+                    return user.Persona.NombreYApellidos.Trim();
+                if (!string.IsNullOrWhiteSpace(user.Persona.Nombre))
+                    return user.Persona.Nombre;
+            }
+            return user.UserName ?? user.Email ?? user.NormalizedUserName ?? "-";
+        }
+
+        public string GetUserNameOrDefault(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id)) return "-";
+            var user = GetbyId(id, includeRelatedEntities: false);
+            return user?.NormalizedUserName ?? user?.UserName ?? user?.Email ?? "-";
+        }
+
 
 
         public void Update(User model, bool saveChanges = true)

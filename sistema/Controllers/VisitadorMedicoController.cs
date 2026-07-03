@@ -2,6 +2,7 @@ using Database.Shared.IRepository;
 using Database.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
 using sistema.Models;
+using sistema.Utilidades;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -35,10 +36,18 @@ namespace sistema.Controllers
         {
             try
             {
-                // Validar y ajustar la URL si es necesario
-                if (!model.UrlCatalogo.StartsWith("http://") && !model.UrlCatalogo.StartsWith("https://"))
+                string urlCatalogo = null;
+                if (!string.IsNullOrWhiteSpace(model.UrlCatalogo))
                 {
-                    model.UrlCatalogo = "https://" + model.UrlCatalogo;
+                    urlCatalogo = CatalogUrlHelper.Normalize(model.UrlCatalogo);
+                    if (urlCatalogo == null)
+                    {
+                        return JsonSerializer.Serialize(new
+                        {
+                            Exitoso = false,
+                            Mensaje = "La URL del catálogo no es válida. Use un enlace completo, por ejemplo: https://www.ejemplo.com/catalogo"
+                        });
+                    }
                 }
 
                 var visitadorMedico = new VisitadorMedico
@@ -48,7 +57,7 @@ namespace sistema.Controllers
                     NombreFarmaceutica = model.NombreFarmaceutica,
                     ContactoFarmaceutica = model.ContactoFarmaceutica,
                     Observaciones = model.Observaciones,
-                    UrlCatalogo = model.UrlCatalogo,
+                    UrlCatalogo = urlCatalogo,
 
                 };
 
@@ -98,10 +107,18 @@ namespace sistema.Controllers
                     });
                 }
 
-                // Validar y ajustar la URL si es necesario
-                if (!model.UrlCatalogo.StartsWith("http://") && !model.UrlCatalogo.StartsWith("https://"))
+                string urlCatalogo = null;
+                if (!string.IsNullOrWhiteSpace(model.UrlCatalogo))
                 {
-                    model.UrlCatalogo = "https://" + model.UrlCatalogo;
+                    urlCatalogo = CatalogUrlHelper.Normalize(model.UrlCatalogo);
+                    if (urlCatalogo == null)
+                    {
+                        return JsonSerializer.Serialize(new
+                        {
+                            Exitoso = false,
+                            Mensaje = "La URL del catálogo no es válida. Use un enlace completo, por ejemplo: https://www.ejemplo.com/catalogo"
+                        });
+                    }
                 }
 
                 visitadorMedico.NombreVisitador = model.NombreVisitador;
@@ -109,7 +126,7 @@ namespace sistema.Controllers
                 visitadorMedico.NombreFarmaceutica = model.NombreFarmaceutica;
                 visitadorMedico.ContactoFarmaceutica = model.ContactoFarmaceutica;
                 visitadorMedico.Observaciones = model.Observaciones;
-                visitadorMedico.UrlCatalogo = model.UrlCatalogo;
+                visitadorMedico.UrlCatalogo = urlCatalogo;
 
                 _visitadorMedicoRepository.UpdateVisitadorMedico(visitadorMedico);
 

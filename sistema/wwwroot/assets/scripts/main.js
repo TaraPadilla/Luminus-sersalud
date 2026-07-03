@@ -11595,7 +11595,7 @@
             e(document).ready(function() {
                 if (e(function() {
                         var t = { AF: 16.63, AL: 11.58, DZ: 158.97 };
-                        setTimeout(function() { e("#world-map-gdp").vectorMap({ map: "world_mill", series: { regions: [{ values: t, scale: ["#C8EEFF", "#0071A4"], normalizeFunction: "polynomial" }] }, onRegionTipShow: function(e, n, i) { n.html(n.html() + " (GDP - " + t[i] + ")") } }) }, 2e3)
+                        setTimeout(function() { var o = e("#world-map-gdp"); if (!o.length) return; o.vectorMap({ map: "world_mill", series: { regions: [{ values: t, scale: ["#C8EEFF", "#0071A4"], normalizeFunction: "polynomial" }] }, onRegionTipShow: function(e, n, i) { n.html(n.html() + " (GDP - " + t[i] + ")") } }) }, 2e3)
                     }), document.getElementById("gmap-example")) new i.a({ el: "#gmap-example", lat: -12.043333, lng: -77.028333, width: "100%", height: "300px" })
             })
         }.call(this, n(1))

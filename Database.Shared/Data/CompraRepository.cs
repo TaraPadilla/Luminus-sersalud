@@ -55,9 +55,9 @@ namespace Database.Shared.Data
             .Where(x => x.Eliminado == false).ToList();
         //public List<Recepcion> GetRecepciones() => _context.Recepciones.Include(x => x.Compra).ThenInclude(x => x.Proveedor).Include(x => x.EstadoRecepcion).ToList();
         public List<Compra> GetListadoFecha(DateTime inicio, DateTime final) => _context.Compras.Include(a => a.Proveedor).Include(a => a.DetalleCompras)
-          .ThenInclude(a => a.Producto).Include(a => a.Empleado).Where(a => a.FechaCompra <= final && a.FechaCompra >= inicio).ToList();
+          .ThenInclude(a => a.Producto).Include(a => a.Empleado).Where(a => !a.Eliminado && a.FechaCompra <= final && a.FechaCompra >= inicio).ToList();
         public List<Compra> GetListadoFechaEmpleado(DateTime inicio, DateTime final, int? id) => _context.Compras.Include(a => a.Proveedor).Include(a => a.DetalleCompras)
-       .ThenInclude(a => a.Producto).Include(a => a.Empleado).Where(a => a.FechaCompra <= final && a.FechaCompra >= inicio).Where(a => a.EmpleadoId == id).ToList();
+       .ThenInclude(a => a.Producto).Include(a => a.Empleado).Where(a => !a.Eliminado && a.FechaCompra <= final && a.FechaCompra >= inicio).Where(a => a.EmpleadoId == id).ToList();
         public void saveChanges()
         {
             _context.SaveChanges();

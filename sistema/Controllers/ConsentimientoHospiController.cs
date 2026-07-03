@@ -1,31 +1,92 @@
+using Database.Shared.IRepository;
 using Database.Shared.Models;
+using farmamest.Helpers;
 using farmamest.Service.IService;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace farmamest.Controllers
 {
     public class ConsentimientoHospiController : Controller
     {
         private readonly IConsentimientoHospiService _consentimientoHospiService;
+        private readonly IPacientes _pacientesRepository;
+        private readonly IHabitacion _habitacionRepository;
 
-        public ConsentimientoHospiController(IConsentimientoHospiService consentimientoHospiService)
+        public ConsentimientoHospiController(
+            IConsentimientoHospiService consentimientoHospiService,
+            IPacientes pacientesRepository,
+            IHabitacion habitacionRepository)
         {
             _consentimientoHospiService = consentimientoHospiService;
+            _pacientesRepository = pacientesRepository;
+            _habitacionRepository = habitacionRepository;
         }
 
+        private static readonly JsonSerializerOptions _jsonInputOpts = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
         [HttpPost]
-        public IActionResult Nuevo(ConsentimientoHospi consentimiento)
+        public async Task<IActionResult> Nuevo(ConsentimientoHospi consentimiento)
         {
             try
             {
-                _consentimientoHospiService.AddConsentimiento(consentimiento);
-                return Json(new { exitoso = true, mensaje = "Consentimiento de hospitalización agregado con éxito" });
+                consentimiento ??= new ConsentimientoHospi();
+
+                if (consentimiento.PacienteId <= 0 || consentimiento.HabitacionId <= 0)
+                {
+                    var desdeJson = await HttpRequestJsonHelper.LeerCuerpoJsonAsync<ConsentimientoHospi>(
+                        Request, jsonOptions: _jsonInputOpts);
+                    if (desdeJson != null && desdeJson.PacienteId > 0 && desdeJson.HabitacionId > 0)
+                        consentimiento = desdeJson;
+                }
+
+                if (consentimiento.PacienteId <= 0 || consentimiento.HabitacionId <= 0)
+                {
+                    return Json(new
+                    {
+                        exitoso = false,
+                        mensaje = "Paciente y habitación son obligatorios. Verifique que el formulario se abrió desde el asistente de hospitalización."
+                    });
+                }
+
+                var paciente = _pacientesRepository.Get(consentimiento.PacienteId, includeRelatedEntities: false);
+                if (paciente == null)
+                {
+                    return Json(new
+                    {
+                        exitoso = false,
+                        mensaje = $"El paciente con ID {consentimiento.PacienteId} no existe en la base de datos. Cierre el formulario y vuelva a abrirlo desde el paso 5 del asistente."
+                    });
+                }
+
+                var habitacion = _habitacionRepository.Get(consentimiento.HabitacionId);
+                if (habitacion == null)
+                {
+                    return Json(new
+                    {
+                        exitoso = false,
+                        mensaje = $"La habitación con ID {consentimiento.HabitacionId} no existe."
+                    });
+                }
+
+                if (string.IsNullOrWhiteSpace(consentimiento.HospitalizacionId))
+                    consentimiento.HospitalizacionId = "No se especifica";
+
+                if (string.IsNullOrWhiteSpace(consentimiento.NumeroPaciente))
+                    consentimiento.NumeroPaciente = consentimiento.PacienteId.ToString();
+
+                _consentimientoHospiService.UpsertConsentimiento(consentimiento);
+                return Json(new { exitoso = true, mensaje = "Consentimiento de hospitalización guardado con éxito" });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return Json(new { exitoso = false, mensaje = "Error al agregar el consentimiento de hospitalización" });
+                var detalle = ex.InnerException?.Message ?? ex.Message;
+                return Json(new { exitoso = false, mensaje = "Error al guardar el consentimiento: " + detalle });
             }
         }
 
@@ -112,6 +173,44 @@ namespace farmamest.Controllers
         {
             try
             {
+                if (pacienteId <= 0)
+                {
+                    return JsonSerializer.Serialize(new
+                    {
+                        exitoso = false,
+                        mensaje = "Debe seleccionar un paciente válido antes de guardar la firma (paso 3)."
+                    });
+                }
+
+                if (habitacionId <= 0)
+                {
+                    return JsonSerializer.Serialize(new
+                    {
+                        exitoso = false,
+                        mensaje = "La habitación no es válida."
+                    });
+                }
+
+                var paciente = _pacientesRepository.Get(pacienteId, includeRelatedEntities: false);
+                if (paciente == null)
+                {
+                    return JsonSerializer.Serialize(new
+                    {
+                        exitoso = false,
+                        mensaje = $"El paciente con ID {pacienteId} no existe. Vuelva al paso 3 y seleccione un paciente de la lista."
+                    });
+                }
+
+                var habitacion = _habitacionRepository.Get(habitacionId);
+                if (habitacion == null)
+                {
+                    return JsonSerializer.Serialize(new
+                    {
+                        exitoso = false,
+                        mensaje = $"La habitación con ID {habitacionId} no existe."
+                    });
+                }
+
                 var vm = _consentimientoHospiService
                     .GetConsentimientoByPacienteAndHabitacion(pacienteId, habitacionId);
 
@@ -122,6 +221,16 @@ namespace farmamest.Controllers
                         PacienteId = pacienteId,
                         HabitacionId = habitacionId,
                         HospitalizacionId = "No se especifica",
+                        NombreCompleto = paciente.Nombre ?? "",
+                        NumeroPaciente = paciente.Id.ToString(),
+                        NumeroHabitacion = habitacion.NombreNumeroHabitacion ?? "",
+                        HoraIngreso = DateTime.Now.ToString("g"),
+                        DPI = paciente.Dpi ?? "",
+                        FechaNacimiento = paciente.FechaNacimiento?.ToString("dd/MM/yyyy") ?? "",
+                        Edad = paciente.Edad?.ToString() ?? "",
+                        Direccion = paciente.Direccion ?? "",
+                        Celular = paciente.Celular ?? paciente.Telefono ?? "",
+                        Email = paciente.Email ?? "",
                         URLFirmaPaciente = urlFirmaPaciente ?? "",
                         URLFirmaResponsable = urlFirmaResponsable ?? "",
                     };
@@ -129,27 +238,20 @@ namespace farmamest.Controllers
                     return JsonSerializer.Serialize(new { exitoso = true, mensaje = "Consentimiento creado y firmas actualizadas" });
                 }
 
-                var entidad = new ConsentimientoHospi
-                {
-                    Id = vm.Id,
-                    PacienteId = vm.PacienteId,
-                    HabitacionId = vm.HabitacionId,
-                    HospitalizacionId = vm.HospitalizacionId,
-                    URLFirmaPaciente = !string.IsNullOrEmpty(urlFirmaPaciente)
-                                            ? urlFirmaPaciente
-                                            : vm.URLFirmaPaciente,
-                    URLFirmaResponsable = !string.IsNullOrEmpty(urlFirmaResponsable)
-                                            ? urlFirmaResponsable
-                                            : vm.URLFirmaResponsable,
-                };
-                _consentimientoHospiService.UpdateConsentimiento(entidad);
+                _consentimientoHospiService.UpdateFirmas(
+                    pacienteId,
+                    habitacionId,
+                    urlFirmaPaciente,
+                    urlFirmaResponsable);
 
                 return JsonSerializer.Serialize(new { exitoso = true, mensaje = "Firmas actualizadas correctamente" });
             }
             catch (Exception ex)
             {
-                return JsonSerializer.Serialize(new { exitoso = false, mensaje = "Error al actualizar las firmas: " + ex.Message });
+                var detalle = ex.InnerException?.Message ?? ex.Message;
+                return JsonSerializer.Serialize(new { exitoso = false, mensaje = "Error al actualizar las firmas: " + detalle });
             }
         }
+
     }
 }

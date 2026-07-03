@@ -1,5 +1,5 @@
 @model sistema.Models.HospitalizacionDetallesViewModel
-<div class="tab-pane tabs-animation fade show" id="tab-content-kitIngreso" role="tabpanel">
+<div class="tab-pane tabs-animation fade" id="tab-content-kitIngreso" role="tabpanel">
     <div class="form-row">
         <div class="col-md-12">
             <div class="main-card mb-3 nota-clinica-card">
@@ -13,102 +13,49 @@
                             <h5 class="nota-header-title">Kit de Ingreso</h5>
                             <p class="nota-header-subtitle">Materiales y productos entregados al paciente al momento del
                                 ingreso</p>
-                            </div>
-                        </div>
-                        @if(!User.IsInRole("Medico Externo")){
-                        <div>
-                            <button class="btn btn-nota-primary btn-nota-primary-kit"
-                                    data-bind="click: verModalAgregarKitIngreso">
-                                <i class="fas fa-plus mr-1"></i> Nuevo Kit de Ingreso
-                            </button>
-                        </div>
-                        }
-                    </div>
-
-                    <div class="nota-card-body">
-                        <div class="table-responsive">
-                            <table class="table tabla-notas">
-                                <thead>
-                                    <tr>
-                                        <th>Fecha</th>
-                                        <th>Nombre del Kit</th>
-                                        <th class="text-center">Total ítems</th>
-                                        <th class="text-center">Total utilizado</th>
-                                        <th class="text-center">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!--ko foreach: kitsIngreso-->
-                                    <tr>
-                                        <td>
-                                            <div class="nota-fecha-wrapper">
-                                                <div class="nota-fecha-icon nota-fecha-icon-kit">
-                                                    <i class="fas fa-clock"></i>
-                                                </div>
-                                                <div>
-                                                    <!-- ko if: $data.FechaKit -->
-                                                    <div class="nota-fecha-text" data-bind="text: $data.FechaKit"></div>
-                                                    <!-- /ko -->
-                                                    <!-- ko ifnot: $data.FechaKit -->
-                                                    <div class="nota-fecha-text" data-bind="text: $data.FechaRegistro">
-                                                    </div>
-                                                    <!-- /ko -->
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex align-items-center" style="gap:6px;">
-                                                <span class="nota-contenido-cell nota-contenido-cell-kit"
-                                                      data-bind="text: $data.NombreKit() || 'Kit sin nombre'"></span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <span class="badge badge-info px-2 py-1" style="font-size:0.78rem;border-radius:6px;"
-                                                  data-bind="text: ($data.Detalles ? $data.Detalles().filter(function(d){ return !d.Eliminado(); }).length : 0) + ' ítem(s)'"></span>
-                                        </td>
-                                        <td class="text-center">
-                                            <span class="badge badge-success px-2 py-1" style="font-size:0.78rem;border-radius:6px;"
-                                                  data-bind="text: 'Usados: ' + ($data.Detalles ? $data.Detalles().filter(function(d){ return !d.Eliminado(); }).reduce(function(acc,d){ return acc + (parseFloat(ko.unwrap(d.Utilizado)) || 0); }, 0) : 0)"></span>
-                                        </td>
-                                        <td class="text-center">
-                                            <div class="d-flex justify-content-center" style="gap:6px;">
-                                                <button class="btn btn-nota-accion btn-nota-kit"
-                                                        data-bind="click: function() { $root.verDetalleKitIngreso($data) }">
-                                                    <i class="fas fa-eye mr-1"></i> Ver
-                                                </button>
-                                                
-                                                @if(!User.IsInRole("Medico Externo")){
-
-                                                <button class="btn btn-nota-accion btn-nota-kit"
-                                                        data-bind="click: function() { $root.clonarKitIngreso($data) }"
-                                                        style="background:#e3f2fd;color:#0d47a1;">
-                                                    <i class="fas fa-copy mr-1"></i> Reutilizar
-                                                </button>
-                                                }
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <!--/ko-->
-                                    <!-- ko if: kitsIngreso().length === 0 -->
-                                    <tr>
-                                        <td colspan="5">
-                                            <div class="nota-empty-state">
-                                                <i class="fas fa-box-open d-block"></i>
-                                                <p>No hay kits de ingreso registrados</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <!-- /ko -->
-                                </tbody>
-                            </table>
                         </div>
                     </div>
-
-                    <div class="nota-footer">
-                        <span><i class="fas fa-box-open mr-1" style="color:var(--kit-color)"></i> Kits registrados: <strong
-                            data-bind="text: kitsIngreso().length"></strong></span>
-                        </div>
+                    @if(!User.IsInRole("Medico Externo")){
+                    <div>
+                        <button type="button" class="btn btn-nota-primary btn-nota-primary-kit"
+                                data-hosp-accion="verModalAgregarKitIngreso">
+                            <i class="fas fa-plus mr-1"></i> Nuevo Kit de Ingreso
+                        </button>
                     </div>
+                    }
+                </div>
+
+                <div class="nota-card-body">
+                    <div class="table-responsive">
+                        <table class="table tabla-notas">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Nombre del Kit</th>
+                                    <th class="text-center">Total ítems</th>
+                                    <th class="text-center">Total utilizado</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-kits-ingreso">
+                                <tr>
+                                    <td colspan="5">
+                                        <div class="nota-empty-state">
+                                            <i class="fas fa-box-open d-block"></i>
+                                            <p>No hay kits de ingreso registrados</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="nota-footer">
+                    <span><i class="fas fa-box-open mr-1" style="color:var(--kit-color)"></i> Kits registrados: <strong
+                        id="kits-ingreso-total">0</strong></span>
                 </div>
             </div>
         </div>
+    </div>
+</div>

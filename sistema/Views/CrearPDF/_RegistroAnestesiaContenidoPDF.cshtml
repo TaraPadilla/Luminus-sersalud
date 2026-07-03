@@ -1,0 +1,240 @@
+@model sistema.Models.RegistroAnestesiaPdfVM
+@using System.Linq
+@using System.Text.Json
+@using sistema.Utilidades
+@{
+    JsonElement? datos = null;
+    if (Model?.TieneRegistroGuardado == true && !string.IsNullOrWhiteSpace(Model.DatosJson))
+    {
+        try { datos = JsonDocument.Parse(Model.DatosJson).RootElement; } catch { }
+    }
+
+    string Valor(JsonElement? root, string prop)
+    {
+        if (root == null || !root.Value.TryGetProperty(prop, out var el)) return "-";
+        if (el.ValueKind == JsonValueKind.Null) return "-";
+        return el.ToString();
+    }
+
+    string Radio(JsonElement? root, string name)
+    {
+        if (root == null || !root.Value.TryGetProperty("radios", out var radios)) return "-";
+        if (!radios.TryGetProperty(name, out var el)) return "-";
+        return el.ToString();
+    }
+
+    string Campo(JsonElement? root, string key)
+    {
+        if (root == null || !root.Value.TryGetProperty("campos", out var campos)) return "-";
+        if (!campos.TryGetProperty(key, out var el) || string.IsNullOrWhiteSpace(el.ToString())) return "-";
+        return el.ToString();
+    }
+
+    JsonElement medGridParsed = default;
+    var tieneMedGridParsed = datos != null
+        && datos.Value.TryGetProperty("medicamentosGrid", out medGridParsed)
+        && medGridParsed.ValueKind == JsonValueKind.Object;
+
+    var horasMedicamentos = new string[RegistroAnestesiaMedicamentosGrid.Columnas];
+    if (tieneMedGridParsed && medGridParsed.TryGetProperty("horas", out var horasElParsed) && horasElParsed.ValueKind == JsonValueKind.Array)
+    {
+        var horaIdx = 0;
+        foreach (var h in horasElParsed.EnumerateArray())
+        {
+            if (horaIdx >= horasMedicamentos.Length) break;
+            horasMedicamentos[horaIdx++] = h.ToString();
+        }
+    }
+
+    var filasMedicamentosGuardadas = new Dictionary<string, (string[] Valores, string Nota)>(StringComparer.OrdinalIgnoreCase);
+    if (tieneMedGridParsed && medGridParsed.TryGetProperty("filas", out var medFilasParsed) && medFilasParsed.ValueKind == JsonValueKind.Array)
+    {
+        foreach (var fila in medFilasParsed.EnumerateArray())
+        {
+            var itemRaw = fila.TryGetProperty("item", out var it) ? it.ToString() : "";
+            var item = RegistroAnestesiaMedicamentosGrid.ResolverItemCanonico(itemRaw);
+            if (string.IsNullOrWhiteSpace(item)) continue;
+
+            var vals = new string[RegistroAnestesiaMedicamentosGrid.Columnas];
+            if (fila.TryGetProperty("valores", out var v) && v.ValueKind == JsonValueKind.Array)
+            {
+                var vi = 0;
+                foreach (var cel in v.EnumerateArray())
+                {
+                    if (vi >= vals.Length) break;
+                    vals[vi++] = cel.ToString();
+                }
+            }
+            var nota = fila.TryGetProperty("nota", out var n) ? n.ToString() : "";
+            filasMedicamentosGuardadas[item] = (vals, nota);
+        }
+    }
+
+    var notaHoraMedicamentos = tieneMedGridParsed && medGridParsed.TryGetProperty("notaHora", out var notaHoraElParsed)
+        ? notaHoraElParsed.ToString()
+        : "";
+    var solucionesTerceraPdf = Campo(datos, "an_tercera_soluciones");
+    if (solucionesTerceraPdf == "-")
+        solucionesTerceraPdf = Campo(datos, "an_bal_soluciones");
+}
+
+@if (datos == null)
+{
+    <p class="muted">Sin datos clínicos guardados en el formulario.</p>
+}
+else
+{
+    <div class="section">Segunda sección — Evaluación clínica</div>
+    <table class="kv">
+        <tr><th>Identificación</th><td>@Radio(datos, "an_prep_identificacion")</td></tr>
+        <tr><th>Revisión expediente</th><td>@Radio(datos, "an_prep_expediente")</td></tr>
+        <tr><th>Consentimiento</th><td>@Radio(datos, "an_prep_consentimiento")</td></tr>
+        <tr><th>Miembro marcado</th><td>@Radio(datos, "an_prep_miembro")</td></tr>
+        <tr><th>Ayuno</th><td>@Campo(datos, "an_ayuno")</td></tr>
+        <tr><th>Revisión equipo</th><td>@Radio(datos, "an_seg_equipo")</td></tr>
+        <tr><th>Protección ocular</th><td>@Radio(datos, "an_seg_ocular")</td></tr>
+        <tr><th>Esfigmomanómetro</th><td>@Radio(datos, "an_mon_esfigmo")</td></tr>
+        <tr><th>EKG</th><td>@Radio(datos, "an_mon_ekg")</td></tr>
+        <tr><th>Oxímetro</th><td>@Radio(datos, "an_mon_oximetro")</td></tr>
+        <tr><th>Foley</th><td>@Radio(datos, "an_mon_foley")</td></tr>
+        <tr><th>Posición</th><td>@Campo(datos, "an_posicion")</td></tr>
+        <tr><th>Canalización</th><td>Cat: @Campo(datos, "an_can_cat") — Sitio: @Campo(datos, "an_can_sitio")@{ var canOtroPdf = Campo(datos, "an_can_otro"); }@(canOtroPdf != "-" ? " — Otro: " + canOtroPdf : "") — Intentos: @Campo(datos, "an_can_intentos")</td></tr>
+        <tr><th>Inducción</th><td>@Campo(datos, "an_induccion_tipo") @Campo(datos, "an_induccion_detalle")</td></tr>
+        <tr><th>Vía aérea</th><td>Binasal: @Radio(datos, "an_via_binasal") — OT: @Campo(datos, "an_via_ot") — NT: @Campo(datos, "an_via_nt")</td></tr>
+    </table>
+
+    <div class="section">Tercera sección — Medicamentos e insumos</div>
+    <style>
+        table.med-grid th, table.med-grid td { border: 1px solid #dde3ef; padding: 3px 4px; text-align: center; vertical-align: middle; }
+        table.med-grid th:first-child, table.med-grid td:first-child { text-align: left; }
+        tr.med-grid-hora td { background: #f7f9ff; }
+        tr.med-grid-resaltada td { background: #e8f4fc; }
+    </style>
+    <table class="kv med-grid" style="font-size:9px; table-layout:fixed; width:100%;">
+            <thead>
+                <tr>
+                    <th style="width:18%;">Item</th>
+                    @for (var c = 1; c <= RegistroAnestesiaMedicamentosGrid.Columnas; c++)
+                    {
+                        <th class="text-center" style="width:7%;">@c</th>
+                    }
+                    <th style="width:16%;">Notas</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="med-grid-hora">
+                    <td><strong>Hora</strong></td>
+                    @for (var i = 0; i < horasMedicamentos.Length; i++)
+                    {
+                        <td class="text-center">@(string.IsNullOrWhiteSpace(horasMedicamentos[i]) ? "" : horasMedicamentos[i])</td>
+                    }
+                    <td>@(string.IsNullOrWhiteSpace(notaHoraMedicamentos) ? "" : notaHoraMedicamentos)</td>
+                </tr>
+                @foreach (var filaDef in RegistroAnestesiaMedicamentosGrid.Filas)
+                {
+                    filasMedicamentosGuardadas.TryGetValue(filaDef.Item, out var guardada);
+                    var vals = guardada.Valores ?? Array.Empty<string>();
+                    var notaFila = guardada.Nota ?? "";
+                    <tr class="@(filaDef.Resaltada ? "med-grid-resaltada" : "")">
+                        <td>@filaDef.Item</td>
+                        @for (var i = 0; i < RegistroAnestesiaMedicamentosGrid.Columnas; i++)
+                        {
+                            var val = i < vals.Length ? vals[i] : "";
+                            <td class="text-center">@(string.IsNullOrWhiteSpace(val) ? "" : val)</td>
+                        }
+                        <td>@(string.IsNullOrWhiteSpace(notaFila) ? "" : notaFila)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (tieneMedGridParsed && medGridParsed.TryGetProperty("filas", out var filasExtra) && filasExtra.ValueKind == JsonValueKind.Array)
+        {
+            var tieneExtras = filasExtra.EnumerateArray().Any(f =>
+            {
+                var itemRaw = f.TryGetProperty("item", out var it) ? it.ToString() : "";
+                return !string.IsNullOrWhiteSpace(itemRaw) && !RegistroAnestesiaMedicamentosGrid.EsFilaEstandar(itemRaw);
+            });
+            if (tieneExtras)
+            {
+                <div style="margin-top:8px; font-size:10px;"><strong>Otros medicamentos registrados (formato anterior)</strong></div>
+                <table class="kv" style="font-size:9px;">
+                    <tr><th>Medicamento</th><th>Valores</th><th>Notas</th></tr>
+                    @foreach (var fila in filasExtra.EnumerateArray())
+                    {
+                        var itemRaw = fila.TryGetProperty("item", out var it) ? it.ToString() : "";
+                        if (RegistroAnestesiaMedicamentosGrid.EsFilaEstandar(itemRaw)) { continue; }
+                        var vals = fila.TryGetProperty("valores", out var v) && v.ValueKind == JsonValueKind.Array
+                            ? string.Join(" | ", v.EnumerateArray().Select(x => x.ToString()).Where(s => !string.IsNullOrWhiteSpace(s)))
+                            : "";
+                        var nota = fila.TryGetProperty("nota", out var n) ? n.ToString() : "";
+                        <tr><td>@itemRaw</td><td>@(string.IsNullOrWhiteSpace(vals) ? "-" : vals)</td><td>@(string.IsNullOrWhiteSpace(nota) ? "-" : nota)</td></tr>
+                    }
+                </table>
+            }
+        }
+        <div style="margin-top:10px; font-size:10px;">
+            <strong>Soluciones</strong><br />
+            @(solucionesTerceraPdf == "-" ? "" : solucionesTerceraPdf)
+        </div>
+
+    <div class="section">Cuarta sección — Balance de líquidos</div>
+    <table class="kv">
+        <tr><th>Cristaloides</th><td>@Campo(datos, "an_bal_cristaloides")</td></tr>
+        <tr><th>Coloides</th><td>@Campo(datos, "an_bal_coloides")</td></tr>
+        <tr><th>Sangre</th><td>@Campo(datos, "an_bal_sangre")</td></tr>
+        <tr><th>Orina</th><td>@Campo(datos, "an_bal_orina")</td></tr>
+        <tr><th>Sangrado</th><td>@Campo(datos, "an_bal_sangrado")</td></tr>
+        <tr><th>Tiempo de ayuno</th><td>@Campo(datos, "an_perd_ayuno")</td></tr>
+        <tr><th>Soluciones</th><td>@Campo(datos, "an_bal_soluciones")</td></tr>
+        <tr><th>Balance total</th><td>@Campo(datos, "an_bal_total")</td></tr>
+    </table>
+
+    @if (datos.Value.TryGetProperty("ingestaFilas", out var ingesta) && ingesta.ValueKind == JsonValueKind.Array && ingesta.GetArrayLength() > 0)
+    {
+        <div class="section">Ingesta por hora</div>
+        <table class="kv">
+            <tr><th>Hora</th><th>ml</th></tr>
+            @foreach (var fila in ingesta.EnumerateArray())
+            {
+                <tr><td>@(fila.TryGetProperty("hora", out var h) ? h.ToString() : "-")</td><td>@(fila.TryGetProperty("ml", out var m) ? m.ToString() : "-")</td></tr>
+            }
+        </table>
+    }
+
+    @if (datos.Value.TryGetProperty("excretaFilas", out var excreta) && excreta.ValueKind == JsonValueKind.Array && excreta.GetArrayLength() > 0)
+    {
+        <div class="section">Excreta por hora</div>
+        <table class="kv">
+            <tr><th>Hora</th><th>ml</th></tr>
+            @foreach (var fila in excreta.EnumerateArray())
+            {
+                <tr><td>@(fila.TryGetProperty("hora", out var h) ? h.ToString() : "-")</td><td>@(fila.TryGetProperty("ml", out var m) ? m.ToString() : "-")</td></tr>
+            }
+        </table>
+    }
+
+    @if (datos.Value.TryGetProperty("graficaPuntos", out var puntos) && puntos.ValueKind == JsonValueKind.Array && puntos.GetArrayLength() > 0)
+    {
+        <div class="section">Quinta sección — Signos vitales transoperatorios</div>
+        <table class="kv">
+            <tr><th>Hora</th><th>PA Sist.</th><th>PA Diast.</th><th>FC</th><th>FR</th><th>Otros</th></tr>
+            @foreach (var p in puntos.EnumerateArray())
+            {
+                <tr>
+                    <td>@(p.TryGetProperty("hora", out var h) ? h.ToString() : "-")</td>
+                    <td>@(p.TryGetProperty("pas", out var pas) ? pas.ToString() : "-")</td>
+                    <td>@(p.TryGetProperty("pad", out var pad) ? pad.ToString() : "-")</td>
+                    <td>@(p.TryGetProperty("fc", out var fc) ? fc.ToString() : "-")</td>
+                    <td>@(p.TryGetProperty("fr", out var fr) ? fr.ToString() : "-")</td>
+                    <td>@(p.TryGetProperty("otros", out var ot) ? ot.ToString() : "-")</td>
+                </tr>
+            }
+        </table>
+    }
+
+    <table class="kv" style="margin-top:10px;">
+        <tr><th>Inicio anestesia</th><td>@Campo(datos, "an_hora_inicio_anestesia")</td><th>Inicio cirugía</th><td>@Campo(datos, "an_hora_inicio_cirugia")</td></tr>
+        <tr><th>Fin cirugía</th><td>@Campo(datos, "an_hora_fin_cirugia")</td><th>Fin anestesia</th><td>@Campo(datos, "an_hora_fin_anestesia")</td></tr>
+        <tr><th>Respiración</th><td>@Radio(datos, "an_respiracion")</td><th>Torniquete</th><td>@Campo(datos, "an_torniquete_presion") mmHg (@Campo(datos, "an_torniquete_inicio") — @Campo(datos, "an_torniquete_fin"))</td></tr>
+    </table>
+}

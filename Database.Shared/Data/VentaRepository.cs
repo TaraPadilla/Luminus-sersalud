@@ -39,12 +39,19 @@ namespace Database.Shared.Data
         .Where(x => x.Eliminado == false)
         .ToList();
 
-        public List<Venta> GetListado() => _context.Ventas.Include(a => a.Paciente).Include(a => a.DetalleVenta).ThenInclude(a => a.Producto).Include(a => a.Empleado).ToList();
+        public List<Venta> GetListado() => _context.Ventas
+            .Include(a => a.Paciente)
+            .Include(a => a.DetalleVenta).ThenInclude(a => a.Producto)
+            .Include(a => a.Empleado)
+            .Where(x => !x.Eliminado)
+            .ToList();
 
         public List<Venta> GetListadoFecha(DateTime inicio, DateTime final) => _context.Ventas
         .Include(a => a.Clientes)
         .Include(a => a.DetalleVenta).ThenInclude(a => a.Producto)
-        .Include(a => a.Empleado)
+        .Include(a => a.DetalleVenta).ThenInclude(a => a.Servicio).ThenInclude(s => s.CategoriaServicio)
+        .Include(a => a.DetalleVenta).ThenInclude(a => a.ExamenLabClinico).ThenInclude(e => e.CategoriaLabClinico)
+        .Include(a => a.Empleado).ThenInclude(e => e.Especialidad)
         .Include(a => a.Pagos).ThenInclude(a => a.FormaPago)
         .Where(a => a.FechaVenta <= final && a.FechaVenta >= inicio)
         .Where(a => a.Eliminado == false)
@@ -52,14 +59,17 @@ namespace Database.Shared.Data
         .ToList();
 
         public List<Venta> GetListadoFechaEmpleado(DateTime inicio, DateTime final, int? id) => _context.Ventas
-       .Include(a => a.Clientes).Include(a => a.DetalleVenta)
-       .ThenInclude(a => a.Producto).Include(a => a.Empleado)
-       .Include(a => a.Pagos).ThenInclude(a => a.FormaPago)
-       .Where(a => a.FechaVenta <= final && a.FechaVenta >= inicio)
-       .Where(a => a.Eliminado == false)
-       .Where(a => a.EmpleadoId == id)
-       .OrderByDescending(a => a.FechaVenta)
-       .ToList();
+        .Include(a => a.Clientes)
+        .Include(a => a.DetalleVenta).ThenInclude(a => a.Producto)
+        .Include(a => a.DetalleVenta).ThenInclude(a => a.Servicio).ThenInclude(s => s.CategoriaServicio)
+        .Include(a => a.DetalleVenta).ThenInclude(a => a.ExamenLabClinico).ThenInclude(e => e.CategoriaLabClinico)
+        .Include(a => a.Empleado).ThenInclude(e => e.Especialidad)
+        .Include(a => a.Pagos).ThenInclude(a => a.FormaPago)
+        .Where(a => a.FechaVenta <= final && a.FechaVenta >= inicio)
+        .Where(a => a.Eliminado == false)
+        .Where(a => a.EmpleadoId == id)
+        .OrderByDescending(a => a.FechaVenta)
+        .ToList();
 
         public List<Venta> GetListadoFechaFarmacia(DateTime inicio, DateTime final) => _context.Ventas
                   .Include(a => a.Clientes)
@@ -121,6 +131,9 @@ namespace Database.Shared.Data
                 .Include(v => v.Paciente)
                 .Include(v => v.DetalleVenta)
                     .ThenInclude(d => d.Servicio)
+                    .ThenInclude(s => s.CategoriaServicio)
+                .Include(v => v.DetalleVenta)
+                    .ThenInclude(d => d.Servicio)
                     .ThenInclude(s => s.ServiciosPrecios)
                 .Include(v => v.Empleado)
                 .Include(v => v.Pagos)
@@ -180,15 +193,22 @@ namespace Database.Shared.Data
 
             if (includeRelatedEntities)
             {
-                detalle = detalle.Include(x => x.Producto);
+                detalle = detalle
+                    .Include(x => x.Producto)
+                    .Include(x => x.Servicio).ThenInclude(s => s.CategoriaServicio)
+                    .Include(x => x.ExamenLabClinico).ThenInclude(e => e.CategoriaLabClinico);
             }
 
-            return detalle.Where(x => x.Venta.Id == id).ToList();
+            return detalle.Where(x => x.VentaId == id).ToList();
 
 
         }
 
-        public List<DetalleVenta> GetListadoDetalles() => _context.DetalleVentas.Include(a => a.Venta).Include(a => a.Producto).ToList();
+        public List<DetalleVenta> GetListadoDetalles() => _context.DetalleVentas
+            .Include(a => a.Venta)
+            .Include(a => a.Producto)
+            .Where(d => d.Venta != null && !d.Venta.Eliminado)
+            .ToList();
 
 
 
@@ -440,12 +460,11 @@ namespace Database.Shared.Data
 
         public List<Venta> GetVentasFechas(DateTime fecha1, DateTime fecha2)
         {
-
-
-            var ventas = _context.Ventas.FromSqlRaw("DECLARE @fecha1  DATETIME, @fecha2  DATETIME;  SELECT   @fecha1 = '20210101' ,@fecha2   = '20210201';  SELECT  DATENAME(MONTH, DATEADD(MONTH, x.number, @fecha1)) AS MonthName FROM Ventas x WHERE   x.type = 'P'  AND  x.number <= DATEDIFF(MONTH, @fecha1, @fecha2)").ToList();
-
-
-            return ventas;
+            return _context.Ventas
+                .Where(a => a.FechaVenta >= fecha1 && a.FechaVenta < fecha2.AddDays(1))
+                .Where(a => !a.Eliminado)
+                .OrderBy(a => a.FechaVenta)
+                .ToList();
         }
 
         public Empleado GetEmpleadoUser(string id)
@@ -454,8 +473,6 @@ namespace Database.Shared.Data
             var emp = (from empleado in _context.Empleados
                        join user in _context.Usuarios
                        on empleado.Id equals user.EmpleadoId
-                       join envio in _context.Envios
-                       on user.Id equals envio.UserId1
                        where user.Id == id
                        select empleado
                           ).SingleOrDefault();
@@ -479,10 +496,10 @@ namespace Database.Shared.Data
             {
                 Venta = Venta
                 .Include(a => a.DetalleVenta).ThenInclude(a => a.Producto)
-                .Include(a => a.DetalleVenta).ThenInclude(a => a.Servicio)
-                .Include(a => a.DetalleVenta).ThenInclude(a => a.ExamenLabClinico)
+                .Include(a => a.DetalleVenta).ThenInclude(a => a.Servicio).ThenInclude(s => s.CategoriaServicio)
+                .Include(a => a.DetalleVenta).ThenInclude(a => a.ExamenLabClinico).ThenInclude(e => e.CategoriaLabClinico)
                 .Include(a => a.Pagos).ThenInclude(a => a.FormaPago)
-                .Include(a => a.Empleado)
+                .Include(a => a.Empleado).ThenInclude(e => e.Especialidad)
                 .Include(a => a.Paciente);
             }
 

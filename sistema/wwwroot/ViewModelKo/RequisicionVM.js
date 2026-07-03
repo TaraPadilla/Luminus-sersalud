@@ -176,6 +176,10 @@ var RequisicionVM = function () {
 
     self.guardarFirmaDigital = function () {
         const canvas = document.getElementById('canvasFirma');
+        if (!canvas) {
+            alert("No se encontró el área de firma. Abra la opción Firma Digital e intente de nuevo.");
+            return;
+        }
         const dataUrl = canvas.toDataURL("image/png");
         self.actualizarFirmaEnBD(dataUrl);
     };
@@ -193,11 +197,6 @@ var RequisicionVM = function () {
                 
                 if (data.success) {
                     self.firmaUrl(data.rutaFirma);
-
-                    if (typeof self.metodoFirmaSeleccionado === "function") {
-                        self.metodoFirmaSeleccionado(origen);
-                    }
-
                     toastr.success("Firma actualizada correctamente.");
                 } else {
                     alert("Error al guardar: " + (data.message || "Error desconocido"));
@@ -241,6 +240,9 @@ var RequisicionVM = function () {
                     }
                 } else {
                     console.warn("La consulta fue exitosa pero no trajo datos o falló:", data.Mensaje);
+                    if (data.Mensaje && typeof toastr !== "undefined") {
+                        toastr.warning(data.Mensaje);
+                    }
                 }
             },
             error: function (dataerror) {
@@ -621,15 +623,24 @@ var RequisicionVM = function () {
     // =========================
     // Validación mínima
     // =========================
+    function bodegaSeleccionada($el) {
+        var v = $el.val();
+        return v !== null && v !== undefined && String(v).trim() !== "";
+    }
+
     self.validateModel = function () {
-        let bodegaOrigenId = $("#BodegaOrigenId").val();
-        if (!bodegaOrigenId || bodegaOrigenId.trim() === "") {
+        var $origen = $("#BodegaOrigenId");
+        if ($origen.find("option[value!='']").length === 0) {
+            alert("No hay bodegas de origen configuradas. Verifique sucursales y bodegas en el sistema.");
+            return false;
+        }
+        if (!bodegaSeleccionada($origen)) {
             alert("Seleccione una bodega de origen");
             return false;
         }
 
-        let bodegaDestinoId = $("#BodegaDestinoId").val();
-        if (!bodegaDestinoId || bodegaDestinoId.trim() === "") {
+        var $destino = $("#BodegaDestinoId");
+        if (!bodegaSeleccionada($destino)) {
             alert("Seleccione una bodega de destino");
             return false;
         }

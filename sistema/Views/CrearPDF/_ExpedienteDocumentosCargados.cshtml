@@ -1,0 +1,58 @@
+@using farmamest.Models
+@model (List<DocumentoEmbebidoVm> Documentos, DocumentoEmbebidoVm ConsentimientoEscaneado)
+
+@{
+    var documentos = Model.Documentos ?? new List<DocumentoEmbebidoVm>();
+    var consentimiento = Model.ConsentimientoEscaneado;
+    var hayDocumentos = documentos.Any(d => d != null && (d.PaginasBase64?.Any() == true || !string.IsNullOrWhiteSpace(d.UrlOriginal)));
+    var hayConsentimiento = consentimiento != null && (consentimiento.PaginasBase64?.Any() == true || !string.IsNullOrWhiteSpace(consentimiento.UrlOriginal));
+}
+
+@if (!hayDocumentos && !hayConsentimiento)
+{
+    <p class="muted">Sin registro.</p>
+}
+else
+{
+    @if (hayConsentimiento)
+    {
+        <div style="margin-bottom:14px;">
+            <strong>Consentimiento firmado (archivo de hospitalización)</strong>
+            @if (consentimiento.PaginasBase64?.Any() == true)
+            {
+                foreach (var pagina in consentimiento.PaginasBase64)
+                {
+                    <div style="margin-top:8px; page-break-inside: avoid;">
+                        <img src="@pagina" style="max-width:100%; max-height:520px; border:1px solid #e6e9f2;" alt="Consentimiento firmado" />
+                    </div>
+                }
+            }
+            else if (!string.IsNullOrWhiteSpace(consentimiento.UrlOriginal))
+            {
+                <p class="muted" style="margin-top:6px;">Archivo no disponible en disco: @consentimiento.UrlOriginal</p>
+            }
+        </div>
+    }
+
+    @foreach (var doc in documentos.Where(d => d != null))
+    {
+        <div style="margin-bottom:14px; page-break-inside: avoid;">
+            <strong>@(doc.Nombre ?? "-")</strong>
+            @if (doc.PaginasBase64?.Any() == true)
+            {
+                foreach (var pagina in doc.PaginasBase64)
+                {
+                    <div style="margin-top:8px;">
+                        <img src="@pagina" style="max-width:100%; max-height:520px; border:1px solid #e6e9f2;" alt="@doc.Nombre" />
+                    </div>
+                }
+            }
+            else if (!string.IsNullOrWhiteSpace(doc.UrlOriginal))
+            {
+                <p class="muted" style="margin:4px 0 0;">
+                    @(doc.ArchivoExiste ? "No se pudo visualizar el archivo." : "Archivo no disponible en disco:") @doc.UrlOriginal
+                </p>
+            }
+        </div>
+    }
+}

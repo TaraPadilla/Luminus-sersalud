@@ -11,10 +11,14 @@ namespace farmamest.Service
     public class ControlGlucometria2Service : IControlGlucometria2Service
     {
         private readonly IControlGlucometria2 _controlGlucometria2Repository;
+        private readonly IUser _userRepository;
 
-        public ControlGlucometria2Service(IControlGlucometria2 controlGlucometria2Repository)
+        public ControlGlucometria2Service(
+            IControlGlucometria2 controlGlucometria2Repository,
+            IUser userRepository)
         {
             _controlGlucometria2Repository = controlGlucometria2Repository;
+            _userRepository = userRepository;
         }
 
         public void Add(ControlGlucometria2 entity)
@@ -38,7 +42,8 @@ namespace farmamest.Service
                 Medicamento = x.ControlGlucometria2.Medicamento,
                 Unidades = x.ControlGlucometria2.Unidades,
                 NombrePersonaAplica = x.User?.Persona == null ? "-" : x.User.Persona.NombreYApellidos,
-                NombreProfesional = x.Profesional?.Persona == null ? "-" : x.Profesional.Persona.NombreYApellidos,
+                NombreProfesional = x.Profesional?.Persona?.NombreYApellidos
+                    ?? _userRepository.GetDisplayName(x.ProfesionalId),
                 PersonaAplicaId = x.UserId == null ? "-" : x.UserId,
                 ProfesionalId = x.ProfesionalId,
                 FechaHoraAplicacion = x.FechaAplicacion?.ToString("yyyy-MM-dd HH:mm:ss"),

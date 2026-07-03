@@ -84,7 +84,9 @@ namespace sistema.Controllers
                     o.Descripcion,
                     o.HospitalizacionId,
                     o.Realizada,
-                    o.FechaRealizacion,
+                    FechaRealizacion = o.Realizada && o.FechaRealizacion.Year > 1900
+                        ? (DateTime?)o.FechaRealizacion
+                        : null,
                     o.ProfesionalRealiza,
                     o.Examenes,
                     o.Dietas,

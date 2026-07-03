@@ -1,13 +1,9 @@
 @if (TempData["Message"] != null)
 {
+    var messageType = TempData["MessageType"] as string;
+    var alertClass = messageType == "error" ? "alert-danger" : "alert-success";
     <p>&nbsp;</p>
-
-    @* <div class="alert alert-sucess alert-dismissible fade show" role="alert">
-        <button type="button" class="close" aria-label="Close"><span aria-hidden="true">×</span></button>
-            @TempData["Message"]
-    </div> *@
-
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
+    <div class="alert @alertClass alert-dismissible fade show" role="alert">
         <button type="button" class="close" data-dismiss="alert" aria-label="Close">
             <span aria-hidden="true">&times;</span>
         </button>

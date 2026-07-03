@@ -32,7 +32,7 @@ namespace farmamest.Service
             var result = data.Select(turno => new TurnoEnfermeriaVM
             {
                 Id = turno.Id,
-                FechaRegistro = turno.FechaRegistro.ToString("yyyy-MM-dd HH:mm:ss"), // Formato de fecha con hora
+                FechaRegistro = turno.FechaRegistro.ToString("dd/MM/yyyy HH:mm"), // Formato de fecha con hora
                 NumeroTurno = turno.NumeroTurno,
                 NombreTurno = turno.NombreTurno,
                 HospitalizacionId = turno.HospitalizacionId,
@@ -52,7 +52,7 @@ namespace farmamest.Service
             var result = data.Select(turno => new TurnoEnfermeriaVM
             {
                 Id = turno.Id,
-                FechaRegistro = turno.FechaRegistro.ToString("yyyy-MM-dd HH:mm:ss"), // Formato de fecha con hora
+                FechaRegistro = turno.FechaRegistro.ToString("dd/MM/yyyy HH:mm"), // Formato de fecha con hora
                 NumeroTurno = turno.NumeroTurno,
                 NombreTurno = turno.NombreTurno,
                 HospitalizacionId = turno.HospitalizacionId,

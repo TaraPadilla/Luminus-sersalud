@@ -2,7 +2,7 @@
 @{
     var usuarioAdmisiones = User.IsInRole("Admisiones");
 } 
-<div class="tab-pane tabs-animation fade show " id="tab-content-nota-enfermeria" role="tabpanel">
+<div class="tab-pane tabs-animation fade " id="tab-content-nota-enfermeria" role="tabpanel">
     <div class="form-row">
         <div class="col-md-12">
             <div class="main-card mb-3 nota-clinica-card">
@@ -43,6 +43,7 @@
                             <thead>
                                 <tr>
                                     <th>Fecha de registro</th>
+                                    <th>N&deg; Turno</th>
                                     <th>Profesional</th>
                                     <th>Nombre del Turno</th>
                                     <th class="text-center">Acciones</th>
@@ -61,6 +62,9 @@
                                                 <div class="nota-fecha-label">Registro de turno</div>
                                             </div>
                                         </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-light border" data-bind="text: NumeroTurno || '—'"></span>
                                     </td>
                                     <td>
                                         <span class="nota-badge-enfermeria" data-bind="text:Profesional"></span>
@@ -96,7 +100,7 @@
                                 <!--/ko-->
                                 <!-- ko if: turnosEnfermeria().length === 0 -->
                                 <tr>
-                                    <td colspan="4">
+                                    <td colspan="5">
                                         <div class="nota-empty-state">
                                             <i class="fas fa-heartbeat d-block"></i>
                                             <p>No hay turnos de enfermer&iacute;a registrados</p>

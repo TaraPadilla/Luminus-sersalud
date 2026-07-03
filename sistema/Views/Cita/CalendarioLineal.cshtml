@@ -12,6 +12,7 @@
     var currentFilter2 = (ViewData["CurrentFilter2"] as string) ?? string.Empty;
 
     string clienteconf = Configuration["Cliente"];
+    bool esSerSalud = farmamest.Utilidades.SerSaludUiHelper.EsSerSalud(clienteconf);
 
     // ← NUEVO: Detectar médico externo
     bool esMedicoExterno = User.IsInRole("Medico Externo");
@@ -19,15 +20,11 @@
     bool deshabilitarAcciones = (clienteconf == "M14" && esMedicoExterno);
 
     // ← NUEVO: modo de calendario
-    var defaultModo = "consulta";
-    if (clienteconf == "SS")
-    {
-        defaultModo = "hospitalizacion";
-    }
+    var defaultModo = esSerSalud ? "hospitalizacion" : "consulta";
     var modoActual = (ViewData["Modo"] as string) ?? defaultModo;
 
-    // Si el cliente es Sersalud, forzamos siempre el modo hospitalización (SOP)
-    if (clienteconf == "SS")
+    // SerSalud siempre usa calendario de hospitalización (SOP)
+    if (esSerSalud)
     {
         modoActual = "hospitalizacion";
     }
@@ -55,6 +52,9 @@
         currentFilter = Model.Fecha;
         currentFilter2 = Model.Fecha;
     }
+
+    var mostrarCalendarioCompleto = !Model.FechaBloqueada || esHospitalizacion;
+    var mostrarTablaPacienteBloqueado = Model.FechaBloqueada && tieneFiltroPaciente && !esHospitalizacion;
 }
 
 
@@ -112,7 +112,7 @@
             </div>
             <div class="d-flex align-items-center" style="gap: 8px;">
                 <div class="btn-group btn-group-sm shadow-sm" role="group" aria-label="Modo de calendario">
-                    @if(clienteconf != "SS"){ 
+                    @if(!esSerSalud){ 
                     <a href="@UrlModo("consulta")"
                        class="btn @(!esHospitalizacion ? "btn-primary" : "btn-outline-primary") font-weight-bold text-uppercase px-3">
                         <i class="fas fa-stethoscope mr-1"></i> COEX
@@ -270,7 +270,7 @@
                             {
                                 <button type="button"
                                         class="btn btn-sm btn-success btn-block shadow-sm font-weight-bold text-uppercase"
-                                        data-bind="click: function() { desbloquearDia('@Model.Fecha') }">
+                                        data-bind="click: desbloquearDiaActual">
                                     <i class="fas fa-lock-open mr-2"></i> Desbloquear Día
                                 </button>
                             }
@@ -355,69 +355,74 @@
         @* --- SECCIÓN 3: TABLAS --- *@
         @if (Model.FechaBloqueada)
         {
-            <div class="alert alert-danger text-center font-weight-bold mb-4" role="alert">
+            <div class="alert @(esHospitalizacion ? "alert-warning" : "alert-danger") text-center font-weight-bold mb-4" role="alert">
                 <i class="fas fa-ban mr-2"></i> Esta fecha se encuentra bloqueada. <br />
                 <small class="font-weight-normal">Motivo: @Model.Motivo</small>
+                @if (esHospitalizacion)
+                {
+                    <br /><small class="font-weight-normal">El calendario de hospitalización sigue visible. Use <strong>Desbloquear Día</strong> si necesita agendar citas.</small>
+                }
             </div>
-
-            @if (tieneFiltroPaciente)
-            {
-                <h6 class="text-uppercase text-muted font-weight-bold mb-3">
-                    <i class="fas fa-globe mr-2"></i>Citas globales del paciente:
-                    <span class="text-primary">@pacienteFiltro</span>
-                </h6>
-
-                <div class="border rounded bg-white shadow-sm" style="max-height:520px; overflow-y:auto;">
-                    <table class="table table-sm table-hover table-striped mb-0 table-bordered"
-                           style="min-width:1200px; font-size:12px;">
-                        <thead class="bg-light" style="position:sticky; top:0; z-index:5;">
-                            <tr>
-                                <th class="text-uppercase small font-weight-bold text-nowrap">Fecha</th>
-                                <th class="text-uppercase small font-weight-bold text-nowrap">Hora</th>
-                                <th class="text-uppercase small font-weight-bold">Especialidad / Doctor</th>
-                                <th class="text-uppercase small font-weight-bold">Servicios</th>
-                                <th class="text-uppercase small font-weight-bold">Paciente</th>
-                                <th class="text-uppercase small font-weight-bold text-nowrap">Telefono</th>
-                                <th class="text-uppercase small font-weight-bold text-nowrap">Asistencia</th>
-                                <th class="text-uppercase small font-weight-bold">Tipo de atencion</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var c in citas.OrderBy(x => x.FechaInicio))
-                            {
-                                var cliente  = c.Paciente == null ? "" : c.Paciente.Nombre;
-                                var telefono = c.Paciente == null ? "" : c.Paciente.Telefono;
-                                <tr>
-                                    <td class="align-middle text-nowrap">@((c.FechaInicio ?? DateTime.Now).ToString("yyyy-MM-dd"))</td>
-                                    <td class="align-middle text-nowrap">@((c.FechaInicio ?? DateTime.Now).ToString("HH:mm"))</td>
-                                    <td class="align-middle">@c.EspecialidadText / @c.EmpleadoText</td>
-                                    <td class="align-middle">
-                                        <div class="d-flex flex-wrap" style="gap:6px;">
-                                            @if (c.CitasServicios != null && c.CitasServicios.Count() > 0)
-                                            {
-                                                foreach (var s in c.CitasServicios)
-                                                {
-                                                    <span class="badge badge-primary">@s.Servicio.NombreServicio</span>
-                                                }
-                                            }
-                                            else
-                                            {
-                                                <span class="text-muted"><i>No hay servicios registrados</i></span>
-                                            }
-                                        </div>
-                                    </td>
-                                    <td class="align-middle">@cliente</td>
-                                    <td class="align-middle text-nowrap">@telefono</td>
-                                    <td class="align-middle text-nowrap">@c.EstadoCita</td>
-                                    <td class="align-middle text-nowrap">@c.CitaTipoAtencion</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
         }
-        else
+
+        @if (mostrarTablaPacienteBloqueado)
+        {
+            <h6 class="text-uppercase text-muted font-weight-bold mb-3">
+                <i class="fas fa-globe mr-2"></i>Citas globales del paciente:
+                <span class="text-primary">@pacienteFiltro</span>
+            </h6>
+
+            <div class="border rounded bg-white shadow-sm" style="max-height:520px; overflow-y:auto;">
+                <table class="table table-sm table-hover table-striped mb-0 table-bordered"
+                       style="min-width:1200px; font-size:12px;">
+                    <thead class="bg-light" style="position:sticky; top:0; z-index:5;">
+                        <tr>
+                            <th class="text-uppercase small font-weight-bold text-nowrap">Fecha</th>
+                            <th class="text-uppercase small font-weight-bold text-nowrap">Hora</th>
+                            <th class="text-uppercase small font-weight-bold">Especialidad / Doctor</th>
+                            <th class="text-uppercase small font-weight-bold">Servicios</th>
+                            <th class="text-uppercase small font-weight-bold">Paciente</th>
+                            <th class="text-uppercase small font-weight-bold text-nowrap">Telefono</th>
+                            <th class="text-uppercase small font-weight-bold text-nowrap">Asistencia</th>
+                            <th class="text-uppercase small font-weight-bold">Tipo de atencion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in citas.OrderBy(x => x.FechaInicio))
+                        {
+                            var cliente  = c.Paciente == null ? "" : c.Paciente.Nombre;
+                            var telefono = c.Paciente == null ? "" : c.Paciente.Telefono;
+                            <tr>
+                                <td class="align-middle text-nowrap">@((c.FechaInicio ?? DateTime.Now).ToString("yyyy-MM-dd"))</td>
+                                <td class="align-middle text-nowrap">@((c.FechaInicio ?? DateTime.Now).ToString("HH:mm"))</td>
+                                <td class="align-middle">@c.EspecialidadText / @c.EmpleadoText</td>
+                                <td class="align-middle">
+                                    <div class="d-flex flex-wrap" style="gap:6px;">
+                                        @if (c.CitasServicios != null && c.CitasServicios.Count() > 0)
+                                        {
+                                            foreach (var s in c.CitasServicios)
+                                            {
+                                                <span class="badge badge-primary">@s.Servicio.NombreServicio</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted"><i>No hay servicios registrados</i></span>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="align-middle">@cliente</td>
+                                <td class="align-middle text-nowrap">@telefono</td>
+                                <td class="align-middle text-nowrap">@c.EstadoCita</td>
+                                <td class="align-middle text-nowrap">@c.CitaTipoAtencion</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        @if (mostrarCalendarioCompleto)
         {
             @if (esDiaUnico)
             {

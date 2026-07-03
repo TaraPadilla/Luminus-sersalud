@@ -163,7 +163,8 @@
                     </div>
                 </form>
                 @if (!string.IsNullOrEmpty(Model.RangoFechas)){
-                <a asp-action="DescargarIneExcel"
+                <a id="btnDesc"
+                   asp-action="DescargarIneExcel"
                    asp-route-rangoFechas="@Model.RangoFechas"
                    asp-route-departamentoId="@Model.SelectedDepartamentoId"
                    asp-route-municipioId="@Model.SelectedMunicipioId"
@@ -291,45 +292,91 @@
   </div> 
 
 
-    <script type="text/javascript" src="~/js/moment.min.js"></script>
-    <script type="text/javascript" src="~/js/daterangepicker.js"></script>
-    <script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
-
+@section Scripts {
     <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('btnDesc');
-  const fecha = document.getElementById('rangoFechasPicker');
-  const depto = document.getElementById('DepartamentoSelect');
-  const muni  = document.getElementById('MunicipioSelect');
+        $(function () {
+            const $fecha = $('#rangoFechasPicker');
+            const $btn = $('#btnDesc');
+            const $depto = $('#DepartamentoSelect');
+            const $muni = $('#MunicipioSelect');
 
-  function actualizarHref() {
-    if (!fecha.value) {
-      btn.removeAttribute('href');
-      return;
-    }
-    btn.href = `/Reportes/DescargarIneExcel`
-             + `?rangoFechas=${encodeURIComponent(fecha.value)}`
-             + `&departamentoId=${depto.value}`
-             + `&municipioId=${muni.value}`;
-  }
+            if ($fecha.length && typeof $.fn.daterangepicker === 'function') {
+                $fecha.daterangepicker({
+                    autoUpdateInput: true,
+                    locale: {
+                        format: 'YYYY-MM-DD',
+                        separator: ' - ',
+                        applyLabel: 'Aplicar',
+                        cancelLabel: 'Cancelar'
+                    }
+                });
+            }
 
-  // cada vez que cambien estos campos, actualiza el href
-  [fecha, depto, muni].forEach(el =>
-    el.addEventListener('change', actualizarHref)
-  );
+            function navegarConFiltros() {
+                const params = new URLSearchParams();
+                if ($fecha.val()) {
+                    params.set('rangoFechas', $fecha.val());
+                }
+                if ($depto.val()) {
+                    params.set('departamentoId', $depto.val());
+                }
+                if ($muni.val()) {
+                    params.set('municipioId', $muni.val());
+                }
+                window.location.href = '/Reportes/Ine?' + params.toString();
+            }
 
-  // init
-  actualizarHref();
+            function actualizarHrefDescarga() {
+                if (!$btn.length) return;
+                if (!$fecha.val()) {
+                    $btn.attr('href', '#');
+                    return;
+                }
+                const params = new URLSearchParams({
+                    rangoFechas: $fecha.val(),
+                    departamentoId: $depto.val() || '',
+                    municipioId: $muni.val() || ''
+                });
+                $btn.attr('href', '/Reportes/DescargarIneExcel?' + params.toString());
+            }
 
-  // opcional: si quieres prevenir click sin rango
-  btn.addEventListener('click', e => {
-    if (!btn.href) {
-      alert('Selecciona primero un rango de fechas.');
-      e.preventDefault();
-    }
-  });
-});
-</script>
+            $depto.on('change', function () {
+                const departamentoId = $(this).val();
+                $muni.empty().append('<option value="">-- Seleccione --</option>');
+                actualizarHrefDescarga();
+                if (!departamentoId) {
+                    navegarConFiltros();
+                    return;
+                }
+                $.getJSON('/Reportes/GetMunicipios', { departamentoId: departamentoId })
+                    .done(function (data) {
+                        data.forEach(function (m) {
+                            $muni.append($('<option></option>').val(m.id).text(m.nombre));
+                        });
+                        navegarConFiltros();
+                    })
+                    .fail(function () {
+                        navegarConFiltros();
+                    });
+            });
+
+            $muni.on('change', function () {
+                actualizarHrefDescarga();
+                navegarConFiltros();
+            });
+            $fecha.on('change apply.daterangepicker', actualizarHrefDescarga);
+
+            actualizarHrefDescarga();
+
+            $btn.on('click', function (e) {
+                if (!$fecha.val()) {
+                    e.preventDefault();
+                    alert('Selecciona primero un rango de fechas.');
+                }
+            });
+        });
+    </script>
+}
 
 
 

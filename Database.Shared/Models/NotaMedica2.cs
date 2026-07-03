@@ -20,5 +20,8 @@ namespace Database.Shared.Models
         public bool Autorizado { get; set; }
         public string UsuarioAutoriza { get; set; }
         public DateTime? FechaAutorizacion { get; set; }
+
+        /// <summary>Ingreso, Traslado, Recepcion, Egreso — para expediente completo.</summary>
+        public string TipoNota { get; set; }
     }
 }

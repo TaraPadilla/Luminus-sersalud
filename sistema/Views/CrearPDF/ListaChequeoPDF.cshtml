@@ -1,0 +1,33 @@
+@model IEnumerable<Database.Shared.Models.ListaChequeo>
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Lista de Chequeo Quirúrgico";
+    ViewData["MostrarServicios"] = false;
+    ViewData["MostrarEmergencias"] = false;
+    var paciente = ViewBag.PacienteNombre as string ?? "-";
+    var hospiId = ViewBag.HospitalizacionId;
+}
+
+<style>
+    .doc { padding: 10px 16px 22px; font-size: 12px; }
+    .doc-title { font-size: 18px; font-weight: 800; text-align: center; margin-bottom: 8px; }
+    .phase { margin-top: 14px; font-weight: 700; text-transform: uppercase; border-top: 3px solid #0a47a3; padding-top: 6px; }
+    table.kv { width: 100%; border-collapse: collapse; margin-top: 6px; }
+    table.kv th, table.kv td { border: 1px solid #dde3ef; padding: 5px 8px; text-align: left; vertical-align: top; }
+    table.kv th { width: 55%; background: #f7f9ff; }
+    .page-break { page-break-after: always; }
+    .muted { color: #64748b; font-style: italic; }
+</style>
+
+<div class="doc">
+    <div class="doc-title">Lista de Chequeo Quirúrgico (WHO)</div>
+    <p style="text-align:center;"><strong>Paciente:</strong> @paciente — <strong>Hospitalización #@hospiId</strong></p>
+</div>
+
+@foreach (var lista in Model ?? Enumerable.Empty<Database.Shared.Models.ListaChequeo>())
+{
+    <div class="doc @(lista != Model.Last() ? "page-break" : "")">
+        @await Html.PartialAsync("CrearPDF/_ListaChequeoDetalle", lista)
+        <p style="margin-top:24px;"><strong>Vo. Bo. Equipo Quirúrgico</strong> _________________________________</p>
+    </div>
+}

@@ -2,12 +2,7 @@
 @model EmergenciaViewModel
 @inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 @{
-    // Leer el valor del appsettings.json. 
-    string sufijoLayout = Configuration["Cliente"]; 
-    
-    // Concatenar para formar el nombre del Layout (ejemplo: "_Layout" + "SS")
-    // Si la clave trae el nombre completo (ej. "_LayoutSS"), simplemente asignalo directo.
-    Layout = $"_Layout{sufijoLayout}"; 
+    Layout = farmamest.Utilidades.SerSaludUiHelper.ResolverLayout(Configuration); 
     
     ViewData["Title"] = "Emergencia - Detalles";
 }

@@ -12,7 +12,7 @@ var TrasladoVM = function () {
 
   self.filteredProductosTrasladados = ko.computed(function () {
     let filter = self.searchQuery().toLowerCase();
-    let sortedArray = self.productosTrasladados().sort(function (a, b) {
+    let sortedArray = self.productosTrasladados().slice().sort(function (a, b) {
       return (
         new Date(b.FechaTraslado).getTime() -
         new Date(a.FechaTraslado).getTime()
@@ -23,7 +23,7 @@ var TrasladoVM = function () {
       return sortedArray;
     } else {
       return ko.utils.arrayFilter(sortedArray, function (item) {
-        return item.ProductoNombre.toLowerCase().includes(filter);
+        return (item.ProductoNombre || "").toLowerCase().includes(filter);
       });
     }
   });
@@ -84,7 +84,7 @@ var TrasladoVM = function () {
   };
 
   self.ordenarProductosTrasladados = function () {
-    let sortedArray = self.productosTrasladados().sort(function (a, b) {
+    let sortedArray = self.productosTrasladados().slice().sort(function (a, b) {
       return (
         new Date(b.FechaTraslado).getTime() -
         new Date(a.FechaTraslado).getTime()
@@ -127,25 +127,23 @@ var TrasladoVM = function () {
     self.ordenarProductosTrasladados(); // Ordenar después de quitar
   };
 
+  function bodegaSeleccionada(selector) {
+    var v = $(selector).val();
+    return v !== null && v !== undefined && String(v).trim() !== "";
+  }
+
   self.validateModel = function () {
-    //Bodega origen
-    let bodegaOrigenId = $("#BodegaOrigenId").val();
-    if (
-      bodegaOrigenId == undefined ||
-      bodegaOrigenId == null ||
-      bodegaOrigenId.trim() == ""
-    ) {
+    var $origen = $("#BodegaOrigenId");
+    if ($origen.find("option[value!='']").length === 0) {
+      alert("No hay bodegas de origen configuradas. Verifique sucursales y bodegas en el sistema.");
+      return false;
+    }
+    if (!bodegaSeleccionada($origen)) {
       alert("Seleccione una bodega de origen");
       return false;
     }
 
-    //Bodega destino
-    let bodegaDestinoId = $("#BodegaDestinoId").val();
-    if (
-      bodegaDestinoId == undefined ||
-      bodegaDestinoId == null ||
-      bodegaDestinoId.trim() == ""
-    ) {
+    if (!bodegaSeleccionada("#BodegaDestinoId")) {
       alert("Seleccione una bodega de destino");
       return false;
     }
@@ -334,11 +332,14 @@ var trasladoVm = new TrasladoVM();
 ko.applyBindings(trasladoVm);
 
 $(document).ready(function () {
-  trasladoVm.consultarProductosDisponibles();
-
   $("#BodegaOrigenId").change(function () {
     trasladoVm.consultarProductosDisponibles();
   });
+
+  var bodegaOrigenInicial = $("#BodegaOrigenId").val();
+  if (bodegaOrigenInicial) {
+    trasladoVm.consultarProductosDisponibles();
+  }
 
   //Consultar productos (Editar traslado)
   let trasladoId = $("#TrasladoId").val();

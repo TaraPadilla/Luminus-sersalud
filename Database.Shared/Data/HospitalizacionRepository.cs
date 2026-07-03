@@ -82,6 +82,12 @@ namespace Database.Shared.Data
                     .Where(a => a.HospitalizacionId == hospitalizacion.Id
                     && !a.Eliminado)
                     .ToList();
+
+                hospitalizacion.HospitalizacionInsumosDirectos = _context.HospitalizacionInsumosDirectos
+                    .Include(i => i.Producto)
+                    .Include(i => i.Aplicaciones)
+                    .Where(i => i.HospitalizacionId == hospitalizacion.Id && !i.Eliminado)
+                    .ToList();
             }
             if (includeServicios)
             {
@@ -114,6 +120,7 @@ namespace Database.Shared.Data
             {
                 hospitalizacion.HospitalizacionesPaquetesHospitalizacion = _context.HospitalizacionesPaquetesHospitalizacion
                     .Include(a => a.PaqueteHospitalizacion)
+                        .ThenInclude(p => p.DetallePaquetesHospitalizacion)
                     .Where(a => a.HospitalizacionId == hospitalizacion.Id && !a.Eliminado)
                     .ToList();
             }
@@ -221,7 +228,8 @@ namespace Database.Shared.Data
 
             var productosAplicacion = _context.HospitalizacionesProductosAplicaciones
                 .Include(s => s.HospitalizacionProducto).ThenInclude(s => s.Producto)
-                .Where(s => s.HospitalizacionProducto.HospitalizacionId == hospitalizacionId)
+                .Where(s => s.HospitalizacionProducto.HospitalizacionId == hospitalizacionId
+                    && !s.HospitalizacionProducto.Eliminado)
                 .OrderBy(s => s.Aplicado)
                 .ThenByDescending(s => s.FechaHoraAplicacion.HasValue)
                 .ThenByDescending(s => s.FechaHoraAplicacion)
@@ -611,6 +619,7 @@ namespace Database.Shared.Data
                     .ThenInclude(u => u.Persona)
                 .Include(n => n.Hospitalizacion)
                     .ThenInclude(h => h.Paciente)
+                        .ThenInclude(p => p.Sexo)
                 .Include(n => n.Hospitalizacion)
                     .ThenInclude(h => h.Consultas)
                         .ThenInclude(c => c.Citas)

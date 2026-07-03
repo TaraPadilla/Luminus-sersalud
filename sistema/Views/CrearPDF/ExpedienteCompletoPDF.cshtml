@@ -1,0 +1,672 @@
+@using System.IO
+@using System.Linq
+@using Database.Shared.Models
+@using farmamest.Models
+@using farmamest.Utilidades
+@using sistema.Models
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Config
+@model ExpedienteCompletoViewModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Expediente Completo del Paciente";
+    ViewData["MostrarServicios"] = false;
+    ViewData["MostrarEmergencias"] = false;
+    ViewData["EmbebidoEnExpediente"] = true;
+
+    var consentView = PdfReportHelper.ResolverVistaConsentimientoPdf(Config["Cliente"]);
+
+
+
+    var notasEvolucion = Model?.NotasEvolucion ?? new List<NotaMedica2ViewModel>();
+
+    var notasEnfermeria = Model?.NotasEnfermeria ?? new List<NotaEnfermeriaPdfViewModel>();
+
+    var ordenesMedicas = Model?.OrdenesMedicas ?? new List<OrdenMedicaViewModel>();
+
+    var notasOperatorias = Model?.NotasOperatorias ?? new List<NotaOperatoriaVM>();
+
+    var documentos = Model?.Documentos ?? new List<PacienteArchivoVM>();
+
+    var consentPdf = Model?.Consentimiento;
+
+
+
+    var ordenPreOpIdx = ordenesMedicas.FindIndex(o => o != null && o.Autorizado);
+
+    var ordenesPostOp = ordenPreOpIdx >= 0
+
+        ? ordenesMedicas.Skip(ordenPreOpIdx + 1).ToList()
+
+        : (ordenesMedicas.Count > 1 ? ordenesMedicas.Skip(1).ToList() : new List<OrdenMedicaViewModel>());
+
+
+
+    string EstadoSeccion(bool tieneDatos) => tieneDatos ? "Con datos" : "Sin registro";
+
+
+
+    var indiceSecciones = new (string Codigo, string Titulo, bool TieneDatos)[]
+
+    {
+
+        ("a", "Consentimiento informado", consentPdf != null),
+
+        ("b", "Cuestionario pre-anestésico", Model.CuestionarioPreAnestesico != null),
+
+        ("c", "Nota de ingreso — evolución", Model.NotaIngresoEvolucion != null),
+
+        ("d", "Nota de ingreso — enfermería", Model.NotaIngresoEnfermeria != null),
+
+        ("e", "Nota de traslado a sala — evolución", Model.NotaTrasladoEvolucion != null),
+
+        ("f", "Nota de traslado a sala — enfermería", Model.NotaTrasladoEnfermeria != null),
+
+        ("g", "Órdenes médicas pre-operatorias", ordenPreOpIdx >= 0),
+
+        ("h", "Autorización médico anestesiólogo", consentPdf != null && (!string.IsNullOrWhiteSpace(consentPdf.NombreAnestesista) || !string.IsNullOrWhiteSpace(consentPdf.NombreMedicoTratante))),
+
+        ("i", "Check list quirúrgico", Model.ListasChequeo != null && Model.ListasChequeo.Any()),
+
+        ("j", "Hoja de anestesia (registro anestésico)", Model.RegistroAnestesiaPdf?.TieneRegistroGuardado == true),
+
+        ("k", "Nota operatoria", notasOperatorias.Any()),
+
+        ("l", "Nota de recepción de sala — evolución", Model.NotaRecepcionEvolucion != null),
+
+        ("m", "Nota de recepción de sala — enfermería", Model.NotaRecepcionEnfermeria != null),
+
+        ("n", "Órdenes médicas post-operatorias", ordenesPostOp.Any()),
+
+        ("o", "Nota de egreso — evolución", Model.NotasEgresoEvolucion != null && Model.NotasEgresoEvolucion.Any()),
+
+        ("p", "Nota de egreso — enfermería", Model.NotasEgresoEnfermeria != null && Model.NotasEgresoEnfermeria.Any()),
+
+        ("q", "Control de signos vitales", Model.SignosVitales != null && Model.SignosVitales.Any()),
+
+        ("r", "Documentos cargados", (Model.DocumentosEmbebidos?.Any(d => d.PaginasBase64?.Any() == true) == true) || Model.DocumentoConsentimientoEmbebido?.PaginasBase64?.Any() == true || documentos.Any() || !string.IsNullOrWhiteSpace(Model.Contexto?.UrlArchivoConsentimiento)),
+
+        ("s", "Registro de medicamentos controlados", (consentPdf?.MedicamentosNoControlados != null && consentPdf.MedicamentosNoControlados.Any()) || (Model.MedicamentosControlados != null && Model.MedicamentosControlados.Any())),
+
+        ("t", "Control de medicamentos e insumos aplicados", Model.HistorialMedicamentos != null && Model.HistorialMedicamentos.Any(r => r.Aplicado))
+
+    };
+
+
+
+    var seccionesConDatos = indiceSecciones.Count(s => s.TieneDatos);
+
+}
+
+
+
+<style>
+
+    .doc { padding: 10px 16px 22px 16px; }
+
+    .doc-title { font-size: 18px; font-weight: 800; text-align: center; margin: 4px 0 8px; }
+
+    .doc-underline { height: 2px; background: #0a47a3; opacity: .25; margin: 6px 0 14px; }
+
+    .section-bar { margin-top: 18px; margin-bottom: 8px; border-top: 4px solid #0a47a3; padding: 8px 10px 6px; font-weight: 700; text-transform: uppercase; background: #f7f9ff; }
+
+    .page-break { page-break-after: always; }
+
+    .notes p { margin: 0 0 4px 0; }
+
+    .muted { color: #64748b; font-style: italic; }
+
+    table.kv { width: 100%; border-collapse: collapse; }
+
+    table.kv th, table.kv td { padding: 6px 8px; border-bottom: 1px solid #e6e9f2; text-align: left; vertical-align: top; }
+
+    table.kv th { width: 30%; }
+
+    table.indice { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
+
+    table.indice th, table.indice td { padding: 5px 8px; border-bottom: 1px solid #e6e9f2; }
+
+    table.indice th { background: #f7f9ff; text-align: left; }
+
+    .estado-ok { color: #15803d; font-weight: 600; }
+
+    .estado-vacio { color: #94a3b8; }
+
+</style>
+
+
+
+<div class="page-break">
+
+    <div class="doc">
+
+        <div class="doc-title">EXPEDIENTE COMPLETO — Hospitalización #@Model.HospitalizacionId</div>
+
+        <div class="doc-underline"></div>
+
+        <p style="text-align:center;"><strong>Paciente:</strong> @(Model.PacienteNombre ?? "-")</p>
+
+        <p style="text-align:center;"><strong>Médico tratante:</strong> @(Model.MedicoTratanteNombre ?? "-") (@(Model.MedicoTratanteColegiado ?? "-"))</p>
+
+
+
+        <div class="section-bar" style="margin-top: 24px;">Índice del expediente (secciones a – s)</div>
+
+        <p class="muted" style="margin: 0 0 8px;">Este documento incluye <strong>@indiceSecciones.Length secciones</strong>. @seccionesConDatos con información registrada.</p>
+
+        <table class="indice">
+
+            <thead>
+
+                <tr>
+
+                    <th style="width:8%;">Sec.</th>
+
+                    <th>Documento</th>
+
+                    <th style="width:22%;">Estado</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                @foreach (var item in indiceSecciones)
+
+                {
+
+                    <tr>
+
+                        <td>@item.Codigo)</td>
+
+                        <td>@item.Titulo</td>
+
+                        <td class="@(item.TieneDatos ? "estado-ok" : "estado-vacio")">@EstadoSeccion(item.TieneDatos)</td>
+
+                    </tr>
+
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+
+<div class="page-break">
+
+    <div class="doc">
+
+        <div class="section-bar">a) Consentimiento informado</div>
+
+        @if (consentPdf != null)
+
+        {
+
+            @await Html.PartialAsync(consentView, consentPdf)
+
+        }
+
+        else
+
+        {
+
+            <p class="muted">Sin registro.</p>
+
+        }
+
+    </div>
+
+</div>
+
+
+
+<div class="page-break">
+
+    <div class="doc">
+
+        <div class="section-bar">b) Cuestionario pre-anestésico</div>
+
+        @if (Model.CuestionarioPreAnestesico != null)
+
+        {
+
+            @await Html.PartialAsync("CrearPDF/CuestionarioPreAnestesicoPDF", Model.CuestionarioPreAnestesico)
+
+        }
+
+        else
+
+        {
+
+            <p class="muted">Sin registro.</p>
+
+        }
+
+    </div>
+
+</div>
+
+
+
+@await Html.PartialAsync("CrearPDF/_ExpedienteSeccionNotaEvolucion", ("c) Nota de ingreso — evolución", Model.NotaIngresoEvolucion, Model.Contexto, "ingreso"))
+
+@await Html.PartialAsync("CrearPDF/_ExpedienteSeccionNotaEnfermeria", ("d) Nota de ingreso — enfermería", Model.NotaIngresoEnfermeria, Model.Contexto, "enfermeria-ingreso"))
+
+@await Html.PartialAsync("CrearPDF/_ExpedienteSeccionNotaEvolucion", ("e) Nota de traslado a sala — evolución", Model.NotaTrasladoEvolucion, Model.Contexto, "traslado"))
+
+@await Html.PartialAsync("CrearPDF/_ExpedienteSeccionNotaEnfermeria", ("f) Nota de traslado a sala — enfermería", Model.NotaTrasladoEnfermeria, Model.Contexto, "enfermeria-traslado"))
+
+
+
+@{
+
+    var ordenPreOp = ordenPreOpIdx >= 0 ? ordenesMedicas[ordenPreOpIdx] : null;
+
+}
+
+<div class="page-break">
+
+    <div class="doc">
+
+        <div class="section-bar">g) Órdenes médicas pre-operatorias</div>
+
+        @if (ordenPreOp != null)
+
+        {
+
+            <table class="kv">
+
+                <tr><th>Fecha</th><td>@(ordenPreOp.FechaHora ?? "-")</td></tr>
+
+                <tr><th>Profesional</th><td>@(ordenPreOp.Profesional ?? "-")</td></tr>
+
+                <tr><th>Autorizada</th><td>Sí</td></tr>
+
+                <tr><th>Realizada</th><td>@(ordenPreOp.Realizada ?? "-")</td></tr>
+
+                <tr><th>Descripción</th><td class="notes">@Html.Raw(ordenPreOp.Descripcion ?? "-")</td></tr>
+
+            </table>
+
+            @if (!string.IsNullOrEmpty(ordenPreOp.FirmaBase64))
+
+            {
+
+                <p><strong>Firma del profesional:</strong> @(ordenPreOp.NombreFirmante ?? ordenPreOp.Profesional)</p>
+                @if (!string.IsNullOrWhiteSpace(ordenPreOp.AutorizadoPor))
+                {
+                    <p><strong>Autorizado por (validaci&oacute;n):</strong> @ordenPreOp.AutorizadoPor</p>
+                }
+
+                <img src="@ordenPreOp.FirmaBase64" style="max-height:90px;" alt="Firma" />
+
+            }
+
+            else if (!string.IsNullOrWhiteSpace(ordenPreOp.Profesional))
+
+            {
+
+                <p><strong>Profesional:</strong> @ordenPreOp.Profesional</p>
+
+                @if (!string.IsNullOrWhiteSpace(ordenPreOp.AutorizadoPor))
+
+                {
+
+                    <p><strong>Autorizado por:</strong> @ordenPreOp.AutorizadoPor</p>
+
+                }
+
+                <p class="muted">Firma digital pendiente.</p>
+
+            }
+
+        }
+
+        else
+
+        {
+
+            <p class="muted">Sin registro.</p>
+
+        }
+
+    </div>
+
+</div>
+
+
+
+<div class="page-break">
+
+    <div class="doc">
+
+        <div class="section-bar">h) Autorización médico anestesiólogo</div>
+
+        @if (consentPdf != null && (!string.IsNullOrWhiteSpace(consentPdf.NombreAnestesista) || !string.IsNullOrWhiteSpace(consentPdf.NombreMedicoTratante)))
+
+        {
+
+            @await Html.PartialAsync("CrearPDF/MedicoAnestesiaHospiPDF", consentPdf)
+
+        }
+
+        else
+
+        {
+
+            <p class="muted">Sin registro.</p>
+
+        }
+
+    </div>
+
+</div>
+
+
+
+<div class="page-break">
+
+    <div class="doc">
+
+        <div class="section-bar">i) Check list quirúrgico</div>
+
+        @if (Model.ListasChequeo != null && Model.ListasChequeo.Any())
+
+        {
+
+            @await Html.PartialAsync("CrearPDF/_ListaChequeoDetalle", Model.ListasChequeo.First())
+
+        }
+
+        else
+
+        {
+
+            <p class="muted">Sin registro.</p>
+
+        }
+
+    </div>
+
+</div>
+
+
+
+<div class="page-break">
+
+    <div class="doc">
+
+        <div class="section-bar">j) Hoja de anestesia (registro anestésico)</div>
+
+        @if (Model.RegistroAnestesiaPdf?.TieneRegistroGuardado == true)
+
+        {
+
+            @await Html.PartialAsync("CrearPDF/RegistroAnestesiaPDF", Model.RegistroAnestesiaPdf)
+
+        }
+
+        else
+
+        {
+
+            <p class="muted">Sin registro.</p>
+
+        }
+
+    </div>
+
+</div>
+
+
+
+<div class="page-break">
+
+    <div class="doc">
+
+        <div class="section-bar">k) Nota operatoria</div>
+
+        @if (notasOperatorias.Any())
+        {
+            foreach (var nota in notasOperatorias)
+            {
+                if (nota == null) { continue; }
+                @await Html.PartialAsync("CrearPDF/HospitalizacionNotaOperatoriaPDF", nota)
+                <hr />
+            }
+        }
+
+        else
+
+        {
+
+            <p class="muted">Sin registro.</p>
+
+        }
+
+    </div>
+
+</div>
+
+
+
+@await Html.PartialAsync("CrearPDF/_ExpedienteSeccionNotaEvolucion", ("l) Nota de recepción de sala — evolución", Model.NotaRecepcionEvolucion, Model.Contexto, "recepcion"))
+
+@await Html.PartialAsync("CrearPDF/_ExpedienteSeccionNotaEnfermeria", ("m) Nota de recepción de sala — enfermería", Model.NotaRecepcionEnfermeria, Model.Contexto, "enfermeria-recepcion"))
+
+
+
+<div class="page-break">
+
+    <div class="doc">
+
+        <div class="section-bar">n) Órdenes médicas post-operatorias</div>
+
+        @if (ordenesPostOp.Any())
+
+        {
+
+            foreach (var orden in ordenesPostOp)
+
+            {
+
+                if (orden == null) { continue; }
+
+                <table class="kv">
+
+                    <tr><th>Fecha</th><td>@(orden.FechaHora ?? "-")</td></tr>
+
+                    <tr><th>Profesional</th><td>@(orden.Profesional ?? "-")</td></tr>
+
+                    <tr><th>Autorizada</th><td>@(orden.Autorizado ? "Sí" : "No")</td></tr>
+
+                    @if (orden.Autorizado && !string.IsNullOrWhiteSpace(orden.AutorizadoPor))
+                    {
+                        <tr><th>Autorizado por</th><td>@orden.AutorizadoPor</td></tr>
+                    }
+
+                    <tr><th>Realizada</th><td>@(orden.Realizada ?? "-")</td></tr>
+
+                    <tr><th>Descripción</th><td class="notes">@Html.Raw(orden.Descripcion ?? "-")</td></tr>
+
+                </table>
+
+                @if (!string.IsNullOrEmpty(orden.FirmaBase64))
+
+                {
+
+                    <p><strong>Firma del profesional:</strong> @(orden.NombreFirmante ?? orden.Profesional)</p>
+                    @if (orden.Autorizado && !string.IsNullOrWhiteSpace(orden.AutorizadoPor))
+                    {
+                        <p><strong>Autorizado por (validaci&oacute;n):</strong> @orden.AutorizadoPor</p>
+                    }
+                    <p><strong>M&eacute;dico tratante:</strong> @orden.EmpleadoText</p>
+
+                    <img src="@orden.FirmaBase64" style="max-height:90px;" alt="Firma" />
+
+                }
+
+                else if (!string.IsNullOrWhiteSpace(orden.Profesional))
+
+                {
+
+                    <p><strong>Profesional:</strong> @orden.Profesional</p>
+
+                    @if (!string.IsNullOrWhiteSpace(orden.AutorizadoPor))
+
+                    {
+
+                        <p><strong>Autorizado por:</strong> @orden.AutorizadoPor</p>
+
+                    }
+
+                    <p class="muted">Firma digital pendiente.</p>
+
+                }
+
+                <hr />
+
+            }
+
+        }
+
+        else
+
+        {
+
+            <p class="muted">Sin registro.</p>
+
+        }
+
+    </div>
+
+</div>
+
+
+
+@await Html.PartialAsync("CrearPDF/_ExpedienteSeccionNotasLista", ("o) Nota de egreso — evolución", Model.NotasEgresoEvolucion, Model.Contexto, "egreso"))
+
+@await Html.PartialAsync("CrearPDF/_ExpedienteSeccionNotaEnfermeriaLista", ("p) Nota de egreso — enfermería", Model.NotasEgresoEnfermeria, Model.Contexto, "enfermeria-egreso"))
+
+
+
+<div class="page-break">
+
+    <div class="doc">
+
+        <div class="section-bar">q) Control de signos vitales</div>
+
+        @if (Model.SignosVitales != null && Model.SignosVitales.Any())
+
+        {
+
+            ViewBag.PacienteNombre = Model.PacienteNombre;
+
+            ViewBag.HospitalizacionId = Model.HospitalizacionId;
+
+            @await Html.PartialAsync("CrearPDF/SignosVitalesHospPDF", Model.SignosVitales)
+
+        }
+
+        else
+
+        {
+
+            <p class="muted">Sin registro.</p>
+
+        }
+
+    </div>
+
+</div>
+
+
+
+<div class="page-break">
+
+    <div class="doc">
+
+        <div class="section-bar">r) Documentos cargados</div>
+
+        @await Html.PartialAsync("CrearPDF/_ExpedienteDocumentosCargados", (Model.DocumentosEmbebidos ?? new List<DocumentoEmbebidoVm>(), Model.DocumentoConsentimientoEmbebido))
+
+    </div>
+
+</div>
+
+
+
+<div class="doc">
+
+    <div class="section-bar">s) Registro de medicamentos controlados</div>
+
+    @if (consentPdf != null || (Model.MedicamentosControlados != null && Model.MedicamentosControlados.Any()))
+
+    {
+
+        var consentMedicamentos = consentPdf ?? new ConsentimientoHospiVM
+
+        {
+
+            NombrePaciente = Model.PacienteNombre,
+
+            NombreAnestesista = Model.AutorizacionAnestesia?.NombreAnestesista,
+
+            UrlFirmaAnestesista = Model.AutorizacionAnestesia?.FirmaAnestesistaBase64 ?? consentPdf?.UrlFirmaAnestesista,
+
+            UrlFirmaMedico = Model.MedicoTratanteFirmaBase64,
+
+            UrlFirmaFarmacia = consentPdf?.UrlFirmaFarmacia,
+
+            MedicamentosNoControlados = Model.MedicamentosControlados ?? new List<MedicamentoNoControladoPdfVM>()
+
+        };
+
+        ViewData["EmbebidoEnExpediente"] = true;
+
+        @await Html.PartialAsync("CrearPDF/MedicamentosContrladosHospiPDF", consentMedicamentos)
+
+    }
+
+    else
+
+    {
+
+        <p class="muted">Sin registro.</p>
+
+    }
+
+</div>
+
+
+
+<div class="doc">
+
+    <div class="section-bar">t) Control de medicamentos (solo aplicados)</div>
+
+    @{
+        var historialMedicamentos = (Model.HistorialMedicamentos ?? new List<HistorialMedicamentoPdfRow>())
+            .Where(r => r.Aplicado && string.Equals(r.Origen, "Control de Medicamentos", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+    @await Html.PartialAsync("CrearPDF/_ExpedienteHistorialMedicamentos", historialMedicamentos)
+
+    <div class="section-bar" style="margin-top:12px;">Control de insumos (solo aplicados)</div>
+
+    @{
+        var historialInsumos = (Model.HistorialMedicamentos ?? new List<HistorialMedicamentoPdfRow>())
+            .Where(r => r.Aplicado && string.Equals(r.Origen, "Control de Insumos", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+    @await Html.PartialAsync("CrearPDF/_ExpedienteHistorialMedicamentos", historialInsumos)
+
+</div>
+
+

@@ -1,9 +1,10 @@
+@model sistema.Models.HospitalizacionDetallesViewModel
 @* #Region Pestañas Hospitalización *@
 
 @inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 
 @{
-    string cliente = Configuration["Cliente"]; 
+    string cliente = farmamest.Utilidades.SerSaludUiHelper.NormalizarCliente(Configuration["Cliente"]);
 }
 
 <div class="mb-3 card tabs-hosp-card">
@@ -270,7 +271,7 @@
 
             @if(cliente != "M14"){
                 <li class="nav-item">
-                    <a role="tab" class="nav-link" id="tab-historial-hospitalizaciones" data-bind="click:"
+                    <a role="tab" class="nav-link" id="tab-historial-autorizaciones"
                     data-toggle="tab" href="#tab-content-historial-autorizaciones">
                     <i class="tab-icn text-left fa fa-lock" aria-hidden="true"></i>
                         <span>Autorizaciones</span>
@@ -281,7 +282,7 @@
             @if(cliente != "SS" && cliente != "M14"){ 
 
                 <li class="nav-item">
-                    <a role="tab" class="nav-link" id="tab-ambulancias" data-bind="click:"
+                    <a role="tab" class="nav-link" id="tab-ambulancias"
                     data-toggle="tab" href="#tab-content-ambulancias">
                     <i class="tab-icn text-left fa fa-ambulance" aria-hidden="true"></i>
                         <span>Ambulancias</span>
@@ -289,7 +290,7 @@
                 </li>
 
                 <li class="nav-item">
-                    <a role="tab" class="nav-link" id="tab-emergencias" data-bind="click:"
+                    <a role="tab" class="nav-link" id="tab-emergencias"
                     data-toggle="tab" href="#tab-content-emergencias">
                     <i class="tab-icn text-left fa fa-user-md" aria-hidden="true"></i>
                         <span>Emergencias</span>

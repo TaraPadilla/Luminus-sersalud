@@ -90,8 +90,44 @@ namespace Database.Shared.Data
 
         public void Update(Proveedor model, bool saveChanges = true)
         {
+            var existing = _context.Proveedores
+                .Include(x => x.TipoCompraProveedor)
+                .FirstOrDefault(x => x.Id == model.Id);
 
-            _context.Entry(model).State = EntityState.Modified;
+            if (existing == null)
+                return;
+
+            existing.Nombre = model.Nombre;
+            existing.Direccion = model.Direccion;
+            existing.Correo = model.Correo;
+            existing.Giro = model.Giro;
+            existing.Telefono_1 = model.Telefono_1;
+            existing.Telefono_2 = model.Telefono_2;
+            existing.Celular_1 = model.Celular_1;
+            existing.Celular_2 = model.Celular_2;
+            existing.Nit = model.Nit;
+            existing.CuentaBancaria = model.CuentaBancaria;
+            existing.BancoId = model.BancoId;
+            existing.Observaciones = model.Observaciones;
+            existing.TipoProveedor = model.TipoProveedor;
+            existing.FrecuenciaEntrega = model.FrecuenciaEntrega;
+            existing.DiasEntrega = model.DiasEntrega;
+            existing.DiasCredito = model.DiasCredito;
+            existing.PoliticasDevolucion = model.PoliticasDevolucion;
+            existing.PoliticasDevolucionVencimiento = model.PoliticasDevolucionVencimiento;
+
+            if (model.TipoCompraProveedor != null)
+            {
+                _context.TipoCompraProveedor.RemoveRange(existing.TipoCompraProveedor);
+                foreach (var tipoCompra in model.TipoCompraProveedor)
+                {
+                    existing.TipoCompraProveedor.Add(new TipoCompraProveedor
+                    {
+                        ProveedorId = existing.Id,
+                        TipoCompraId = tipoCompra.TipoCompraId
+                    });
+                }
+            }
 
             if (saveChanges)
             {

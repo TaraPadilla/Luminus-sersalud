@@ -78,6 +78,15 @@ namespace sistema.Controllers
         [HttpPost]
         public string Nuevo(PrecioViewModel model)
         {
+            if (string.IsNullOrWhiteSpace(model?.NombrePrecio))
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = false,
+                    Mensaje = "El nombre del precio es obligatorio."
+                });
+            }
+
             try
             {
                 var precio = new Precio
@@ -124,6 +133,15 @@ namespace sistema.Controllers
         [HttpPost]
         public string Modificar(PrecioViewModel model)
         {
+            if (string.IsNullOrWhiteSpace(model?.NombrePrecio))
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = false,
+                    Mensaje = "El nombre del precio es obligatorio."
+                });
+            }
+
             try
             {
                 var precio = _preciosRepository.Get((int)model.PrecioId);

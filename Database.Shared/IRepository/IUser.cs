@@ -23,7 +23,8 @@ namespace Database.Shared.IRepository
         public IdentityRole GetRole(string name, bool includeRelatedEntities = true);
 
         public User GetbyId(string id, bool includeRelatedEntities = true);
-       
+        string GetDisplayName(string id);
+        string GetUserNameOrDefault(string id);
 
         public void Update(User model, bool saveChanges = true);
 

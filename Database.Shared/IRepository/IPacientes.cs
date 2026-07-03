@@ -16,6 +16,7 @@ namespace Database.Shared.IRepository
         public List<PersonaSeguro> GetPersonasSeguro(int pacienteId);
         public List<Vacuna> GetVacunas();
         public List<VacunaPaciente> GetVacunasPaciente(int idPaciente);
+        public List<VacunaPaciente> GetVacunasAlertaPaciente();
         public List<AntecedentePersonal> GetAntecedentesPersonales();
         public List<PacienteAntecedentePersonal> GetAntecedentesPersonalesPaciente(int idPaciente);
         public List<PreguntaRegistro> GetPreguntasRegistro();

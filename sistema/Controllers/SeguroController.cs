@@ -30,6 +30,15 @@ namespace farmamest.Controllers
         [HttpPost]
         public string Nuevo(SeguroViewModel model)
         {
+            if (string.IsNullOrWhiteSpace(model?.Nombre))
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = false,
+                    Mensaje = "El nombre del seguro es obligatorio."
+                });
+            }
+
             try
             {
                 var seguro = new Seguro
@@ -82,6 +91,15 @@ namespace farmamest.Controllers
         [HttpPost]
         public string ModificarSeguro(SeguroViewModel model)
         {
+            if (string.IsNullOrWhiteSpace(model?.Nombre))
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = false,
+                    Mensaje = "El nombre del seguro es obligatorio."
+                });
+            }
+
             try
             {
                 var seguro = _seguroRepository.GetSeguro(model.Id);

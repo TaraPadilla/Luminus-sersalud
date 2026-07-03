@@ -35,8 +35,8 @@
                 </div>
 
                 <div class="form-group">
-                    <label>URL de Catálogo</label>
-                    @Html.TextBoxFor(m => m.UrlCatalogo, new { @class = "form-control", placeholder = "Enlace al catálogo de productos" })
+                    <label>URL de Catálogo <small class="text-muted">(opcional)</small></label>
+                    @Html.TextBoxFor(m => m.UrlCatalogo, new { @class = "form-control", placeholder = "https://www.ejemplo.com/catalogo" })
                 </div>
             </form>
         </div>

@@ -139,8 +139,9 @@
     bool mostrarDireccion = (ViewData["MostrarDireccion"] as bool?) ?? true;
     bool mostrarTelefono = (ViewData["MostrarTelefono"] as bool?) ?? true;
     bool mostrarCorreo = (ViewData["MostrarCorreoElectronico"] as bool?) ?? true;
-    bool mostrarServicios = (ViewData["MostrarServicios"] as bool?) ?? true;
-    bool mostrarEmergencias = (ViewData["MostrarEmergencias"] as bool?) ?? true;
+    bool esSerSalud = Cliente == "SS" || string.Equals(Cliente, "SerSalud", StringComparison.OrdinalIgnoreCase);
+    bool mostrarServicios = (ViewData["MostrarServicios"] as bool?) ?? false;
+    bool mostrarEmergencias = (ViewData["MostrarEmergencias"] as bool?) ?? false;
 
     // Solución al Error CS0128: Evaluamos usando la variable existente
     hayLogo = hayLogo && mostrarLogo;
@@ -194,7 +195,7 @@
             </td>
         </tr>
 
-    @if(Cliente != "SerSalud")
+    @if(!esSerSalud)
     {
         @* Fila de SERVICIOS, debe ocupar todo el ancho *@
         @if (mostrarServicios)
@@ -233,7 +234,7 @@
    }
     </table>
 
-@if(Cliente != "SerSalud")
+@if(!esSerSalud)
 {
     @* Emergencias 24 horas debajo del bloque completo *@
     @if (mostrarEmergencias)

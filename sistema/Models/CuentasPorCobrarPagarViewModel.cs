@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Database.Shared.IRepository;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace sistema.Models
 {
@@ -70,10 +71,13 @@ namespace sistema.Models
 
         public void Init(ICuentasPorCobrar cuentasPorCobrarRepository, IEmpleado empleadoRepository)
         {
-            FormaPagoSelectListItems = new SelectList(cuentasPorCobrarRepository.GetFormasPago(), "Id", "NombreFormaPago");
-            MonedaSelectListItems = new SelectList(cuentasPorCobrarRepository.GetMonedas(), "Id", "NombreMoneda");
-            DoctoresSelectListItem = new SelectList(empleadoRepository.GetListEmpleadoTipoProfesionalColegiado(), "Id", "NombreCompleto");
+            var formasPago = cuentasPorCobrarRepository.GetFormasPago() ?? new List<Database.Shared.Models.FormaPago>();
+            var monedas = cuentasPorCobrarRepository.GetMonedas() ?? new List<Database.Shared.Models.Moneda>();
+            var doctores = empleadoRepository.GetListEmpleadoTipoProfesionalColegiado() ?? new List<object>();
 
+            FormaPagoSelectListItems = new SelectList(formasPago, "Id", "NombreFormaPago");
+            MonedaSelectListItems = new SelectList(monedas, "Id", "NombreMoneda");
+            DoctoresSelectListItem = new SelectList(doctores, "Id", "NombreCompleto");
         }
 
         public decimal Descuento { get; set; } = 0m;

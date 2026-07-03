@@ -230,6 +230,9 @@ namespace farmamest.Controllers
                 control.Autorizado = true;
                 control.UsuarioAutoriza = authorizerId;
                 control.FechaAutorizacion = DateTime.Now;
+                control.Firma = authorizerUser?.Persona?.NombreYApellidos
+                    ?? authorizerUser?.UserName
+                    ?? "Autorizado";
                 _controlGlucometria2Service.Update(control);
 
                 return JsonSerializer.Serialize(new { exitoso = true });

@@ -1,0 +1,41 @@
+@using Database.Shared.Paginacion
+@model PaginacionList<Database.Shared.Models.TrasladosProductos>
+
+@{
+    var action = ViewContext.RouteData.Values["action"]?.ToString() ?? "Lista";
+    var totalPages = Model.TotalPages < 1 ? 1 : Model.TotalPages;
+}
+
+<nav class="mt-3 mb-4" aria-label="Paginación de solicitudes" style="clear: both;">
+    @if (Model.HasPreviousPage)
+    {
+        <a asp-action="@action"
+           asp-route-sortOrder="@ViewData["CurrentSort"]"
+           asp-route-pageNumber="@(Model.PageIndex - 1)"
+           asp-route-currentFilter="@ViewData["CurrentFilter"]"
+           class="btn btn-danger btn-sm">
+            Anterior
+        </a>
+    }
+    else
+    {
+        <span class="btn btn-danger btn-sm disabled" tabindex="-1" aria-disabled="true">Anterior</span>
+    }
+
+    <span class="text-muted small mx-2">Página @Model.PageIndex de @totalPages</span>
+
+    @if (Model.HasNextPage)
+    {
+        <a asp-action="@action"
+           asp-route-sortOrder="@ViewData["CurrentSort"]"
+           asp-route-pageNumber="@(Model.PageIndex + 1)"
+           asp-route-currentFilter="@ViewData["CurrentFilter"]"
+           class="btn btn-danger btn-sm">
+            Siguiente
+        </a>
+    }
+    else
+    {
+        <span class="btn btn-danger btn-sm disabled" tabindex="-1" aria-disabled="true">Siguiente</span>
+    }
+</nav>

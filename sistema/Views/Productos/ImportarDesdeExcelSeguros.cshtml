@@ -19,8 +19,8 @@
                     <div class="col-md-4">
                         <label><b>Seguro</b></label>
                         <select class="form-control select2bs4" asp-for="SeguroId"
-                            asp-items="@Model.SegurosSelectListItem">
-                            <option disabled selected>Sin Asignar</option>
+                            asp-items="@Model.SegurosSelectListItem" required>
+                            <option value="" disabled selected>Seleccione un seguro</option>
                         </select>
                     </div>
                     <div class="col-md-4">
@@ -123,34 +123,56 @@
                                 return;
                             }
 
+                            var seguroId = $("#SeguroId").val();
+                            var archivo = $('#excel')[0].files[0];
+
+                            if (!seguroId || seguroId === "Sin Asignar") {
+                                alert("Debe seleccionar un seguro.");
+                                return;
+                            }
+
+                            if (!archivo) {
+                                alert("Debe seleccionar un archivo Excel.");
+                                return;
+                            }
+
                             showLoading();
 
                             var formData = new FormData();
                             formData.append('TipoPrecio', tipoPrecio); 
                             formData.append('TipoItem', tipoItem); 
-                            formData.append('SeguroId', $("#SeguroId").val());
+                            formData.append('SeguroId', seguroId);
                             formData.append('TipoProductoId', tipoProducto); 
-                            formData.append('excel', $('#excel')[0].files[0]);
+                            formData.append('excel', archivo);
 
                             $.ajax({
-                                url: url, // Usar la URL dinámica
+                                url: url,
                                 method: "POST",
                                 processData: false,
                                 contentType: false,
                                 data: formData,
                                 success: function (dataResult) {
-                                    var data = JSON.parse(dataResult); // Asegúrate de que sea un JSON válido
+                                    var data = typeof dataResult === "string" ? JSON.parse(dataResult) : dataResult;
                                     if (data.Exitoso) {
                                         window.location.href = "/Seguro/Lista";
                                     } else {
                                         hideLoading();
-                                        alert(data.Mensaje); // Muestra el mensaje correctamente
+                                        alert(data.Mensaje);
                                     }
                                 },
-                                error: function (dataError) {
+                                error: function (xhr) {
                                     hideLoading();
-                                    console.log(dataError);
-                                    alert("Ocurrió un error al procesar la solicitud.");
+                                    console.log(xhr);
+                                    var msg = "Ocurrió un error al procesar la solicitud.";
+                                    if (xhr.responseText) {
+                                        try {
+                                            var err = JSON.parse(xhr.responseText);
+                                            if (err.Mensaje) msg = err.Mensaje;
+                                        } catch (e) {
+                                            if (xhr.responseText.length < 500) msg = xhr.responseText;
+                                        }
+                                    }
+                                    alert(msg);
                                 }
                             });
                         }

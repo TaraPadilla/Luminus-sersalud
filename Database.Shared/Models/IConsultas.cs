@@ -12,6 +12,7 @@ namespace Database.Shared.IRepository
     {
 
         Consulta GetConsultaPorHospitalizacion(int hospitalizacionId);
+        Consulta GetConsultaPorCita(int citaId);
 
         void Add(Consulta consulta, bool saveChanges = true);
         int AddConsulta(Consulta consulta);

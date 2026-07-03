@@ -1,3 +1,84 @@
+function normalizarRecordatorioItem(item) {
+  if (!item) return null;
+
+  var paciente = item.paciente || {};
+  var nombre =
+    item.pacienteNombre ||
+    item.PacienteNombre ||
+    item.Paciente ||
+    item.NombrePaciente ||
+    item.nombre ||
+    item.nombrePaciente ||
+    item.nombrePacienteText ||
+    paciente.nombre ||
+    "";
+  var telefonoRaw =
+    item.telefono ||
+    item.Telefono ||
+    item.PacienteTelefono ||
+    item.Celular ||
+    item.celular ||
+    paciente.telefono ||
+    paciente.celular ||
+    "";
+  var telefono = telefonoRaw && telefonoRaw !== "-" ? telefonoRaw : "";
+  var email =
+    item.email || item.Email || item.Correo || paciente.email || "";
+  if (email === "-") email = "";
+
+  var citaId = item.citaId || item.CitaId || item.Id || item.id || null;
+  var fechaInicio = item.FechaInicio || item.fechaInicio;
+  var hora = item.Hora || item.hora;
+  var fecha = "";
+
+  if (fechaInicio && hora) {
+    var conHora = moment(
+      fechaInicio + " " + hora,
+      ["MM/DD/YYYY HH:mm", "M/D/YYYY HH:mm", "YYYY-MM-DD HH:mm"],
+      true
+    );
+    fecha = conHora.isValid()
+      ? conHora.format("DD/MM/YYYY HH:mm")
+      : fechaInicio + " " + hora;
+  } else if (fechaInicio && fechaInicio !== "-") {
+    var soloFecha = moment(fechaInicio);
+    fecha = soloFecha.isValid()
+      ? soloFecha.format("DD/MM/YYYY HH:mm")
+      : fechaInicio;
+  } else if (item.fechaNacimiento) {
+    fecha = moment(item.fechaNacimiento).format("DD/MM/YYYY");
+  } else if (item.fechaLimitePago) {
+    fecha = moment(item.fechaLimitePago).format("DD/MM/YYYY");
+  } else if (item.fechaContacto) {
+    fecha = moment(item.fechaContacto).format("DD/MM/YYYY");
+  }
+
+  var nombreVacuna = item.NombreVacuna || item.nombreVacuna || null;
+  var esCita =
+    !!citaId || (!!fechaInicio && fechaInicio !== "-" && !!hora);
+
+  return {
+    citaId: citaId,
+    nombre: nombre,
+    telefono: telefono,
+    email: email,
+    fecha: fecha,
+    nombreVacuna: nombreVacuna,
+    esCita: esCita,
+  };
+}
+
+function isSerSaludCliente() {
+  var cfg = window.__appConfig || {};
+  return String(cfg.cliente || "").toUpperCase() === "SS";
+}
+
+function initJqueryTabs(selector) {
+  if ($(selector).length) {
+    $(selector).tabs();
+  }
+}
+
 var HomeVM = function () {
   var self = this;
   self.citas = ko.observableArray();
@@ -61,9 +142,11 @@ var HomeVM = function () {
   self.abrirTabHospital = function () {
     if (!self.tabAbiertaHospital()) {
       self.consultarHabitacionesOcupadas();
-      self.consultarHospitalInventarioStockMinimo();
-      self.consultarHospitalInventarioVencidos();
-      self.consultarHospitalInventarioProximosVencer();
+      if (!isSerSaludCliente()) {
+        self.consultarHospitalInventarioStockMinimo();
+        self.consultarHospitalInventarioVencidos();
+        self.consultarHospitalInventarioProximosVencer();
+      }
       self.tabAbiertaHospital(true);
     }
   };
@@ -305,7 +388,9 @@ var HomeVM = function () {
   //#region Iniciar tablas TAB HOSPITAL
   self.consultarHabitacionesOcupadas = function () {
     showLoading();
-    clearDataTable("tabla-habitaciones-ocupadas");
+    if ($.fn.DataTable.isDataTable("#tabla-habitaciones-ocupadas")) {
+      $("#tabla-habitaciones-ocupadas").DataTable().clear().destroy();
+    }
 
     $.ajax({
       method: "POST",
@@ -313,9 +398,8 @@ var HomeVM = function () {
       success: function (dataResult) {
         var data = JSON.parse(dataResult);
         if (data.Exitoso) {
-          showLoading();
-          self.habitacionesOcupadas(data.Resultado);
-          drawDataTable("tabla-habitaciones-ocupadas");
+          self.habitacionesOcupadas(data.Resultado || []);
+          ko.tasks.runEarly();
           hideLoading();
         } else {
           alert(data.Mensaje);
@@ -325,7 +409,7 @@ var HomeVM = function () {
       error: function (data) {
         hideLoading();
         console.log(data);
-        alert(data);
+        alert("Error al consultar habitaciones ocupadas.");
       },
     });
   };
@@ -742,15 +826,60 @@ var HomeVM = function () {
     });
   };
   self.sendEmailReminder = function (item) {
-    // Formatea la fecha como tú quieras
-    const fechaFormateada = moment(item.FechaInicio).format("DD/MM/YYYY HH:mm");
-    // Llama al helper
+    var datos = normalizarRecordatorioItem(item);
+    if (!datos.email) {
+      alert("El paciente no tiene un correo electrónico registrado.");
+      return;
+    }
+
+    if (datos.nombreVacuna) {
+      enviarRecordatorioEmailGenerico(
+        datos.email,
+        "Recordatorio de vacuna",
+        "<p>Estimado/a " +
+          datos.nombre +
+          ",</p><p>Le recordamos que tiene pendiente la vacuna: <strong>" +
+          datos.nombreVacuna +
+          "</strong>.</p>"
+      );
+      return;
+    }
+
     enviarRecordatorioEmail(
-      item.Id,
-      item.PacienteNombre,
-      item.Email,
-      fechaFormateada
+      datos.citaId,
+      datos.nombre,
+      datos.email,
+      datos.fecha || "fecha por confirmar"
     );
+  };
+  self.enviarRecordatorioWhatsApp = function (item) {
+    var datos = normalizarRecordatorioItem(item);
+    if (!datos.telefono) {
+      alert("El paciente no tiene un número de celular registrado.");
+      return;
+    }
+
+    if (datos.esCita && datos.fecha) {
+      enviarRecordatorioCitaWhatsApp(
+        datos.citaId,
+        datos.nombre,
+        datos.telefono,
+        datos.fecha
+      );
+      return;
+    }
+
+    var mensaje = "Hola " + datos.nombre;
+    if (datos.nombreVacuna) {
+      mensaje +=
+        ", le recordamos que tiene pendiente la vacuna: " + datos.nombreVacuna + ".";
+    } else if (datos.fecha) {
+      mensaje += ", le recordamos la fecha: " + datos.fecha + ".";
+    } else {
+      mensaje += ", le recordamos ponerse en contacto con nosotros.";
+    }
+
+    enviarMensajeTextoWhatsApp(datos.telefono, mensaje);
   };
   self.consultarComprasStockMinimo = function () {
     showLoading();
@@ -785,8 +914,7 @@ var HomeVM = function () {
   };
 
   self.verDetallesCuenta = function (cuenta) {
-    debugger;
-    var url = "CuentasPorCobrar/VerDetallesCuenta?cuentaId=" + cuenta.id;
+    var url = "/CuentasPorCobrar/VerDetallesCuenta?cuentaId=" + cuenta.id;
     window.location.href = url;
   };
   self.pagarCuenta = function (value) {
@@ -984,76 +1112,6 @@ var HomeVM = function () {
     });
   };
 };
-async function getWhatsAppToken() {
-  try {
-    const response = await fetch("/api/whatsapptoken");
-    if (response.ok) {
-      const token = await response.text();
-      return token; // Devuelve el token
-    } else {
-      console.error("Error al obtener el token de WhatsApp");
-      return null;
-    }
-  } catch (error) {
-    console.error("Error al obtener el token de WhatsApp:", error);
-    return null;
-  }
-}
-async function enviarRecordatorioWhatsApp(
-  citaId,
-  nombrePaciente,
-  celularPaciente,
-  fechaCita
-) {
-  const token = await getWhatsAppToken();
-
-  if (!celularPaciente) {
-    alert("El paciente no tiene un número de celular registrado.");
-    return;
-  }
-
-  // Ajusta prefijo para Honduras:
-  const formattedPhoneNumber = `502${celularPaciente}`;
-
-  // Aquí ya NO generas PDF ni subes nada, simplemente mandas el template:
-  const messageBody = {
-    messaging_product: "whatsapp",
-    to: formattedPhoneNumber,
-    type: "template",
-    template: {
-      name: "recordatorio_cita", // tu plantilla de recordatorio
-      language: { code: "es" },
-      components: [
-        {
-          type: "body",
-          parameters: [
-            { type: "text", text: nombrePaciente },
-            { type: "text", text: fechaCita },
-          ],
-        },
-      ],
-    },
-  };
-
-  const whatsappResponse = await fetch(
-    "https://graph.facebook.com/v20.0/TU_PHONE_NUMBER_ID/messages",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(messageBody),
-    }
-  );
-
-  if (whatsappResponse.ok) {
-    alert("✅ Recordatorio enviado por WhatsApp");
-  } else {
-    alert("❌ Error al enviar el recordatorio");
-  }
-}
-// 1) Helper fuera de HomeVM:
 async function enviarRecordatorioEmail(
   citaId,
   nombrePaciente,
@@ -1064,31 +1122,67 @@ async function enviarRecordatorioEmail(
     return alert("El paciente no tiene un correo electrónico registrado.");
   }
 
-  // Opcional: si quieres usar una plantilla HTML ligera
   let plantilla = await fetch(
-    "../js-utilidades-wp-email/email-plantilla-cita.html"
+    "/js-utilidades-wp-email/email-plantilla-cita.html"
   ).then((r) => r.text());
-  // Reemplaza marcadores por valores reales
   let bodyMessage = plantilla
     .replace("{{nombrePaciente}}", nombrePaciente)
     .replace("{{fechaCita}}", fechaCita);
 
-  // Prepara el FormData para tu API de correo
   const formData = new FormData();
   formData.append("To", emailPaciente);
   formData.append("Subject", "Recordatorio de cita");
   formData.append("Body", bodyMessage);
 
-  // Llama a tu endpoint que envía correos
   const resp = await fetch("/api/SendEmail", {
     method: "POST",
     body: formData,
   });
 
   if (resp.ok) {
-    alert("✅ Correo de recordatorio enviado exitosamente.");
+    alert("Correo de recordatorio enviado exitosamente.");
   } else {
-    alert("❌ Error al enviar el correo de recordatorio.");
+    alert("Error al enviar el correo de recordatorio.");
+  }
+}
+
+async function enviarRecordatorioEmailGenerico(emailPaciente, asunto, cuerpoHtml) {
+  const formData = new FormData();
+  formData.append("To", emailPaciente);
+  formData.append("Subject", asunto);
+  formData.append("Body", cuerpoHtml);
+
+  const resp = await fetch("/api/SendEmail", {
+    method: "POST",
+    body: formData,
+  });
+
+  if (resp.ok) {
+    alert("Correo enviado exitosamente.");
+  } else {
+    alert("Error al enviar el correo.");
+  }
+}
+
+async function enviarMensajeTextoWhatsApp(celularPaciente, mensaje) {
+  var telefono = normalizarNumeroWhatsapp(celularPaciente);
+  if (!telefono) {
+    alert("El número de celular del paciente no es válido.");
+    return;
+  }
+
+  var resultado = await enviarWhatsAppBackend("send-text", {
+    to: telefono,
+    message: mensaje,
+  });
+
+  if (resultado.ok) {
+    alert("Mensaje enviado por WhatsApp.");
+  } else {
+    alert(
+      (resultado.result && resultado.result.message) ||
+        "No se pudo enviar por WhatsApp. Verifique WhatsAppSettings."
+    );
   }
 }
 
@@ -1096,13 +1190,25 @@ var homeVM = new HomeVM();
 ko.applyBindings(homeVM);
 
 $(document).ready(function () {
-  $("#tabs").tabs();
-  $("#subtabs-general").tabs();
-  $("#subtabs-hospital").tabs();
-  $("#subtabs-laboratorio").tabs();
-  $("#subtabs-clinica").tabs();
-  $("#subtabs-farmacia").tabs();
-  $("#subtabs-compras").tabs();
+  if ($("#tabs").length) {
+    $("#tabs").tabs();
+  }
+
+  initJqueryTabs("#subtabs-general");
+  initJqueryTabs("#subtabs-hospital");
+  initJqueryTabs("#subtabs-laboratorio");
+  initJqueryTabs("#subtabs-clinica");
+  initJqueryTabs("#subtabs-farmacia");
+  initJqueryTabs("#subtabs-compras");
+
+  if (isSerSaludCliente()) {
+    var hospitalTabIndex = $("#tabs ul li a[href='#tab-hospital']").parent().index();
+    if (hospitalTabIndex >= 0) {
+      $("#tabs").tabs("option", "active", hospitalTabIndex);
+    }
+    homeVM.abrirTabHospital();
+    return;
+  }
 
   homeVM.consultarCitasProximas();
   homeVM.consultarReconsultas();

@@ -55,6 +55,24 @@ namespace farmamest.Controllers
         [HttpPost]
         public string Nuevo(CuentaContableViewModel model)
         {
+            if (string.IsNullOrWhiteSpace(model?.NombreCuenta))
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = false,
+                    Mensaje = "El nombre de la cuenta contable es obligatorio."
+                });
+            }
+
+            if (model.CategoriaCuentaId <= 0)
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = false,
+                    Mensaje = "Seleccione una categoría."
+                });
+            }
+
             try
             {
                 var nomeclaturas = new List<CuentaContableNomenclatura>();
@@ -110,6 +128,36 @@ namespace farmamest.Controllers
                 {
                     Exitoso = false,
                     Mensaje = "Error al registrar la cuenta. " + ex.Message
+                });
+            }
+        }
+
+        [HttpPost]
+        public string ConsultarCategorias()
+        {
+            try
+            {
+                var data = _categoriaCuentaContableRepository.GetAll()
+                    .Select(item => new CategoriaCuentaContableViewModel
+                    {
+                        Id = item.Id,
+                        Nombre = item.Nombre,
+                        Especificacion = item.Especificacion
+                    })
+                    .ToList();
+
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = true,
+                    Resultado = data
+                });
+            }
+            catch (Exception ex)
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = false,
+                    Mensaje = "Error de servidor al consultar las categorias. " + ex.Message
                 });
             }
         }

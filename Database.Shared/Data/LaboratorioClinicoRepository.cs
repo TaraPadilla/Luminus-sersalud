@@ -76,7 +76,7 @@ namespace Database.Shared.Data
             return PaginacionList<ExamenLabClinico>.CreateAsyncc(examen
             .Where(x => x.Eliminado == false)
             .OrderByDescending(a => a.Id),
-            pageNumber ?? 1, 30000);
+            pageNumber ?? 1, pageSize);
         }
 
 
@@ -157,7 +157,17 @@ namespace Database.Shared.Data
         }
         public List<ExamenLabClinicosSP> GetListExamenesLaboratorioSP()
         {
-            return _context.ExamenLabClinicosSP.FromSqlInterpolated($"SELECT * FROM obtener_examenes_lab_clinicos();").ToList();
+            return _context.ExamenLabClinicos
+                .Where(x => !x.Eliminado)
+                .OrderBy(x => x.CodigoInterno)
+                .Select(x => new ExamenLabClinicosSP
+                {
+                    ExamenId = x.Id,
+                    ExamenNombre = x.NombreExamen,
+                    ExamenCodigo = x.CodigoInterno,
+                    ExamenNombreMostrar = (x.CodigoInterno ?? "") + " - " + (x.NombreExamen ?? "")
+                })
+                .ToList();
         }
 
         public IList<Examen> GetListExamenesRealizado()
@@ -332,12 +342,7 @@ namespace Database.Shared.Data
 
         public void Update(Resultados resultado, bool saveChanges = true)
         {
-            _context.Entry(resultado).State = EntityState.Modified;
-
-            if (saveChanges)
-            {
-                _context.SaveChanges();
-            }
+            EfUpdateHelper.UpdateEntity(_context, resultado, saveChanges);
         }
 
         public Examen GetExamenRealizado(int id, bool includeRelatedEntities = true)
@@ -385,52 +390,27 @@ namespace Database.Shared.Data
 
         public void Update(CategoriaLabClinico categoriaLabClinico, bool saveChanges = true)
         {
-            _context.Entry(categoriaLabClinico).State = EntityState.Modified;
-
-            if (saveChanges)
-            {
-                _context.SaveChanges();
-            }
+            EfUpdateHelper.UpdateEntity(_context, categoriaLabClinico, saveChanges);
         }
 
         public void Update(DatosExamenesLabClinico datos, bool saveChanges = true)
         {
-            _context.Entry(datos).State = EntityState.Modified;
-
-            if (saveChanges)
-            {
-                _context.SaveChanges();
-            }
+            EfUpdateHelper.UpdateEntity(_context, datos, saveChanges);
         }
 
         public void Update(ExamenLabClinico examen, bool saveChanges = true)
         {
-            _context.Entry(examen).State = EntityState.Modified;
-
-            if (saveChanges)
-            {
-                _context.SaveChanges();
-            }
+            EfUpdateHelper.UpdateEntity(_context, examen, saveChanges);
         }
 
         public void Update(Examen examen, bool saveChanges = true)
         {
-            _context.Entry(examen).State = EntityState.Modified;
-
-            if (saveChanges)
-            {
-                _context.SaveChanges();
-            }
+            EfUpdateHelper.UpdateEntity(_context, examen, saveChanges);
         }
 
         public void Update(DetalleExamen examen, bool saveChanges = true)
         {
-            _context.Entry(examen).State = EntityState.Modified;
-
-            if (saveChanges)
-            {
-                _context.SaveChanges();
-            }
+            EfUpdateHelper.UpdateEntity(_context, examen, saveChanges);
         }
 
         //public void Update(VentasLab examen, bool saveChanges = true)
@@ -605,12 +585,7 @@ namespace Database.Shared.Data
 
         public void UpdatePregunta(ExamenLabClinicoPregunta examen, bool saveChanges = true)
         {
-            _context.Entry(examen).State = EntityState.Modified;
-
-            if (saveChanges)
-            {
-                _context.SaveChanges();
-            }
+            EfUpdateHelper.UpdateEntity(_context, examen, saveChanges);
         }
 
         public Examen GetExamenPaciente(int id, bool includeRelatedEntities = true)

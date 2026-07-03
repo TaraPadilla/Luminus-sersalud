@@ -174,6 +174,14 @@ namespace Database.Shared.Data
 
             return PaginacionList<Envio>.CreateAsyncc(envio.Include(s=>s.EstadosEnvio).Include(s=>s.Ruta).Include(a=>a.User).ThenInclude(a => a.Persona).Where(x=>x.EstadosEnvioId==4), pageNumber ?? 1, pageSize);
         }
+        private static IQueryable<Envio> FilterByAspNetUser(IQueryable<Envio> query, string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                return query;
+
+            return query.Where(x => x.UserId2 == userId);
+        }
+
         public PaginacionList<Envio> PaginacionEnviosEnRuta(string sortOrder, string searchString, int? pageNumber, int pageSize, string id)
         {
             var envio = _context.Envios.AsQueryable();
@@ -204,8 +212,12 @@ namespace Database.Shared.Data
             }
             else
             {
-                 return PaginacionList<Envio>.CreateAsyncc(envio.Include(s=>s.EstadosEnvio).Include(s=>s.Ruta).Include(a=>a.User).ThenInclude(a => a.Persona).Where(x=>x.EstadosEnvioId==2).Where(x=>x.User.Id==id), pageNumber ?? 1, pageSize);
-               
+                 return PaginacionList<Envio>.CreateAsyncc(
+                     FilterByAspNetUser(
+                         envio.Include(s=>s.EstadosEnvio).Include(s=>s.Ruta).Include(a=>a.User).ThenInclude(a => a.Persona)
+                             .Where(x=>x.EstadosEnvioId==2),
+                         id),
+                     pageNumber ?? 1, pageSize);
 
             }
 
@@ -236,7 +248,12 @@ namespace Database.Shared.Data
                 break;
             }
 
-            return PaginacionList<Envio>.CreateAsyncc(envio.Include(s=>s.EstadosEnvio).Include(s=>s.Ruta).Include(a=>a.User).ThenInclude(a => a.Persona).Where(x=>x.EstadosEnvioId==1).Where(x=>x.User.Id==id), pageNumber ?? 1, pageSize);
+            return PaginacionList<Envio>.CreateAsyncc(
+                FilterByAspNetUser(
+                    envio.Include(s=>s.EstadosEnvio).Include(s=>s.Ruta).Include(a=>a.User).ThenInclude(a => a.Persona)
+                        .Where(x => x.EstadosEnvioId == 1),
+                    id),
+                pageNumber ?? 1, pageSize);
         }
 
          public PaginacionList<Envio> PaginacionMisPedidosEntregados(string sortOrder, string searchString, int? pageNumber, int pageSize,string id)
@@ -269,7 +286,12 @@ namespace Database.Shared.Data
             }
             else
             {
-                return PaginacionList<Envio>.CreateAsyncc(envio.Include(s=>s.EstadosEnvio).Include(s=>s.Ruta).Include(a=>a.User).ThenInclude(a => a.Persona).Where(x=>x.EstadosEnvioId==1002).Where(x=>x.User.Id==id), pageNumber ?? 1, pageSize);
+                return PaginacionList<Envio>.CreateAsyncc(
+                    FilterByAspNetUser(
+                        envio.Include(s=>s.EstadosEnvio).Include(s=>s.Ruta).Include(a=>a.User).ThenInclude(a => a.Persona)
+                            .Where(x => x.EstadosEnvioId == 1002),
+                        id),
+                    pageNumber ?? 1, pageSize);
 
             }
 

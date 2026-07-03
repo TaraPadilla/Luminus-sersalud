@@ -32,8 +32,8 @@
                         <option value="0">— Todos —</option>
                         <option value="1">Farmacia</option>
                         <option value="2">Clínica</option>
-                        <option value="4">Hospital</option>
-                        <option value="5">Laboratorio</option>
+                        <option value="3">Hospital</option>
+                        <option value="4">Laboratorio</option>
                     </select>
                 </div>
 
@@ -41,24 +41,27 @@
                     <label for="inputEmpleado"><i class="fa fa-user"></i> Empleado (opcional)</label>
                     <select id="inputEmpleado" class="form-control">
                         <option value="0">— Todos —</option>
-                        @foreach (var emp in ViewBag.Empleados ?? new List<dynamic>())
+                        @if (ViewBag.Empleados is Microsoft.AspNetCore.Mvc.Rendering.SelectList listaEmpleados)
                         {
-                            <option value="@emp.Id">@emp.NombreYApellidos</option>
+                            foreach (var opcion in listaEmpleados)
+                            {
+                                <option value="@opcion.Value">@opcion.Text</option>
+                            }
                         }
                     </select>
                 </div>
 
             </div>
 
-            <div class="row mt-2">
+            <div class="row mt-2 align-items-center">
 
-                <div class="col-md-6 form-group">
-                    <label><i class="fa fa-list-alt"></i> Detalle de ítems en el PDF</label>
-                    <div class="d-flex flex-wrap align-items-center" style="gap:12px; margin-top:4px;">
+                <div class="col-md-8 form-group mb-0">
+                    <label class="mb-1"><i class="fa fa-list-alt"></i> Detalle de ítems en el PDF</label>
+                    <div class="d-flex flex-wrap align-items-center" style="gap:14px;">
 
                         <div class="form-check form-check-inline m-0">
                             <input class="form-check-input" type="radio" name="modoDetalle" id="modoMonto" value="monto"
-                                   checked />
+                                   checked onchange="sincronizarOpcionesReporte()" />
                             <label class="form-check-label" for="modoMonto">
                                 <i class="fa fa-dollar"></i> Solo montos por categoría
                             </label>
@@ -66,43 +69,43 @@
 
                         <div class="form-check form-check-inline m-0">
                             <input class="form-check-input" type="radio" name="modoDetalle" id="modoDescripcion"
-                                   value="descripcion" />
+                                   value="descripcion" onchange="sincronizarOpcionesReporte()" />
                             <label class="form-check-label" for="modoDescripcion">
-                                <i class="fa fa-align-left"></i> Con descripción de ítems
-                                <small class="text-muted">(servicios, exámenes, lab., paquetes, dietas)</small>
+                                <i class="fa fa-align-left"></i> Con descripción de ítems (servicios, exámenes, lab., paquetes, dietas)
                             </label>
                         </div>
 
                         <div class="form-check form-check-inline m-0">
-                            <input class="form-check-input" type="checkbox" name="incluirConsolidadoItems"
-                                   id="incluirConsolidadoItems" value="true" />
-                            <label class="form-check-label" for="incluirConsolidadoItems">
+                            <input class="form-check-input" type="checkbox" id="chkConsolidadoItems" checked />
+                            <label class="form-check-label" for="chkConsolidadoItems">
                                 Incluir consolidado detallado de categorías (servicios, exámenes, lab., paquetes, dietas)
                             </label>
                         </div>
 
                         <div class="form-check form-check-inline m-0">
-                            <input class="form-check-input" type="checkbox" name="incluirConsolidadoMedicos"
-                                   id="incluirConsolidadoMedicos" value="true" checked />
-                            <label class="form-check-label" for="incluirConsolidadoMedicos">
-                                Incluir consolidado por médico
+                            <input class="form-check-input" type="checkbox" id="chkConsolidadoMedicos" />
+                            <label class="form-check-label" for="chkConsolidadoMedicos">
+                                Incluir consolidado por médico y por especialidad
                             </label>
                         </div>
 
                     </div>
                 </div>
 
-                <div class="col-md-6 form-group d-flex align-items-end">
-                    <div>
-                        <button type="button" class="btn btn-danger mr-2" onclick="generarReportePDF()">
-                            <i class="fa fa-file-pdf-o"></i> Generar PDF
-                        </button>
-                        <button type="button" class="btn btn-secondary" onclick="limpiarFiltros()">
-                            <i class="fa fa-refresh"></i> Limpiar
-                        </button>
-                    </div>
+                <div class="col-md-4 form-group mb-0 text-md-right">
+                    <button type="button" id="btnGenerarPdf" class="btn btn-danger mr-2" onclick="generarReportePDF()">
+                        <i class="fa fa-file-pdf-o"></i> Generar PDF
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="limpiarFiltros()">
+                        <i class="fa fa-refresh"></i> Limpiar
+                    </button>
                 </div>
 
+            </div>
+
+            <div id="pdfLoadingAlert" class="alert alert-info mt-3 mb-0 d-none" role="status">
+                <i class="fa fa-spinner fa-spin mr-2"></i>
+                Generando PDF, por favor espere…
             </div>
 
         </div>
@@ -112,22 +115,53 @@
 
 
 <script>
+    function sincronizarOpcionesReporte() {
+        var modo = document.querySelector("input[name='modoDetalle']:checked").value;
+        var chkItems = document.getElementById("chkConsolidadoItems");
+        var chkMedicos = document.getElementById("chkConsolidadoMedicos");
+
+        chkItems.checked = true;
+        if (modo === "descripcion") {
+            chkMedicos.checked = true;
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", sincronizarOpcionesReporte);
+
+    function setPdfLoading(activo) {
+        var btn = document.getElementById("btnGenerarPdf");
+        var alerta = document.getElementById("pdfLoadingAlert");
+        btn.disabled = activo;
+        if (activo) {
+            alerta.classList.remove("d-none");
+        } else {
+            alerta.classList.add("d-none");
+        }
+    }
+
+    function formatPdfError(text) {
+        if (!text) return "No se pudo generar el PDF.";
+        var plain = text.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+        if (/Npgsql|SSL handshake|SocketException|transient failure/i.test(plain)) {
+            return "No se pudo conectar a la base de datos PostgreSQL. "
+                + "En desarrollo use la base local; en producción verifique red y conexión al servidor.";
+        }
+        if (/wkhtmltopdf/i.test(plain)) {
+            return "No se pudo generar el PDF: wkhtmltopdf no está disponible en el servidor.";
+        }
+        if (plain.length > 280) return plain.substring(0, 280) + "…";
+        return plain;
+    }
+
     function generarReportePDF() {
         var desde = document.getElementById("inputDesde").value;
         var hasta = document.getElementById("inputHasta").value;
         var ambienteId = document.getElementById("inputAmbiente").value;
         var empleadoId = document.getElementById("inputEmpleado").value;
         var modoDetalle = document.querySelector("input[name='modoDetalle']:checked").value;
+        var incluirConsolidadoItems = document.getElementById("chkConsolidadoItems").checked;
+        var incluirConsolidadoMedicos = document.getElementById("chkConsolidadoMedicos").checked;
 
-        // Obtener el checkbox de consolidado de ítems
-        var chkConsolidado = document.querySelector("input[name='incluirConsolidadoItems']");
-        var incluirConsolidado = chkConsolidado ? chkConsolidado.checked : false;
-
-        // Obtener el checkbox de consolidado por médico
-        var chkMedicos = document.querySelector("input[name='incluirConsolidadoMedicos']");
-        var incluirMedicos = chkMedicos ? chkMedicos.checked : true;
-
-        // Validaciones básicas
         if (!desde || !hasta) {
             alert("Por favor selecciona el rango de fechas.");
             return;
@@ -137,25 +171,48 @@
             return;
         }
 
-        // Construir URL base
         var url = "/CrearPDF/ReporteVentasGeneralPDF"
             + "?desde=" + encodeURIComponent(desde)
             + "&hasta=" + encodeURIComponent(hasta)
             + "&ambienteId=" + ambienteId
             + "&empleadoId=" + empleadoId
-            + "&modoDetalle=" + modoDetalle;
+            + "&modoDetalle=" + encodeURIComponent(modoDetalle)
+            + "&incluirConsolidadoItems=" + incluirConsolidadoItems
+            + "&incluirConsolidadoMedicos=" + incluirConsolidadoMedicos;
 
-        // Agregar el parámetro de consolidado si está marcado
-        if (incluirConsolidado) {
-            url += "&incluirConsolidadoItems=true";
-        }
+        setPdfLoading(true);
 
-        // Agregar el parámetro de médicos si está marcado
-        if (incluirMedicos) {
-            url += "&incluirConsolidadoMedicos=true";
-        }
-
-        window.open(url, "_blank");
+        fetch(url, { credentials: "same-origin" })
+            .then(function (response) {
+                var contentType = (response.headers.get("content-type") || "").toLowerCase();
+                if (!response.ok) {
+                    return response.text().then(function (text) {
+                        throw new Error(text || ("Error " + response.status + " al generar el PDF."));
+                    });
+                }
+                if (contentType.indexOf("application/pdf") === -1) {
+                    return response.text().then(function (text) {
+                        throw new Error(text || "El servidor no devolvió un PDF válido.");
+                    });
+                }
+                return response.blob();
+            })
+            .then(function (blob) {
+                var blobUrl = window.URL.createObjectURL(blob);
+                var enlace = document.createElement("a");
+                enlace.href = blobUrl;
+                enlace.download = "ReporteVentasGeneral_" + desde + "_" + hasta + ".pdf";
+                document.body.appendChild(enlace);
+                enlace.click();
+                document.body.removeChild(enlace);
+                window.setTimeout(function () { window.URL.revokeObjectURL(blobUrl); }, 60000);
+            })
+            .catch(function (err) {
+                alert(formatPdfError(err.message));
+            })
+            .finally(function () {
+                setPdfLoading(false);
+            });
     }
 
     function limpiarFiltros() {
@@ -165,13 +222,7 @@
         document.getElementById("inputAmbiente").value = "0";
         document.getElementById("inputEmpleado").value = "0";
         document.querySelector("input[name='modoDetalle'][value='monto']").checked = true;
-
-        // También limpiar el checkbox de consolidado (opcional)
-        var chkConsolidado = document.querySelector("input[name='incluirConsolidadoItems']");
-        if (chkConsolidado) chkConsolidado.checked = false;
-
-        // Restablecer checkbox de médicos (marcado por defecto)
-        var chkMedicos = document.querySelector("input[name='incluirConsolidadoMedicos']");
-        if (chkMedicos) chkMedicos.checked = true;
+        document.getElementById("chkConsolidadoItems").checked = true;
+        sincronizarOpcionesReporte();
     }
 </script>

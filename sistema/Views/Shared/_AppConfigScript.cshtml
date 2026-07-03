@@ -1,0 +1,10 @@
+@inject Microsoft.Extensions.Configuration.IConfiguration Config
+@using System.Text.Json
+@using farmamest.Utilidades
+<script>
+  window.__appConfig = {
+    cliente: @Html.Raw(JsonSerializer.Serialize(SerSaludUiHelper.NormalizarCliente(Config["Cliente"] ?? ""))),
+    nombreEstablecimiento: @Html.Raw(JsonSerializer.Serialize(Config["EstablecimientoNombreEmpresa"] ?? "")),
+    pestana: @Html.Raw(JsonSerializer.Serialize(Config["EstablecimientoPestana"] ?? ""))
+  };
+</script>

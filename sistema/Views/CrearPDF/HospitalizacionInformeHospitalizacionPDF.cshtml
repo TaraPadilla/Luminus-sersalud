@@ -1,8 +1,14 @@
 @using Newtonsoft.Json
 @using Database.Shared.Models
+@using sistema.Models
+@using System.Linq
 @model Hospitalizacion
 
 @{
+    var archivosPaciente = (ViewBag.ArchivosPaciente as IEnumerable<PacienteArchivoVM>)
+        ?? Enumerable.Empty<PacienteArchivoVM>();
+    var informe = ViewBag.InformeSecciones as sistema.Models.HospitalizacionInformePdfSectionsVm
+        ?? new sistema.Models.HospitalizacionInformePdfSectionsVm();
     Layout = "_HojaMembreteLayout";
     ViewData["Title"] = "Hospitalización - Informe de hospitalización";
 
@@ -472,17 +478,41 @@
                             <th>Profesional</th>
                             <th>Valores</th>
                             <th>Observaciones</th>
+                            <th>Estado</th>
+                            <th>Autorizado por</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <!--ko foreach: examenesFisicosHospitalizacion-->
-                        <tr>
-                            <td data-bind="text:FechaHora"></td>
-                            <td data-bind="text:Persona"></td>
-                            <td data-bind="html:Datos"></td>
-                            <td data-bind="text:Observaciones"></td>
-                        </tr>
-                        <!--/ko-->
+                        @if (informe.SignosVitales.Any())
+                        {
+                            foreach (var signo in informe.SignosVitales)
+                            {
+                                var valores = signo.Valores != null && signo.Valores.Any()
+                                    ? string.Join(", ", signo.Valores.Select(v => $"{v.Key}: {v.Value}"))
+                                    : "-";
+                                <tr>
+                                    <td>@signo.FechaHora.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>@signo.Profesional</td>
+                                    <td>@valores</td>
+                                    <td>@signo.Observaciones</td>
+                                    <td>@(signo.Autorizado ? "Autorizado" : "Pendiente")</td>
+                                    <td>@(signo.AutorizadoPor ?? "-")</td>
+                                </tr>
+                                @if (!string.IsNullOrEmpty(signo.FirmaBase64))
+                                {
+                                    <tr>
+                                        <td colspan="6" style="text-align:center; padding:6px;">
+                                            <small>Firma — @(signo.AutorizadoPor ?? signo.Profesional)</small><br />
+                                            <img src="@signo.FirmaBase64" style="max-height:50px;" alt="Firma" />
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="6"><i>No hay signos vitales registrados</i></td></tr>
+                        }
                     </tbody>
                 </table>
             </td>
@@ -514,22 +544,37 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!--ko foreach: controlesGlucometria-->
-                        <tr>
-                            <td data-bind="text:FechaHora"></td>
-                            <td data-bind="text:GMT"></td>
-                            <td data-bind="text:InsulinaNombre"></td>
-                            <td data-bind="text:Unidades"></td>
-                            <td data-bind="text:Firma"></td>
-                            <td>
-                                <label data-bind="if:Aplicado">SI</label>
-                                <label data-bind="ifnot:Aplicado">NO</label>
-                            </td>
-                            <td data-bind="text:FechaHoraAplicacion"></td>
-                            <td data-bind="text:NombrePersonaAplica"></td>
-                            <td data-bind="text:NombreProfesional"></td>
-                        </tr>
-                        <!--/ko-->
+                        @if (informe.Glucometria.Any())
+                        {
+                            foreach (var ctrl in informe.Glucometria)
+                            {
+                                <tr>
+                                    <td>@ctrl.FechaHora</td>
+                                    <td>@ctrl.GMT</td>
+                                    <td>@ctrl.InsulinaNombre</td>
+                                    <td>@ctrl.Unidades</td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(ctrl.FirmaBase64))
+                                        {
+                                            <div>@ctrl.FirmaTexto</div>
+                                            <img src="@ctrl.FirmaBase64" style="max-height:50px;" alt="Firma" />
+                                        }
+                                        else
+                                        {
+                                            @ctrl.FirmaTexto
+                                        }
+                                    </td>
+                                    <td>@(ctrl.Aplicado ? "SI" : "NO")</td>
+                                    <td>@ctrl.FechaHoraAplicacion</td>
+                                    <td>@ctrl.NombrePersonaAplica</td>
+                                    <td>@ctrl.NombreProfesional</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="9"><i>No hay controles de glucometría registrados</i></td></tr>
+                        }
                     </tbody>
                 </table>
             </td>
@@ -560,18 +605,26 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- ko foreach: IngestasExcretas -->
-                        <tr>
-                            <td data-bind="text: FechaRegistro"></td>
-                            <td data-bind="text: IngestaIV"></td>
-                            <td data-bind="text: IngestaPO"></td>
-                            <td data-bind="text: TotalIngesta"></td>
-                            <td data-bind="text: Excreta"></td>
-                            <td data-bind="text: Heces"></td>
-                            <td data-bind="text: CuantasHoras"></td>
-                            <td data-bind="text: Enfermeria"></td>
-                        </tr>
-                        <!-- /ko -->
+                        @if (informe.IngestasExcretas.Any())
+                        {
+                            foreach (var item in informe.IngestasExcretas)
+                            {
+                                <tr>
+                                    <td>@item.FechaRegistro</td>
+                                    <td>@item.IngestaIV</td>
+                                    <td>@item.IngestaPO</td>
+                                    <td>@item.TotalIngesta</td>
+                                    <td>@item.Excreta</td>
+                                    <td>@item.Heces</td>
+                                    <td>@item.CuantasHoras</td>
+                                    <td>@item.Enfermeria</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="8"><i>No hay registros de ingesta/excreta</i></td></tr>
+                        }
                     </tbody>
                 </table>
             </td>
@@ -597,13 +650,30 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!--ko foreach: notasEvolucion-->
-                        <tr>
-                            <td data-bind="text:FechaRegistro"></td>
-                            <td data-bind="text:Profesional"></td>
-                            <td data-bind="text:Diagnostico"></td>
-                        </tr>
-                        <!--/ko-->
+                        @if (informe.NotasEvolucion.Any())
+                        {
+                            foreach (var nota in informe.NotasEvolucion)
+                            {
+                                <tr>
+                                    <td>@nota.FechaRegistro</td>
+                                    <td>@nota.Profesional</td>
+                                    <td>
+                                        @nota.Descripcion
+                                        @if (!string.IsNullOrEmpty(nota.FirmaBase64))
+                                        {
+                                            <div style="margin-top:6px;">
+                                                <small>Firmado por: @(nota.FirmadoPor ?? nota.Profesional)</small><br />
+                                                <img src="@nota.FirmaBase64" style="max-height:50px;" alt="Firma" />
+                                            </div>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="3"><i>No hay notas de evolución registradas</i></td></tr>
+                        }
                     </tbody>
                 </table>
             </td>
@@ -636,41 +706,28 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- ko foreach: productosAplicacionHospitalizacion -->
-                        <tr>
-                            <td>Medicamento</td>
-                            <td data-bind="text: Nombre"></td>
-                            <td data-bind="text: Indicaciones"></td>
-                            <td data-bind="text: Cantidad"></td>
-                            <td data-bind="text: UnidadMedidaVentaNombre"></td>
-                            <td data-bind="text: OrdenMedicaNumero"></td>
-                            <td data-bind="text: PersonaCrea"></td>
-                            <td>
-                                <label data-bind="if: Aplicado">SI</label>
-                                <label data-bind="ifnot: Aplicado">NO</label>
-                            </td>
-                            <td data-bind="text: FechaHoraAplicacion"></td>
-                            <td data-bind="text: PersonaAplica"></td>
-                        </tr>
-                        <!-- /ko -->
-
-                        <!-- ko foreach: serviciosHospitalizacion -->
-                        <tr>
-                            <td>Servicio</td>
-                            <td data-bind="text: Nombre"></td>
-                            <td></td>
-                            <td data-bind="text: Cantidad"></td>
-                            <td></td>
-                            <td>-</td>
-                            <td data-bind="text: PersonaCrea"></td>
-                            <td>
-                                <label data-bind="if: Aplicado">SI</label>
-                                <label data-bind="ifnot: Aplicado">NO</label>
-                            </td>
-                            <td data-bind="text: FechaHoraAplicacion"></td>
-                            <td data-bind="text: PersonaAplica"></td>
-                        </tr>
-                        <!-- /ko -->
+                        @if (informe.Aplicaciones.Any())
+                        {
+                            foreach (var item in informe.Aplicaciones)
+                            {
+                                <tr>
+                                    <td>@item.TipoElemento</td>
+                                    <td>@item.Nombre</td>
+                                    <td>@item.Indicaciones</td>
+                                    <td>@item.Cantidad</td>
+                                    <td>@item.UnidadMedidaVentaNombre</td>
+                                    <td>@item.OrdenMedicaNumero</td>
+                                    <td>@item.PersonaCrea</td>
+                                    <td>@(item.Aplicado ? "SI" : "NO")</td>
+                                    <td>@item.FechaHoraAplicacion</td>
+                                    <td>@item.PersonaAplica</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="10"><i>No hay medicamentos o servicios aplicados</i></td></tr>
+                        }
                     </tbody>
                 </table>
             </td>
@@ -696,13 +753,33 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- ko foreach: notasEnfermerias -->
-                        <tr>
-                            <td data-bind="text: FechaRegistro"></td>
-                            <td data-bind="text: Profesional"></td>
-                            <td data-bind="text: Diagnostico"></td>
-                        </tr>
-                        <!-- /ko -->
+                        @if (informe.NotasEnfermeria.Any())
+                        {
+                            foreach (var nota in informe.NotasEnfermeria)
+                            {
+                                <tr>
+                                    <td>@nota.FechaRegistro</td>
+                                    <td>@nota.Profesional</td>
+                                    <td>
+                                        @nota.Descripcion
+                                        @if (nota.Firmado)
+                                        {
+                                            <div style="margin-top:6px;">
+                                                <small>Firmado por: @(nota.FirmadoPor ?? nota.Profesional)</small>
+                                                @if (!string.IsNullOrEmpty(nota.FirmaBase64))
+                                                {
+                                                    <br /><img src="@nota.FirmaBase64" style="max-height:50px;" alt="Firma" />
+                                                }
+                                            </div>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="3"><i>No hay notas de enfermería registradas</i></td></tr>
+                        }
                     </tbody>
                 </table>
             </td>
@@ -727,18 +804,20 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- ko foreach: examenesHospitalizacion -->
-                        <tr>
-                            <td data-bind="text: FechaHora"></td>
-                            <td data-bind="text: Nombre"></td>
-                        </tr>
-                        <!-- /ko -->
-
-                        <!-- ko if: examenesHospitalizacion().length == 0 -->
-                        <tr>
-                            <td colspan="2"><i>No hay examenes agregados</i></td>
-                        </tr>
-                        <!-- /ko -->
+                        @if (informe.Examenes.Any())
+                        {
+                            foreach (var examen in informe.Examenes)
+                            {
+                                <tr>
+                                    <td>@examen.FechaHora</td>
+                                    <td>@examen.Nombre</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="2"><i>No hay examenes agregados</i></td></tr>
+                        }
                     </tbody>
                 </table>
             </td>
@@ -936,9 +1015,9 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @if (ViewBag.ArchivosPaciente != null)
+                        @if (archivosPaciente.Any())
                         {
-                            foreach (var archivo in ViewBag.ArchivosPaciente)
+                            foreach (var archivo in archivosPaciente)
                             {
                                 <tr class="kv-row">
                                     <td>@archivo.ArchivoFecha</td>

@@ -9,7 +9,9 @@ using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using System.Net;
 using Database.Shared;
@@ -34,20 +36,25 @@ using farmamest.Service;
 using sistema.Service.IService;
 using sistema.UtilidadesEmailWp.Services;
 using sistema.UtilidadesEmailWp.Services.IService;
+using farmamest.Utilidades;
 using farmamest.UtilidadesEmailWp;
 using Microsoft.Extensions.Options;
 using Sistema.Services.WebAuthn;
 using Database.Shared.Repository;
 using Hangfire;
 using Hangfire.PostgreSql;
+using Npgsql;
 
 namespace farmamest
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        private readonly IWebHostEnvironment _env;
+
+        public Startup(IConfiguration configuration, IWebHostEnvironment env)
         {
             Configuration = configuration;
+            _env = env;
         }
 
         public IConfiguration Configuration { get; }
@@ -59,24 +66,47 @@ namespace farmamest
 
             services.Configure<FelSettings>(Configuration.GetSection("Fel"));
 
-            services.AddHttpClient("Fel", (sp, client) =>
+            var felBaseUrl = Configuration["Fel:BaseUrl"];
+            if (!string.IsNullOrWhiteSpace(felBaseUrl))
             {
-                var fel = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<FelSettings>>().Value;
-
-                if (string.IsNullOrWhiteSpace(fel.BaseUrl))
-                    throw new InvalidOperationException("Falta configurar Fel:BaseUrl");
-
-                client.BaseAddress = new Uri(fel.BaseUrl);
-                client.Timeout = TimeSpan.FromSeconds(fel.TimeoutSeconds <= 0 ? 30 : fel.TimeoutSeconds);
-            });
+                services.AddHttpClient("Fel", (sp, client) =>
+                {
+                    var fel = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<FelSettings>>().Value;
+                    client.BaseAddress = new Uri(fel.BaseUrl);
+                    client.Timeout = TimeSpan.FromSeconds(fel.TimeoutSeconds <= 0 ? 30 : fel.TimeoutSeconds);
+                });
+            }
 
             services.AddFido2(options =>
           {
               var fido2Section = Configuration.GetSection("Fido2");
-              options.ServerDomain = fido2Section["ServerDomain"];
-              options.ServerName = fido2Section["ServerName"];
-              options.Origins = new HashSet<string>(fido2Section.GetSection("Origins").Get<string[]>());
-              options.TimestampDriftTolerance = fido2Section.GetValue<int>("TimestampDriftTolerance");
+              var isPublishedProduction = _env.IsProduction()
+                  && !File.Exists(Path.Combine(_env.ContentRootPath, "farmamest.csproj"));
+
+              if (!isPublishedProduction)
+              {
+                  options.ServerDomain = "localhost";
+                  options.ServerName = fido2Section["ServerName"] ?? "farmamest";
+                  options.Origins = new HashSet<string>(new[]
+                  {
+                      "http://localhost:5000",
+                      "http://127.0.0.1:5000",
+                      "http://localhost:5001",
+                      "http://127.0.0.1:5001",
+                      "https://localhost:5000",
+                      "https://localhost:5001"
+                  });
+              }
+              else
+              {
+                  options.ServerDomain = fido2Section["ServerDomain"] ?? "localhost";
+                  options.ServerName = fido2Section["ServerName"] ?? "farmamest";
+                  var origins = fido2Section.GetSection("Origins").Get<string[]>()
+                                ?? new[] { "https://sersaludgt.com/" };
+                  options.Origins = new HashSet<string>(origins);
+              }
+
+              options.TimestampDriftTolerance = fido2Section.GetValue<int?>("TimestampDriftTolerance") ?? 300000;
           });
 
 
@@ -120,25 +150,32 @@ namespace farmamest
             .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<Context>();
 
+            var sessionIdleMinutes = Configuration.GetValue("SessionIdleMinutes", 2880);
             services.AddSession(options =>
             {
-                options.IdleTimeout = TimeSpan.FromMinutes(2880);
+                options.IdleTimeout = TimeSpan.FromMinutes(sessionIdleMinutes > 0 ? sessionIdleMinutes : 2880);
             });
 
             services.AddControllersWithViews();
 
             services.AddControllers().AddJsonOptions(options =>
             {
-                options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
+                options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
                 options.JsonSerializerOptions.MaxDepth = 64;
-                options.JsonSerializerOptions.PropertyNameCaseInsensitive = true; // ← agrega esto
-
-
+                options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+                options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
             });
             AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
             //services.AddDbContext<ApplicationDbContext>(options => options.UseSqlite(Configuration.GetConnectionString("DefaultConnection")));
             //services.AddDbContext<Context>(options => options.UseSqlServer(Configuration.GetConnectionString("farmaowl")));
-            services.AddDbContext<Context>(options => options.UseNpgsql(Configuration.GetConnectionString("farmaowl")));
+            services.AddDbContext<Context>(options =>
+                options.UseNpgsql(
+                    ConnectionStringResolver.Resolve(Configuration),
+                    npgsql =>
+                    {
+                        npgsql.EnableRetryOnFailure(5, TimeSpan.FromSeconds(8), null);
+                        npgsql.CommandTimeout(120);
+                    }));
             services.AddScoped<Database.Shared.IRepository.IConfiguracionSistema, Database.Shared.Data.ConfiguracionSistemaRepository>();
             services.AddScoped<Database.Shared.IRepository.IDespegablesProducto, Database.Shared.Data.CategoriaRepository>();
             services.AddScoped<Database.Shared.IRepository.IBodega, Database.Shared.Data.BodegaRepository>();
@@ -213,6 +250,9 @@ namespace farmamest
             services.AddScoped<IListaChequeo, ListaChequeoRepository>();
             services.AddScoped<IListaChequeoService, ListaChequeoService>();
 
+            services.AddScoped<IRegistroAnestesia, RegistroAnestesiaRepository>();
+            services.AddScoped<IRegistroAnestesiaService, RegistroAnestesiaService>();
+
             services.AddScoped<ICuestionarioPreAnestesico, CuestionarioPreAnestesicoRepository>();
             services.AddScoped<ICuestionarioPreAnestesicoService, CuestionarioPreAnestesicoService>();
 
@@ -261,9 +301,17 @@ namespace farmamest
 
             #region Configuracion WhatsApp e Email
             services.Configure<WhatsAppSettings>(Configuration.GetSection("WhatsAppSettings"));
-            services.Configure<EmailSettings>(Configuration.GetSection("EmailSettings"));
+            services.Configure<EmailSettings>(options =>
+            {
+                Configuration.GetSection("EmailSettings").Bind(options);
+                if (string.IsNullOrWhiteSpace(options.Host))
+                    options.Host = "smtp.gmail.com";
+                if (options.Port <= 0)
+                    options.Port = 587;
+            });
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IWhatsAppService, WhatsAppService>();
+            services.AddScoped<Microsoft.AspNetCore.Identity.UI.Services.IEmailSender, IdentityEmailSender>();
             #endregion
 
             services.AddScoped<IHomeService, HomeService>();
@@ -328,7 +376,7 @@ namespace farmamest
                 // options.Cookie.Name = Configuration["CookieName"];
                 options.Cookie.Name = "YourAppCookieName";
                 options.Cookie.HttpOnly = true;
-                options.ExpireTimeSpan = TimeSpan.FromMinutes(100000);
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(sessionIdleMinutes > 0 ? sessionIdleMinutes : 2880);
 
                 options.LoginPath = "/Identity/Account/Login";
                 options.AccessDeniedPath = "/Identity/Account/AccessDenied";
@@ -370,21 +418,55 @@ namespace farmamest
             options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
             );
 
-            var connectionString = Configuration.GetConnectionString("farmaowl");
+            var connectionString = ConnectionStringResolver.Resolve(Configuration);
             if (string.IsNullOrEmpty(connectionString))
-                throw new InvalidOperationException("Connection string 'farmaowl' not found.");
+                throw new InvalidOperationException(
+                    "No se encontró cadena de conexión PostgreSQL. " +
+                    "Agregue ConnectionStrings:farmaowl (o DefaultConnection) en appsettings.json del servidor.");
 
-            services.AddHangfire(config => config.UsePostgreSqlStorage(connectionString));
-            services.AddHangfireServer();
+            var hangfireOptions = new PostgreSqlStorageOptions
+            {
+                QueuePollInterval = TimeSpan.FromSeconds(15),
+                InvisibilityTimeout = TimeSpan.FromMinutes(30),
+                DistributedLockTimeout = TimeSpan.FromMinutes(1),
+                PrepareSchemaIfNecessary = true
+            };
+
+            // Disable Hangfire in development to avoid background job server trying to reach Postgres
+            if (!_env.IsDevelopment())
+            {
+                try
+                {
+                    using (var testConn = new NpgsqlConnection(connectionString))
+                    {
+                        testConn.Open();
+                        testConn.Close();
+                    }
+
+                    services.AddHangfire(config => config.UsePostgreSqlStorage(connectionString, hangfireOptions));
+                    services.AddHangfireServer();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Hangfire initialization skipped: cannot connect to Postgres. " + ex.Message);
+                }
+            }
 
 
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, Context context)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, Context context, IConfiguration configuration, ILogger<Startup> logger)
         {
-            //context.Database.Migrate();
+            var cliente = configuration["Cliente"] ?? "(sin Cliente)";
+            logger.LogInformation(
+                "Inicio: Environment={Environment}, Cliente={Cliente}. Configuracion desde appsettings del servidor (sin archivos extra).",
+                env.EnvironmentName,
+                cliente);
 
+            farmamest.Utilidades.PdfEnvironmentHelper.EnsureWindowsRotativaBinary(
+                env.ContentRootPath, env.WebRootPath, logger);
+            farmamest.Utilidades.PdfEnvironmentHelper.VerificarWkhtmltopdf(logger, env.ContentRootPath, env.WebRootPath);
 
             if (env.IsDevelopment())
             {
@@ -393,7 +475,7 @@ namespace farmamest
             }
             else
             {
-                app.UseExceptionHandler("/Error");
+                app.UseExceptionHandler("/Home/Error");
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
@@ -413,7 +495,21 @@ namespace farmamest
                 ForwardLimit = null
             });
 
-            app.UseHttpsRedirection();
+            app.Use(async (context, next) =>
+            {
+                context.Request.EnableBuffering();
+                await next();
+            });
+
+            var httpsPort = configuration["ASPNETCORE_HTTPS_PORT"];
+            var urls = configuration["ASPNETCORE_URLS"] ?? Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
+            var servesHttps = !string.IsNullOrWhiteSpace(httpsPort)
+                || (!string.IsNullOrWhiteSpace(urls) && urls.Contains("https://", StringComparison.OrdinalIgnoreCase));
+            if (servesHttps)
+            {
+                app.UseHttpsRedirection();
+            }
+
             app.UseStaticFiles();
 
             //cookie policy
@@ -423,6 +519,9 @@ namespace farmamest
             app.UseRouting();
             app.UseSession();
 
+            // Before auth: cookie validation hits PostgreSQL (SignInManager security stamp).
+            app.UseMiddleware<DatabaseExceptionMiddleware>();
+
             app.UseAuthentication();
             app.UseAuthorization();
 
@@ -431,14 +530,19 @@ namespace farmamest
 
             app.UseEndpoints(endpoints =>
             {
+                endpoints.MapControllers();
                 endpoints.MapControllerRoute(
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}");
                 endpoints.MapRazorPages();
             });
 
-            //Rotativa.AspNetCore.RotativaConfiguration.Setup(env.WebRootPath, "Rotativa/Linux");
-            Rotativa.AspNetCore.RotativaConfiguration.Setup(env.WebRootPath, "Rotativa/Windows");
+            var rotativaFolder = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(
+                System.Runtime.InteropServices.OSPlatform.Windows)
+                ? "Rotativa/Windows"
+                : "Rotativa/Linux";
+            farmamest.Utilidades.PdfEnvironmentHelper.EnsureLinuxRotativaBinary(env.WebRootPath, logger);
+            Rotativa.AspNetCore.RotativaConfiguration.Setup(env.WebRootPath, rotativaFolder);
 
         }
     }

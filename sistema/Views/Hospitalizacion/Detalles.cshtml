@@ -3,16 +3,13 @@
 @{
     // Leer el valor del appsettings.json. 
     // Cambia "Cliente" por la clave exacta que decidas usar para identificar la abreviatura.
-    string sufijoLayout = Configuration["Cliente"]; 
-    
-    // Concatenar para formar el nombre del Layout (ejemplo: "_Layout" + "SS")
-    // Si la clave trae el nombre completo (ej. "_LayoutSS"), simplemente asignalo directo.
-    Layout = $"_Layout{sufijoLayout}";
+    Layout = farmamest.Utilidades.SerSaludUiHelper.ResolverLayout(Configuration);
     ViewData["Title"] = "Hospitalizacion - Detalles";
     var logoBase64 = Configuration["ImagenLogoBase64"];
-    string cliente = Configuration["Cliente"]; 
-
+    string cliente = farmamest.Utilidades.SerSaludUiHelper.NormalizarCliente(Configuration["Cliente"]);
 }
+<script src="~/js/hosp-jquery-defer.js"></script>
+<script src="~/js/hospitalizacion-ajax.js"></script>
 @await Html.PartialAsync("_MensajeExito")
 
 @Html.HiddenFor(m => m.HospitalizacionId)
@@ -31,6 +28,7 @@
 <input type="hidden" id="ResponsableCorreo" value="@(Model.Consulta?.Citas?.ResponsableCorreo ?? "")" />
 <input type="hidden" id="SeguroNombre" value="@(Model.CodigoSeguro ?? "")" />
 <input type="hidden" id="PacienteNombreAdmision" value="@(Model.PacienteNombre ?? "")" />
+<input type="hidden" id="PacienteDpi" value="@(Model.PacienteDpi ?? "")" />
 <input type="hidden" id="MedicoAsignadoNombre" value="@(Model.MedicoAsignado ?? "")" />
 <input type="hidden" id="PrimerMedicoSecundarioNombre" value="@(Model.MedicosSecundarios != null && Model.MedicosSecundarios.Any() ? Model.MedicosSecundarios.First().NombreCompleto : "")" />
 <input type="hidden" id="CitaPrimerAyudante"  value="@(Model.CitaPrimerAyudante  ?? "")" />
@@ -45,8 +43,11 @@
 <input type="hidden" id="PacienteEdad" value="@(Model.EdadPaciente)" />
 <input type="hidden" id="PacientePeso" value="@(Model.PacientePeso ?? "")" />
 <input type="hidden" id="PacienteTalla" value="@(Model.PacienteTalla ?? "")" />
+<input type="hidden" id="PacienteTipoSangre" value="@(Model.PacienteTipoSangre ?? "")" />
 <input type="hidden" id="CitaCirujanoId" value="@(Model.Consulta?.Citas?.EmpleadoId?.ToString() ?? "")" />
 <input type="hidden" id="Cliente" value="@cliente" />
+<input type="hidden" id="ConsultaIdHistoriaClinica" value="@(Model.Consulta?.Id ?? 0)" />
+<input type="hidden" id="CitaIdPDF" value="@Model.CitaIdPDF" />
 
 @{
     var usuarioAdmisiones = User.IsInRole("Admisiones");
@@ -55,6 +56,9 @@
     var usuarioRecepcionDiurno = User.IsInRole("Recepcion Diurno");
     var idHospi = @Model.HospitalizacionId.ToString();
 }
+<input type="hidden" id="NotaMedicaPuedeEditar" value="@((!usuarioAdmisiones && !Model.HospitalizacionFinalizada && !User.IsInRole("Enfermeria") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio")) ? "1" : "0")" />
+<input type="hidden" id="ChequeoPuedeEditar" value="@(!User.IsInRole("Medico Externo") ? "1" : "0")" />
+<input type="hidden" id="KitPuedeReutilizar" value="@(!User.IsInRole("Medico Externo") ? "1" : "0")" />
 <script src="~/js/voicetotext/voicetotext.js"></script>
 
  <link href="~/css/quill.snow.css" rel="stylesheet" />
@@ -515,15 +519,27 @@
 ===================================================== */
 
 .modal {
-
     z-index: 1060 !important;
-
 }
 
 .modal-backdrop {
-
     z-index: 1050 !important;
+}
 
+.ui-widget-overlay {
+    z-index: 1050 !important;
+}
+
+.ui-dialog {
+    z-index: 1060 !important;
+}
+
+.select2-container--open {
+    z-index: 1070 !important;
+}
+
+#div-loading {
+    z-index: 1030 !important;
 }
 
 /* Elimina el box-shadow del tema que genera el rectángulo
@@ -697,6 +713,13 @@
     }
 }
 
+.tab-content > .tab-pane:not(.active) {
+    display: none !important;
+}
+.tab-content > .tab-pane.active {
+    display: block !important;
+}
+
 @@media (max-width: 768px) {
     #editor {
         height: 200px !important;
@@ -719,15 +742,16 @@
     }
 }
 </style>
-<input type="hidden" id="HospitalizacionId" value="@Model.HospitalizacionId" />
+@* HospitalizacionId ya está en @Html.HiddenFor(m => m.HospitalizacionId) al inicio de la vista *@
 
 
 
+<div id="hospitalizacion-ko-root">
 <div id="mensajeAccion" class="alert d-none" role="alert"></div>
 @await Html.PartialAsync("_CabeceraHospitalizacion", Model)
 
 @* #Region Pestañas Hospitalización *@
-@await Html.PartialAsync("_Tabs")
+@await Html.PartialAsync("_Tabs", Model)
 
 
 @* #EndRegion Pestañas Hospitalización *@
@@ -757,13 +781,13 @@
 
             @* #Region TAB ORDEN MEDICA *@
             <div class="tab-pane tabs-animation fade" id="tab-content-orden-medica" role="tabpanel">
-                @await Html.PartialAsync("Tabs/_OrdenMedica")
+                @await Html.PartialAsync("Tabs/_OrdenMedica", Model)
             </div>
             @* #EndRegion TAB ORDEN MEDICA *@
 
             @* #Region TAB DEVOLUCION DE MEDICAMENTOS *@
             <div class="tab-pane tabs-animation fade" id="tab-content-devolucion-medicamentos" role="tabpanel">
-                @await Html.PartialAsync("Tabs/_DevolucionMedicamentos")
+                @await Html.PartialAsync("Tabs/_DevolucionMedicamentos", Model)
             </div>
             @* #EndRegion TAB DEVOLUCION DE MEDICAMENTOS *@
 
@@ -782,7 +806,7 @@
             @* #EndRegion TAB NOTA ENFERMERIA *@
 
             @* #Region TAB ACTUALIZAR ESTADIA *@
-            <div class="tab-pane tabs-animation fade show " id="tab-content-2" role="tabpanel">
+            <div class="tab-pane tabs-animation fade " id="tab-content-2" role="tabpanel">
                 <div class="main-card mb-3 card">
                     <div class="card-body">
                         <label>Periodo de hospitalización:</label>
@@ -865,10 +889,18 @@
             @* #EndRegion TAB CARGA DE DOCUMENNTOS *@
 
             <div class="tab-pane tabs-animation fade" id="tab-content-historia-clinica" role="tabpanel">
-                <div id="contenedor-editar-consulta-historia-clinica"></div>
-                @* <div data-bind="foreach: historialConsultasPaciente">
-                    <p>Consulta ID: <span data-bind="text: ConsultaId"></span></p>
-                </div> *@
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <div class="col-md-12 text-primary" style="display:none" id="texto-cargando-historia-clinica">
+                            Cargando historia cl&iacute;nica...
+                        </div>
+                        <div class="col-md-12 text-danger" style="display:none" id="texto-error-historia-clinica">
+                            No se pudo cargar la historia cl&iacute;nica.
+                            <a href="#" id="reintentar-historia-clinica">Reintentar</a>
+                        </div>
+                        <div id="contenedor-editar-consulta-historia-clinica"></div>
+                    </div>
+                </div>
             </div>
 
 
@@ -902,7 +934,7 @@
 
          
 
-            <div class="tab-pane tabs-animation fade show " id="tab-content-3" role="tabpanel">
+            <div class="tab-pane tabs-animation fade " id="tab-content-3" role="tabpanel">
                 <div class="form-row">
                     <div class="col-md-12">
                         <div class="main-card mb-3 card" style="border-radius: 10px">
@@ -920,7 +952,7 @@
                 </div>
             </div>
 
-            <div class="tab-pane tabs-animation fade show " id="tab-content-enfermeria" role="tabpanel">
+            <div class="tab-pane tabs-animation fade " id="tab-content-enfermeria" role="tabpanel">
                 <div class="form-row">
                     <div class="col-md-12">
                         <div class="main-card mb-3 card" style="border-radius: 10px">
@@ -928,6 +960,17 @@
                                 <div class="form-row">
                                     <div class="col-md-12">
                                         <h6><b>Aplicaci&oacute;n de medicamentos y servicios</b></h6>
+                                        <div class="d-flex flex-wrap mb-2" style="gap:8px;">
+                                            <button type="button" class="btn btn-warning btn-sm" onclick="abrirModalControlAplicaciones(1)">
+                                                <i class="fa fa-syringe"></i> Control de Medicamentos
+                                            </button>
+                                            <button type="button" class="btn btn-warning btn-sm" onclick="abrirModalControlInsumosDirectos()">
+                                                <i class="fa fa-syringe"></i> Control de Insumos
+                                            </button>
+                                            <button type="button" class="btn btn-warning btn-sm" onclick="abrirModalControlServicios()">
+                                                <i class="fa fa-syringe"></i> Control de Servicios
+                                            </button>
+                                        </div>
                                         <hr />
                                     </div>
                                     <div class="col-md-12">
@@ -1032,7 +1075,7 @@
                 </div>
             </div>
 
-            <div class="tab-pane tabs-animation fade show " id="tab-content-receta" role="tabpanel">
+            <div class="tab-pane tabs-animation fade " id="tab-content-receta" role="tabpanel">
                 <div class="form-row">
                     <div class="col-md-12">
                         <div class="main-card mb-3 card" style="border-radius: 10px">
@@ -1103,7 +1146,7 @@
                 </div>
             </div>
 
-<div class="tab-pane tabs-animation fade show" id="tab-content-cirugia" role="tabpanel">
+<div class="tab-pane tabs-animation fade" id="tab-content-cirugia" role="tabpanel">
     <div class="form-row">
         <div class="col-md-12">
             <div class="main-card mb-3 card" style="border-radius:10px">
@@ -1113,8 +1156,8 @@
 
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h6 class="mb-0"><b>Cirugía &mdash; Paquete</b></h6>
-                                <button class="btn btn-success btn-sm"
-                                        data-bind="click: abrirModalAgregarProductoPaquete"
+                                <button type="button" class="btn btn-success btn-sm"
+                                        data-paquete-accion="agregar"
                                         title="Agregar Medicamento / Insumo al paquete">
                                     <i class="fas fa-plus mr-1"></i> Agregar Medicamento / Insumo
                                 </button>
@@ -1123,33 +1166,38 @@
                             <div class="mb-3 d-flex flex-wrap align-items-center" style="gap:8px">
                                 <div class="btn-group btn-group-sm" role="group">
                                     <button type="button" class="btn btn-outline-secondary"
-        id="btnPaqFiltroTodos"
-        data-bind="click: function(){ filtrarPaquetes('todos') },
-                   css: { active: filtroActivo() === 'todos' }">
-    Todos
-    <span class="badge badge-secondary ml-1" data-bind="text: totalPaquetesBadge"></span>
-</button>
+                                            id="btnPaqFiltroTodos"
+                                            data-paquete-accion="filtrar"
+                                            data-paquete-filtro="todos"
+                                            data-bind="css: { active: filtroActivo() === 'todos' }">
+                                        Todos
+                                        <span class="badge badge-secondary ml-1" data-bind="text: totalPaquetesBadge"></span>
+                                    </button>
                                     <button type="button" class="btn btn-outline-success"
-        id="btnPaqFiltroAplicados"
-        data-bind="click: function(){ filtrarPaquetes('aplicados') },
-                   css: { active: filtroActivo() === 'aplicados' }">
-    Aplicados
-    <span class="badge badge-success ml-1" data-bind="text: totalPaquetesAplicadosBadge"></span>
-</button>
-                                  <button type="button" class="btn btn-outline-warning"
-        id="btnPaqFiltroPendientes"
-        data-bind="click: function(){ filtrarPaquetes('pendientes') },
-                   css: { active: filtroActivo() === 'pendientes' }">
-    Pendientes
-    <span class="badge badge-warning text-dark ml-1" data-bind="text: totalPaquetesPendientesBadge"></span>
-</button>
+                                            id="btnPaqFiltroAplicados"
+                                            data-paquete-accion="filtrar"
+                                            data-paquete-filtro="aplicados"
+                                            data-bind="css: { active: filtroActivo() === 'aplicados' }">
+                                        Aplicados
+                                        <span class="badge badge-success ml-1" data-bind="text: totalPaquetesAplicadosBadge"></span>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-warning"
+                                            id="btnPaqFiltroPendientes"
+                                            data-paquete-accion="filtrar"
+                                            data-paquete-filtro="pendientes"
+                                            data-bind="css: { active: filtroActivo() === 'pendientes' }">
+                                        Pendientes
+                                        <span class="badge badge-warning text-dark ml-1" data-bind="text: totalPaquetesPendientesBadge"></span>
+                                    </button>
                                 </div>
 
                                 <input type="text" class="form-control form-control-sm" style="max-width:280px"
                                        placeholder="Buscar por nombre, código o tipo..."
+                                       data-paquete-busqueda="1"
                                        data-bind="value: filtroBusquedaPaquetes, valueUpdate: 'input'">
 
                                 <select class="form-control form-control-sm" style="max-width:130px"
+                                        data-paquete-items-pagina="1"
                                         data-bind="value: itemsPorPaginaPaquetes">
                                     <option value="5">Mostrar 5</option>
                                     <option value="10">Mostrar 10</option>
@@ -1164,7 +1212,7 @@
                             </div>
                             <div class="alert alert-danger py-2 mb-2"
                                  id="texto-error-consultar-paquetes-aplicados" style="display:none">
-                                Error de conexión. <a href="#" data-bind="click: consultarPaquetesAplicados">Reintentar</a>
+                                Error de conexión. <a href="#" data-paquete-accion="reintentar">Reintentar</a>
                             </div>
 
                             <table class="table table-hover" id="tablaPaquetesAplicados">
@@ -1229,24 +1277,27 @@
                                                        style="width:60px"
                                                        data-bind="value: CantidadAplicar,
                                                                   attr: { min: 1, max: Cantidad() - CantidadAplicados() }">
-                                                <button class="btn btn-primary btn-sm"
-                                                        data-bind="click: function(){ $root.aplicarPaquete($data); }"
+                                                <button type="button" class="btn btn-primary btn-sm"
+                                                        data-paquete-accion="aplicar"
+                                                        data-bind="attr: { 'data-paquete-id': Id }"
                                                         title="Aplicar">
                                                     <i class="fas fa-syringe"></i> Aplicar
                                                 </button>
                                                 <!-- /ko -->
 
                                                 <!-- ko if: CantidadAplicados() === 0 -->
-                                                <button class="btn btn-danger btn-sm"
-                                                        data-bind="click: function(){ $root.eliminarDetallePaquete($data); }"
+                                                <button type="button" class="btn btn-danger btn-sm"
+                                                        data-paquete-accion="eliminar"
+                                                        data-bind="attr: { 'data-paquete-id': Id }"
                                                         title="Eliminar (no aplicado)">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                                 <!-- /ko -->
 
                                                 <!-- ko if: CantidadAplicados() > 0 -->
-                                                <button class="btn btn-warning btn-sm text-dark"
-                                                        data-bind="click: function(){ $root.abrirModalDevolucionPaquete($data); }"
+                                                <button type="button" class="btn btn-warning btn-sm text-dark"
+                                                        data-paquete-accion="devolver"
+                                                        data-bind="attr: { 'data-paquete-id': Id }"
                                                         title="Devolver a Pendiente">
                                                     <i class="fas fa-undo-alt mr-1"></i> Devolver
                                                 </button>
@@ -1263,18 +1314,18 @@
                             </table>
 
                             <div class="text-center mt-3" data-bind="visible: listaProductosAplicacion().length > 0">
-                                <button class="btn btn-outline-primary btn-sm"
-                                        data-bind="click: function(){ $root.cambiarPaginaPaquetes(-1) },
-                                                   enable: paginaActualPaquetes() > 1">
+                                <button type="button" class="btn btn-outline-primary btn-sm"
+                                        data-paquete-accion="pagina-anterior"
+                                        data-bind="enable: paginaActualPaquetes() > 1">
                                     &#9665; Anterior
                                 </button>
                                 <span class="mx-3 font-weight-bold">
                                     Página <span data-bind="text: paginaActualPaquetes"></span>
                                     de <span data-bind="text: totalPaginasPaquetes"></span>
                                 </span>
-                                <button class="btn btn-outline-primary btn-sm"
-                                        data-bind="click: function(){ $root.cambiarPaginaPaquetes(1) },
-                                                   enable: paginaActualPaquetes() < totalPaginasPaquetes()">
+                                <button type="button" class="btn btn-outline-primary btn-sm"
+                                        data-paquete-accion="pagina-siguiente"
+                                        data-bind="enable: paginaActualPaquetes() < totalPaginasPaquetes()">
                                     Siguiente &#9655;
                                 </button>
                             </div>
@@ -1287,7 +1338,7 @@
     </div>
 </div>
 
-            @* <div class="tab-pane tabs-animation fade show" id="tab-content-cirugia" role="tabpanel">
+            @* <div class="tab-pane tabs-animation fade" id="tab-content-cirugia" role="tabpanel">
                 <div class="form-row">
                     <div class="col-md-12">
                         <div class="main-card mb-3 card" style="border-radius: 10px">
@@ -1366,58 +1417,8 @@
                 </div>
             </div> *@
 
-<script>
-    let pagina = 1;
-    let cantidad = 10;
-
-    function cambiarCantidad() {
-        cantidad = parseInt(document.getElementById("cantidadSelect").value);
-        pagina = 1;
-        mostrarPagina();
-    }
-
-    function paginaAnterior() {
-        if (pagina > 1) {
-            pagina--;
-            mostrarPagina();
-        }
-    }
-
-    function paginaSiguiente() {
-        let totalFilas = document.querySelectorAll('#tablaPaquetes tbody tr:not(.hidden)').length;
-        if ((pagina * cantidad) < totalFilas) {
-            pagina++;
-            mostrarPagina();
-        }
-    }
-
-    function mostrarPagina() {
-        let filas = document.querySelectorAll('#tablaPaquetes tbody tr:not(.hidden)');
-        filas.forEach((fila, index) => {
-            fila.style.display = (index >= (pagina - 1) * cantidad && index < pagina * cantidad) ? '' : 'none';
-        });
-        document.getElementById('paginaActual').innerText = pagina;
-    }
-
-    function filtrarTabla() {
-        let valor = document.getElementById("buscarInput").value.toLowerCase();
-        let filas = document.querySelectorAll('#tablaPaquetes tbody tr');
-        filas.forEach(fila => {
-            let texto = fila.innerText.toLowerCase();
-            fila.classList.toggle('hidden', !texto.includes(valor));
-            fila.style.display = texto.includes(valor) ? '' : 'none';
-        });
-        pagina = 1;
-        mostrarPagina();
-    }
-
-    window.onload = function () {
-        cambiarCantidad();
-    }
-</script>
-
             @* Nota Medica *@
-            <div class="tab-pane tabs-animation fade show" id="tab-content-nota-medica" role="tabpanel">
+            <div class="tab-pane tabs-animation fade" id="tab-content-nota-medica" role="tabpanel">
     <div class="form-row">
         <div class="col-md-12">
             <div class="main-card mb-3 nota-clinica-card">
@@ -1436,10 +1437,10 @@
                     <div class="d-flex" style="gap: 8px;">
                         @if (!usuarioAdmisiones && !Model.HospitalizacionFinalizada && !User.IsInRole("Enfermeria") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
                         {
-                            <button class="btn btn-nota-primary btn-nota-primary-evolucion" data-bind="click: verModalAgregarNotaMedica2">
+                            <button type="button" class="btn btn-nota-primary btn-nota-primary-evolucion" data-nota-medica-accion="nueva">
                                 <i class="fas fa-plus mr-1"></i> Nueva Nota
                             </button>
-                            <button class="btn btn-nota-outline btn-nota-outline-evolucion" data-bind="click: function() { $root.imprimirNotasMedicasAll(@Model.HospitalizacionId) }">
+                            <button type="button" class="btn btn-nota-outline btn-nota-outline-evolucion" data-nota-medica-accion="pdf-todo">
                                 <i class="fas fa-print mr-1"></i> Imprimir Todo
                             </button>
                         }
@@ -1458,57 +1459,15 @@
                                     <th class="text-center">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <!--ko foreach: notasMedicas-->
-                                <tr>
-                                    <td>
-                                        <div class="nota-fecha-wrapper">
-                                            <div class="nota-fecha-icon nota-fecha-icon-evolucion">
-                                                <i class="fas fa-calendar-alt"></i>
-                                            </div>
-                                            <div>
-                                                <div class="nota-fecha-text" data-bind="text: FechaRegistro"></div>
-                                                <div class="nota-fecha-label">Registro cl&iacute;nico</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="nota-badge-evolucion"><i class="fas fa-user-md mr-1"></i><span data-bind="text: Profesional"></span></span>
-                                    </td>
-                                    <td>
-                                        <div class="nota-contenido-cell nota-contenido-cell-evolucion" data-bind="html: Diagnostico"></div>
-                                    </td>
-                                    <td class="text-center">
-                                        <div class="d-flex justify-content-center" style="gap: 6px;">
-                                            <!-- ko ifnot: Autorizado -->
-                                            @if (!usuarioAdmisiones && !Model.HospitalizacionFinalizada && !User.IsInRole("Enfermeria") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
-                                            {
-                                                <button class="btn btn-nota-accion btn-nota-outline-evolucion" data-bind="click: function() { $root.editarNotaMedica2($data) }">
-                                                    <i class="fas fa-edit mr-1"></i> Editar
-                                                </button>
-                                            }
-                                            <!-- /ko -->
-                                            <!-- ko if: Autorizado -->
-                                            <span class="badge badge-success" style="align-self:center;"><i class="fas fa-check-circle mr-1"></i> Autorizada</span>
-                                            <!-- /ko -->
-                                            <button class="btn btn-nota-accion btn-nota-evolucion" data-bind="click: function() { $root.imprimirNotaMedica2($data) }">
-                                                <i class="fas fa-print mr-1"></i> PDF
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <!--/ko-->
-
-                                <!-- ko if: notasMedicas().length === 0 -->
+                            <tbody id="tbody-notas-medicas">
                                 <tr>
                                     <td colspan="4">
                                         <div class="nota-empty-state">
                                             <i class="fas fa-notes-medical d-block"></i>
-                                            <p>No hay notas de evoluci&oacute;n registradas. Haz clic en "Nueva Nota" para agregar el primer registro.</p>
+                                            <p>Cargando notas de evoluci&oacute;n...</p>
                                         </div>
                                     </td>
                                 </tr>
-                                <!-- /ko -->
                             </tbody>
                         </table>
                     </div>
@@ -1516,7 +1475,7 @@
 
                 <!-- Footer -->
                 <div class="nota-footer">
-                    <span><i class="fas fa-chart-line mr-1" style="color:var(--evolucion-color)"></i> Total de notas: <strong data-bind="text: notasMedicas().length"></strong></span>
+                    <span><i class="fas fa-chart-line mr-1" style="color:var(--evolucion-color)"></i> Total de notas: <strong id="notas-medicas-total">0</strong></span>
                     <span><i class="fas fa-clock mr-1" style="color:var(--evolucion-color)"></i> &Uacute;ltima actualizaci&oacute;n: <strong>@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</strong></span>
                 </div>
 
@@ -1526,7 +1485,7 @@
 </div>
 
             @* NOTA EVOLUCION *@
-            @* <div class="tab-pane tabs-animation fade show " id="tab-content-nota-evolucion" role="tabpanel">
+            @* <div class="tab-pane tabs-animation fade " id="tab-content-nota-evolucion" role="tabpanel">
                 <div class="form-row">
                     <div class="col-md-12">
                         <div class="main-card mb-3 card" style="border-radius: 10px">
@@ -1580,6 +1539,7 @@
             </div> *@
         </div>
     </div>
+</div>
 </div>
 
 
@@ -1639,7 +1599,7 @@
                         <i class="fas fa-sign-in-alt" style="color:#fff;font-size:0.8rem;"></i>
                     </div>
                     <div>
-                        <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#0369a1;">Antes de la inducci&oacute;n de anestesia</div>
+                        <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#0369a1;">FASE I — Ingreso a quir&oacute;fano (previo a inducci&oacute;n)</div>
                         <div style="font-size:1rem;font-weight:800;color:#0284c7;line-height:1;">ENTRADA</div>
                     </div>
                 </div>
@@ -1768,7 +1728,7 @@
                         <i class="fas fa-pause-circle" style="color:#fff;font-size:0.8rem;"></i>
                     </div>
                     <div>
-                        <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#92400e;">Antes de la incisi&oacute;n cut&aacute;nea</div>
+                        <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#92400e;">FASE II — Pausa quir&uacute;rgica (antes de incisi&oacute;n)</div>
                         <div style="font-size:1rem;font-weight:800;color:#d97706;line-height:1;">PAUSA</div>
                     </div>
                 </div>
@@ -1902,7 +1862,7 @@
                         <i class="fas fa-sign-out-alt" style="color:#fff;font-size:0.8rem;"></i>
                     </div>
                     <div>
-                        <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#166534;">Antes de la salida del quir&oacute;fano</div>
+                        <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#166534;">FASE III — Antes de salir de quir&oacute;fano</div>
                         <div style="font-size:1rem;font-weight:800;color:#16a34a;line-height:1;">SALIDA</div>
                     </div>
                 </div>
@@ -1938,8 +1898,8 @@
                             </div>
                         </div>
                     </div>
-                    @* Sub-sección: Recuperación *@
-                    <p style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #f1f5f9;">Recuperaci&oacute;n</p>
+                    @* Sub-sección: FASE IV Recuperación *@
+                    <p style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #f1f5f9;">FASE IV — Recuperaci&oacute;n y traslado</p>
                     <div class="form-row mb-3">
                         <div class="col-md-5">
                             <label style="font-size:0.78rem;color:#374151;margin-bottom:3px;display:block;">Cirujano, anestesi&oacute;logo y enfermera repasan inquietudes del post-operatorio</label>
@@ -2138,11 +2098,11 @@
                 <div class="form-row mt-2">
                     <div class="col-md-2">
                         <label class="font-weight-bold small text-uppercase text-muted">Peso (kg)</label>
-                        <input type="number" class="form-control form-control-sm" data-bind="value: pa_Peso" />
+                        <input type="number" class="form-control form-control-sm" step="0.01" min="0" data-bind="value: pa_Peso" />
                     </div>
                     <div class="col-md-2">
                         <label class="font-weight-bold small text-uppercase text-muted">Estatura (m)</label>
-                        <input type="number" class="form-control form-control-sm" step="0.01" data-bind="value: pa_Estatura" />
+                        <input type="number" class="form-control form-control-sm" step="0.01" min="0" data-bind="value: pa_Estatura" />
                     </div>
                     <div class="col-md-4">
                         <label class="font-weight-bold small text-uppercase text-muted">Fecha de última regla</label>
@@ -2422,7 +2382,7 @@
             <button type="button" class="btn btn-secondary" onclick='$("#mdl-agregar-preanestesico").dialog("close")'>
                 <i class="fas fa-times mr-1"></i> Cancelar
             </button>
-            <button type="button" class="btn btn-primary font-weight-bold" data-bind="click: agregarCuestionarioPreAnest">
+            <button type="button" class="btn btn-primary font-weight-bold" data-preanest-accion="guardar">
                 <i class="fas fa-save mr-1"></i> Guardar Cuestionario
             </button>
         </div>
@@ -2634,7 +2594,7 @@
     </div>
     <div class="form-row mt-3" style="display:flex; justify-content:flex-end; gap:8px;">
         <button type="button" class="btn btn-secondary" onclick='$("#mdl-editar-preanestesico").dialog("close")'><i class="fas fa-times mr-1"></i> Cancelar</button>
-        <button type="button" class="btn btn-warning font-weight-bold text-white" data-bind="click: guardarEdicionCuestionarioPreAnest">
+        <button type="button" class="btn btn-warning font-weight-bold text-white" data-preanest-accion="guardar-edicion">
             <i class="fas fa-save mr-1"></i> Guardar Cambios
         </button>
     </div>
@@ -2652,29 +2612,27 @@
 
     <div style="display:none; flex-direction: column; gap: 20px;" id="mdl-agregar-nota-medica">
         <div class="form-row mb-3">
-            <label class="col-12">
-                <!-- ko if: editandoNotaMedica -->
-                <span class="text-warning"><i class="fas fa-edit mr-1"></i> Editando nota</span>
-                <!-- /ko -->
-                <!-- ko ifnot: editandoNotaMedica -->
-                Evolución
-                <!-- /ko -->
-            </label>
+            <div class="col-md-4">
+                <label class="text-muted small font-weight-bold">Tipo de nota (expediente)</label>
+                <select id="nota-medica-tipo-select" class="form-control form-control-sm" data-bind="value: notaTipoClinica">
+                    <option value="">Sin clasificar (orden cronológico)</option>
+                    <option value="Ingreso">Ingreso</option>
+                    <option value="Traslado">Traslado a sala</option>
+                    <option value="Recepcion">Recepción de sala</option>
+                    <option value="Egreso">Egreso</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row mb-3">
+            <label class="col-12 nota-medica-modal-modo">Evolución</label>
             <div id="editor-nota-medica" style="height: 250px; width: 100%;"></div>
         </div>
         <div class="form-row" style="display: flex; justify-content: flex-end; gap: 8px;">
-            <!-- ko if: editandoNotaMedica -->
-            <button class="btn btn-secondary" data-bind="click: function(){ $('#mdl-agregar-nota-medica').dialog('close'); }">
+            <button type="button" class="btn btn-secondary" id="btn-cancelar-nota-medica" style="display:none;" data-hosp-accion="cerrar-dialog" data-dialog-target="mdl-agregar-nota-medica">
                 <i class="fas fa-times mr-1"></i> Cancelar
             </button>
-            <!-- /ko -->
-            <button class="btn btn-success" data-bind="click: agregarNotaMedica2">
-                <!-- ko if: editandoNotaMedica -->
-                <i class="fas fa-save mr-1"></i> Actualizar
-                <!-- /ko -->
-                <!-- ko ifnot: editandoNotaMedica -->
-                <i class="fas fa-save mr-1"></i> Guardar
-                <!-- /ko -->
+            <button type="button" class="btn btn-success" data-hosp-accion="agregarNotaMedica2" id="btn-guardar-nota-medica">
+                <i class="fas fa-save mr-1"></i> <span id="btn-guardar-nota-medica-text">Guardar</span>
             </button>
         </div>
     </div>
@@ -2844,221 +2802,7 @@
     @* MODAL — VER DETALLE COMPLETO DE NOTA OPERATORIA *@
     <div class="modal fade" id="mdl-detalle-nota-operatoria" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-scrollable">
-            <div class="modal-content" style="border-radius:14px; overflow:hidden;">
-
-                <!-- ko with: notaOperatoriaDetalle -->
-
-                <!-- Header -->
-                <div class="modal-header py-3" style="background:linear-gradient(135deg,#eef1f5 0%,#dce2ec 100%); border-bottom:3px solid var(--operatoria-color);">
-                    <div class="d-flex align-items-center">
-                        <div style="width:40px;height:40px;border-radius:10px;background:var(--operatoria-mid);display:flex;align-items:center;justify-content:center;margin-right:12px;">
-                            <i class="fas fa-procedures" style="color:var(--operatoria-color);"></i>
-                        </div>
-                        <div>
-                            <h5 class="modal-title mb-0 font-weight-bold" style="color:var(--nota-text);">Detalle de Nota Operatoria</h5>
-                            <small style="color:var(--nota-muted);">
-                                Registro #<span data-bind="text: $data.Id"></span>
-                                &nbsp;&mdash;&nbsp;
-                                <span data-bind="text: $data.FechaRegistro"></span>
-                            </small>
-                        </div>
-                    </div>
-                    <button type="button" class="close ml-auto" data-dismiss="modal" aria-label="Cerrar">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-
-                <div class="modal-body p-4" style="background:#f7f9fc;">
-
-                    @* ── Fecha y horario ── *@
-                    <div class="row mb-3">
-                        <div class="col-md-4 mb-2">
-                            <div class="p-3 bg-white rounded shadow-sm" style="border-left:4px solid var(--operatoria-color);">
-                                <small class="text-uppercase font-weight-bold text-muted d-block">Fecha de Operación</small>
-                                <!-- ko if: $data.FechaOperacion -->
-                                <span class="font-weight-bold" data-bind="text: $data.FechaOperacion"></span>
-                                <!-- /ko -->
-                                <!-- ko ifnot: $data.FechaOperacion -->
-                                <span class="font-weight-bold" data-bind="text: $data.FechaRegistro"></span>
-                                <!-- /ko -->
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-2">
-                            <div class="p-3 bg-white rounded shadow-sm" style="border-left:4px solid var(--operatoria-color);">
-                                <small class="text-uppercase font-weight-bold text-muted d-block">Comenzó</small>
-                                <!-- ko if: $data.HoraComenzo -->
-                                <span class="font-weight-bold" data-bind="text: $data.HoraComenzo"></span>
-                                <!-- /ko -->
-                                <!-- ko ifnot: $data.HoraComenzo -->
-                                <span class="text-muted">—</span>
-                                <!-- /ko -->
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-2">
-                            <div class="p-3 bg-white rounded shadow-sm" style="border-left:4px solid var(--operatoria-color);">
-                                <small class="text-uppercase font-weight-bold text-muted d-block">Terminó</small>
-                                <!-- ko if: $data.HoraTermino -->
-                                <span class="font-weight-bold" data-bind="text: $data.HoraTermino"></span>
-                                <!-- /ko -->
-                                <!-- ko ifnot: $data.HoraTermino -->
-                                <span class="text-muted">—</span>
-                                <!-- /ko -->
-                            </div>
-                        </div>
-                    </div>
-
-                    @* ── Personal Quirúrgico ── *@
-                    <div class="card mb-3" style="border:0;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.07);">
-                        <div class="card-header font-weight-bold" style="background:var(--operatoria-light);border-radius:10px 10px 0 0;border:0;color:var(--operatoria-color);">
-                            <i class="fas fa-user-md mr-2"></i> Personal Quirúrgico
-                        </div>
-                        <div class="card-body p-3">
-                            <div class="row">
-                                <div class="col-md-6 mb-2">
-                                    <small class="text-uppercase font-weight-bold text-muted d-block">Cirujano</small>
-                                    <!-- ko if: $data.Cirujano --><span data-bind="text: $data.Cirujano"></span><!-- /ko -->
-                                    <!-- ko ifnot: $data.Cirujano --><span class="text-muted">—</span><!-- /ko -->
-                                </div>
-                                <div class="col-md-6 mb-2">
-                                    <small class="text-uppercase font-weight-bold text-muted d-block">1er. Ayudante</small>
-                                    <!-- ko if: $data.PrimerAyudante --><span data-bind="text: $data.PrimerAyudante"></span><!-- /ko -->
-                                    <!-- ko ifnot: $data.PrimerAyudante --><span class="text-muted">—</span><!-- /ko -->
-                                </div>
-                                <div class="col-md-6 mb-2">
-                                    <small class="text-uppercase font-weight-bold text-muted d-block">Anestesista</small>
-                                    <!-- ko if: $data.Anestesista --><span data-bind="text: $data.Anestesista"></span><!-- /ko -->
-                                    <!-- ko ifnot: $data.Anestesista --><span class="text-muted">—</span><!-- /ko -->
-                                </div>
-                                <div class="col-md-6 mb-2">
-                                    <small class="text-uppercase font-weight-bold text-muted d-block">2do. Ayudante</small>
-                                    <!-- ko if: $data.SegundoAyudante --><span data-bind="text: $data.SegundoAyudante"></span><!-- /ko -->
-                                    <!-- ko ifnot: $data.SegundoAyudante --><span class="text-muted">—</span><!-- /ko -->
-                                </div>
-                                <div class="col-md-6 mb-2">
-                                    <small class="text-uppercase font-weight-bold text-muted d-block">Instrumentista</small>
-                                    <!-- ko if: $data.Instrumentista --><span data-bind="text: $data.Instrumentista"></span><!-- /ko -->
-                                    <!-- ko ifnot: $data.Instrumentista --><span class="text-muted">—</span><!-- /ko -->
-                                </div>
-                                <div class="col-md-6 mb-2">
-                                    <small class="text-uppercase font-weight-bold text-muted d-block">Circulante</small>
-                                    <!-- ko if: $data.Circulante --><span data-bind="text: $data.Circulante"></span><!-- /ko -->
-                                    <!-- ko ifnot: $data.Circulante --><span class="text-muted">—</span><!-- /ko -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    @* ── Diagnósticos ── *@
-                    <div class="card mb-3" style="border:0;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.07);">
-                        <div class="card-header font-weight-bold" style="background:var(--operatoria-light);border-radius:10px 10px 0 0;border:0;color:var(--operatoria-color);">
-                            <i class="fas fa-stethoscope mr-2"></i> Diagnósticos
-                        </div>
-                        <div class="card-body p-3">
-                            <div class="mb-3">
-                                <small class="text-uppercase font-weight-bold text-muted d-block mb-1">Diagnóstico Pre-Operatorio</small>
-                                <div class="p-2 rounded" style="background:#f0f4f8;border-left:3px solid var(--operatoria-color);min-height:36px;white-space:pre-wrap;">
-                                    <!-- ko if: $data.DiagnosticoPreOperatorio --><span data-bind="text: $data.DiagnosticoPreOperatorio"></span><!-- /ko -->
-                                    <!-- ko ifnot: $data.DiagnosticoPreOperatorio --><span class="text-muted">—</span><!-- /ko -->
-                                </div>
-                            </div>
-                            <div>
-                                <small class="text-uppercase font-weight-bold text-muted d-block mb-1">Diagnóstico Post-Operatorio</small>
-                                <div class="p-2 rounded" style="background:#f0f4f8;border-left:3px solid var(--operatoria-color);min-height:36px;white-space:pre-wrap;">
-                                    <!-- ko if: $data.DiagnosticoPostOperatorio --><span data-bind="text: $data.DiagnosticoPostOperatorio"></span><!-- /ko -->
-                                    <!-- ko ifnot: $data.DiagnosticoPostOperatorio --><span class="text-muted">—</span><!-- /ko -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    @* ── Operación y Hallazgos ── *@
-                    <div class="card mb-3" style="border:0;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.07);">
-                        <div class="card-header font-weight-bold" style="background:var(--operatoria-light);border-radius:10px 10px 0 0;border:0;color:var(--operatoria-color);">
-                            <i class="fas fa-cut mr-2"></i> Operación y Hallazgos
-                        </div>
-                        <div class="card-body p-3">
-                            <div class="mb-3">
-                                <small class="text-uppercase font-weight-bold text-muted d-block mb-1">Operación Efectuada y Técnica Quirúrgica</small>
-                                <div class="p-2 rounded" style="background:#f0f4f8;border-left:3px solid var(--operatoria-color);min-height:36px;white-space:pre-wrap;">
-                                    <!-- ko if: $data.OperacionEfectuada --><span data-bind="text: $data.OperacionEfectuada"></span><!-- /ko -->
-                                    <!-- ko ifnot: $data.OperacionEfectuada --><span class="text-muted">—</span><!-- /ko -->
-                                </div>
-                            </div>
-                            <div>
-                                <small class="text-uppercase font-weight-bold text-muted d-block mb-1">Hallazgos Trans-Operatorios</small>
-                                <div class="p-2 rounded" style="background:#f0f4f8;border-left:3px solid var(--operatoria-color);min-height:36px;white-space:pre-wrap;">
-                                    <!-- ko if: $data.HallazgosTransOperatorios --><span data-bind="text: $data.HallazgosTransOperatorios"></span><!-- /ko -->
-                                    <!-- ko ifnot: $data.HallazgosTransOperatorios --><span class="text-muted">—</span><!-- /ko -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    @* ── Descripción general (campo Diagnostico original) ── *@
-                    <!-- ko if: $data.Diagnostico -->
-                    <div class="card" style="border:0;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.07);">
-                        <div class="card-header font-weight-bold" style="background:var(--operatoria-light);border-radius:10px 10px 0 0;border:0;color:var(--operatoria-color);">
-                            <i class="fas fa-notes-medical mr-2"></i> Descripción General
-                        </div>
-                        <div class="card-body p-3">
-                            <div class="p-2 rounded" style="background:#f0f4f8;border-left:3px solid var(--operatoria-color);white-space:pre-wrap;" data-bind="text: $data.Diagnostico"></div>
-                        </div>
-                    </div>
-                    <!-- /ko -->
-
-                    @* ── Firma ── *@
-                    <div class="card mt-3" style="border:0;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.07);">
-                        <div class="card-header font-weight-bold" style="background:var(--operatoria-light);border-radius:10px 10px 0 0;border:0;color:var(--operatoria-color);">
-                            <i class="fas fa-signature mr-2"></i> Firma del Cirujano
-                        </div>
-                        <div class="card-body p-3 text-center">
-                            <!-- ko if: $data.Firmado -->
-                            <img data-bind="attr: { src: $data.FirmaRuta }"
-                                 alt="Firma del cirujano"
-                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
-                                 style="max-height:120px; max-width:320px; border:1px solid #dee2e6; border-radius:8px; padding:6px; background:#fff;" />
-                            <div style="display:none;" class="alert alert-warning py-2 small">
-                                <i class="fas fa-exclamation-triangle mr-1"></i>
-                                No se pudo cargar la imagen de la firma.
-                                <span class="d-block text-muted mt-1" data-bind="text: 'Ruta: ' + ($data.FirmaRuta || 'no registrada')"></span>
-                            </div>
-                            <div class="mt-2">
-                                <span class="badge badge-success px-3 py-2">
-                                    <i class="fas fa-check-circle mr-1"></i> Firmado
-                                </span>
-                                <!-- ko if: $data.FechaFirma -->
-                                <small class="text-muted d-block mt-1" data-bind="text: 'Fecha de firma: ' + $data.FechaFirma"></small>
-                                <!-- /ko -->
-                            </div>
-                            <!-- /ko -->
-                            <!-- ko ifnot: $data.Firmado -->
-                            <div class="text-muted py-3">
-                                <i class="fas fa-signature fa-2x mb-2 d-block" style="opacity:.3;"></i>
-                                <small>Esta nota aún no ha sido firmada.</small>
-                            </div>
-                            <!-- /ko -->
-                        </div>
-                    </div>
-
-                </div>
-
-                @* Footer *@
-                <div class="modal-footer" style="background:#fff;border-top:1px solid var(--nota-border);">
-                    <!-- ko ifnot: $data.Firmado -->
-                    <button type="button" class="btn btn-nota-firmar btn-nota-primary" style="background:#e6a817;color:#fff;border:0;" data-bind="click: function() { $root.abrirModalFirmaNotaOperatoria($data) }">
-                        <i class="fas fa-signature mr-1"></i> Firmar Nota
-                    </button>
-                    <!-- /ko -->
-                    <button type="button" class="btn btn-nota-primary btn-nota-primary-operatoria" data-bind="click: function() { $root.imprimirNotaOperatoria($data) }">
-                        <i class="fas fa-file-pdf mr-1"></i> Generar PDF
-                    </button>
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                        <i class="fas fa-times mr-1"></i> Cerrar
-                    </button>
-                </div>
-
-                <!-- /ko -->
-
+            <div class="modal-content" style="border-radius:14px; overflow:hidden;" id="detalle-nota-operatoria-inner">
             </div>
         </div>
     </div>
@@ -3550,16 +3294,18 @@
         };
 
         /* Re-iniciar y limpiar canvas cada vez que el modal termina de mostrarse */
-        $(document).on('shown.bs.modal', '#mdl-firma-nota-operatoria', function () {
-            var panelCanvas     = document.getElementById('panelCanvasFirmaNotaOp');
-            var contenedorPrev  = document.getElementById('contenedorPrevFirmaNotaOp');
-            // Solo init canvas si el selector está visible (no hay previsualización activa)
-            var prevVisible = contenedorPrev && !contenedorPrev.classList.contains('d-none');
-            if (!prevVisible && panelCanvas && !panelCanvas.classList.contains('d-none')) {
-                window.limpiarCanvasFirmaNotaOp();
-                window.initCanvasFirmaNotaOp();
-            }
-        });
+        if (window.jQuery) {
+            jQuery(document).on('shown.bs.modal', '#mdl-firma-nota-operatoria', function () {
+                var panelCanvas     = document.getElementById('panelCanvasFirmaNotaOp');
+                var contenedorPrev  = document.getElementById('contenedorPrevFirmaNotaOp');
+                // Solo init canvas si el selector está visible (no hay previsualización activa)
+                var prevVisible = contenedorPrev && !contenedorPrev.classList.contains('d-none');
+                if (!prevVisible && panelCanvas && !panelCanvas.classList.contains('d-none')) {
+                    window.limpiarCanvasFirmaNotaOp();
+                    window.initCanvasFirmaNotaOp();
+                }
+            });
+        }
 
     })();
     </script>
@@ -3685,15 +3431,17 @@
             }
         };
 
-        $(document).on('shown.bs.modal', '#mdl-firma-turno-enfermeria', function () {
-            var panelCanvas = document.getElementById('panelCanvasFirmaTurno');
-            var contenedorPrev = document.getElementById('contenedorPrevFirmaTurno');
-            var prevVisible = contenedorPrev && !contenedorPrev.classList.contains('d-none');
-            if (!prevVisible && panelCanvas && !panelCanvas.classList.contains('d-none')) {
-                window.limpiarCanvasFirmaTurno();
-                window.initCanvasFirmaTurno();
-            }
-        });
+        if (window.jQuery) {
+            jQuery(document).on('shown.bs.modal', '#mdl-firma-turno-enfermeria', function () {
+                var panelCanvas = document.getElementById('panelCanvasFirmaTurno');
+                var contenedorPrev = document.getElementById('contenedorPrevFirmaTurno');
+                var prevVisible = contenedorPrev && !contenedorPrev.classList.contains('d-none');
+                if (!prevVisible && panelCanvas && !panelCanvas.classList.contains('d-none')) {
+                    window.limpiarCanvasFirmaTurno();
+                    window.initCanvasFirmaTurno();
+                }
+            });
+        }
     })();
 </script>
 
@@ -3737,7 +3485,7 @@
                                 <!--ko foreach: observacionesProductsHospiLista-->
                                 <tr>
                                     <td data-bind="text:FechaCreacion"></td>
-                                    <td data-bind="text:UsuarioCreaId"></td>
+                                    <td data-bind="text:UsuarioCreaNombre || UsuarioCreaId"></td>
                                     <td data-bind="text:Observacion" style="white-space: pre-wrap;"></td>
                                     @if (!User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
                                     {
@@ -4862,6 +4610,18 @@
         {
        
             <div class="form-row mb-3" data-bind="visible: !turnoFirmado()">
+                <div class="col-md-4 mb-2">
+                    <label class="text-muted small font-weight-bold">Tipo de nota (expediente)</label>
+                    <select class="form-control form-control-sm" data-bind="value: notaTipoClinica">
+                        <option value="">Sin clasificar (orden cronológico)</option>
+                        <option value="Ingreso">Ingreso</option>
+                        <option value="Traslado">Traslado a sala</option>
+                        <option value="Recepcion">Recepción de sala</option>
+                        <option value="Egreso">Egreso</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row mb-3" data-bind="visible: !turnoFirmado()">
     <label class="col-12">Descripción</label>
     <div id="editor" style="height: 250px; width: 100%;"></div>
 </div>
@@ -4890,23 +4650,25 @@
                 <td data-bind="text: Profesional"></td>
                 @* <td data-bind="text: Diagnostico" style="white-space: pre-wrap;"></td> *@
                 <td data-bind="html: Diagnostico" style="white-space: pre-wrap;"></td>
-                <td>
-    <!-- ko if: $root.turnoFirmado() -->
-    <span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i> Turno firmado</span>
-    <!-- /ko -->
-    <!-- ko ifnot: $root.turnoFirmado() -->
-    <button class="btn btn-sm btn-primary" data-bind="click: function() { $root.editarNotaEnfermeria($data); }">
-        <i class="fas fa-edit"></i> Editar
-    </button>
-    <!-- /ko -->
-
-    <td>
-    <button class="btn btn-sm btn-secondary" 
-            data-bind="click: function() { window.open('/CrearPDF/NotaEnfermeriaPDF?id=' + Id, '_blank'); }">
-        <i class="fas fa-print"></i> Imprimir
-    </button>
-</td>
-</td>
+                <td class="text-nowrap">
+                    <!-- ko if: Firmado -->
+                    <span class="badge badge-success mr-1"><i class="fas fa-check-circle mr-1"></i> Firmada</span>
+                    <!-- /ko -->
+                    <!-- ko ifnot: Firmado -->
+                    <button class="btn btn-sm btn-primary mr-1" data-bind="click: function() { $root.editarNotaEnfermeria($data); }">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                    @if(!User.IsInRole("Medico Externo"))
+                    {
+                    <button class="btn btn-sm btn-warning mr-1" data-bind="click: function() { $root.abrirModalFirmaNotaEnfermeria($data); }">
+                        <i class="fas fa-signature"></i> Firmar
+                    </button>
+                    }
+                    <!-- /ko -->
+                    <button class="btn btn-sm btn-secondary" data-bind="click: function() { window.open('/CrearPDF/NotaEnfermeriaPDF?id=' + Id, '_blank'); }">
+                        <i class="fas fa-print"></i> Imprimir
+                    </button>
+                </td>
             </tr>
             <!--/ko-->
         </tbody>
@@ -4964,7 +4726,7 @@
             <tbody>
                 <tr>
                     <td>
-                        <select class="select2bs4 form-control" data-bind="options: listaUsuarios, optionsText: 'Nombre', value: usuarioSeleccionado"></select>
+                        <select class="select2bs4 form-control" data-bind="options: listaUsuarios, optionsText: 'Nombre', optionsCaption: '-- Seleccione usuario --', value: usuarioSeleccionado"></select>
                     </td>
                 </tr>
             </tbody>
@@ -5070,6 +4832,12 @@
                         </tr>
                     </tfoot>
                 </table>
+            </div>
+
+            <div class="text-right mt-3">
+                <button type="button" class="btn btn-danger" data-bind="click: verInformeDetallado">
+                    <i class="fas fa-file-pdf mr-1"></i> Imprimir detalle en PDF
+                </button>
             </div>
         </div>
     </div>
@@ -5280,7 +5048,10 @@
         });
     </script> *@
 
-    <script type="text/javascript" src="~/ViewModelKo/HospitalizacionDetallesVM.js"></script>
+    <script src="~/js/quill.js"></script>
+    <script type="text/javascript" src="~/ViewModelKo/HospitalizacionDetallesVM.js?v=20250701vitals2"></script>
+    <script src="~/js-utilidades-wp-email/SendEmail.js"></script>
+    <script src="~/js-utilidades-wp-email/SendWhatsApp.js"></script>
 
     <link href="~/css/daterangepicker.css" rel="stylesheet">
 
@@ -5289,7 +5060,10 @@
 {
     <script type="text/javascript">
         $(document).ready(function () {
-            $('#myTab a[href="#tab-content-historia-clinica"]').tab('show');
+            var hash = window.location.hash;
+            if (!hash || hash.indexOf("#tab-content-") !== 0) {
+                $('#myTab a[href="#tab-content-historia-clinica"]').tab('show');
+            }
         });
     </script>
 }
@@ -5304,7 +5078,8 @@
             });
 
             $("#btnAbrirModalAnestesia").on("click", function () {
-                showAnestesiaStep(1); // Reset to first step
+                showAnestesiaStep(1);
+                if (typeof cargarRegistroAnestesia === "function") cargarRegistroAnestesia();
                 $("#mdl-registro-anestesia").dialog("open");
             });
         });
@@ -5328,79 +5103,212 @@
     </script>
 
 <script>
-    // Función para cargar la vista de edición al cargar la página
-    $(document).ready(function() {
-        // Cargar historial de consultas y luego cargar la vista de edición de la última consulta
-        consultarHistorialConsultasPaciente(); 
-    });
+    var historiaClinicaCargada = false;
 
-    // Función para obtener el ID de la última consulta
-    function obtenerConsultaIdMasReciente(historial) {
-        if (historial && historial.length > 0) {
-            return historial[0].ConsultaId; // Asegúrate de que el formato del resultado es correcto
+    function obtenerCitaIdDesdePagina() {
+        var citaId = parseInt($("#CitaIdPDF").val(), 10);
+        if (!isNaN(citaId) && citaId > 0) {
+            return citaId;
         }
-        return null;
+
+        var params = new URLSearchParams(window.location.search);
+        citaId = parseInt(params.get("citaId"), 10);
+        return (!isNaN(citaId) && citaId > 0) ? citaId : null;
     }
 
-    // Función para consultar historial de consultas
-    function consultarHistorialConsultasPaciente() {
-        let textoCargando = $("#texto-cargando-consultas");
-        let textoError = $("#texto-error-consultar-consultas");
-        textoCargando.show();
-        textoError.hide();
+    function mostrarSinConsultaHistoriaClinica(mensaje) {
+        $("#texto-cargando-historia-clinica").hide();
+        $("#texto-error-historia-clinica").hide();
+        $("#contenedor-editar-consulta-historia-clinica").html(
+            "<div class='alert alert-warning mb-0'>" + (mensaje || "No se encontr&oacute; una consulta vinculada a esta hospitalizaci&oacute;n.") + "</div>"
+        );
+    }
 
+    function mostrarErrorHistoriaClinica(mensaje) {
+        $("#texto-cargando-historia-clinica").hide();
+        $("#texto-error-historia-clinica").show();
+        $("#contenedor-editar-consulta-historia-clinica").html(
+            "<div class='alert alert-danger mb-0'>" + (mensaje || "No se pudo cargar la historia cl&iacute;nica.") + "</div>"
+        );
+    }
+
+    function dispararCargaTabHospitalizacion(hash) {
+        if (!hash || typeof detallesVm === "undefined" || !detallesVm) return;
+        var map = {
+            "#tab-content-evolucion": "abrirTabSignosVitales",
+            "#tab-content-increta-excreta": "abrirTabIncretaExcreta",
+            "#tab-content-control-glucometria": "abrirTabGlucometria",
+            "#tab-content-pagos": "abrirTabPagos",
+            "#tab-content-nota-medica": "abrirTabNotaMedica2",
+            "#tab-content-nota-operatoria": "abrirTabNotaOperatoria",
+            "#tab-content-archivos": "abrirTabArchivos",
+            "#tab-content-historial-consultas": "abrirTabHistorialConsultas",
+            "#tab-content-historial-hospitalizaciones": "abrirTabHistorialHospitalizaciones",
+            "#tab-content-chequeo": "abrirTabChequeo",
+            "#tab-content-kitIngreso": "abrirTabKitIngreso",
+            "#tab-content-historial-autorizaciones": "abrirTabAutorizaciones",
+            "#tab-content-preanestesico": "abrirTabPreanestesico",
+            "#tab-content-medicamentos-no-controlados": "abrirTabMedicamentosNoControlados",
+            "#tab-content-cirugia": "abrirTabCirugiaPaquete"
+        };
+        var fn = map[hash];
+        if (fn && typeof detallesVm[fn] === "function") {
+            detallesVm[fn]();
+        }
+    }
+
+    function activarTabInicialHospitalizacion() {
+        var hash = window.location.hash;
+        if (hash && hash.indexOf("#tab-content-") === 0) {
+            var $tabLink = $('#myTab a[href="' + hash + '"]');
+            if ($tabLink.length) {
+                $tabLink.tab("show");
+                $(hash).addClass("active show");
+                dispararCargaTabHospitalizacion(hash);
+                return;
+            }
+        }
+
+        @if (cliente == "SS")
+        {
+            <text>$('#myTab a[href="#tab-content-historia-clinica"]').tab("show");</text>
+        }
+    }
+
+    function scrollATabHistoriaClinica() {
+        var $pane = $("#tab-content-historia-clinica");
+        if (!$pane.length) return;
+        var top = $pane.offset().top - 120;
+        $("html, body").animate({ scrollTop: top }, 250);
+    }
+
+    function resolverConsultaIdServidor(callback) {
         $.ajax({
-            url: "/Hospitalizacion/ConsultarHistorialConsultasPaciente",
+            url: "/Hospitalizacion/ObtenerConsultaIdHistoriaClinica",
             method: "POST",
             data: {
-                pacienteId: $("#PacienteId").val()
+                hospitalizacionId: $("#HospitalizacionId").val(),
+                citaId: obtenerCitaIdDesdePagina()
             },
             success: function(result) {
-                textoCargando.hide();
-                let data = JSON.parse(result);
-
-                if (data.Exitoso) {
-                    let historial = data.Resultado;
-
-                    // Obtener el ID de la consulta más reciente
-                    let consultaId = obtenerConsultaIdMasReciente(historial);
-
-                    if (consultaId) {
-                        // Llamar a la función para cargar la vista de edición
-                        cargarVistaEditarConsulta(consultaId);
-                    } else {
-                        textoError.show();
-                    }
+                var data = HospAjax.parseHospJson(result);
+                if (!data) {
+                    mostrarErrorHistoriaClinica();
+                    return;
+                }
+                if (HospAjax.hospExitoso(data) && (data.ConsultaId || data.consultaId)) {
+                    var consultaId = data.ConsultaId || data.consultaId;
+                    $("#ConsultaIdHistoriaClinica").val(consultaId);
+                    callback(consultaId);
                 } else {
-                    textoError.show();
+                    mostrarSinConsultaHistoriaClinica(HospAjax.hospMensaje(data));
                 }
             },
-            error: function(resultError) {
-                textoCargando.hide();
-                textoError.show();
-                console.log(resultError);
+            error: function() {
+                mostrarErrorHistoriaClinica();
             }
         });
     }
 
+    function cargarVistaEditarConsulta(consultaId, reintentarConServidor) {
+        var url = "/Consultas/EditarConsultaHistoriaClinicaHospitalizacion/" + consultaId;
+        var $contenedor = $("#contenedor-editar-consulta-historia-clinica");
 
-    // Cargar la vista de edición directamente
-    function cargarVistaEditarConsulta(consultaId) {
-        var url = '/Consultas/EditarConsultaHistoriaClinicaHospitalizacion/' + consultaId;
-
-        $('#contenedor-editar-consulta-historia-clinica').html('<p>Cargando vista de edición...</p>');
+        $("#texto-error-historia-clinica").hide();
+        $("#texto-cargando-historia-clinica").show();
+        $contenedor.html("<p class='text-primary mb-0'>Cargando vista de edici&oacute;n...</p>");
 
         $.ajax({
             url: url,
-            type: 'GET',
+            type: "GET",
             success: function(response) {
-                $('#contenedor-editar-consulta-historia-clinica').html(response); // Cargar la vista de edición en el contenedor
+                historiaClinicaCargada = true;
+                $("#texto-cargando-historia-clinica").hide();
+                $contenedor.html(response);
             },
             error: function() {
-                $('#contenedor-editar-consulta-historia-clinica').html('<p>Error al cargar la vista de edición.</p>');
+                historiaClinicaCargada = false;
+                $("#texto-cargando-historia-clinica").hide();
+
+                if (reintentarConServidor !== false) {
+                    resolverConsultaIdServidor(function(consultaIdServidor) {
+                        if (consultaIdServidor !== consultaId) {
+                            cargarVistaEditarConsulta(consultaIdServidor, false);
+                        } else {
+                            mostrarErrorHistoriaClinica();
+                        }
+                    });
+                } else {
+                    mostrarErrorHistoriaClinica();
+                }
             }
         });
     }
+
+    function cargarHistoriaClinicaSiNecesario(forceReload) {
+        if (!forceReload && historiaClinicaCargada && !$("#contenedor-editar-consulta-historia-clinica").is(":empty")) {
+            return;
+        }
+
+        var consultaIdLocal = parseInt($("#ConsultaIdHistoriaClinica").val(), 10);
+        if (!forceReload && !isNaN(consultaIdLocal) && consultaIdLocal > 0) {
+            cargarVistaEditarConsulta(consultaIdLocal, true);
+            return;
+        }
+
+        $("#texto-cargando-historia-clinica").show();
+        $("#texto-error-historia-clinica").hide();
+        $("#contenedor-editar-consulta-historia-clinica").empty();
+
+        resolverConsultaIdServidor(function(consultaId) {
+            cargarVistaEditarConsulta(consultaId, false);
+        });
+    }
+
+    function inicializarTabsHistoriaClinica() {
+        $("#reintentar-historia-clinica").on("click", function(e) {
+            e.preventDefault();
+            historiaClinicaCargada = false;
+            $("#ConsultaIdHistoriaClinica").val("0");
+            cargarHistoriaClinicaSiNecesario(true);
+        });
+
+        $('a[data-toggle="tab"][href="#tab-content-historia-clinica"]').on("shown.bs.tab", function() {
+            if (window.location.hash !== "#tab-content-historia-clinica") {
+                history.replaceState(null, "", window.location.pathname + window.location.search + "#tab-content-historia-clinica");
+            }
+            scrollATabHistoriaClinica();
+            cargarHistoriaClinicaSiNecesario(false);
+        });
+
+        $('a[data-toggle="tab"][href="#tab-content-historia-clinica"]').on("click", function() {
+            if ($(this).hasClass("active")) {
+                scrollATabHistoriaClinica();
+                cargarHistoriaClinicaSiNecesario(false);
+            }
+        });
+
+        $('#myTab a[data-toggle="tab"]').not('[href="#tab-content-historia-clinica"]').on("shown.bs.tab", function(e) {
+            var hash = $(e.target).attr("href");
+            if (hash && hash.indexOf("#tab-content-") === 0) {
+                history.replaceState(null, "", window.location.pathname + window.location.search + hash);
+                $(".tab-content > .tab-pane").removeClass("active show");
+                $(hash).addClass("active show");
+                dispararCargaTabHospitalizacion(hash);
+            }
+        });
+
+        activarTabInicialHospitalizacion();
+
+        if ($("#tab-historia-clinica").hasClass("active")) {
+            scrollATabHistoriaClinica();
+            cargarHistoriaClinicaSiNecesario(false);
+        }
+    }
+
+    $(document).ready(function() {
+        inicializarTabsHistoriaClinica();
+    });
 </script>
 
 <script>
@@ -5764,16 +5672,45 @@ $(document).ready(function () {
     });
 });
     /**
+     * @@function esRespuestaExitosa
+     * @@description Normaliza respuestas JSON camelCase/PascalCase del backend.
+     */
+    function esRespuestaExitosa(data) {
+        return !!(data && (data.Exitoso === true || data.exitoso === true));
+    }
+
+    function obtenerMensajeRespuesta(data) {
+        return (data && (data.Mensaje || data.mensaje)) || 'Operación no completada.';
+    }
+
+    function obtenerValorSelect(selectId) {
+        var el = document.getElementById(selectId);
+        if (!el) {
+            return '';
+        }
+        if (window.jQuery && jQuery(el).data('select2')) {
+            return jQuery(el).val() || '';
+        }
+        return el.value || '';
+    }
+
+    function obtenerTextoSelect(selectId) {
+        var el = document.getElementById(selectId);
+        if (!el || el.selectedIndex < 0) {
+            return '';
+        }
+        return el.options[el.selectedIndex].text || '';
+    }
+
+    /**
      * @@function actualizarSeguro
      * @@description Actualiza el código de seguro asociado a una hospitalización activa.
      * @@param {number} citaId - Identificador único de la cita.
      * @@param {number} hospitalizacionId - Identificador único del registro de hospitalización.
      */
     function actualizarSeguro(citaId, hospitalizacionId) {
-        // --- TRAZABILIDAD: OBTENCIÓN DE DATA (DOM) ---
-        const seguroSelect = document.getElementById("seguroSelect");
-        const seguroSeleccionado = seguroSelect.value;
-        const seguroSeleccionadoNombre = seguroSelect.options[seguroSelect.selectedIndex].text;
+        const seguroSeleccionado = obtenerValorSelect("seguroSelect");
+        const seguroSeleccionadoNombre = obtenerTextoSelect("seguroSelect");
 
         // Validación de integridad de datos de entrada
         if (!seguroSeleccionado) {
@@ -5807,12 +5744,11 @@ $(document).ready(function () {
                 return response.json();
             })
             .then(data => {
-                // Manejo de respuesta del servidor
-                if (data.exitoso) {
+                if (esRespuestaExitosa(data)) {
                     guardarMensajeParaReload(`✅ Usted ha cambiado de seguro satisfactoriamente a: ${seguroSeleccionadoNombre}`);
                     location.reload();
                 } else {
-                    mostrarMensaje(`Error: ${data.Mensaje}`, "danger");
+                    mostrarMensaje(`Error: ${obtenerMensajeRespuesta(data)}`, "danger");
                 }
             })
             .catch(error => {
@@ -5827,10 +5763,8 @@ $(document).ready(function () {
      * @@param {number} citaId - Identificador de la cita médica.
      */
     function actualizarMedicoAsignado(citaId) {
-        // --- TRAZABILIDAD: OBTENCIÓN DE DATA (DOM) ---
-        const medicoSelect = document.getElementById("medicoAsignadoSelect");
-        const medicoSeleccionado = medicoSelect.value;
-        const medicoSeleccionadoNombre = medicoSelect.options[medicoSelect.selectedIndex].text;
+        const medicoSeleccionado = obtenerValorSelect("medicoAsignadoSelect");
+        const medicoSeleccionadoNombre = obtenerTextoSelect("medicoAsignadoSelect");
 
         if (!medicoSeleccionado) {
             alert("⚠️ Error: No has seleccionado un médico. Por favor selecciona uno antes de continuar.");
@@ -5861,11 +5795,11 @@ $(document).ready(function () {
                 return response.json();
             })
             .then(data => {
-                if (data.exitoso) {
+                if (esRespuestaExitosa(data)) {
                     guardarMensajeParaReload(`✅ Usted ha cambiado el médico asignado satisfactoriamente a: ${medicoSeleccionadoNombre}`);
                     location.reload();
                 } else {
-                    mostrarMensaje(`Error: ${data.Mensaje}`, "danger");
+                    mostrarMensaje(`Error: ${obtenerMensajeRespuesta(data)}`, "danger");
                 }
             })
             .catch(error => {
@@ -5880,10 +5814,8 @@ $(document).ready(function () {
      * @@param {number} citaId - Identificador de la cita médica.
      */
     function agregarMedicoSecundario(citaId) {
-        // --- TRAZABILIDAD: OBTENCIÓN DE DATA (DOM) ---
-        const medicoSecundarioSelect = document.getElementById("medicoSecundarioSelect");
-        const medicoSeleccionado = medicoSecundarioSelect.value;
-        const medicoSeleccionadoNombre = medicoSecundarioSelect.options[medicoSecundarioSelect.selectedIndex].text;
+        const medicoSeleccionado = obtenerValorSelect("medicoSecundarioSelect");
+        const medicoSeleccionadoNombre = obtenerTextoSelect("medicoSecundarioSelect");
 
         if (!medicoSeleccionado) {
             alert("⚠️ Error: No has seleccionado un médico secundario. Por favor selecciona uno antes de continuar.");
@@ -5914,12 +5846,14 @@ $(document).ready(function () {
                 return response.json();
             })
             .then(data => {
-                if (data.exitoso) {
-                    // Actualización reactiva de la interfaz de usuario
+                if (esRespuestaExitosa(data)) {
                     agregarMedicoSecundarioAlDOM(citaId, medicoSeleccionadoNombre, medicoSeleccionado);
                     mostrarMensaje(`✅ Médico secundario agregado: ${medicoSeleccionadoNombre}`, "success");
+                    if (window.jQuery) {
+                        jQuery('#medicoSecundarioSelect').val('').trigger('change');
+                    }
                 } else {
-                    mostrarMensaje(`Error: ${data.Mensaje}`, "danger");
+                    mostrarMensaje(`Error: ${obtenerMensajeRespuesta(data)}`, "danger");
                 }
             })
             .catch(error => {
@@ -6007,14 +5941,13 @@ $(document).ready(function () {
                 return response.json();
             })
             .then(data => {
-                if (data.exitoso) {
-                    // Sincronización del DOM tras eliminación exitosa
+                if (esRespuestaExitosa(data)) {
                     const item = document.getElementById(`medico-secundario-${medicoId}`);
                     if (item) item.remove();
                     mostrarMensaje(`✅ Médico secundario eliminado correctamente.`, "success");
                     location.reload();
                 } else {
-                    mostrarMensaje(`Error: ${data.Mensaje}`, "danger");
+                    mostrarMensaje(`Error: ${obtenerMensajeRespuesta(data)}`, "danger");
                 }
             })
             .catch(error => {
@@ -6290,11 +6223,11 @@ $("#archivosDocumento").change(function() {
             url    : '/HospitalizacionPaquetes/ConsultarProductosExistentes',
             data   : { BodegaId: bodegaId },
             success: function (dataResult) {
-                let data = JSON.parse(dataResult);
-                if (!data.Exitoso) { alert('Error al consultar productos.'); return; }
+                let data = HospAjax.parseHospJson(dataResult);
+                if (!data || !HospAjax.hospExitoso(data)) { alert('Error al consultar productos.'); return; }
 
                 let agrupados = {};
-                data.Resultado.forEach(p => {
+                HospAjax.hospResultado(data).forEach(p => {
                     if (!agrupados[p.ProductoId]) {
                         agrupados[p.ProductoId] = {
                             ProductoId: p.ProductoId, ProductoNombre: p.ProductoNombre, Precios: []
@@ -6462,8 +6395,12 @@ if (fechaHoraRaw) {
                         FechaHoraAplicacionManual: p.FechaHoraAplicacionManual
                     }
                 });
-                const data = (typeof resp === 'string') ? JSON.parse(resp) : resp;
-                data.Exitoso ? registrados++ : errores.push(`${p.Nombre}: ${data.Mensaje}`);
+                const data = HospAjax.parseHospJson(resp);
+                if (!data) {
+                    errores.push(`${p.Nombre}: Respuesta inválida`);
+                    continue;
+                }
+                HospAjax.hospExitoso(data) ? registrados++ : errores.push(`${p.Nombre}: ${HospAjax.hospMensaje(data)}`);
             } catch (err) {
                 errores.push(`${p.Nombre}: Error de comunicación`);
                 console.error(err);
@@ -6490,8 +6427,8 @@ if (fechaHoraRaw) {
     async function abrirModalControlInsumosDirectos() {
         $("#tablaControlInsumosDirectosBody").empty();
 
-        let hayProductos = await consultarInsumosDirectosAplicacion();
-        if (!hayProductos) return;
+        const ok = await consultarInsumosDirectosAplicacion();
+        if (!ok) return;
 
         $("#modalControlInsumosDirectos").dialog({
             modal : true,
@@ -6508,22 +6445,22 @@ if (fechaHoraRaw) {
             const resp = await $.ajax({
                 url   : "/Hospitalizacion/ConsultarInsumosDirectosAplicacion",
                 method: "POST",
-                data  : { hospitalizacionId: $("#HospitalizacionId").val() }
+                dataType: "json",
+                data  : { hospitalizacionId: HospAjax.getHospitalizacionId() }
             });
             hideLoading();
 
-            const data = (typeof resp === 'string') ? JSON.parse(resp) : resp;
+            const data = HospAjax.parseHospJson(resp);
+            if (!data) {
+                mensajeEmergenteError("No se pudo interpretar la respuesta del servidor.");
+                return false;
+            }
 
-            if (data.Exitoso) {
-                if (data.Resultado && data.Resultado.length > 0) {
-                    renderizarTablaInsumosDirectos(data.Resultado);
-                    return true;
-                } else {
-                    alert("No hay insumos directos pendientes de aplicación.");
-                    return false;
-                }
+            if (HospAjax.hospExitoso(data)) {
+                renderizarTablaInsumosDirectos(HospAjax.hospResultado(data));
+                return true;
             } else {
-                mensajeEmergenteError(data.Mensaje);
+                mensajeEmergenteError(HospAjax.hospMensaje(data));
                 return false;
             }
         } catch (err) {
@@ -6577,6 +6514,10 @@ console.log("🔍 Campos del primer insumo directo:", productos[0]);
             </tr>`);
     });
 
+    if (tbody.children().length === 0) {
+        tbody.append(`<tr><td colspan="11" class="text-center text-muted py-3">No hay insumos pendientes de aplicación.</td></tr>`);
+    }
+
     setTimeout(() => {
         if (!$.fn.DataTable.isDataTable("#tablaControlInsumosDirectos")) {
             $("#tablaControlInsumosDirectos").DataTable({
@@ -6615,17 +6556,22 @@ function aplicarInsumoDirecto(id, fila) {
             cuentaId: $("#CuentaId").val()
         },
         success: function (resp) {
-            const data = (typeof resp === 'string') ? JSON.parse(resp) : resp;
-            if (data.Exitoso) {
+            const data = HospAjax.parseHospJson(resp);
+            if (!data) {
+                alert("No se pudo interpretar la respuesta del servidor.");
+                return;
+            }
+            if (HospAjax.hospExitoso(data)) {
                 fila.find("td:nth-child(6)").html('<span class="badge badge-success">SI</span>');
-fila.find("td:nth-child(7)").text(data.ProductoAplicado.FechaHoraAplicacion);
+fila.find("td:nth-child(7)").text((data.ProductoAplicado || data.productoAplicado || {}).FechaHoraAplicacion || '');
                 fila.find("td:nth-child(11)").empty();
                 // Subtotal viene directo del servidor
                 if (typeof detallesVm !== "undefined") {
-                    detallesVm.consultarInsumosDirectosAplicados(data.ProductoAplicado.Subtotal);
+                    var aplicado = data.ProductoAplicado || data.productoAplicado || {};
+                    detallesVm.consultarInsumosDirectosAplicados(aplicado.Subtotal || aplicado.subtotal);
                 }
             } else {
-                alert("Error: " + data.Mensaje);
+                alert("Error: " + HospAjax.hospMensaje(data));
             }
         },
         error: function (xhr) {
@@ -6741,7 +6687,6 @@ $(document).on('change', '#selectUnidadPaquete', function () {
 });
 </script>
 
-<script src="~/js/quill.js"></script>
 <script>
     $("#mdl-agregar-nota-enfermeria").on("dialogclose", function () {
         // Limpiar el editor Quill (si existe)
@@ -6760,18 +6705,23 @@ $(document).on('change', '#selectUnidadPaquete', function () {
         }
         if (detallesVm) {
             detallesVm.notaDiagnostico('');
+            detallesVm.notaTipoClinica('');
             detallesVm.editandoNotaMedica(false);
             detallesVm.editNotaMedicaId(null);
+            actualizarUiModalNotaMedica(false);
         }
     });
 
     $("#btnAgregarNotaEnfermeria").click(function () {
-    self.editandoNotaEnfermeria(false);
-    self.editNotaEnfermeriaId(null);
-    self.notaDiagnostico("");
-    if (quillEditor) quillEditor.setText("");
-    $("#mdl-agregar-nota-enfermeria").dialog("open");
-});
+        if (!window.detallesVm) return;
+        window.detallesVm.editandoNotaEnfermeria(false);
+        window.detallesVm.editNotaEnfermeriaId(null);
+        window.detallesVm.notaDiagnostico("");
+        if (window.detallesVm.quillEditor) {
+            window.detallesVm.quillEditor.setText("");
+        }
+        $("#mdl-agregar-nota-enfermeria").dialog("open");
+    });
 </script>
 
 }

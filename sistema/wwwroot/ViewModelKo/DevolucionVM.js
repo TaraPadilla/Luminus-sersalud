@@ -202,6 +202,10 @@ var DevolucionVM = function () {
     // =========================
     self.guardarFirmaDigital = function () {
         const canvas = document.getElementById('canvasFirma');
+        if (!canvas) {
+            alert("No se encontró el área de firma.");
+            return;
+        }
         const dataUrl = canvas.toDataURL("image/png");
         self.actualizarFirmaEnBD(dataUrl);
     };
@@ -336,8 +340,13 @@ var DevolucionVM = function () {
             alert("Seleccione un proveedor");
             return false;
         }
-        var bodegaOrigenId = $("#BodegaOrigenId").val();
-        if (!bodegaOrigenId || bodegaOrigenId.trim() === "") {
+        var $origen = $("#BodegaOrigenId");
+        if ($origen.find("option[value!='']").length === 0) {
+            alert("No hay bodegas de origen configuradas. Verifique sucursales y bodegas en el sistema.");
+            return false;
+        }
+        var bodegaOrigenId = $origen.val();
+        if (bodegaOrigenId === null || bodegaOrigenId === undefined || String(bodegaOrigenId).trim() === "") {
             alert("Seleccione una bodega de origen");
             return false;
         }

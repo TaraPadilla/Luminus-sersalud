@@ -1,9 +1,25 @@
 @model farmamest.Models.ConsentimientoHospiVM
 @using Microsoft.Extensions.Configuration
+@using farmamest.Utilidades
 @inject IConfiguration Config
 
+@functions {
+    string MarcaSiNo(string valor, string opcion)
+    {
+        if (string.IsNullOrWhiteSpace(valor) || valor == "-" || valor == "N/S")
+            return "&nbsp;&nbsp;";
+        var v = valor.Trim();
+        if (string.Equals(opcion, "SI", StringComparison.OrdinalIgnoreCase))
+            return v.Equals("SI", StringComparison.OrdinalIgnoreCase) || v.Equals("SÍ", StringComparison.OrdinalIgnoreCase) ? "X" : "&nbsp;&nbsp;";
+        return v.Equals("NO", StringComparison.OrdinalIgnoreCase) ? "X" : "&nbsp;&nbsp;";
+    }
+}
+
 @{
-    Layout = "_HojaMembreteLayout";
+    var embebido = ViewData["EmbebidoEnExpediente"] as bool? ?? false;
+    Layout = embebido ? null : "_HojaMembreteLayout";
+    ViewData["MostrarServicios"] = false;
+    ViewData["MostrarEmergencias"] = false;
     var imagenLogoBase64 = Config["ImagenLogoBase64"];
     ViewData["Direccion"] = Config["EstablecimientoDireccion"];
     ViewData["Telefono"] = Config["EstablecimientoTelefono"];
@@ -120,7 +136,7 @@
             mismo, y declaro estar debidamente informado(a) según lo establecido en el artículo seis (6), del Código de Salud de
             Guatemala, Decreto noventa guion noventa y siete (90-97) del Congreso de la República, y el artículo treinta (30)
             del Código Médico Deontológico, que reglamenta los derechos y obligaciones en materia de información y documentación
-            clínica. Declaro que tuve la oportunidad de aclarar mis dudas en entrevista con el Dr. Renato López. Así mismo
+            clínica. Declaro que tuve la oportunidad de aclarar mis dudas en entrevista con el @(Model.NombreMedicoTratante ?? "médico tratante"). Así mismo
             declaro que he recibido respuesta a todas mis preguntas, habiendo tomado la decisión de manera libre y voluntaria,
             consiento, ratifico y firmo.
         </p>
@@ -142,13 +158,13 @@
 
         <ul style="text-align: justify; line-height: 1.5; list-style: none; padding-left: 20px;">
             <li><strong>☢ ¿Existe posibilidad de que usted esté embarazada?</strong>
-                SÍ [ &nbsp;&nbsp; ] &nbsp;&nbsp; NO [ &nbsp;&nbsp; ]
+                SÍ [ @Html.Raw(MarcaSiNo(Model.RadiacionEmbarazada, "SI")) ] &nbsp;&nbsp; NO [ @Html.Raw(MarcaSiNo(Model.RadiacionEmbarazada, "NO")) ]
             </li>
             <li><strong>☢ Fecha de última menstruación (FUM):</strong>
-                _________________________
+                @(!string.IsNullOrWhiteSpace(Model.RadiacionFUM) ? Model.RadiacionFUM : "_________________________")
             </li>
             <li><strong>☢ ¿Está usted amamantando? (Relevante si se usa medio de contraste)</strong>
-                SÍ [ &nbsp;&nbsp; ] &nbsp;&nbsp; NO [ &nbsp;&nbsp; ]
+                SÍ [ @Html.Raw(MarcaSiNo(Model.RadiacionAmamantando, "SI")) ] &nbsp;&nbsp; NO [ @Html.Raw(MarcaSiNo(Model.RadiacionAmamantando, "NO")) ]
             </li>
         </ul>
 
@@ -173,9 +189,14 @@
             <tr>
                 <td style="width: 50%; padding-bottom: 50px; vertical-align: top;">
                     Por el Paciente<br><br><br><br>
-                    @if (!string.IsNullOrWhiteSpace(Model.URLFirmaPaciente))
+                    @{
+                        var firmaPaciente = !string.IsNullOrWhiteSpace(Model.FirmaPacienteBase64)
+                            ? Model.FirmaPacienteBase64
+                            : Model.URLFirmaPaciente;
+                    }
+                    @if (!string.IsNullOrWhiteSpace(firmaPaciente))
                     {
-                        <img width="180" height="80" src="@Model.URLFirmaPaciente" alt="Firma del Paciente" />
+                        <img width="180" height="80" src="@firmaPaciente" alt="Firma del Paciente" />
                         <br>
                     }
                     else
@@ -187,29 +208,84 @@
                 <td style="width: 50%; padding-bottom: 50px; vertical-align: top;">
                     Por el Acompañante<br>
                     (En caso el Paciente es menor de edad)<br><br><br>
-                    @if (!string.IsNullOrWhiteSpace(Model.URLFirmaResponsable))
+                    @{
+                        var firmaResponsable = !string.IsNullOrWhiteSpace(Model.FirmaResponsableBase64)
+                            ? Model.FirmaResponsableBase64
+                            : Model.URLFirmaResponsable;
+                    }
+                    @if (!string.IsNullOrWhiteSpace(firmaResponsable))
                     {
-                        <img width="180" height="80" src="@Model.URLFirmaResponsable" alt="Firma del Responsable" />
+                        <img width="180" height="80" src="@firmaResponsable" alt="Firma del Responsable" />
                         <br>
                     }
                     else
                     {
                         @:f.___________________________________<br><br>
                     }
-                    DPI: @(!string.IsNullOrWhiteSpace(Model.DPIResponsable) ? Model.DPIResponsable : "_________________________________")
+                    @{
+                        var dpiAcompanante = Model.DPIResponsable;
+                        if (!string.IsNullOrWhiteSpace(dpiAcompanante)
+                            && string.Equals(dpiAcompanante, Model.DPI, StringComparison.OrdinalIgnoreCase))
+                        {
+                            dpiAcompanante = null;
+                        }
+                    }
+                    DPI: @(!string.IsNullOrWhiteSpace(dpiAcompanante) ? dpiAcompanante : "_________________________________")
                 </td>
             </tr>
             <tr>
                 <td style="width: 50%; vertical-align: top;">
-                    Por el Doctor que autoriza<br><br><br><br>
-                    <img src="@Model.UrlFirmaMedico" alt="Firma del Médico"><br><br>
-                    No. de Colegiado: @(Model.ColegiadoMedico)
+                    Por el Doctor que autoriza<br><br>
+                    @{
+                        var firmaMedico = !string.IsNullOrWhiteSpace(Model.FirmaMedicoBase64)
+                            ? Model.FirmaMedicoBase64
+                            : Model.UrlFirmaMedico;
+                        if (PdfReportHelper.EsRutaImagenLogo(firmaMedico))
+                        {
+                            firmaMedico = null;
+                        }
+                    }
+                    @if (!string.IsNullOrWhiteSpace(firmaMedico))
+                    {
+                        <div style="width:88px;height:88px;border-radius:50%;overflow:hidden;border:2px solid #cbd5e1;display:inline-block;margin:8px 0;">
+                            <img src="@firmaMedico" alt="Firma del médico" style="width:88px;height:88px;object-fit:cover;display:block;" />
+                        </div>
+                        <br>
+                    }
+                    else
+                    {
+                        @:f.___________________________________<br><br>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.NombreMedicoTratante))
+                    {
+                        <div>@Model.NombreMedicoTratante</div>
+                    }
+                    No. de Colegiado: @(string.IsNullOrWhiteSpace(Model.ColegiadoMedico) ? "_________________________________" : Model.ColegiadoMedico)
                 </td>
                 <td style="width: 50%; vertical-align: top;">
-                    Por Sersalud<br><br><br><br>
-                    f.___________________________________<br><br>
+                    Por Sersalud<br><br>
+                    @{
+                        var firmaSersalud = !string.IsNullOrWhiteSpace(Model.FirmaRepresentanteBase64)
+                            ? Model.FirmaRepresentanteBase64
+                            : Model.URLFirmaRepresentanteNaranjo;
+                        if (PdfReportHelper.EsRutaImagenLogo(firmaSersalud))
+                        {
+                            firmaSersalud = null;
+                        }
+                    }
+                    @if (!string.IsNullOrWhiteSpace(firmaSersalud))
+                    {
+                        <div style="width:200px;min-height:72px;border:1px solid #cbd5e1;border-radius:8px;padding:6px;background:#fff;display:inline-block;margin:8px 0;">
+                            <img src="@firmaSersalud" alt="Firma Sersalud" style="max-width:188px;max-height:64px;display:block;" />
+                        </div>
+                        <br>
+                    }
+                    else
+                    {
+                        @:f.___________________________________<br><br>
+                    }
                     Erwin A. Aragón M.<br>
                     Administrador Único
                 </td>
-            </table>
+            </tr>
         </table>

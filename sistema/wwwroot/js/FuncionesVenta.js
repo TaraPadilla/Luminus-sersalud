@@ -9,14 +9,14 @@ actualizarPreciosVenta();
 /// Funciones Venta /////////
 $('#boton').click(function(){
 var fecha = document.getElementById('reservationtime').value;
-var empleadoid = document.getElementById('empleadoselect').vaalue;
+var empleadoid = document.getElementById('empleadoselect').value;
 
 var datos = "";
 $.ajax({
     method: "POST",
     data: datos,
     dataType: 'json',
-    url: '/CrearPDF/VentasPdf?fecha= '+fecha+'&empleadoid='+empleadoid,
+    url: '/Reportes/ReporteVentas?fecha=' + encodeURIComponent(fecha) + '&empleadoid=' + empleadoid,
     traditional: true,
     success: function (data, state) {
 
@@ -52,9 +52,13 @@ $('#buscartxt').keypress(function (e) {
             method: "POST",
             data: datos,
             dataType: 'json',
-            url: '/Productos/RetornarProducto ',
+            url: '/Productos/RetornarProducto',
             traditional: true,
             success: function (data, state) {
+                if (!data || !data.id) {
+                    toastr.warning("Producto no encontrado");
+                    return;
+                }
                 agregarATabla(data);
             },
             error: function (data) {
@@ -74,9 +78,13 @@ function agregardetalle(codigo) {
         method: "POST",
         data: datos,
         dataType: 'json',
-        url: '/Productos/RetornarProducto ',
+        url: '/Productos/RetornarProducto',
         traditional: true,
         success: function (data, state) {
+            if (!data || !data.id) {
+                toastr.warning("Producto no encontrado");
+                return;
+            }
             agregarATabla(data);
         },
         error: function (data) {
@@ -120,7 +128,7 @@ function FiltrarProductos(codigo) {
                 "showMethod": "show",
                 "hideMethod": "hide"
             };
-            toastr.warning(data.responseJSON.message);
+            toastr.warning(data.responseJSON && data.responseJSON.message ? data.responseJSON.message : "Error al buscar productos");
 
         },
     });
@@ -144,7 +152,7 @@ function agregarALista(data) {
             
         }
 
-        if(item.tipoProductoId === 10){
+        if(item.tipoProductoId === 1){
             var presentacionProducto = (item.presentacion == null) ? " --- " : (item.presentacion);
             var viaAdministracion = (item.viadmin == null) ? " --- " : (item.viadmin);
             var grupoTerapeutico = (item.grupoT == null) ? " --- " : (item.grupoT);
@@ -175,7 +183,7 @@ function agregarALista(data) {
             $('#listafiltro').append(htmlTags);
 
         } 
-        else if(item.tipoProductoId === 11){
+        else if(item.tipoProductoId === 2){
 
             var categoria = (item.categoria == null) ? " --- " : (item.categoria);
             var marca = (item.marca == null) ? " --- " : (item.marca);
@@ -232,7 +240,7 @@ $("#descuentoventa").on('change', function () {
 
     var descuento = document.getElementById('descuentoventa').value;
 
-    total = document.getElementById('precio-total-a-pagar').value;
+    total = document.getElementById('precio-total-a-pagar').innerText;
     sumatotal = parseFloat(total) - parseFloat(descuento);
 
     console.log(total);
@@ -297,6 +305,8 @@ function editarValorFila(r) {
 // }
 
 function actualizarPreciosVenta(){
+    if (!document.getElementById('subtotal-venta') || !document.getElementById('contentdetalle'))
+        return;
 
     var lista = document.getElementById('contentdetalle').querySelectorAll("td.total-t");
     var listasub = document.getElementById('contentdetalle').querySelectorAll("td.subtotal-t");
@@ -569,7 +579,7 @@ function GuardarEnvio() {
             // si tiene exito, reiniciemos la pag
             // pero marquemos que tuvo exito
             console.log(data);
-            window.location.href = '/Venta/Nuevo/';
+            window.location.href = '/Venta/NuevaVentaFarmacia/';
 
         },
         error: function (data) {
@@ -595,7 +605,6 @@ function ModificarEnvio(id) {
             "Ids": $(this).html(),
         });
     });
-    datos
     $.each($("#tableventa tbody tr td.nuevo-detalle").parent(), function () {
 
         detalleVenta.push({
@@ -719,7 +728,7 @@ function GuardarVentaFarmacia() {
         traditional: true,
         success: function (data) {
             window.open('/CrearPDF/ReciboVentaPdf/'+ data,'_blank');
-            window.location.href = '/Venta/Nuevo/';
+            window.location.href = '/Venta/NuevaVentaFarmacia/';
         },
         error: function (data) {
             alert(data.responseJSON.messsage);
@@ -768,8 +777,8 @@ function ModificarVenta(id) {
 
         detalleVenta.push({
             "ProductoId": $(this).find("td").eq(9).html(),
-            "Cantidad":this.parentNode.querySelectorAll("td.cantidad-fila")[0].querySelectorAll("input")[0].value,
-            "Precio": this.parentNode.querySelectorAll("td.precio-fila")[0].querySelectorAll("select")[0].value,
+            "Cantidad": this.querySelectorAll("td.cantidad-fila")[0].querySelectorAll("input")[0].value,
+            "Precio": this.querySelectorAll("td.precio-fila")[0].querySelectorAll("select")[0].value,
             "Descuento": $(this).find("td").eq(5).html(),
             "Subtotal": $(this).find("td").eq(6).html(),
             "Total": $(this).find("td").eq(7).html()

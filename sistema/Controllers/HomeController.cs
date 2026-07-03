@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using farmamest.Models;
 using Database.Shared.IRepository;
@@ -19,6 +20,9 @@ using sistema.Models;
 using System.Text.Json;
 using DocumentFormat.OpenXml.Bibliography;
 using sistema.Service.IService;
+using Microsoft.Extensions.Configuration;
+using farmamest.Utilidades;
+using sistema.Helpers;
 
 namespace sistema.Controllers
 
@@ -37,6 +41,7 @@ namespace sistema.Controllers
 
         //Servicio (logica de negocio)
         private readonly IHomeService _homeService = null;
+        private readonly IConfiguration _configuration;
 
 
         public HomeController(
@@ -46,6 +51,7 @@ namespace sistema.Controllers
             IConsultas consultasRepository,
             ICitas citasRepository,
             IPersonas personasRepository,
+            IConfiguration configuration,
             //Servicio (logica de negocio)
             IHomeService homeService
             )
@@ -56,19 +62,13 @@ namespace sistema.Controllers
             _habitacionRepository = habitacionRepository;
             _consultasRepository = consultasRepository;
             _personasRepository = personasRepository;
+            _configuration = configuration;
             //Servicio (logica de negocio)
             _homeService = homeService;
         }
         public IActionResult Index()
         {
-            //var citas = _citasRepository.CitasListado();
-            //var citasConsultadas = new HomeCitasViewModel()
-            //{
-            //    citas = citas
-            //};
-            //return View(citasConsultadas);
-            // return await _generatePdf.GetPdf("Views/Home/Index.cshtml", "Hello World");
-            return View();
+            return View(new HomeCitasViewModel());
         }
 
         public IActionResult Privacy()
@@ -77,9 +77,22 @@ namespace sistema.Controllers
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        [AllowAnonymous]
         public IActionResult Error()
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            var model = new ErrorViewModel
+            {
+                RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+                IsDatabaseError = string.Equals(Request.Query["db"], "1", StringComparison.Ordinal)
+            };
+
+            if (model.IsDatabaseError && HttpContext.Session != null)
+            {
+                model.Message = HttpContext.Session.GetString("DatabaseErrorMessage");
+                HttpContext.Session.Remove("DatabaseErrorMessage");
+            }
+
+            return View(model);
         }
 
         [HttpPost]
@@ -94,23 +107,21 @@ namespace sistema.Controllers
 
                 if (citas != null && citas.Count > 0)
                 {
-                    //foreach (var cita in citas)
-                    //{
-                    //    citasConsultadas.Add(new HomeCitasViewModel
-                    //    {
-                    //        FechaInicio = ((DateTime)cita.FechaInicio).ToString("MM/dd/yyyy"),
-                    //        Hora = ((DateTime)cita.FechaInicio).ToString("HH:mm"),
-                    //        Sucursal = cita.Sucursal.NombreSucursal,
-                    //        Empleado = cita.Empleado.NombreYApellidos,
-                    //        Paciente = cita.Paciente.Nombre,
-                    //        NumeroTurno = cita.NumeroTurno,
-                    //        Servicios = (List<Servicio>)cita.CitasServicios
-
-
-                    //    });
-
-
-                    //}
+                    foreach (var cita in citas)
+                    {
+                        if (cita.FechaInicio == null) continue;
+                        citasConsultadas.Add(new HomeCitasViewModel
+                        {
+                            CitaId = cita.Id,
+                            FechaInicio = cita.FechaInicio.Value.ToString("MM/dd/yyyy"),
+                            Hora = cita.FechaInicio.Value.ToString("HH:mm"),
+                            Sucursal = cita.Sucursal?.NombreSucursal ?? "-",
+                            Empleado = cita.Empleado?.NombreYApellidos ?? "-",
+                            Paciente = cita.Paciente?.Nombre ?? "-",
+                            NumeroTurno = cita.NumeroTurno,
+                            Especialidad = cita.EspecialidadText
+                        });
+                    }
                 }
 
 
@@ -136,16 +147,19 @@ namespace sistema.Controllers
                 {
                     foreach (var citadiasdespues in citasdiasdespues)
                     {
+                        if (citadiasdespues.FechaInicio == null) continue;
 
                         citasProximas.Add(new CitaViewModel
                         {
-                            FechaInicio = ((DateTime)citadiasdespues.FechaInicio).ToString("MM/dd/yyyy"),
-                            Hora = ((DateTime)citadiasdespues.FechaInicio).ToString("HH:mm"),
+                            CitaId = citadiasdespues.Id,
+                            FechaInicio = citadiasdespues.FechaInicio.Value.ToString("MM/dd/yyyy"),
+                            Hora = citadiasdespues.FechaInicio.Value.ToString("HH:mm"),
                             EspecialidadText = citadiasdespues.EspecialidadText,
                             EmpleadoText = citadiasdespues.EmpleadoText,
-                            servicios = citadiasdespues.CitasServicios.ToList(),
+                            servicios = citadiasdespues.CitasServicios?.ToList() ?? new List<CitasServicio>(),
                             PacienteNombre = citadiasdespues.Paciente != null ? citadiasdespues.Paciente.Nombre : "-",
                             Telefono = citadiasdespues.Paciente != null ? citadiasdespues.Paciente.Telefono : "-",
+                            Email = citadiasdespues.Paciente?.Email ?? "",
                             EstadoCita = citadiasdespues.EstadoCita,
                             PersonText = citadiasdespues.PersonText,
                             EsMenorDeEdadText = citadiasdespues.EsMenorDeEdadText,
@@ -170,13 +184,15 @@ namespace sistema.Controllers
             }
         }
 
-      [HttpPost]
-public string ConsultarAlertaVacunas(int idPaciente)
+        [HttpPost]
+public string ConsultarAlertaVacunas(int idPaciente = 0)
 {
     try
     {
         var alertasVacunas = new List<VacunaPacienteViewModel>();
-        var vacunasPacientes = _pacientesRepository.GetVacunasPaciente(idPaciente);
+        var vacunasPacientes = idPaciente > 0
+            ? _pacientesRepository.GetVacunasPaciente(idPaciente)
+            : _pacientesRepository.GetVacunasAlertaPaciente();
 
         if (vacunasPacientes != null)
         {
@@ -185,10 +201,10 @@ public string ConsultarAlertaVacunas(int idPaciente)
                 alertasVacunas.Add(new VacunaPacienteViewModel
                 {
                     Id = vacunaPaciente.Id,
-                    NombreVacuna = vacunaPaciente.Vacuna.Nombre,
-                    NombrePaciente = vacunaPaciente.Paciente.Nombre,
-                    Telefono = vacunaPaciente.Paciente.Telefono,
-                    Email = vacunaPaciente.Paciente.Email,
+                    NombreVacuna = vacunaPaciente.Vacuna?.Nombre ?? "-",
+                    NombrePaciente = vacunaPaciente.Paciente?.Nombre ?? "-",
+                    Telefono = vacunaPaciente.Paciente?.Telefono ?? "-",
+                    Email = vacunaPaciente.Paciente?.Email ?? "-",
                     Primera = vacunaPaciente.Primera,
                     Segunda = vacunaPaciente.Segunda,
                     Tercera = vacunaPaciente.Tercera,
@@ -208,7 +224,7 @@ public string ConsultarAlertaVacunas(int idPaciente)
         return JsonSerializer.Serialize(new
         {
             Exitoso = false,
-            Mensaje = "Error al consultar habitaciones ocupadas. " + ex.Message
+            Mensaje = "Error al consultar alertas de vacunas. " + ex.Message
         });
     }
 }
@@ -262,7 +278,8 @@ public string ConsultarAlertaVacunas(int idPaciente)
 
                 foreach (var consulta in consultas)
                 {
-                    pacientes.Add(consulta.Citas.Paciente);
+                    if (consulta.Citas?.Paciente != null)
+                        pacientes.Add(consulta.Citas.Paciente);
                 }
 
                 var pacientesAplicables = pacientes.Distinct().ToList();
@@ -312,7 +329,10 @@ public string ConsultarAlertaVacunas(int idPaciente)
                 //}
 
                 var pacientesContactar = _personasRepository.GetPersonas()
-                    .Where(x => x.TipificacionComunicacion.NombreTipificacion.ToLower().Trim() == "Recontactado".ToLower().Trim()).ToList();
+                    .Where(x => x.TipificacionComunicacion != null
+                        && x.TipificacionComunicacion.NombreTipificacion != null
+                        && x.TipificacionComunicacion.NombreTipificacion.ToLower().Trim() == "recontactado")
+                    .ToList();
 
                 return Json(new { Exitoso = true, Resultado = pacientesContactar });
             }
@@ -332,6 +352,9 @@ public string ConsultarAlertaVacunas(int idPaciente)
 
                 foreach (var fase in fasesTratamiento)
                 {
+                    if (fase.Paciente == null || fase.FaseTratamiento == null)
+                        continue;
+
                     pacientesAniversario.Add(new HomePacientesAniversarioViewModel
                     {
                         PacienteId = fase.Paciente.Id,
@@ -364,10 +387,18 @@ public string ConsultarAlertaVacunas(int idPaciente)
 
                         reconsultas.Add(new HomeCitasViewModel
                         {
-                            FechaInicio = (reconsulta.FechaInicio != null ? reconsulta.FechaInicio.ToString() : "-"),
-                            Paciente = reconsulta.Paciente.Nombre,
+                            CitaId = reconsulta.Id,
+                            FechaInicio = reconsulta.FechaInicio != null
+                                ? reconsulta.FechaInicio.Value.ToString("MM/dd/yyyy")
+                                : "-",
+                            Hora = reconsulta.FechaInicio != null
+                                ? reconsulta.FechaInicio.Value.ToString("HH:mm")
+                                : "",
+                            Paciente = reconsulta.Paciente?.Nombre ?? "-",
+                            PacienteNombre = reconsulta.Paciente?.Nombre ?? "-",
                             Empleado = reconsulta.PersonText,
-                            Telefono = reconsulta.Paciente.Telefono,
+                            Telefono = reconsulta.Paciente?.Telefono ?? "-",
+                            Email = reconsulta.Paciente?.Email ?? "",
                             Especialidad = reconsulta.EspecialidadText
                         });
                     }
@@ -560,40 +591,33 @@ public string ConsultarAlertaVacunas(int idPaciente)
             try
             {
                 var habitacionesOcupadas = new List<HomeHabitacionesOcupadasViewModel>();
-                var habitaciones = _habitacionRepository.GetHabitaciones()
-                    .Where(a => a.EstadoHabitacionId == (int)EstadoHabitacionEnum.Ocupada);
-                if (habitaciones != null)
+                var habitaciones = _habitacionRepository.GetHabitaciones() ?? new List<Habitacion>();
+
+                foreach (var habitacion in habitaciones)
                 {
-                    foreach (var habitacion in habitaciones)
+                    var habitacionVm = HospitalizacionHabitacionHelper.CrearViewModel(habitacion, _habitacionRepository);
+                    if (habitacionVm.HabitacionEstadoId != (int)EstadoHabitacionEnum.Ocupada
+                        || !habitacionVm.HospitalizacionId.HasValue
+                        || habitacionVm.HospitalizacionId.Value <= 0)
                     {
-                        var ocupante = "";
-                        var paciente = _habitacionRepository.GetPacienteOcupante(habitacion.Id);
-                        ocupante = paciente != null ? paciente.Nombre : "-";
-
-                        var medico = "";
-                        var codigoCita = "";
-
-                        var hospitalizacionActualId = _habitacionRepository.GetHospitalizacionActual(habitacion.Id) == null ? 0 : _habitacionRepository.GetHospitalizacionActual(habitacion.Id).Id;
-                        var hospitalizacionActual = _habitacionRepository.GetHospitalizacionActual(habitacion.Id);
-
-                        medico = hospitalizacionActual.Consultas?
-                            .FirstOrDefault()?.Citas?.Empleado?.NombreYApellidos;
-
-                        codigoCita = hospitalizacionActual.Consultas?
-                            .FirstOrDefault()?.Citas.CodigoDeCita;
-
-                        habitacionesOcupadas.Add(new HomeHabitacionesOcupadasViewModel
-                        {
-                            HospitalizacionId = hospitalizacionActualId,
-                            HabitacionId = habitacion.Id,
-                            HabitacionNumeroNombre = habitacion.NombreNumeroHabitacion,
-                            HabitacionCategoria = habitacion.CategoriaHabitacion.NombreCategoria,
-                            Paciente = ocupante,
-                            MedicoAsignado = medico,
-                            CodigoCita = codigoCita
-                        });
+                        continue;
                     }
+
+                    var (_, medico, codigoCita) =
+                        _habitacionRepository.GetPacienteOcupanteConMedicoYCita(habitacion.Id);
+
+                    habitacionesOcupadas.Add(new HomeHabitacionesOcupadasViewModel
+                    {
+                        HospitalizacionId = habitacionVm.HospitalizacionId.Value,
+                        HabitacionId = habitacion.Id,
+                        HabitacionNumeroNombre = habitacionVm.HabitacionNombre ?? "-",
+                        HabitacionCategoria = habitacionVm.HabitacionCategoria ?? "-",
+                        Paciente = habitacionVm.HabitacionOcupante ?? "-",
+                        MedicoAsignado = medico?.NombreYApellidos ?? "-",
+                        CodigoCita = string.IsNullOrWhiteSpace(codigoCita) ? "-" : codigoCita
+                    });
                 }
+
                 return JsonSerializer.Serialize(new
                 {
                     Exitoso = true,

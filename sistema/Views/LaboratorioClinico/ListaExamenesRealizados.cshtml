@@ -130,7 +130,7 @@
                 <hr />
                 @if (!User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Radiologia"))
                 {
-                    <a class="btn btn-danger btn-sm" asp-action="NuevaVentaUnificada" asp-route-islaboratorio="true"
+                    <a class="btn btn-danger btn-sm" asp-action="NuevaVentaLaboratorio"
                         asp-controller="Venta">
                         <i class="fa fa-plus"></i>&nbsp;
                         Nuevo examen
@@ -312,8 +312,7 @@
                                                 <div class="col-md-6">
                                                     <!-- Botón para Enviar Correo -->
                                                     <button class="btn btn-danger"
-                                                        @* onclick="enviarResultadosLaboratorioEmail('@item.ExamenNumero','@item.Paciente','@item.PacienteEmail')" *@
-                                                        onclick="enviarResultadosLaboratorioEmail('@item.ExamenNumero','@item.Paciente','yosephy23@gmail.com')"
+                                                        onclick="enviarResultadosLaboratorioEmail('@item.ExamenNumero','@item.Paciente','@item.PacienteEmail')"
                                                         title="Enviar por Correo">
                                                         <i class="fas fa-envelope"></i>
                                                     </button>
@@ -321,8 +320,7 @@
                                                 <div class="col-md-6">
                                                     <!-- Botón para Enviar por WhatsApp -->
                                                     <button class="btn btn-success"
-                                                        @* onclick="enviarResultadosLaboratorioWhatsApp('@item.ExamenNumero','@item.Paciente','@item.PacienteCelular')" *@
-                                                        onclick="enviarResultadosLaboratorioWhatsApp('@item.ExamenNumero','@item.Paciente','+584120122517')"
+                                                        onclick="enviarResultadosLaboratorioWhatsApp('@item.ExamenNumero','@item.Paciente','@item.PacienteCelular')"
                                                         title="Enviar por WhatsApp">
                                                         <i class="fab fa-whatsapp"></i>
                                                     </button>

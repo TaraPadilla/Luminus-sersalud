@@ -6,6 +6,9 @@ var listaVM = new BancoListaVM();
 ko.applyBindings(listaVM);
 
 $(document).ready(function () {
+    if ($.fn.DataTable.isDataTable("#tabla-cuenta")) {
+        $("#tabla-cuenta").DataTable().destroy();
+    }
     drawDataTable("tabla-cuenta");
 });
 

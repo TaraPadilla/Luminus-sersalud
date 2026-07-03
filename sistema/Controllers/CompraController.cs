@@ -173,6 +173,11 @@ namespace sistema.Controllers
 
             var userName = _userManager.GetUserName(HttpContext.User);
             var user = _userRepository.Get(userName);
+            if (user == null)
+            {
+                TempData["Message"] = "No se pudo identificar el usuario actual.";
+                return RedirectToAction("Index", "Home");
+            }
 
             // Inicializar lista de productos
             List<ProductoCompraViewModel> productos = new List<ProductoCompraViewModel>();
@@ -243,9 +248,9 @@ namespace sistema.Controllers
 
             return RedirectToAction("Nuevo", new
             {
-                ambienteId = 5,
-                tipoDocumentoId = 2,
-                TipoCompraId = (int?)null,
+                ambienteId = model.CompraAmbienteId ?? model.EncabezadoAmbienteId ?? (int)AmbienteEnum.Bodega,
+                tipoDocumentoId = model.EncabezadoTipoDocumentoId ?? (int)CompraTipoDocumentoEnum.Compra,
+                TipoCompraId = model.EncabezadoTipoCompraId > 0 ? model.EncabezadoTipoCompraId : (int?)null,
                 ProveedorId = (int?)null
             });
         }
@@ -276,7 +281,7 @@ namespace sistema.Controllers
                         + " - Activo y concentracion: "
                         + producto.ActivoYConcentracion
                         + " ("
-                        + producto.TipoProducto.NombreTipoProducto
+                        + (producto.TipoProducto?.NombreTipoProducto ?? "-")
                         + " - "
                         + ambiente.NombreAmbiente
                         + ")"
@@ -415,6 +420,8 @@ namespace sistema.Controllers
                     var equivalencia = equivalencias
                         .Where(a => a.UnidadMedidaCompraId == id)
                         .FirstOrDefault();
+                    if (equivalencia?.UnidadMedidaCompra == null)
+                        continue;
                     var unidadBd = new UnidadMedidaCompraViewModel
                     {
                         Id = id,
@@ -548,6 +555,42 @@ namespace sistema.Controllers
                 });
             }
         }
+        public class ProductoPrecioSolicitudDto
+        {
+            public int ProductoId { get; set; }
+        }
+
+        [HttpPost]
+        public JsonResult ObtenerUltimosPreciosPorProveedor(string proveedor, [FromBody] List<ProductoPrecioSolicitudDto> productos)
+        {
+            try
+            {
+                var precios = new Dictionary<string, decimal>();
+                if (string.IsNullOrWhiteSpace(proveedor) || productos == null || productos.Count == 0)
+                    return Json(new { Exitoso = true, Precios = precios });
+
+                var proveedorBd = _proveedorRepository.GetProveedorPorNombre(proveedor.Trim());
+                foreach (var item in productos.Where(p => p.ProductoId > 0))
+                {
+                    var detalles = _compraRepository.GetDetalleOrdenCompraByIdProducto(item.ProductoId) ?? new List<DetalleOrdenCompra>();
+                    var ultimo = detalles
+                        .Where(d => d.OrdenCompra != null
+                                    && (proveedorBd == null || d.OrdenCompra.ProveedorId == proveedorBd.Id))
+                        .OrderByDescending(d => d.OrdenCompra.Fecha)
+                        .FirstOrDefault();
+
+                    if (ultimo != null)
+                        precios[item.ProductoId.ToString()] = ultimo.Precio;
+                }
+
+                return Json(new { Exitoso = true, Precios = precios });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { Exitoso = false, Mensaje = "Error al consultar precios del proveedor. " + ex.Message });
+            }
+        }
+
         [HttpPost]
         public string ConsultarInfoProveedor(string proveedorNombre)
         {
@@ -788,8 +831,8 @@ namespace sistema.Controllers
                     FechaCompra = fechaHora,
                     Observaciones = model.EncabezadoObservacion,
                     // Estos dos siguen fijos por ahora, lo vemos en un paso aparte
-                    TipoCompraId = 1,
-                    CompraTipoDocumentoId = 1,
+                    TipoCompraId = model.EncabezadoTipoCompraId > 0 ? model.EncabezadoTipoCompraId : 1,
+                    CompraTipoDocumentoId = model.EncabezadoTipoDocumentoId ?? (int)CompraTipoDocumentoEnum.OrdenCompra,
                     OrdenCompraRecibida = ordenCompraRecibida,
                     FechaRecepcion = fechaRecepcionFactura,
                     DetalleCompras = new List<DetalleCompra>()
@@ -1571,6 +1614,8 @@ namespace sistema.Controllers
                                 var equivalencia = producto.Producto.ProductoEquivalencias
                                     .Where(a => a.UnidadMedidaVentaId == ubicacion.UnidadMedidaVentaId)
                                     .FirstOrDefault();
+                                if (equivalencia == null)
+                                    continue;
                                 var unidadVenta = ubicacion.UnidadMedidaVenta ?? new UnidadMedidaVenta();
 
                                 ubicaciones.Add(new CompraUbicacionViewModel
@@ -1583,7 +1628,7 @@ namespace sistema.Controllers
                                     NombreUnidad = unidadVenta.Nombre,
                                     CantidadEquivalenteDestino = equivalencia.CantidadEquivalenteDestino * ubicacion.Cantidad,
                                     UnidadEquivalencia = $"1 {unidadVenta.Nombre} =" +
-                                        $" {equivalencia.CantidadEquivalenteDestino} {equivalencia.UnidadMedidaVenta.Nombre}"
+                                        $" {equivalencia.CantidadEquivalenteDestino} {equivalencia.UnidadMedidaVenta?.Nombre ?? "-"}"
                                 });
 
                                 // Precios
@@ -1765,8 +1810,8 @@ namespace sistema.Controllers
 
         public IActionResult ReporteComprasFechas()
         {
-            var model = new CompraBaseViewModel() { };
-            // model.Init(_empleadoRepository);
+            var model = new CompraBaseViewModel();
+            model.Init(_empleadoRepository);
 
             return View(model);
         }

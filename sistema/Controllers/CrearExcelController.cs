@@ -1,4 +1,4 @@
-﻿using ClosedXML.Excel;
+using ClosedXML.Excel;
 using Database.Shared.Data;
 using Database.Shared.IRepository;
 using Database.Shared.Models;
@@ -441,17 +441,18 @@ namespace farmamest.Controllers
 
                 // Totales y datos del reporte
                 decimal totalCostos = 0;
+                decimal totalVentas = ventas.Sum(v => v.DetalleVenta.Sum(d => d.Total));
                 decimal totalMontoPagado = ventas.Sum(v => v.MontoPago);
                 decimal totalVuelto = ventas.Sum(v => v.Vuelto);
 
                 worksheet.Cell(5, 1).Value = "Total de Ventas:";
-                worksheet.Cell(5, 2).Value = (totalMontoPagado - totalVuelto);
+                worksheet.Cell(5, 2).Value = totalVentas;
                 worksheet.Cell(6, 1).Value = "Vuelto Total:";
                 worksheet.Cell(6, 2).Value = totalVuelto;
                 worksheet.Cell(7, 1).Value = "Total de Costos:";
                 worksheet.Cell(7, 2).Value = totalCostos;
                 worksheet.Cell(8, 1).Value = "Ganancia Total:";
-                worksheet.Cell(8, 2).Value = (totalMontoPagado - totalCostos);
+                worksheet.Cell(8, 2).Value = (totalVentas - totalCostos);
 
                 worksheet.Range("A5:B8").Style.Font.Bold = true;
                 worksheet.Range("A5:B8").Style.Fill.BackgroundColor = XLColor.LightBlue;
@@ -506,16 +507,14 @@ namespace farmamest.Controllers
                     foreach (var detalle in venta.DetalleVenta)
                     {
                         decimal precioCosto = detalle.Producto?.ProductosInventario.FirstOrDefault()?.PrecioCosto ?? 0;
-                        decimal precioVentaNormal = detalle.Producto?.ProductosInventario.FirstOrDefault()?.ProductosInventarioPrecios
+                        decimal precioVentaSugerido = detalle.Producto?.ProductosInventario.FirstOrDefault()?.ProductosInventarioPrecios
                             .FirstOrDefault(p => p.Precio?.NombrePrecio == "Normal")?.Valor ?? 0;
-                        decimal precioVentaDescuento = detalle.Producto?.ProductosInventario.FirstOrDefault()?.ProductosInventarioPrecios
-                            .FirstOrDefault(p => p.Precio?.NombrePrecio == "Descuento")?.Valor ?? 0;
-                        decimal precioVentaUtilizado = detalle.Producto?.ProductosInventario.FirstOrDefault()?.ProductosInventarioPrecios.FirstOrDefault()?.Valor ?? 0;
-                        string nombrePrecioUtilizado = detalle.Producto?.ProductosInventario.FirstOrDefault()?.ProductosInventarioPrecios.FirstOrDefault()?.Precio?.NombrePrecio ?? "Sin Nombre";
+                        decimal precioVenta = detalle.Precio;
+                        decimal descuento = detalle.Descuento;
 
                         int cantidad = detalle.Cantidad;
                         decimal costoTotal = precioCosto * cantidad;
-                        decimal margenUnitario = precioVentaUtilizado - precioCosto;
+                        decimal margenUnitario = precioVenta - precioCosto;
                         decimal margenTotal = margenUnitario * cantidad;
 
                         totalCostos += costoTotal;
@@ -537,10 +536,9 @@ namespace farmamest.Controllers
                         worksheet.Cell(row, 14).Value = venta.Empleado?.NombreYApellidos ?? "Sin Empleado";
                         worksheet.Cell(row, 15).Value = cantidad;
                         worksheet.Cell(row, 16).Value = precioCosto;
-                        worksheet.Cell(row, 17).Value = precioVentaNormal;
-                        worksheet.Cell(row, 18).Value = precioVentaDescuento;
-                        // worksheet.Cell(row, 19).Value = $"{precioVentaUtilizado} ({nombrePrecioUtilizado})";
-                        worksheet.Cell(row, 19).Value = precioVentaNormal < precioVentaDescuento ? 0 : precioVentaNormal - precioVentaDescuento;
+                        worksheet.Cell(row, 17).Value = precioVentaSugerido;
+                        worksheet.Cell(row, 18).Value = precioVenta;
+                        worksheet.Cell(row, 19).Value = descuento;
                         worksheet.Cell(row, 20).Value = venta.MontoPago;
                         worksheet.Cell(row, 21).Value = venta.Vuelto;
                         worksheet.Cell(row, 22).Value = detalle.Total;
@@ -908,8 +906,13 @@ namespace farmamest.Controllers
         public IActionResult MedicamentosControladosHospiExcel(int hospitalizacionId)
         {
             // Obtener los medicamentos controlados desde la base de datos
-            var medicamentos = _context.MedicamentosNoControlado
-                .Where(m => m.HospitalizacionId == hospitalizacionId)
+            var historialMeds = _context.MedicamentosNoControlado
+                .Where(m => m.HospitalizacionId == hospitalizacionId && !m.Eliminado)
+                .OrderByDescending(m => m.FechaRegistro)
+                .ToList();
+            var ultimaFechaRegistro = historialMeds.FirstOrDefault()?.FechaRegistro;
+            var medicamentos = historialMeds
+                .Where(m => ultimaFechaRegistro == null || m.FechaRegistro == ultimaFechaRegistro)
                 .OrderBy(m => m.ProductoNombre)
                 .ToList();
 
@@ -938,7 +941,7 @@ namespace farmamest.Controllers
 
                 ws.Cell(5, 1).Value = "Fecha:";
                 ws.Cell(5, 1).Style.Font.Bold = true;
-                ws.Cell(5, 2).Value = DateTime.Now.ToString("dd/MM/yyyy");
+                ws.Cell(5, 2).Value = farmamest.Utilidades.HospitalTimeHelper.NowGuatemala().ToString("dd/MM/yyyy");
                 ws.Cell(5, 2).Style.Border.BottomBorder = XLBorderStyleValues.Thin;
 
                 ws.Cell(6, 1).Value = "Paciente:";
@@ -982,19 +985,15 @@ namespace farmamest.Controllers
                 {
                     foreach (var m in medicamentos)
                     {
-                        // Calcular descartado y retornadas (si no existen en BD)
-                        decimal descartado = m.UnidadesIniciales - m.Utilizado;
-                        decimal retornadas = descartado > 0 ? descartado : 0;
-
                         ws.Cell(row, 1).Value = m.ProductoNombre;
                         ws.Cell(row, 1).Style.Font.Bold = true;
                         ws.Cell(row, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
 
-                        ws.Cell(row, 2).Value = m.UnidadesIniciales;   // Inicial
-                        ws.Cell(row, 3).Value = 0;                     // Extra (no disponible en esta tabla)
-                        ws.Cell(row, 4).Value = m.Utilizado;           // Utilizado
-                        ws.Cell(row, 5).Value = descartado;            // Descartado
-                        ws.Cell(row, 6).Value = retornadas;            // Retornadas
+                        ws.Cell(row, 2).Value = m.UnidadesIniciales;
+                        ws.Cell(row, 3).Value = m.UnidadesExtra;
+                        ws.Cell(row, 4).Value = m.Utilizado;
+                        ws.Cell(row, 5).Value = m.Descartado;
+                        ws.Cell(row, 6).Value = m.Retornadas;
 
                         var dataRange = ws.Range(row, 1, row, 6);
                         dataRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;

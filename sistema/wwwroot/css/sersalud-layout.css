@@ -1,0 +1,391 @@
+/**
+ * SerSalud layout — matches client sidebar reference:
+ * - Full-height left column with lighter brand bar + dark menu
+ * - Top bar only over content area (must NOT cover sidebar brand)
+ * - Menu: Dashboard, Precios, Hospital, …
+ */
+
+/* ── Sidebar column: full viewport, no theme header offset ── */
+.layout-sersalud-compact.fixed-sidebar .app-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 280px !important;
+    min-width: 280px !important;
+    height: 100vh !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    display: flex !important;
+    flex-direction: column;
+    overflow: hidden;
+    background: #1a1d21 !important;
+    z-index: 1030;
+    box-shadow: none;
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Theme hides this when fixed-sidebar + fixed-header; must override */
+.layout-sersalud-compact.fixed-sidebar.fixed-header .app-sidebar .app-header__logo.sersalud-sidebar-brand,
+.layout-sersalud-compact .app-sidebar .app-header__logo.sersalud-sidebar-brand {
+    display: flex !important;
+    visibility: visible !important;
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    min-width: 280px;
+    height: 60px;
+    flex: 0 0 60px;
+    padding: 0 3rem 0 1.5rem;
+    background: #2d3339 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    z-index: 12;
+}
+
+.layout-sersalud-compact .app-sidebar .sersalud-sidebar-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #d1d5db;
+    letter-spacing: 0.02em;
+    text-align: left;
+    flex: 1 1 auto;
+    pointer-events: none;
+}
+
+.layout-sersalud-compact .app-sidebar .app-header__logo.sersalud-sidebar-brand .header__pane {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+}
+
+.layout-sersalud-compact .app-sidebar .app-header__mobile-menu {
+    display: none !important;
+}
+
+/* Top bar: only the content column — do not paint over sidebar brand */
+.layout-sersalud-compact.fixed-header .app-header {
+    position: fixed !important;
+    top: 0 !important;
+    left: 280px !important;
+    width: calc(100% - 280px) !important;
+    height: 60px;
+    padding-left: 0 !important;
+    background: #0d1619 !important;
+    z-index: 1025;
+    box-shadow: none;
+    border-bottom: none;
+    display: flex !important;
+    align-items: center;
+}
+
+.layout-sersalud-compact .app-header .app-header__logo.sersalud-header-logo {
+    display: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    overflow: hidden;
+}
+
+.layout-sersalud-compact .app-header .app-header__content {
+    flex: 1 1 auto;
+    width: 100%;
+    height: 60px;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 0 1.5rem;
+}
+
+.layout-sersalud-compact .app-header .app-header__left,
+.layout-sersalud-compact .app-header .app-header__right {
+    display: none !important;
+}
+
+.layout-sersalud-compact .navbar-custom-container {
+    display: flex !important;
+    width: 100% !important;
+    justify-content: center !important;
+    align-items: center !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.layout-sersalud-compact .navbar-nav-custom {
+    justify-content: center;
+    gap: 8px;
+}
+
+.layout-sersalud-compact .user-name-display {
+    color: #fff;
+    border-left: 1px solid #454d55;
+    padding-left: 12px;
+    margin-left: 4px;
+    font-size: 0.75rem;
+    line-height: 1.3;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.layout-sersalud-compact .user-name-display a {
+    color: #fff !important;
+}
+
+.layout-sersalud-compact .btn-sm-custom {
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+/* Top header nav — always in the content header bar (client reference) */
+@media (min-width: 992px) {
+    .layout-sersalud-compact .app-header .app-header__mobile-menu,
+    .layout-sersalud-compact .app-header .app-header__menu {
+        display: none !important;
+    }
+
+    .layout-sersalud-compact .navbar-toggler-custom {
+        display: none !important;
+    }
+
+    .layout-sersalud-compact .collapse-custom {
+        display: block !important;
+        position: static !important;
+        width: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        background: transparent !important;
+    }
+
+    .layout-sersalud-compact .navbar-nav-custom {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .layout-sersalud-compact .nav-item-custom,
+    .layout-sersalud-compact .nav-item-custom .btn,
+    .layout-sersalud-compact .nav-item-custom form,
+    .layout-sersalud-compact .nav-item-custom button {
+        width: auto !important;
+        display: inline-block !important;
+        text-align: center !important;
+    }
+}
+
+/* Mobile/tablet: hamburger reveals Citas - Calendario + Desconectarse */
+@media (max-width: 991.98px) {
+    .layout-sersalud-compact .navbar-toggler-custom {
+        display: block !important;
+        position: fixed !important;
+        right: 15px !important;
+        top: 12px !important;
+        z-index: 1040 !important;
+        background-color: #3f6ad8 !important;
+        border: none !important;
+        border-radius: 4px;
+        padding: 8px 12px !important;
+        color: #fff !important;
+    }
+
+    .layout-sersalud-compact .collapse-custom {
+        display: none;
+        position: fixed !important;
+        top: 60px;
+        right: 15px;
+        width: 290px;
+        background-color: #0d1619 !important;
+        z-index: 1039 !important;
+        border: 1px solid #454d55;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+        border-radius: 8px;
+        padding: 15px !important;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .layout-sersalud-compact .collapse-custom.show {
+        display: block !important;
+    }
+
+    .layout-sersalud-compact .navbar-nav-custom {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px;
+    }
+
+    .layout-sersalud-compact .nav-item-custom,
+    .layout-sersalud-compact .nav-item-custom .btn,
+    .layout-sersalud-compact .nav-item-custom form,
+    .layout-sersalud-compact .nav-item-custom button {
+        width: 100% !important;
+        display: block !important;
+    }
+
+    .layout-sersalud-compact .user-name-display {
+        border-left: none;
+        padding-left: 0;
+        margin-left: 0;
+        margin-top: 8px;
+        white-space: normal;
+        text-align: center;
+    }
+}
+
+/* ── Scrollable menu body ── */
+.layout-sersalud-compact.fixed-sidebar .app-sidebar .scrollbar-sidebar,
+.layout-sersalud-compact.fixed-sidebar .app-sidebar .sersalud-sidebar-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    background: #1a1d21;
+}
+
+.layout-sersalud-compact.fixed-sidebar.closed-sidebar:not(.sidebar-mobile-open) .app-sidebar .scrollbar-sidebar,
+.layout-sersalud-compact.fixed-sidebar.closed-sidebar:not(.sidebar-mobile-open) .app-sidebar .sersalud-sidebar-scroll {
+    position: relative !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+}
+
+.layout-sersalud-compact.fixed-sidebar .app-main {
+    display: flex;
+}
+
+.layout-sersalud-compact.fixed-sidebar .app-main .app-main__outer {
+    padding-left: 280px !important;
+    width: 100%;
+}
+
+.layout-sersalud-compact.closed-sidebar.fixed-sidebar .app-main .app-main__outer {
+    padding-left: 80px !important;
+}
+
+.layout-sersalud-compact.closed-sidebar.fixed-sidebar .app-sidebar {
+    width: 80px !important;
+    min-width: 80px !important;
+}
+
+.layout-sersalud-compact.closed-sidebar.fixed-sidebar .app-sidebar .app-header__logo.sersalud-sidebar-brand {
+    min-width: 80px;
+    padding: 0 0.5rem;
+}
+
+.layout-sersalud-compact.closed-sidebar.fixed-sidebar .sersalud-sidebar-title {
+    font-size: 0;
+    line-height: 0;
+    overflow: hidden;
+}
+
+.layout-sersalud-compact.closed-sidebar.fixed-sidebar .app-header {
+    left: 80px !important;
+    width: calc(100% - 80px) !important;
+    padding-left: 0 !important;
+}
+
+.layout-sersalud-compact.fixed-header .app-main {
+    padding-top: 60px;
+}
+
+.layout-sersalud-compact .app-main .app-main__inner {
+    padding: 30px 30px 0;
+}
+
+/* ── Menu typography & spacing (client reference) ── */
+.layout-sersalud-compact .app-sidebar .app-sidebar__inner {
+    padding: 4px 1.5rem 1.5rem;
+}
+
+.layout-sersalud-compact .app-sidebar .app-sidebar__heading {
+    margin: 0.85rem 0 0.4rem;
+    padding: 0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.45) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.layout-sersalud-compact .app-sidebar .app-sidebar__heading::before {
+    display: none !important;
+}
+
+.layout-sersalud-compact .app-sidebar .vertical-nav-menu li a {
+    line-height: 2.4rem;
+    height: 2.4rem;
+    padding: 0 1.75rem 0 45px;
+    margin: 0;
+    border-radius: 0.25rem;
+    color: #9ca3af !important;
+    font-size: 0.92rem;
+    font-weight: 400;
+}
+
+.layout-sersalud-compact .app-sidebar .vertical-nav-menu ul > li > a {
+    height: 2rem;
+    line-height: 2rem;
+    padding: 0 1rem 0 0.5rem;
+    color: rgba(255, 255, 255, 0.55) !important;
+    font-size: 0.88rem;
+}
+
+.layout-sersalud-compact .app-sidebar .vertical-nav-menu ul.mm-show {
+    padding: 0.35em 0 0.35em 2rem;
+}
+
+.layout-sersalud-compact .app-sidebar .vertical-nav-menu ul:before {
+    display: none !important;
+}
+
+.layout-sersalud-compact .app-sidebar .vertical-nav-menu li a:hover,
+.layout-sersalud-compact .app-sidebar .vertical-nav-menu li a.mm-active {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #e5e7eb !important;
+    font-weight: 400;
+}
+
+.layout-sersalud-compact .app-sidebar .vertical-nav-menu i.metismenu-icon {
+    line-height: 34px;
+    opacity: 0.55;
+    font-size: 1.15rem;
+    left: 12px;
+}
+
+.layout-sersalud-compact .app-sidebar .vertical-nav-menu i.metismenu-state-icon {
+    line-height: 34px;
+    opacity: 0.45;
+    right: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.layout-sersalud-compact .app-sidebar .vertical-nav-menu li a:hover i.metismenu-icon,
+.layout-sersalud-compact .app-sidebar .vertical-nav-menu li a:hover i.metismenu-state-icon {
+    opacity: 0.85;
+}
+
+.layout-sersalud-compact .app-sidebar .vertical-nav-menu li.mm-active > a i.metismenu-state-icon {
+    transform: rotate(-180deg);
+}
+
+.layout-sersalud-compact .app-sidebar .app-header__logo .hamburger-inner,
+.layout-sersalud-compact .app-sidebar .app-header__logo .hamburger-inner::before,
+.layout-sersalud-compact .app-sidebar .app-header__logo .hamburger-inner::after {
+    background-color: rgba(255, 255, 255, 0.85) !important;
+}

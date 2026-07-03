@@ -1,11 +1,11 @@
-var InventarioVM = function () {
-    var self = this;
-    self.precioEditar = ko.observable();
-    self.stockEditar = ko.observable();
-};
-
-var inventarioVm = new InventarioVM();
-ko.applyBindings(inventarioVm);
+if (typeof ko !== 'undefined' && document.querySelector('[data-bind]')) {
+    var InventarioVM = function () {
+        var self = this;
+        self.precioEditar = ko.observable();
+        self.stockEditar = ko.observable();
+    };
+    ko.applyBindings(new InventarioVM());
+}
 
 // =============================================
 // ESTADO DE COMPARATIVA
@@ -69,8 +69,20 @@ function restaurarValoresTabla() {
 // COMPARATIVA (MODO DIFERENCIAS)
 // =============================================
 
+function obtenerTablaAuditoria() {
+    var $tabla = $('#tabla-clinica-medicamentos');
+    if (!$.fn.DataTable || !$.fn.DataTable.isDataTable($tabla)) {
+        return null;
+    }
+    return $tabla.DataTable();
+}
+
 function compararStock() {
-    let table = $('#tabla-clinica-medicamentos').DataTable();
+    let table = obtenerTablaAuditoria();
+    if (!table) {
+        mensajeEmergenteError('La tabla no está lista. Recargue la página e intente de nuevo.');
+        return;
+    }
     
     // Guardar valores actuales antes de cualquier redibujado
     guardarValoresTabla();
@@ -140,7 +152,8 @@ function compararStock() {
 }
 
 function regresarDeComparativa() {
-    let table = $('#tabla-clinica-medicamentos').DataTable();
+    let table = obtenerTablaAuditoria();
+    if (!table) return;
     
     // Guardar valores actuales antes de restaurar la vista completa
     guardarValoresTabla();
@@ -179,7 +192,11 @@ function mostrarDialogoGuardarNuevo() {
 }
 
 function guardarStockNuevo() {
-    let table = $('#tabla-clinica-medicamentos').DataTable();
+    let table = obtenerTablaAuditoria();
+    if (!table) {
+        mensajeEmergenteError('La tabla no está lista. Recargue la página e intente de nuevo.');
+        return;
+    }
     let productos = [];
     let errores = [];
 
@@ -290,7 +307,11 @@ function mostrarDialogoGuardarNuevoSinStock() {
 }
 
 function guardarStockNuevoSinStock() {
-    let table = $('#tabla-clinica-medicamentos').DataTable();
+    let table = obtenerTablaAuditoria();
+    if (!table) {
+        mensajeEmergenteError('La tabla no está lista. Recargue la página e intente de nuevo.');
+        return;
+    }
     let productos = [];
 
     table.rows().every(function () {
@@ -392,9 +413,18 @@ function actualizarNombre(inputContent, productoId) {
 // =============================================
 
 $(function () {
-    var table = $("#tabla-clinica-medicamentos").DataTable({
-        dom: 'Bfrtip',
-        buttons: [],
+    if (!$.fn.DataTable) {
+        console.error('DataTables no está disponible en Auditoría/Nuevo.');
+        return;
+    }
+
+    var $tabla = $("#tabla-clinica-medicamentos");
+    if ($.fn.DataTable.isDataTable($tabla)) {
+        $tabla.DataTable().destroy();
+    }
+
+    var table = $tabla.DataTable({
+        dom: 'frtip',
         searching: true,
         ordering: true,
         paging: true,

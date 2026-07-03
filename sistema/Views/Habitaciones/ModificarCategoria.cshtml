@@ -1,16 +1,10 @@
-@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 @{
-    // Leer el valor del appsettings.json. 
-    string sufijoLayout = Configuration["Cliente"]; 
-    
-    // Concatenar para formar el nombre del Layout (ejemplo: "_Layout" + "SS")
-    // Si la clave trae el nombre completo (ej. "_LayoutSS"), simplemente asignalo directo.
-    Layout = $"_Layout{sufijoLayout}"; 
     ViewData["Title"] = "Categoria - Modificar";
 }
 
 @await Html.PartialAsync("_MensajeExito")
 
+<div id="habitacion-categoria-ko-root">
 <div class="main-card mb-3 card">
     <div class="card-body">
         <div class="form-row">
@@ -27,12 +21,13 @@
     <div class="card-body">
         <div class="form-row">
             <div class="col-md-12">
-                <button class="btn btn-primary" data-bind="click: modificarCategoria">
+                <button type="button" class="btn btn-primary" data-habitacion-cat-accion="guardar-editar">
                     Guardar
                 </button>
             </div>
         </div>
     </div>
+</div>
 </div>
 
 @section Scripts

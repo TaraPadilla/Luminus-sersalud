@@ -4,11 +4,13 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Database.Shared.Enumeraciones;
 
 namespace sistema.Models
 {
     public class VentaUnificadaViewModel
     {
+        public string TipoVenta { get; set; }
         public bool IsClinica { get; set; }
         public bool IsFarmacia { get; set; }
         public bool IsLaboratorio { get; set; }
@@ -69,6 +71,79 @@ namespace sistema.Models
         public string ResponsableDPI { get; set; }
         public DateTime PacienteFechaNacimiento { get; set; }
 
+        public void ApplyTipoVenta(string tipoVenta = null)
+        {
+            var tipo = (tipoVenta ?? TipoVenta)?.Trim().ToLowerInvariant();
+            if (string.IsNullOrEmpty(tipo))
+                return;
+
+            TipoVenta = tipo;
+            IsClinica = false;
+            IsFarmacia = false;
+            IsLaboratorio = false;
+            IsEmergencia = false;
+            IsHospital = false;
+
+            switch (tipo)
+            {
+                case "clinica":
+                    IsClinica = true;
+                    break;
+                case "farmacia":
+                    IsFarmacia = true;
+                    break;
+                case "laboratorio":
+                    IsLaboratorio = true;
+                    break;
+                case "emergencia":
+                    IsEmergencia = true;
+                    break;
+                case "hospital":
+                    IsHospital = true;
+                    break;
+            }
+
+            SetAmbienteFromTipo();
+        }
+
+        public void SetAmbienteFromTipo()
+        {
+            if (IsHospital)
+                AmbienteId = (int)AmbienteEnum.Hospital;
+            else if (IsClinica)
+                AmbienteId = (int)AmbienteEnum.Clinica;
+            else if (IsFarmacia)
+                AmbienteId = (int)AmbienteEnum.Farmacia;
+            else if (IsLaboratorio)
+                AmbienteId = (int)AmbienteEnum.Laboratorio;
+            else if (IsEmergencia)
+                AmbienteId = (int)AmbienteEnum.Clinica;
+        }
+
+        public string GetTituloPantalla()
+        {
+            switch (TipoVenta?.Trim().ToLowerInvariant())
+            {
+                case "clinica":
+                    return "Clínica - Nueva venta";
+                case "farmacia":
+                    return "Farmacia - Nueva venta";
+                case "laboratorio":
+                    return "Laboratorio - Nueva venta";
+                case "emergencia":
+                    return "Emergencia - Nueva venta";
+                case "hospital":
+                    return "Hospital - Nueva venta";
+                default:
+                    if (IsClinica) return "Clínica - Nueva venta";
+                    if (IsFarmacia) return "Farmacia - Nueva venta";
+                    if (IsLaboratorio) return "Laboratorio - Nueva venta";
+                    if (IsEmergencia) return "Emergencia - Nueva venta";
+                    if (IsHospital) return "Hospital - Nueva venta";
+                    return "Nueva venta";
+            }
+        }
+
         public void Init(
             IPacientes _pacientesRepository,
             ICliente _clienteRepository,
@@ -88,7 +163,10 @@ namespace sistema.Models
                 ListaClinicasDisponibles = new SelectList(empleadoRepository.GetListClinicas(), "Id", "NombreClinica");
                 ListaClientes = new SelectList(_pacientesRepository.GetList(), "Id", "Nombre");
             }
-            ListaSucursales = new SelectList(_sucursalRepository.GetList(), "Id", "NombreSucursal");
+            var sucursales = _sucursalRepository.GetList()?.ToList() ?? new List<Sucursal>();
+            ListaSucursales = new SelectList(sucursales, "Id", "NombreSucursal");
+            if (SucursalId == 0 && sucursales.Count > 0)
+                SucursalId = sucursales[0].Id;
         }
 
 

@@ -1,0 +1,47 @@
+@using farmamest.Models
+@model List<HistorialMedicamentoPdfRow>
+
+@if (Model == null || !Model.Any())
+{
+    <p class="muted">Sin medicamentos o insumos aplicados en esta hospitalización.</p>
+}
+else
+{
+    <table class="kv" style="font-size:11px;">
+        <thead>
+            <tr>
+                <th>Origen</th>
+                <th>Medicamento / Insumo</th>
+                <th>Indicaciones</th>
+                <th>Vía</th>
+                <th>Frecuencia</th>
+                <th>Cant. reg.</th>
+                <th>Cant. apl.</th>
+                <th>Estado</th>
+                <th>Fecha programada</th>
+                <th>Fecha aplicación</th>
+                <th>Hora aplicación</th>
+                <th>Aplicado por</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in Model)
+            {
+                <tr>
+                    <td>@row.Origen</td>
+                    <td>@row.Nombre</td>
+                    <td>@row.Indicaciones</td>
+                    <td>@row.Via</td>
+                    <td>@row.Frecuencia</td>
+                    <td>@row.CantidadRegistrada</td>
+                    <td>@row.CantidadAplicada</td>
+                    <td>@row.Estado</td>
+                    <td>@row.FechaRegistro</td>
+                    <td>@row.FechaAplicacion</td>
+                    <td>@row.HoraAplicacion</td>
+                    <td>@row.AplicadoPor</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

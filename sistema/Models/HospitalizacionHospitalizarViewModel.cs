@@ -36,6 +36,8 @@ namespace sistema.Models
         public int? EmergenciaId { get; set; }
         //CONSENTIMIENTO
         public string UrlArchivoConsentimiento { get; set; }
+        public string UrlFirmaPaciente { get; set; }
+        public string UrlFirmaResponsable { get; set; }
         public string Base64FirmaConsentimiento { get; set; }
         public int? CitaId { get; set; }
 

@@ -1,0 +1,52 @@
+{
+  "ConnectionStrings": {
+
+    "farmaowl": "User ID=doadmin;Password=3ZT6RxneErlxey6r;Server=profam-do-user-8523265-0.b.db.ondigitalocean.com;Port=25060;Database=Sersalud2;SslMode=Require;Trust Server Certificate=true;"
+  },
+  "MultiAPI_Token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6Ik1hbmFudGlhbGVzIiwibmJmIjoxNzI0Njc5MzM2LCJleHAiOjE3MjQ2ODI5MzYsImlhdCI6MTcyNDY3OTMzNn0.CWJDZ2NM26eoJY77fh_34_1r_JNZP6ifkiHPYkT_2JU",
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
+    }
+  },
+ "AllowedHosts": "*",
+  "IronXL.LicenseKey": "IRONXL.RAPH123007.31044-196C95EBA4-HQKBRQ-NRCMJN4U2ESS-V3WHT3FOV3EE-C2BP7NANSYLY-GQSSALBCK5T6-QTJFDBQ2D6TB-NB7IY5-T6HG27VPP5WEUA-DEPLOYMENT.TRIAL-ZRJCLZ.TRIAL.EXPIRES.09.APR.2022",
+  "ImagenLogoBase64": "/assets/images/logos/logoSS_SinFondo.png",
+  "EstablecimientoDireccion": "Interamericas Diagonal 6 10-50 zona 10 Torre Norte 601, 01010 Guatemala City, Guatemala",
+  "EstablecimientoCorreoElectronico": "info@sersalud.hospital",
+  "EstablecimientoImagenFirma": "",
+  "EstablecimientoTelefono": "2212 9234",
+  "EstablecimientoPestana": "Hospital SerSalud",
+  "EstablecimientoNombreEmpresa": "SerSalud",
+  "Cliente": "SS",
+  "EmailSettings": {
+    "Username": "yosephy23@gmail.com",
+    "Password": "wnys xdji ktkj bckl",
+    "Host": "smtp.gmail.com",
+    "Port": 587
+  },
+  "WhatsAppSettings": {
+    "PublicBaseUrlDev": "http://localhost:5000/",
+    "PublicBaseUrlProd": "https://sersaludgt.com/",
+    "Token": "EABxQVkMGSiIBOZCsrrIPjkKFhZAljnpsvAZAoxyFDRHLtQz7Rfz9jDzy5JYSaSZBdKysh5SXOZBnn7yYX9AmBk08eUGLlcKQ9s88ZCp28GGRinm9yZALWaGsycVZBy9ruZCokGXpwDHU5LZCwSmwtqxRG3iZBbzpvXJCSCCdCI0kddYZAe2EY2mfdaylesu4SPqdJnhU"
+  },
+  "Fel": {
+    "BaseUrl": "http://3.128.79.135",
+    "UsuarioFirma": "117286303",
+    "LlaveFirma": "3f324367093d7bef36bdf933a1e95aff",
+    "UsuarioApi": "117286303",
+    "LlaveApi": "DF34FB82B6FE81A4CC20979661FFF8F4",
+    "TimeoutSeconds": 30
+  },
+  "VoiceToText": {
+    "ApiUrl": "http://18.222.15.29/VoiceToText/vtt"
+  },
+  "Fido2": {
+    "ServerDomain": "sersaludgt.com",
+    "ServerName": "SerSalud",
+    "Origins": [ "https://sersaludgt.com/" ],
+    "TimestampDriftTolerance": 300000
+  }
+}

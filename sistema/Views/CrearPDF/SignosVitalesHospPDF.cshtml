@@ -1,0 +1,60 @@
+@model IEnumerable<farmamest.Models.SignosVitalesHospPdfRow>
+@{
+    var embebido = ViewData["EmbebidoEnExpediente"] as bool? ?? false;
+    Layout = embebido ? null : "_HojaMembreteLayout";
+    ViewData["Title"] = "Control de Signos Vitales";
+    ViewData["MostrarServicios"] = false;
+    ViewData["MostrarEmergencias"] = false;
+    var paciente = ViewBag.PacienteNombre as string ?? "-";
+    var hospiId = ViewBag.HospitalizacionId;
+    var columnas = Model?
+        .SelectMany(r => r.Valores.Keys)
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(k => k)
+        .ToList() ?? new List<string>();
+}
+
+<style>
+    .doc { padding: 8px 12px 18px; font-size: 10px; }
+    .doc-title { font-size: 16px; font-weight: 800; text-align: center; margin-bottom: 8px; }
+    table.sv { width: 100%; border-collapse: collapse; }
+    table.sv th, table.sv td { border: 1px solid #ccd3e0; padding: 4px 6px; text-align: center; }
+    table.sv th { background: #f0f4ff; }
+</style>
+
+<div class="doc">
+    <div class="doc-title">Control de Signos Vitales</div>
+    <p style="text-align:center;"><strong>Paciente:</strong> @paciente — <strong>Hospitalización #@hospiId</strong></p>
+
+    <table class="sv">
+        <thead>
+            <tr>
+                <th>Fecha y hora</th>
+                <th>Profesional</th>
+                @foreach (var col in columnas)
+                {
+                    <th>@col</th>
+                }
+                <th>Observaciones</th>
+                <th>Estado</th>
+                <th>Autorizado por</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in Model ?? Enumerable.Empty<farmamest.Models.SignosVitalesHospPdfRow>())
+            {
+                <tr>
+                    <td>@row.FechaHora.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>@(row.Profesional ?? "-")</td>
+                    @foreach (var col in columnas)
+                    {
+                        <td>@(row.Valores.TryGetValue(col, out var v) ? v : "-")</td>
+                    }
+                    <td>@(row.Observaciones ?? "")</td>
+                    <td>@(row.Autorizado ? "Autorizado" : "Pendiente")</td>
+                    <td>@(row.AutorizadoPor ?? "-")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

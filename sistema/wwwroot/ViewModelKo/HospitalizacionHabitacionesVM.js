@@ -14,6 +14,10 @@ function registrarHospitalizacion(habitacionId) {
 }
 
 function detallesHospitalizacion(hospitalizacionId, citaId) {
+    if (!hospitalizacionId || hospitalizacionId <= 0) {
+        alert("No se encontró una hospitalización activa para esta habitación.");
+        return;
+    }
     var url = "/Hospitalizacion/Detalles?hospitalizacionId=" + hospitalizacionId;
     if (citaId && citaId > 0) {
         url += "&citaId=" + citaId;

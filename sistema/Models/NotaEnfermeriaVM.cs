@@ -17,5 +17,6 @@ namespace farmamest.Models
         public string UserId { get; set; }
         public string Profesional { get; set; }
         public int TurnoEnfermeriaId { get; set; }
+        public string TipoNota { get; set; }
     }
 }

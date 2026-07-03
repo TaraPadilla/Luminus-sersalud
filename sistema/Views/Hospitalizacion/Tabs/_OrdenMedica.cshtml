@@ -176,10 +176,7 @@
                             <div class="form-group">
                                 <label for="recetaSelect" class="font-weight-bold text-primary">Dietas</label>
                                 <div class="input-group">
-                                    <select id="recetaSelect" class="form-control select2bs4" data-bind="options: recetasExistentes,
-                                                                                optionsText: 'NombreReceta',
-                                                                                optionsValue: 'Id',
-                                                                                value: recetaIdAgregar">
+                                    <select id="recetaSelect" class="form-control select2bs4">
                                         <option value="">Seleccione una dieta</option>
                                     </select>
                                     <div class="input-group-append">
@@ -435,13 +432,38 @@
 
 let quillOrdenMedica = null; // variable global para el editor
 
+function initRecetaSelect2OrdenMedica() {
+    var $sel = $('#recetaSelect');
+    if (!$sel.length) return;
+
+    if ($.fn.select2 && $sel.hasClass('select2-hidden-accessible')) {
+        $sel.select2('destroy');
+    }
+
+    $sel.select2({
+        theme: 'bootstrap4',
+        dropdownParent: $('#mdl-agregar-orden-medica'),
+        placeholder: 'Buscar dieta...',
+        allowClear: true,
+        width: '100%',
+        minimumResultsForSearch: 0,
+        language: {
+            noResults: function () { return 'No se encontraron dietas'; },
+            searching: function () { return 'Buscando...'; }
+        }
+    });
+}
+
 function verModalOrdenMedica() {
-    cargarDietasExistentesOrdenMedica();
+    cargarDietasExistentesOrdenMedica(function () {
+        initRecetaSelect2OrdenMedica();
+    });
 
     $("#mdl-agregar-orden-medica").dialog({
         width: 1000,
         modal: true,
         open: function() {
+            initRecetaSelect2OrdenMedica();
             // Inicializar Quill solo una vez
             if (!quillOrdenMedica) {
                 quillOrdenMedica = new Quill('#editor-orden-medica', {
@@ -535,9 +557,12 @@ function agregarOrdenMedica() {
     });
 }
 
-    function cargarDietasExistentesOrdenMedica() {
-        // Evitar recargas innecesarias
-        if (dietasCatalogoCargado && $("#recetaSelect option").length > 1) return;
+    function cargarDietasExistentesOrdenMedica(onReady) {
+        var $select = $("#recetaSelect");
+        if (dietasCatalogoCargado && $select.find("option").length > 1) {
+            if (typeof onReady === "function") onReady();
+            return;
+        }
 
         $.ajax({
             url: '/Receta/ConsultarRecetasExistentes',
@@ -549,36 +574,39 @@ function agregarOrdenMedica() {
                 } catch (e) {
                     console.error("Respuesta inválida ConsultarRecetasExistentes:", resp, e);
                     alert("Error al cargar dietas: respuesta inválida.");
+                    if (typeof onReady === "function") onReady();
                     return;
                 }
 
                 if (!data || data.Exitoso !== true || !Array.isArray(data.Resultado)) {
                     console.error("ConsultarRecetasExistentes no exitoso:", data);
                     alert("Error al cargar dietas.");
+                    if (typeof onReady === "function") onReady();
                     return;
                 }
 
-                const $select = $("#recetaSelect");
+                if ($.fn.select2 && $select.hasClass('select2-hidden-accessible')) {
+                    $select.select2('destroy');
+                }
+
                 $select.empty();
-                $select.append(`<option value="">Seleccione una dieta</option>`);
+                $select.append('<option value="">Seleccione una dieta</option>');
 
                 data.Resultado.forEach(function (r) {
                     if (!r) return;
-
-                    const id = parseInt(r.Id, 10);
-                    const nombre = (r.NombreReceta || "").trim();
-
-                    if (!Number.isInteger(id) || id <= 0) return;
-                    if (!nombre) return;
-
-                    $select.append(`<option value="${id}">${nombre}</option>`);
+                    var id = parseInt(r.Id, 10);
+                    var nombre = (r.NombreReceta || "").trim();
+                    if (!Number.isInteger(id) || id <= 0 || !nombre) return;
+                    $select.append($('<option>').val(String(id)).text(nombre));
                 });
 
                 dietasCatalogoCargado = true;
+                if (typeof onReady === "function") onReady();
             },
             error: function (xhr) {
                 console.error("Error ConsultarRecetasExistentes:", xhr);
                 alert("Error al cargar dietas.");
+                if (typeof onReady === "function") onReady();
             }
         });
     }
@@ -983,6 +1011,48 @@ if (cliente === "SS") {
     }
 
 
+    function stripHtml(html) {
+        if (!html) return '';
+        var tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        return (tmp.textContent || tmp.innerText || '').trim();
+    }
+
+    function formatearFechaOrdenMedica(valor) {
+        if (!valor) return '';
+        var d = new Date(valor);
+        if (isNaN(d.getTime()) || d.getFullYear() < 1900) return '';
+        return d.toLocaleString('es-ES');
+    }
+
+    function propOrdenMedica(orden, name) {
+        if (!orden) return undefined;
+        if (orden[name] !== undefined && orden[name] !== null) return orden[name];
+        var camel = name.charAt(0).toLowerCase() + name.slice(1);
+        if (orden[camel] !== undefined && orden[camel] !== null) return orden[camel];
+        return undefined;
+    }
+
+    function ordenEstaRealizada(orden) {
+        return propOrdenMedica(orden, 'Realizada') === true;
+    }
+
+    function textoFechaAplicacionOrden(orden) {
+        if (!ordenEstaRealizada(orden)) {
+            return '<span class="text-muted">Pendiente</span>';
+        }
+        var fecha = formatearFechaOrdenMedica(propOrdenMedica(orden, 'FechaRealizacion'));
+        return fecha || '<span class="text-muted">—</span>';
+    }
+
+    function textoUsuarioAplicacionOrden(orden) {
+        if (!ordenEstaRealizada(orden)) {
+            return '<span class="text-muted">Pendiente</span>';
+        }
+        var usuario = propOrdenMedica(orden, 'ProfesionalRealiza');
+        return usuario ? usuario : '<span class="text-muted">—</span>';
+    }
+
     function cargarOrdenesMedicas() {
     $.ajax({
         url: `/api/OrdenesMedicas/ObtenerOrdenesPorHospitalizacion/${hospitalizacionIdGlobal}`,
@@ -993,38 +1063,42 @@ if (cliente === "SS") {
 
             ordenes.forEach(orden => {
                 const tieneDietas = Array.isArray(orden.dietas) && orden.dietas.length > 0;
-                const filaClase = (orden.realizada && tieneDietas) ? 'orden-dieta-aplicada' : (orden.realizada ? 'orden-realizada' : '');
+                const realizada = ordenEstaRealizada(orden);
+                const filaClase = (realizada && tieneDietas) ? 'orden-dieta-aplicada' : (realizada ? 'orden-realizada' : '');
 
                 // Estado de autorización
-                const autorizado = orden.autorizado === true;
+                const autorizado = propOrdenMedica(orden, 'Autorizado') === true;
                 const autorizadoBadge = autorizado
                     ? '<span class="badge badge-success">Autorizado</span>'
                     : '<span class="badge badge-warning">Pendiente por Autorización</span>';
 
                 // Botón de autorización (solo si no realizada y no autorizada)
-                const puedeAutorizar = !orden.realizada && !autorizado;
+                const puedeAutorizar = !realizada && !autorizado;
                 const botonAutorizar = puedeAutorizar
-                    ? `<button class="btn btn-secondary" title="Autorizar" onclick="autorizarOrdenMedica(${orden.id})"><i class="fa fa-fingerprint"></i></button>`
+                    ? `<button class="btn btn-secondary" title="Autorizar" onclick="autorizarOrdenMedica(${propOrdenMedica(orden, 'Id')})"><i class="fa fa-fingerprint"></i></button>`
                     : '';
 
-                const examenesHtml = (Array.isArray(orden.examenes) ? orden.examenes : []).join('<br>');
-                const dietasHtml = (Array.isArray(orden.dietas) ? orden.dietas : []).join('<br>');
-                const observacionesHtml = (Array.isArray(orden.observaciones) ? orden.observaciones : []).join('<br>');
+                const examenesHtml = (Array.isArray(orden.examenes) ? orden.examenes : (Array.isArray(orden.Examenes) ? orden.Examenes : [])).join('<br>');
+                const dietasHtml = (Array.isArray(orden.dietas) ? orden.dietas : (Array.isArray(orden.Dietas) ? orden.Dietas : [])).join('<br>');
+                const observacionesHtml = (Array.isArray(orden.observaciones) ? orden.observaciones : (Array.isArray(orden.Observaciones) ? orden.Observaciones : [])).join('<br>');
+
+                const descripcionHtml = propOrdenMedica(orden, 'Descripcion') || '';
+                const descripcionTexto = stripHtml(descripcionHtml) || descripcionHtml;
 
                 tbody.append(`
                     <tr class="${filaClase}">
-                        <td>${new Date(orden.fechaHora).toLocaleString('es-ES')}</td>
-                        <td>${orden.profesional || ''}</td>
-                        <td>${orden.descripcion || ''}</td>
+                        <td>${formatearFechaOrdenMedica(propOrdenMedica(orden, 'FechaHora'))}</td>
+                        <td>${propOrdenMedica(orden, 'Profesional') || ''}</td>
+                        <td>${descripcionTexto}</td>
                         <td>${examenesHtml}</td>
                         <td>${dietasHtml}</td>
                         <td>${observacionesHtml}</td>
-                        <td>${orden.fechaRealizacion ? new Date(orden.fechaRealizacion).toLocaleString('es-ES') : ''}</td>
-                        <td>${orden.profesionalRealiza || ''}</td>
+                        <td>${textoFechaAplicacionOrden(orden)}</td>
+                        <td>${textoUsuarioAplicacionOrden(orden)}</td>
                         <td>${autorizadoBadge}</td>
                         <td>
-                            ${!orden.realizada && orden.autorizado ? `<button class="btn btn-success" title="Aplicar" onclick="aplicarOrdenMedica(${orden.id})"><i class="fa fa-syringe"></i></button>` : ''}
-                            <button class="btn btn-primary" title="Imprimir" onclick="imprimirOrdenMedica(${orden.id})"><i class="fa fa-print"></i></button>
+                            ${!realizada && autorizado ? `<button class="btn btn-success" title="Aplicar" onclick="aplicarOrdenMedica(${propOrdenMedica(orden, 'Id')})"><i class="fa fa-syringe"></i></button>` : ''}
+                            <button class="btn btn-primary" title="Imprimir" onclick="imprimirOrdenMedica(${propOrdenMedica(orden, 'Id')})"><i class="fa fa-print"></i></button>
                             ${botonAutorizar}
                         </td>
                     </tr>

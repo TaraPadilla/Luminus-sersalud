@@ -1,0 +1,519 @@
+@using Database.Shared.Enumeraciones
+@{
+    var tipoProductoMedicamentos = (int)TipoProductoEnum.Medicamentos;
+    var tipoProductoInsumos = (int)TipoProductoEnum.InsumosMedicos;
+    var tipoProductoEquiposMedicos = (int)TipoProductoEnum.EquiposMedicos;
+    var tipoProductoEquiposQuirurgicos = (int)TipoProductoEnum.EquiposQuirurgicos;
+
+    var usuarioAdministrador = User.IsInRole("Administrador");
+    var usuarioCoordinadorSAP = User.IsInRole("Coordinador SAP");
+    var usuarioAdmisiones = User.IsInRole("Admisiones");
+    var usuarioCajero = User.IsInRole("Cajero");
+    var usuarioRecepcion = User.IsInRole("Recepcion");
+    var usuarioCoordinadorRRHH = User.IsInRole("Coordinador RRHH");
+    var usuarioCoordinadorEnfermeria = User.IsInRole("Coordinador Enfermeria");
+    var usuarioSupervisorEnfermeria = User.IsInRole("Supervisor Enfermeria");
+    var usuarioEnfermeria = User.IsInRole("Enfermeria");
+    var usuarioDireccionMedicos = User.IsInRole("Direccion Medicos");
+    var usuarioCoordinadorMedicosResidentes = User.IsInRole("Coordinador Medicos Residentes");
+    var usuarioMedicosResidentes = User.IsInRole("Medicos Residentes");
+    var usuarioCoordinadorFarmacia = User.IsInRole("Coordinador Farmacia");
+    var usuarioEncargadoBodegaFarmacia = User.IsInRole("Encargado Bodega Farmacia");
+    var usuarioAuxiliarFarmacia = User.IsInRole("Auxiliar Farmacia");
+    var usuarioCoordinadorFinanciero = User.IsInRole("Coordinador Financiero");
+    var usuarioCoordinadorContable = User.IsInRole("Coordinador Contable");
+    var usuarioCoordinadorCocina = User.IsInRole("Coordinador Cocina");
+    var usuarioCoordinadorOperaciones = User.IsInRole("Coordinador Operaciones");
+    var usuarioSeguros = User.IsInRole("Seguros");
+    var usuarioMedicoGeneral = User.IsInRole("Medico General");
+    var usuarioFarmacia = User.IsInRole("Farmacia");
+    var usuarioCaja = User.IsInRole("CAJA");
+    var usuarioMonitoraSalon = User.IsInRole("MONITORA SALON");
+    var usuarioRecepcionRadiologia = User.IsInRole("RecepcionRadiologia");
+    var usuarioAdministradorRadiologia = User.IsInRole("administradorRadiologia");
+    var usuarioRecepcionDiurno = User.IsInRole("Recepcion Diurno");
+    var usuarioRecepcionNocturno = User.IsInRole("Recepcion Nocturno");
+    var usuarioCoordinadorLaboratorios = User.IsInRole("Coordinador Laboratorio");
+    var usuarioLaboratorio = User.IsInRole("Laboratorio");
+    var usuarioSupervisorLaboratorio = User.IsInRole("Supervisor Laboratorio");
+    var usuarioTecnicoLaboratorio = User.IsInRole("Tecnico laboratorio");
+    var usuarioDesarrollador = User.IsInRole("Desarrollador");
+    var usuarioMedicoInterno = User.IsInRole("Medico Interno");
+    var usuarioRadiologia = User.IsInRole("Radiologia");
+    var usuarioTecnicoRadiologia = User.IsInRole("TecnicoRadiologia");
+
+    var verDashboard = usuarioAdministrador || usuarioDesarrollador || usuarioCoordinadorSAP || usuarioCoordinadorRRHH
+        || usuarioAdmisiones || usuarioCajero || usuarioRecepcion || usuarioCoordinadorEnfermeria
+        || usuarioSupervisorEnfermeria || usuarioEnfermeria || usuarioDireccionMedicos
+        || usuarioCoordinadorMedicosResidentes || usuarioMedicosResidentes || usuarioCoordinadorFarmacia
+        || usuarioEncargadoBodegaFarmacia || usuarioAuxiliarFarmacia || usuarioCoordinadorFinanciero
+        || usuarioCoordinadorContable || usuarioCoordinadorCocina || usuarioCoordinadorOperaciones
+        || usuarioSeguros || usuarioMedicoGeneral || usuarioFarmacia || usuarioCaja || usuarioMonitoraSalon
+        || usuarioRecepcionRadiologia || usuarioAdministradorRadiologia || usuarioRecepcionDiurno
+        || usuarioRecepcionNocturno || usuarioCoordinadorLaboratorios || usuarioLaboratorio
+        || usuarioSupervisorLaboratorio || usuarioTecnicoLaboratorio || usuarioMedicoInterno
+        || usuarioRadiologia || usuarioTecnicoRadiologia;
+
+    var verExamenesClinicos = usuarioAdministrador || usuarioDesarrollador || usuarioCoordinadorLaboratorios
+        || usuarioLaboratorio || usuarioSupervisorLaboratorio || usuarioTecnicoLaboratorio
+        || usuarioMedicoGeneral || usuarioMedicoInterno || usuarioRecepcionDiurno || usuarioRecepcionNocturno
+        || usuarioRecepcion || usuarioAdmisiones || usuarioCajero || usuarioCaja || usuarioFarmacia
+        || usuarioRadiologia || usuarioTecnicoRadiologia || usuarioRecepcionRadiologia || usuarioAdministradorRadiologia;
+
+    var verPrecios = usuarioAdministrador || usuarioCoordinadorSAP || usuarioAdmisiones || usuarioCajero
+        || usuarioRecepcion || usuarioCoordinadorFinanciero || usuarioCoordinadorContable
+        || usuarioSeguros || usuarioAdministradorRadiologia;
+}
+
+@if (verDashboard)
+{
+    <li class="app-sidebar__heading">Dashboard</li>
+    <li>
+        <a href="#">
+            <i class="metismenu-icon fas fa-user-friends"></i>
+            Inicio
+            <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+        </a>
+        <ul>
+            <li>
+                <a asp-action="Index" asp-controller="Home" class="enlace-redirigir">
+                    <i class="metismenu-icon"></i>Inicio
+                </a>
+            </li>
+        </ul>
+    </li>
+}
+
+@if (verPrecios)
+{
+    <li class="app-sidebar__heading">Precios</li>
+    <li>
+        <a href="#">
+            <i class="metismenu-icon fas fa-user-friends"></i>
+            Precios
+            <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+        </a>
+        <ul>
+            @if (usuarioAdministrador || usuarioCoordinadorSAP || usuarioAdmisiones || usuarioCajero
+                || usuarioRecepcion || usuarioCoordinadorFinanciero || usuarioAdministradorRadiologia)
+            {
+                <li>
+                    <a asp-action="Nuevo" asp-controller="Precios" class="enlace-redirigir">
+                        <i class="metismenu-icon"></i>Nuevo precio
+                    </a>
+                </li>
+            }
+            <li>
+                <a asp-action="Lista" asp-controller="Precios" class="enlace-redirigir">
+                    <i class="metismenu-icon"></i>Ver precios
+                </a>
+            </li>
+        </ul>
+    </li>
+}
+
+<li class="app-sidebar__heading">Hospital</li>
+
+<li>
+    <a href="#">
+        <i class="metismenu-icon fas fa-bed"></i>
+        Historial de Hospitalización
+        <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+    </a>
+    <ul>
+        <li>
+            <a asp-action="ListaEnCurso" asp-controller="Hospitalizacion" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>En curso
+            </a>
+        </li>
+        <li>
+            <a asp-action="ListaFinalizadas" asp-controller="Hospitalizacion" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Finalizadas
+            </a>
+        </li>
+    </ul>
+</li>
+
+<li>
+    <a href="#">
+        <i class="metismenu-icon fas fa-bed"></i>
+        Hospitalización
+        <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+    </a>
+    <ul>
+        <li>
+            <a asp-action="Habitaciones" asp-controller="Hospitalizacion" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Habitaciones
+            </a>
+        </li>
+    </ul>
+</li>
+
+<li>
+    <a href="#">
+        <i class="metismenu-icon fas fa-bed"></i>
+        Sala de Operaciones
+        <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+    </a>
+    <ul>
+        <li>
+            <a asp-action="HabitacionesOperaciones" asp-controller="Operaciones" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Habitaciones
+            </a>
+        </li>
+    </ul>
+</li>
+
+<li>
+    <a href="#">
+        <i class="metismenu-icon fas fa-bed"></i>
+        Sala de Recuperaciones
+        <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+    </a>
+    <ul>
+        <li>
+            <a asp-action="HabitacionesRecuperaciones" asp-controller="Recuperaciones" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Habitaciones
+            </a>
+        </li>
+    </ul>
+</li>
+
+<li>
+    <a href="#">
+        <i class="metismenu-icon fas fa-bed"></i>
+        Habitaciones
+        <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+    </a>
+    <ul>
+        <li>
+            <a asp-action="Nueva" asp-controller="Habitaciones" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Nueva habitaci&oacute;n
+            </a>
+        </li>
+        <li>
+            <a asp-action="Lista" asp-controller="Habitaciones" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Habitaciones
+            </a>
+        </li>
+        <li>
+            <a asp-action="NuevaCategoria" asp-controller="Habitaciones" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Nueva categor&iacute;a
+            </a>
+        </li>
+        <li>
+            <a asp-action="ListaCategorias" asp-controller="Habitaciones" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Categor&iacute;as
+            </a>
+        </li>
+    </ul>
+</li>
+
+<li>
+    <a href="#">
+        <i class="metismenu-icon fas fa-utensils"></i>
+        Dietas
+        <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+    </a>
+    <ul>
+        <li>
+            <a asp-action="Nuevo" asp-controller="Receta" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Nueva dieta
+            </a>
+        </li>
+        <li>
+            <a asp-action="Nuevo" asp-controller="CategoriaReceta" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Nueva Categoria
+            </a>
+        </li>
+        <li>
+            <a asp-action="Nuevo" asp-controller="RecetaMenu" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Nuevo Menú
+            </a>
+        </li>
+        <li>
+            <a asp-action="Lista" asp-controller="Receta" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Listar dietas
+            </a>
+        </li>
+        <li>
+            <a asp-action="Lista" asp-controller="CategoriaReceta" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Listar categorías
+            </a>
+        </li>
+        <li>
+            <a asp-action="Lista" asp-controller="RecetaMenu" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Listar menús
+            </a>
+        </li>
+    </ul>
+</li>
+
+<li>
+    <a asp-action="CalendarioLineal" asp-controller="Cita" asp-route-modo="hospitalizacion" class="enlace-redirigir">
+        <i class="metismenu-icon fas fa-calendar-alt"></i>
+        Citas - Calendario
+    </a>
+</li>
+
+<li class="app-sidebar__heading">Laboratorio y Examenes Complementarios</li>
+
+<li>
+    <a href="#">
+        <i class="metismenu-icon fas fa-user-md"></i>
+        Categorias
+        <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+    </a>
+    <ul>
+        <li>
+            <a asp-action="NuevaCategoria" asp-controller="LaboratorioClinico" class="enlace-redirigir">
+                <i class="metismenu-icon fas fa-hospital"></i>
+                Crear Categoría Examen
+            </a>
+        </li>
+        <li>
+            <a asp-action="ListaCategorias" asp-controller="LaboratorioClinico" class="enlace-redirigir">
+                <i class="metismenu-icon fas fa-hospital"></i>
+                Ver Categorías Examen
+            </a>
+        </li>
+    </ul>
+</li>
+
+<li>
+    <a href="#">
+        <i class="metismenu-icon fas fa-user-md"></i>
+        Examenes disponibles
+        <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+    </a>
+    <ul>
+        <li>
+            <a asp-action="ListaExamenes" asp-controller="LaboratorioClinico">
+                <i class="metismenu-icon fas fa-hospital"></i>
+                Examenes disponibles
+            </a>
+        </li>
+    </ul>
+</li>
+
+@if (verExamenesClinicos)
+{
+    <li>
+        <a href="#">
+            <i class="metismenu-icon fas fa-vials"></i>
+            Ex&aacute;menes cl&iacute;nicos
+            <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+        </a>
+        <ul>
+            <li>
+                <a asp-action="ListaExamenesRealizados" asp-controller="LaboratorioClinico" asp-route-categoriaExcluir="38" class="enlace-redirigir">
+                    <i class="metismenu-icon"></i>Todos
+                </a>
+            </li>
+            <li>
+                <a asp-action="ListaExamenesRealizados" asp-controller="LaboratorioClinico" asp-route-categoriaExcluir="38" asp-route-estado="En proceso" class="enlace-redirigir">
+                    <i class="metismenu-icon"></i>En proceso
+                </a>
+            </li>
+            <li>
+                <a asp-action="ListaExamenesRealizados" asp-controller="LaboratorioClinico" asp-route-categoriaExcluir="38" asp-route-estado="Finalizados" class="enlace-redirigir">
+                    <i class="metismenu-icon"></i>Finalizados
+                </a>
+            </li>
+            <li>
+                <a asp-action="ListaExamenesRealizados" asp-controller="LaboratorioClinico" asp-route-categoriaExcluir="38" asp-route-estado="Solicitados" class="enlace-redirigir">
+                    <i class="metismenu-icon"></i>Solicitados
+                </a>
+            </li>
+        </ul>
+    </li>
+}
+
+<li class="app-sidebar__heading">Bodegas</li>
+
+<li>
+    <a href="#">
+        <i class="metismenu-icon fas fa-boxes"></i>
+        Hospitalizacion
+        <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+    </a>
+    <ul>
+        <li>
+            <a asp-action="Inventario" asp-controller="Productos"
+               asp-route-TipoProductoId="@tipoProductoMedicamentos"
+               asp-route-BodegaId="8"
+               class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Medicamentos
+            </a>
+        </li>
+        <li>
+            <a asp-action="Inventario" asp-controller="Productos"
+               asp-route-TipoProductoId="@tipoProductoInsumos"
+               asp-route-BodegaId="8"
+               class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Insumos medicos
+            </a>
+        </li>
+        <li>
+            <a asp-action="Inventario" asp-controller="Productos"
+               asp-route-TipoProductoId="@tipoProductoEquiposMedicos"
+               asp-route-BodegaId="8"
+               class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Equipos médicos
+            </a>
+        </li>
+        <li>
+            <a asp-action="Inventario" asp-controller="Productos"
+               asp-route-TipoProductoId="@tipoProductoEquiposQuirurgicos"
+               asp-route-BodegaId="8"
+               class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Equipos quirúrgicos
+            </a>
+        </li>
+    </ul>
+</li>
+
+<li class="app-sidebar__heading">Recursos Humanos</li>
+
+<li>
+    <a asp-action="Index" asp-controller="Organizacion" class="enlace-redirigir">
+        <i class="metismenu-icon fas fa-users"></i>
+        Estructura Organizacional
+    </a>
+</li>
+
+<li>
+    <a href="#">
+        <i class="metismenu-icon fas fa-user-md"></i>
+        Empleados
+        <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+    </a>
+    <ul>
+        <li>
+            <a asp-action="Nuevo" asp-controller="Empleado" asp-route-tipoEmpleado="Normal" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Agregar Empleados
+            </a>
+        </li>
+        <li>
+            <a asp-action="Lista" asp-controller="Empleado" asp-route-tipoEmpleado="Normal" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Ver Empleados
+            </a>
+        </li>
+        <li>
+            <a asp-action="ReporteEmpleados" asp-controller="Reportes" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Reporte de Empleados Existente
+            </a>
+        </li>
+    </ul>
+</li>
+
+<li>
+    <a href="#">
+        <i class="metismenu-icon fas fa-user"></i>
+        Usuario
+        <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+    </a>
+    <ul>
+        <li>
+            <a href="/Identity/Account/NuevoUsuario" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Crear Usuario
+            </a>
+        </li>
+        <li>
+            <a asp-action="Lista" asp-controller="Account" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Ver Usuarios
+            </a>
+        </li>
+    </ul>
+</li>
+
+<li>
+    <a href="#">
+        <i class="metismenu-icon fas fa-file-invoice"></i>
+        Especialidades
+        <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+    </a>
+    <ul>
+        <li>
+            <a asp-action="Nuevo" asp-controller="Especialidad" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Agregar Especialidad
+            </a>
+        </li>
+        <li>
+            <a asp-action="Lista" asp-controller="Especialidad" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Ver Especialidades
+            </a>
+        </li>
+    </ul>
+</li>
+
+<li>
+    <a href="#">
+        <i class="metismenu-icon fas fa-user-md"></i>
+        Medicos
+        <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+    </a>
+    <ul>
+        <li>
+            <a asp-action="Nuevo" asp-controller="Empleado" asp-route-tipoEmpleado="Medico" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Agregar Medico
+            </a>
+        </li>
+        <li>
+            <a asp-action="Lista" asp-controller="Empleado" asp-route-tipoEmpleado="Medico" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Ver Medicos
+            </a>
+        </li>
+        <li>
+            <a asp-action="ReporteMedicos" asp-controller="Reportes" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Reporte de Medicos Existentes
+            </a>
+        </li>
+    </ul>
+</li>
+
+<li class="app-sidebar__heading">Bancos, Cuentas y Seguros</li>
+
+<li>
+    <a href="#">
+        <i class="metismenu-icon fas fa-hospital"></i>
+        Seguros
+        <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+    </a>
+    <ul>
+        <li>
+            <a asp-action="Nuevo" asp-controller="Seguro" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Añadir Seguro
+            </a>
+        </li>
+        <li>
+            <a asp-action="Lista" asp-controller="Seguro" class="enlace-redirigir">
+                <i class="metismenu-icon"></i>Ver Seguros
+            </a>
+        </li>
+    </ul>
+</li>
+
+@if (usuarioAdministrador || usuarioDesarrollador)
+{
+    <li class="app-sidebar__heading">Configuraci&oacute;n</li>
+    <li>
+        <a href="#">
+            <i class="metismenu-icon fa fa-cog"></i>
+            Configuraci&oacute;n
+            <i class="metismenu-state-icon pe-7s-angle-down caret-left"></i>
+        </a>
+        <ul>
+            <li>
+                <a href="/Identity/Account/NuevoUsuario" class="enlace-redirigir">
+                    <i class="metismenu-icon"></i>Crear usuario
+                </a>
+            </li>
+            <li>
+                <a asp-action="Lista" asp-controller="Account" class="enlace-redirigir">
+                    <i class="metismenu-icon"></i>Ver usuarios
+                </a>
+            </li>
+        </ul>
+    </li>
+}

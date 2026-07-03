@@ -1,0 +1,87 @@
+@using Database.Shared.Models
+@model CuestionarioPreAnestesico
+
+@{
+    var embebido = ViewData["EmbebidoEnExpediente"] as bool? ?? false;
+    Layout = embebido ? null : "_HojaMembreteLayout";
+    ViewData["Title"] = "Cuestionario Pre-Anestésico";
+    ViewData["MostrarServicios"] = false;
+    ViewData["MostrarEmergencias"] = false;
+
+    string Val(string s) => string.IsNullOrWhiteSpace(s) ? "-" : s;
+    string Pa(string respuesta, string detalle) =>
+        string.IsNullOrWhiteSpace(respuesta)
+            ? "-"
+            : (string.IsNullOrWhiteSpace(detalle) ? respuesta : $"{respuesta} — {detalle}");
+    string FmtDate(DateTime? d) => d.HasValue ? d.Value.ToString("dd/MM/yyyy") : "-";
+    string Imc(double? peso, double? estatura)
+    {
+        if (!peso.HasValue || !estatura.HasValue || estatura.Value <= 0) return "-";
+        var imc = peso.Value / (estatura.Value * estatura.Value);
+        return imc.ToString("0.00");
+    }
+}
+
+<style>
+    .doc { padding: 10px 16px 22px 16px; font-size: 12px; }
+    .doc-title { font-size: 18px; font-weight: 800; text-align: center; margin: 4px 0 12px; }
+    .section-bar { margin-top: 14px; margin-bottom: 6px; border-top: 3px solid #0a47a3; padding: 6px 8px 4px; font-weight: 700; text-transform: uppercase; background: #f7f9ff; }
+    table.kv { width: 100%; border-collapse: collapse; }
+    table.kv th, table.kv td { padding: 5px 8px; border-bottom: 1px solid #e6e9f2; text-align: left; vertical-align: top; }
+    table.kv th { width: 32%; font-weight: 600; }
+    .muted { color: #64748b; font-style: italic; }
+</style>
+
+<div class="doc">
+    <div class="doc-title">CUESTIONARIO PRE-ANESTÉSICO</div>
+
+    <div class="section-bar">Datos del paciente</div>
+    <table class="kv">
+        <tr><th>Registro médico</th><td>@Val(Model.RegistroMedico)</td></tr>
+        <tr><th>Nombre completo</th><td>@Val(Model.NombreCompleto)</td></tr>
+        <tr><th>Edad</th><td>@Val(Model.Edad)</td></tr>
+        <tr><th>Fecha cuestionario</th><td>@FmtDate(Model.FechaCuestionario)</td></tr>
+        <tr><th>Peso (kg)</th><td>@(Model.Peso?.ToString("0.##") ?? "-")</td></tr>
+        <tr><th>Estatura (m)</th><td>@(Model.Estatura?.ToString("0.##") ?? "-")</td></tr>
+        <tr><th>IMC</th><td>@Imc(Model.Peso, Model.Estatura)</td></tr>
+        <tr><th>Fecha última regla</th><td>@FmtDate(Model.FechaUltimaRegla)</td></tr>
+        <tr><th>Fecha procedimiento</th><td>@FmtDate(Model.FechaProcedimiento)</td></tr>
+        <tr><th>Procedimiento programado</th><td>@Val(Model.ProcedimientoProgramado)</td></tr>
+        <tr><th>Cirujano</th><td>@Val(Model.Cirujano)</td></tr>
+    </table>
+
+    <div class="section-bar">Antecedentes médicos</div>
+    <table class="kv">
+        <tr><th>Alergia a medicamentos</th><td>@Pa(Model.PA_Alergia, Model.PA_AlergiaCual)</td></tr>
+        <tr><th>Fuma</th><td>@Pa(Model.PA_Fuma, Model.PA_FumaCuanto)</td></tr>
+        <tr><th>Drogas</th><td>@Pa(Model.PA_Drogas, Model.PA_DrogasCuales)</td></tr>
+        <tr><th>Alcohol</th><td>@Pa(Model.PA_Alcohol, Model.PA_AlcoholCuanto)</td></tr>
+        <tr><th>Embarazo</th><td>@Pa(Model.PA_Embarazo, Model.PA_EmbarazoCual)</td></tr>
+        <tr><th>Transfusiones previas</th><td>@Pa(Model.PA_Transfusion, Model.PA_TransfusionCual)</td></tr>
+        <tr><th>Asma</th><td>@Pa(Model.PA_Asma, Model.PA_AsmaCual)</td></tr>
+        <tr><th>Enfermedad pulmonar</th><td>@Pa(Model.PA_Pulmones, Model.PA_PulmonesCual)</td></tr>
+        <tr><th>Enfermedad cardíaca</th><td>@Pa(Model.PA_Corazon, Model.PA_CorazonCual)</td></tr>
+        <tr><th>Ataque cardíaco</th><td>@Pa(Model.PA_AtaqueCardiaco, Model.PA_AtaqueCardiacoCual)</td></tr>
+        <tr><th>Angina</th><td>@Pa(Model.PA_Angina, Model.PA_AnginaCual)</td></tr>
+        <tr><th>Soplo</th><td>@Pa(Model.PA_Soplo, Model.PA_SoploCual)</td></tr>
+        <tr><th>Presión arterial alta</th><td>@Pa(Model.PA_Presion, Model.PA_PresionCual)</td></tr>
+        <tr><th>Enfermedad del hígado</th><td>@Pa(Model.PA_Higado, Model.PA_HigadoCual)</td></tr>
+        <tr><th>Enfermedad de riñones</th><td>@Pa(Model.PA_Rinones, Model.PA_RinonesCual)</td></tr>
+        <tr><th>Diabetes</th><td>@Pa(Model.PA_Diabetes, Model.PA_DiabetesCual)</td></tr>
+        <tr><th>Epilepsia</th><td>@Pa(Model.PA_Epilepsia, Model.PA_EpilepsiaCual)</td></tr>
+        <tr><th>Derrame cerebral</th><td>@Pa(Model.PA_Derrame, Model.PA_DerrameCual)</td></tr>
+        <tr><th>Enfermedad de tiroides</th><td>@Pa(Model.PA_Tiroides, Model.PA_TiroidesCual)</td></tr>
+        <tr><th>Problemas con anestesia</th><td>@Pa(Model.PA_Anestesico, Model.PA_AnestesicoCual)</td></tr>
+        <tr><th>Acepta transfusión</th><td>@Pa(Model.PA_AceptaTransfusion, Model.PA_AceptaTransfusionCual)</td></tr>
+    </table>
+
+    <div class="section-bar">Información adicional</div>
+    <table class="kv">
+        <tr><th>Medicamentos actuales</th><td>@Val(Model.AI_Medicamentos)</td></tr>
+        <tr><th>Actividad física</th><td>@Pa(Model.AI_Actividad, Model.AI_ActividadDetalle)</td></tr>
+        <tr><th>Operaciones previas</th><td>@Val(Model.AI_OperacionesPrevias)</td></tr>
+        <tr><th>Comentarios</th><td>@Val(Model.AI_Comentarios)</td></tr>
+    </table>
+
+    <p class="muted" style="margin-top:16px;">Registrado: @Model.FechaRegistro.ToString("dd/MM/yyyy HH:mm")</p>
+</div>

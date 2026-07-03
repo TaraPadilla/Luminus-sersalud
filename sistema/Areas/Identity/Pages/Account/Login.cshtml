@@ -5,7 +5,23 @@
 @{
     ViewData["Title"] = "Log in";
     Layout = "_LoginLayout";
-    var logoBase64 = Config["ImagenLogoBase64"];
+    var clienteLogin = Config["Cliente"] ?? "";
+    bool esSerSaludLogin = farmamest.Utilidades.SerSaludUiHelper.EsSerSalud(clienteLogin);
+    var nombreEmpresaLogin = Config["EstablecimientoNombreEmpresa"] ?? (esSerSaludLogin ? "SerSalud" : "AVM Enterprises S.A.");
+    var logoUrl = Config["ImagenLogoBase64"];
+    if (string.IsNullOrWhiteSpace(logoUrl))
+    {
+        var logoFile = clienteLogin switch
+        {
+            "HNPB" => "logoHPB",
+            _ when farmamest.Utilidades.SerSaludUiHelper.EsSerSalud(clienteLogin) => "logoSS",
+            _ when !string.IsNullOrWhiteSpace(clienteLogin) => $"logo{clienteLogin}",
+            _ => null
+        };
+        logoUrl = logoFile != null
+            ? $"/assets/images/logos/{logoFile}.png"
+            : "/assets/images/farm.png";
+    }
 }
 
 <style>
@@ -216,7 +232,7 @@
                     <div class="card card-signin my-3">
                         <div class="card-body">
                             <h5 class="card-title text-center login-logo">
-                                <img src="@logoBase64" width="230" class="img-fluid" alt="Logo" />
+                                <img src="@logoUrl" width="230" class="img-fluid" alt="Logo" />
                             </h5>
 
                             <h2 class="login-title">Iniciar Sesión</h2>
@@ -263,16 +279,15 @@
                                     </button>
                                 </div>
 
+                                <!-- Botón iniciar sesión con huella -->
                                 <hr class="my-3" />
 
-                                <!-- Botón iniciar sesión con huella -->
                                 <div class="mb-2">
                                     <button id="btnLoginHuella" type="button" class="btn btn-lg btn-login-secondary">
                                         <i class="bi bi-fingerprint"></i> INICIAR SESIÓN CON HUELLA
                                     </button>
                                 </div>
 
-                                <!-- Mensajes de error de WebAuthn -->
                                 <div id="mensajeLogin" class="mt-3 text-center fw-semibold text-danger"></div>
                             </form>
                         </div>
@@ -283,8 +298,11 @@
     </div>
 
     <footer class="login-footer-global">
+        @if (!esSerSaludLogin)
+        {
         <p><strong>Integrado con Al Alyssa</strong></p>
-        © 2026 AVM Enterprise. Todos los derechos reservados.
+        }
+        <p>&copy; @DateTime.Now.Year @nombreEmpresaLogin. Todos los derechos reservados.</p>
     </footer>
 </div>
 
@@ -292,87 +310,151 @@
     <partial name="_ValidationScriptsPartial" />
 
     <script>
-        document.getElementById("btnLoginHuella").addEventListener("click", async function () {
+        (function () {
+            const btn = document.getElementById("btnLoginHuella");
             const mensaje = document.getElementById("mensajeLogin");
-            mensaje.innerText = "";
+            const emailInput = document.getElementById("inputUserame");
 
-            try {
-                // ✅ CORRECCIÓN MÍNIMA: leer el email del input visible
-                const email = (document.getElementById("inputUserame")?.value || "").trim();
+            if (!btn || !mensaje || !emailInput) return;
+
+            function base64ToUint8Array(base64) {
+                const normalized = (base64 || "").replace(/-/g, "+").replace(/_/g, "/");
+                const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+                const raw = atob(padded);
+                const arr = new Uint8Array(raw.length);
+                for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+                return arr;
+            }
+
+            function arrayBufferToBase64(buffer) {
+                const bytes = new Uint8Array(buffer);
+                let binary = "";
+                for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+                return btoa(binary);
+            }
+
+            async function readApiError(response) {
+                try {
+                    const data = await response.json();
+                    return data.errorMessage || data.message || JSON.stringify(data);
+                } catch {
+                    try { return await response.text(); } catch { return "Error desconocido."; }
+                }
+            }
+
+            btn.addEventListener("click", async function () {
+                mensaje.innerText = "";
+                mensaje.classList.remove("text-success");
+                mensaje.classList.add("text-danger");
+
+                const email = (emailInput.value || "").trim();
                 if (!email) {
                     mensaje.innerText = "Debe ingresar el usuario/correo para iniciar sesión con huella.";
+                    emailInput.focus();
                     return;
                 }
 
-                // ✅ CORRECCIÓN MÍNIMA: BeginLogin por querystring, sin body y sin headers JSON
-                const beginResponse = await fetch(`/api/WebAuthn/BeginLogin?email=${encodeURIComponent(email)}`, {
-                    method: "POST",
-                    credentials: "include"
-                });
-
-                if (!beginResponse.ok) throw new Error("Error iniciando autenticación.");
-                const options = await beginResponse.json();
-
-                // Decodificar datos base64 → ArrayBuffer
-                options.challenge = Uint8Array.from(atob(options.challenge), c => c.charCodeAt(0)).buffer;
-
-                // Asegurarse de que allowCredentials sea un array y procesar cada credencial
-                if (options.allowCredentials && Array.isArray(options.allowCredentials)) {
-                    options.allowCredentials = options.allowCredentials.map(cred => ({
-                        ...cred,
-                        id: Uint8Array.from(atob(cred.id), c => c.charCodeAt(0)).buffer
-                    }));
+                if (!window.PublicKeyCredential) {
+                    mensaje.innerText = "Este navegador no soporta autenticación con huella (WebAuthn).";
+                    return;
                 }
 
-                // Paso 2: usar WebAuthn para obtener el "assertion"
-                const assertion = await navigator.credentials.get({ publicKey: options });
+                if (!window.isSecureContext) {
+                    mensaje.innerText = "La huella requiere HTTPS o localhost como origen seguro.";
+                    return;
+                }
 
-                // Paso 3: Preparar los datos para enviar al servidor
-                const assertionResponse = {
-                    id: assertion.id,
-                    rawId: btoa(String.fromCharCode.apply(null, new Uint8Array(assertion.rawId))),
-                    type: assertion.type,
-                    response: {
-                        authenticatorData: btoa(String.fromCharCode.apply(null, new Uint8Array(assertion.response.authenticatorData))),
-                        clientDataJSON: btoa(String.fromCharCode.apply(null, new Uint8Array(assertion.response.clientDataJSON))),
-                        signature: btoa(String.fromCharCode.apply(null, new Uint8Array(assertion.response.signature))),
-                        userHandle: assertion.response.userHandle ? btoa(String.fromCharCode.apply(null, new Uint8Array(assertion.response.userHandle))) : null
+                btn.disabled = true;
+
+                try {
+                    const beginResponse = await fetch(`/api/WebAuthn/BeginLogin?email=${encodeURIComponent(email)}`, {
+                        method: "POST",
+                        credentials: "include"
+                    });
+
+                    if (!beginResponse.ok) {
+                        mensaje.innerText = await readApiError(beginResponse);
+                        return;
                     }
-                };
 
-                // Paso 4: Enviar la assertion al servidor para validación y completar el login
-                const completeResponse = await fetch("/api/WebAuthn/CompleteLogin", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify(assertionResponse)
-                });
+                    const optionsFromServer = await beginResponse.json();
+                    const allowCredentials = Array.isArray(optionsFromServer.allowCredentials)
+                        ? optionsFromServer.allowCredentials
+                        : [];
 
-                if (!completeResponse.ok) {
-                    const errorData = await completeResponse.json();
-                    throw new Error(errorData.message || "Error al completar la autenticación");
-                }
+                    if (allowCredentials.length === 0) {
+                        mensaje.innerText = "Este usuario no tiene huella registrada. Inicie sesión con contraseña y registre su huella.";
+                        return;
+                    }
 
-                const result = await completeResponse.json();
+                    const publicKeyOptions = {
+                        challenge: base64ToUint8Array(optionsFromServer.challenge),
+                        timeout: optionsFromServer.timeout,
+                        rpId: optionsFromServer.rpId,
+                        userVerification: optionsFromServer.userVerification || "required",
+                        allowCredentials: allowCredentials.map(function (cred) {
+                            return {
+                                type: "public-key",
+                                id: base64ToUint8Array(cred.id),
+                                transports: cred.transports
+                            };
+                        })
+                    };
 
-                if (result.status === "ok") {
-                    // Ahora sí podemos redirigir, la sesión ha sido iniciada correctamente
-                    window.location.href = "/Home/Index";
-                } else {
+                    let assertion;
+                    try {
+                        assertion = await navigator.credentials.get({ publicKey: publicKeyOptions });
+                    } catch (webAuthnError) {
+                        if (webAuthnError && webAuthnError.name === "NotAllowedError") {
+                            mensaje.innerText = "Autenticación cancelada o no completada.";
+                            return;
+                        }
+                        throw webAuthnError;
+                    }
+
+                    const assertionResponse = {
+                        id: assertion.id,
+                        rawId: arrayBufferToBase64(assertion.rawId),
+                        type: assertion.type,
+                        response: {
+                            authenticatorData: arrayBufferToBase64(assertion.response.authenticatorData),
+                            clientDataJSON: arrayBufferToBase64(assertion.response.clientDataJSON),
+                            signature: arrayBufferToBase64(assertion.response.signature),
+                            userHandle: assertion.response.userHandle
+                                ? arrayBufferToBase64(assertion.response.userHandle)
+                                : null
+                        }
+                    };
+
+                    const completeResponse = await fetch("/api/WebAuthn/CompleteLogin", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                        body: JSON.stringify(assertionResponse)
+                    });
+
+                    if (!completeResponse.ok) {
+                        mensaje.innerText = await readApiError(completeResponse);
+                        return;
+                    }
+
+                    const result = await completeResponse.json();
+                    if (result.status === "ok") {
+                        window.location.href = "/Home/Index";
+                        return;
+                    }
+
                     mensaje.innerText = result.message || "Error desconocido durante autenticación.";
+                } catch (error) {
+                    console.error("Error de autenticación:", error);
+                    mensaje.innerText = (error && error.message) ? error.message : "Error desconocido durante autenticación.";
+                } finally {
+                    btn.disabled = false;
                 }
-
-            } catch (error) {
-                console.error("Error de autenticación:", error);
-
-                if (error.message.includes('The operation either timed out or was not allowed')) {
-                    mensaje.innerText = "Error durante la autenticación. Intenta nuevamente.";
-                } else {
-                    mensaje.innerText = error.message || "Error desconocido durante autenticación.";
-                }
-            }
-        });
+            });
+        })();
     </script>
+
     <script>
         document.querySelectorAll(".toggle-password").forEach(function (el) {
             el.addEventListener("click", function () {

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
+using sistema.Utilidades;
 namespace sistema.Models
 {
     public class HospitalizacionDetallesViewModel
@@ -40,18 +41,23 @@ namespace sistema.Models
         public string PacientePeso { get; set; }
 
         public string MedicoAsignado { get; set; }
+        public int? MedicoAsignadoEmpleadoId { get; set; }
         public int BodegaId { get; set; }
         public string NumeroNombreHabitacion { get; set; }
         public int? NumeroCamas { get; set; }
         public int PacienteId { get; set; }
         public string PacienteNombre { get; set; }
+        public string PacienteDpi { get; set; }
         public string TipoPaciente { get; set; }
         public int PacienteEstadoId { get; set; }
         public string PacienteEstado { get; set; }
         public string PacienteSexo { get; set; }
         public string PacienteTelefono { get; set; }
+        public string PacienteEmail { get; set; }
         public string PacienteCelular { get; set; }
         public string PacienteTipoSangre { get; set; }
+        public string MedicamentosControladosInicialJson { get; set; }
+        public string FechaProcedimientoControlados { get; set; }
 
         //Depositos
         public int FormaPagoId { get; set; }
@@ -132,8 +138,8 @@ namespace sistema.Models
         {
             FormaPagoSelectListItems = new SelectList(cuentasPorCobrarRepository.GetFormasPago(), "Id", "NombreFormaPago");
             MonedaSelectListItems = new SelectList(cuentasPorCobrarRepository.GetMonedas(), "Id", "NombreMoneda");
-            SegurosSelectListItem = new SelectList(seguroRepository.GetList(), "Id", "Nombre");
-            DoctoresSelectListItem = new SelectList(empleadoRepository.GetListEmpleadoTipoProfesional(), "Id", "NombreYApellidos");
+            SegurosSelectListItem = SelectListHelper.Create(seguroRepository.GetList(), "Id", "Nombre");
+            DoctoresSelectListItem = EmpleadoSelectListHelper.Crear(empleadoRepository.GetListEmpleadoTipoProfesional());
         }
 
         // Método para asignar BodegaId basado en CategoriaHabitacionNombre

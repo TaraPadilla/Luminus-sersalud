@@ -40,9 +40,14 @@ namespace Database.Shared.Models
 
         public int ClienteId {get; set;}
 
-        public string UserId1 {get; set;}
+        /// <summary>Legacy integer column in DB (not AspNetUsers).</summary>
+        public int? UserId { get; set; }
 
-        public string UserId { get; set; }
+        public string UserId1 { get; set; }
+
+        /// <summary>FK to AspNetUsers (text).</summary>
+        public string UserId2 { get; set; }
+
         public User User {get; set;}
 
         public Ruta Ruta { get; set; }

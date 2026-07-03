@@ -17,9 +17,10 @@
 </div>
 
 <p style="text-align: justify;">
-    Yo, Edgar _______ Abril _______ (el "Paciente") doy mi consentimiento para que me sea realizado un procedimiento
-    consistente en: Artroscopía de Rodilla más Reparación Meniscal, procedimiento autorizado por el Médico Renato López,
-    número de Colegiado _______.
+    Yo, @(Model.NombreCompleto ?? Model.NombrePaciente ?? "el Paciente") doy mi consentimiento para que me sea realizado un procedimiento
+    consistente en: @(!string.IsNullOrWhiteSpace(Model.ProcedimientoProgramado) ? Model.ProcedimientoProgramado : "________________________________"),
+    procedimiento autorizado por el Médico @(Model.NombreMedicoTratante ?? "No disponible"),
+    especialista en @(Model.EspecialidadMedico ?? "—"), número de Colegiado @(Model.ColegiadoMedico ?? "—").
 </p>
 
 <p style="text-align: justify;">
@@ -27,7 +28,7 @@
     mismo, y declaro estar debidamente informado(a) según lo establecido en el artículo seis (6), del Código de Salud de
     Guatemala, Decreto noventa guion noventa y siete (90-97) del Congreso de la República, y el artículo treinta (30)
     del Código Médico Deontológico, que reglamenta los derechos y obligaciones en materia de información y documentación
-    clínica. Declaro que tuve la oportunidad de aclarar mis dudas en entrevista con el Dr. Renato López. Así mismo
+    clínica. Declaro que tuve la oportunidad de aclarar mis dudas en entrevista con el @(Model.NombreMedicoTratante ?? "médico tratante"). Así mismo
     declaro que he recibido respuesta a todas mis preguntas, habiendo tomado la decisión de manera libre y voluntaria,
     consiento, ratifico y firmo.
 </p>

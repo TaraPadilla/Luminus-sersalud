@@ -9,14 +9,14 @@ actualizarPreciosVenta();
 /// Funciones Venta /////////
 $('#boton').click(function () {
     var fecha = document.getElementById('reservationtime').value;
-    var empleadoid = document.getElementById('empleadoselect').vaalue;
+    var empleadoid = document.getElementById('empleadoselect').value;
 
     var datos = "";
     $.ajax({
         method: "POST",
         data: datos,
         dataType: 'json',
-        url: '/CrearPDF/VentasPdf?fecha= ' + fecha + '&empleadoid=' + empleadoid,
+        url: '/Reportes/ReporteVentas?fecha=' + encodeURIComponent(fecha) + '&empleadoid=' + empleadoid,
         traditional: true,
         success: function (data, state) {
 
@@ -145,7 +145,7 @@ function agregarALista(data) {
 
         }
 
-        if (item.tipoProductoId === 10) {
+        if (item.tipoProductoId === 1) {
             var presentacionProducto = (item.presentacion == null) ? " --- " : (item.presentacion);
             var viaAdministracion = (item.viadmin == null) ? " --- " : (item.viadmin);
             var grupoTerapeutico = (item.grupoT == null) ? " --- " : (item.grupoT);
@@ -176,7 +176,7 @@ function agregarALista(data) {
             $('#listafiltro').append(htmlTags);
 
         }
-        else if (item.tipoProductoId === 11) {
+        else if (item.tipoProductoId === 2) {
 
             var categoria = (item.categoria == null) ? " --- " : (item.categoria);
             var marca = (item.marca == null) ? " --- " : (item.marca);
@@ -643,8 +643,8 @@ function ModificarVenta(id) {
 
         detalleVenta.push({
             "ProductoId": $(this).find("td").eq(9).html(),
-            "Cantidad": this.parentNode.querySelectorAll("td.cantidad-fila")[0].querySelectorAll("input")[0].value,
-            "Precio": this.parentNode.querySelectorAll("td.precio-fila")[0].querySelectorAll("select")[0].value,
+            "Cantidad": this.querySelectorAll("td.cantidad-fila")[0].querySelectorAll("input")[0].value,
+            "Precio": this.querySelectorAll("td.precio-fila")[0].querySelectorAll("select")[0].value,
             "Descuento": $(this).find("td").eq(5).html(),
             "Subtotal": $(this).find("td").eq(6).html(),
             "Total": $(this).find("td").eq(7).html()

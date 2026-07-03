@@ -1,46 +1,22 @@
-@page 
-@model IndexModel
-
-
+@page
+@model AccessDeniedModel
 @{
-    ViewData["Title"] = "Forbidden";
-   Layout = "_forbiddenLayout";
+    ViewData["Title"] = "Acceso denegado";
 }
 
-<div class="ghost">
-  
-<div class="ghost--navbar"></div>
-  <div class="ghost--columns">
-    <div class="ghost--column">
-      <div class="code"></div>
-      <div class="code"></div>
-      <div class="code"></div>
-      <div class="code"></div>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-body text-center p-5">
+                    <h1 class="h3 mb-3">Acceso denegado</h1>
+                    <p class="text-muted mb-4">
+                        No tiene permisos para acceder a este recurso.
+                    </p>
+                    <a class="btn btn-primary" asp-controller="Home" asp-action="Index">Volver al inicio</a>
+                    <a class="btn btn-outline-secondary ml-2" asp-area="Identity" asp-page="/Account/Login">Iniciar sesión</a>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="ghost--column">
-      <div class="code"></div>
-      <div class="code"></div>
-      <div class="code"></div>
-      <div class="code"></div>
-    </div>
-    <div class="ghost--column">
-      <div class="code"></div>
-      <div class="code"></div>
-      <div class="code"></div>
-      <div class="code"></div>
-    </div>
-    
-  </div>
-  <div class="ghost--main">
-    <div class="code"></div>
-    <div class="code"></div>
-
-  </div>
-
 </div>
-
-<h1 class="police-tape police-tape--1">
-  &nbsp;&nbsp;&nbsp;&nbsp;Error: 403&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Error: 403&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Error: 403&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Error: 403&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Error: 403&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Error: 403&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Error: 403
-</h1>
-<h1 class="police-tape police-tape--2">Forbidden&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Forbidden&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Forbidden&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Forbidden&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Forbidden&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Forbidden&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</h1>
-

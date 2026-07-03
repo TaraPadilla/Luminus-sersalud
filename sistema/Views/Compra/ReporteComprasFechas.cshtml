@@ -56,9 +56,9 @@
                                         </div>
                                         <div class="col-md-12">
                                             <label>Empleado</label>
-                                            <select class="form-control select2bs4" style="width: 100%;"
-                                                    name="empleadoid" asp-items="@Model.ListaEmpleados" id="empleadoselect">
-                                                <option selected value="">Sin asignar</option>
+                                            <select class="form-control" style="width: 100%;"
+                                                    name="empleadoid" id="empleadoselect-excel">
+                                                @await Html.PartialAsync("_EmpleadoSelectOptions", Model.ListaEmpleados)
                                             </select>
 
                                         </div>
@@ -97,9 +97,9 @@
                                         </div>
                                         <div class="col-md-12">
                                             <label>Empleado</label>
-                                            <select class="form-control select2bs4" style="width: 100%;"
-                                                    name="empleadoid" asp-items="@Model.ListaEmpleados" id="empleadoselect">
-                                                <option selected value="">Sin asignar</option>
+                                            <select class="form-control" style="width: 100%;"
+                                                    name="empleadoid" id="empleadoselect-pdf">
+                                                @await Html.PartialAsync("_EmpleadoSelectOptions", Model.ListaEmpleados)
                                             </select>
 
                                         </div>

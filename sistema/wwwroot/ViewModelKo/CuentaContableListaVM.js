@@ -1,18 +1,22 @@
-var BancoListaVM = function () {
+var CuentaContableListaVM = function () {
     var self = this;
-}
+};
 
-var listaVM = new BancoListaVM();
+var listaVM = new CuentaContableListaVM();
 ko.applyBindings(listaVM);
 
 $(document).ready(function () {
-    drawDataTable("tabla-cuenta");
+    var tableId = "tabla-cuenta-contable";
+    if ($.fn.DataTable.isDataTable("#" + tableId)) {
+        $("#" + tableId).DataTable().destroy();
+    }
+    drawDataTable(tableId);
 });
 
 function modificarCuenta(cuentaId) {
-    debugger;
     window.location.href = "/CuentaContable/Modificar?cuentaId=" + cuentaId;
 }
+
 function eliminarCuenta(cuentaId) {
     if (confirm("¿Desea eliminar esta cuenta?")) {
         showLoading();
@@ -34,7 +38,7 @@ function eliminarCuenta(cuentaId) {
             error: function (dataError) {
                 hideLoading();
                 console.log(dataError);
-                alert(dataError);
+                alert("Ocurrió un error al eliminar la cuenta.");
             }
         });
     }

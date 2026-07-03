@@ -6,6 +6,7 @@
         <div class="main-card mb-3 card">
             <div class="card-body">
                 <div class="form-row">
+                    @Html.HiddenFor(a => a.Id)
                     @Html.HiddenFor(a => a.ExamenLabClinicoId);
                     <div class="col-md-12">
                         <div class="position-relative form-group">
@@ -74,6 +75,7 @@ else
         <div class="main-card mb-3 card">
             <div class="card-body">
                 <div class="form-row">
+                    @Html.HiddenFor(a => a.Id)
                     @Html.HiddenFor(a => a.ExamenLabClinicoId);
                     <div class="col-md-12">
                         <div class="position-relative form-group">

@@ -1,7 +1,7 @@
 ﻿@using Database.Shared.Models
 @model List<CuentaContable>
 @{
-    ViewData["Title"] = "Categorias";
+    ViewData["Title"] = "Cuentas contables";
 }
 
 @await Html.PartialAsync("_MensajeExito")
@@ -10,7 +10,7 @@
     <div class="card-body">
         <div class="form-row">
             <div class="col-md-12">
-                <center><h4><b>Cuentas</b></h4></center>
+                <center><h4><b>Cuentas contables</b></h4></center>
                 <hr />
                 <a class="btn btn-danger" asp-action="Nuevo" asp-controller="CuentaContable">
                     Nueva Cuenta
@@ -20,12 +20,10 @@
     </div>
 </div>
 
-
-
 <div class="main-card mb-3 card">
     <div class="card-body">
         <div class="table-responsive">
-            <table id="tabla-cuenta">
+            <table id="tabla-cuenta-contable" class="table table-striped table-bordered">
                 <thead>
                     <tr>
                         <th>Nombre de la cuenta</th>
@@ -33,44 +31,27 @@
                         <th>Banco</th>
                         <th>Cuenta</th>
                         <th>Nomenclatura</th>
-                        <th>Categoria</th>
+                        <th>Categoría</th>
                         <th>Acciones</th>
-
                     </tr>
                 </thead>
                 <tbody>
-                    @if (Model != null && Model.Count() > 0)
+                    @if (Model != null && Model.Any())
                     {
                         foreach (var cuenta in Model)
                         {
+                            var nomenclaturaText = cuenta.Nomenclatura != null && cuenta.Nomenclatura.Any()
+                                ? string.Join(" - ", cuenta.Nomenclatura
+                                    .Where(x => x.Nomenclatura != null)
+                                    .Select(x => x.Nomenclatura.Nombre))
+                                : "—";
                             <tr>
                                 <td>@cuenta.NombreCuenta</td>
-                                <td>@cuenta.Especificaciones</td>
-                                <td>@cuenta.Banco.Nombre</td>
-                                @if(cuenta.Cuenta != null){
-                                    <td>@cuenta.Cuenta.NumeroCuenta</td>
-                                }
-                                else
-                                {
-                                    <td>-</td>
-                                }
-                                @if(cuenta.Nomenclatura.Count > 1)
-                                {
-                                    var nombreNom = "";
-                                    string concat = string.Join(" - ", cuenta.Nomenclatura.Select(x => x.Nomenclatura.Nombre));
-                                    foreach (var item in cuenta.Nomenclatura)
-                                    {
-                                        nombreNom += item.Nomenclatura.Nombre + ". ";
-                                    }
-                                    @* <td>@nombreNom</td> *@
-                                    <td>@concat</td>
-                                }
-                                else
-                                {
-                                    <td>@cuenta.Nomenclatura.FirstOrDefault().Nomenclatura.Nombre</td>
-                                }
-
-                                <td>@cuenta.CategoriaCuenta.Nombre</td>
+                                <td>@(cuenta.Especificaciones ?? "—")</td>
+                                <td>@(cuenta.Banco?.Nombre ?? "—")</td>
+                                <td>@(cuenta.Cuenta?.NumeroCuenta ?? "—")</td>
+                                <td>@nomenclaturaText</td>
+                                <td>@(cuenta.CategoriaCuenta?.Nombre ?? "—")</td>
                                 <td>
                                     <button class="btn btn-warning" onclick="modificarCuenta(@cuenta.Id)">
                                         <i class="fa fa-edit"></i>
@@ -81,14 +62,6 @@
                                 </td>
                             </tr>
                         }
-                    }
-                    else
-                    {
-                        <tr>
-                            <td><i>No hay cuentas registrados</i></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
                     }
                 </tbody>
             </table>

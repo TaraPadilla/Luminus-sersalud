@@ -14,6 +14,7 @@ using System.Net.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Hosting;
 using System.IO;
+using sistema.UtilidadesEmailWp.Services.IService;
 
 namespace farmamest.Service
 {
@@ -26,19 +27,22 @@ namespace farmamest.Service
         private static readonly TimeZoneInfo HospitalTimeZone = TimeZoneInfo.FindSystemTimeZoneById(HospitalTimeZoneId);
         private readonly IConfiguration _configuration;
         private readonly IWebHostEnvironment _env;
+        private readonly IWhatsAppService _whatsAppService;
+
         public MedicamentoNotificacionService(
             Context db,
             IHttpClientFactory httpClientFactory,
             ILogger<MedicamentoNotificacionService> logger,
             IConfiguration configuration,
-            IWebHostEnvironment env)
+            IWebHostEnvironment env,
+            IWhatsAppService whatsAppService)
         {
             _db = db;
             _httpClientFactory = httpClientFactory;
             _logger = logger;
             _configuration = configuration;
             _env = env;
-
+            _whatsAppService = whatsAppService;
         }
 
         // ============================================================
@@ -129,18 +133,19 @@ namespace farmamest.Service
                         baseUrl);                    // var body = ObtenerCuerpoCorreo(solicitudMock, pacienteNombre, null, null);
                     if (initialDelay > TimeSpan.Zero)
                     {
-                        BackgroundJob.Schedule(() =>
-            EnviarCorreoBaseAsync(emails,
-                $"Recordatorio de medicación (1/1) - {nombreProducto} para {pacienteNombre}",
-                body, pacienteNombre, nombreProducto, baseUrl),
-            initialDelay);
+                        BackgroundJob.Schedule<MedicamentoNotificacionService>(s =>
+                            s.EnviarCorreoBaseAsync(
+                                emails.ToArray(),
+                                $"Recordatorio de medicación (1/1) - {nombreProducto} para {pacienteNombre}",
+                                body, pacienteNombre, nombreProducto, baseUrl, hospitalizacionId),
+                            initialDelay);
                         _logger.LogInformation("STAT programado con retraso de {Delay} min.", initialDelay.TotalMinutes);
                     }
                     else
                     {
                         await EnviarCorreoBaseAsync(emails,
                                    $"Recordatorio de medicación (1/1) - {nombreProducto} para {pacienteNombre}",
-                                   body, pacienteNombre, nombreProducto, baseUrl);
+                                   body, pacienteNombre, nombreProducto, baseUrl, hospitalizacionId);
                         _logger.LogInformation("STAT enviado inmediatamente.");
                     }
                 }
@@ -178,18 +183,19 @@ namespace farmamest.Service
                             // var bodyFirst = ObtenerCuerpoCorreo(solicitudMock, pacienteNombre, 1, cantidadInt);
                             if (initialDelay > TimeSpan.Zero)
                             {
-                                BackgroundJob.Schedule(() =>
-    EnviarCorreoBaseAsync(emails,
-        $"Recordatorio de medicación (1/{cantidadInt}) - {nombreProducto} para {pacienteNombre}",
-        bodyFirst, pacienteNombre, nombreProducto, baseUrl),
-    initialDelay);
+                                BackgroundJob.Schedule<MedicamentoNotificacionService>(s =>
+                                    s.EnviarCorreoBaseAsync(
+                                        emails.ToArray(),
+                                        $"Recordatorio de medicación (1/{cantidadInt}) - {nombreProducto} para {pacienteNombre}",
+                                        bodyFirst, pacienteNombre, nombreProducto, baseUrl, hospitalizacionId),
+                                    initialDelay);
                                 _logger.LogInformation("Dosis 1/{Total} programada con retraso {Delay} min.", cantidadInt, initialDelay.TotalMinutes);
                             }
                             else
                             {
                                 await EnviarCorreoBaseAsync(emails,
                                       $"Recordatorio de medicación (1/{cantidadInt}) - {nombreProducto} para {pacienteNombre}",
-                                      bodyFirst, pacienteNombre, nombreProducto, baseUrl);
+                                      bodyFirst, pacienteNombre, nombreProducto, baseUrl, hospitalizacionId);
                                 _logger.LogInformation("Dosis 1/{Total} enviada inmediatamente.", cantidadInt);
                             }
 
@@ -197,12 +203,12 @@ namespace farmamest.Service
                             if (cantidadInt > 1)
                             {
                                 TimeSpan delayForSecond = initialDelay + TimeSpan.FromMinutes(intervaloMinutos);
-                                BackgroundJob.Schedule(() =>
-     EnviarRecordatorioMedicamento(
-         hospitalizacionId, pacienteNombre, nombreProducto, cantidad,
-         indicaciones, viaAdministracion, 2, cantidadInt, intervaloMinutos,
-         emails, nombreProducto, baseUrl, frecuenciaAdministracion), 
-     delayForSecond);
+                                BackgroundJob.Schedule<MedicamentoNotificacionService>(s =>
+                                    s.EnviarRecordatorioMedicamento(
+                                        hospitalizacionId, pacienteNombre, nombreProducto, cantidad,
+                                        indicaciones, viaAdministracion, 2, cantidadInt, intervaloMinutos,
+                                        emails.ToArray(), nombreProducto, baseUrl, frecuenciaAdministracion),
+                                    delayForSecond);
                                 _logger.LogInformation("Siguientes dosis programadas cada {Intervalo} minutos, primera repetición en {Delay} min.", intervaloMinutos, delayForSecond.TotalMinutes);
                             }
                         }
@@ -240,10 +246,10 @@ namespace farmamest.Service
             int dosisActual,
             int cantidadTotal,
             int intervaloMinutos,
-            List<string> emails,
+            IEnumerable<string> emails,
             string medicamentoNombre,
             string baseUrl,
-            string frecuenciaAdministracion = null) // ← PARÁMETRO NUEVO
+            string frecuenciaAdministracion = null)
         {
             try
             {
@@ -259,24 +265,24 @@ namespace farmamest.Service
                     (int)cantidad,
                     indicaciones,
                     viaAdministracion,
-                    frecuencia,       // ← CORREGIDO (antes era intervaloMinutos.ToString())
+                    frecuencia,
                     dosisActual,
                     cantidadTotal,
                     "",
                     baseUrl);
 
                 var subject = $"Recordatorio de medicación ({dosisActual}/{cantidadTotal}) - {medicamentoNombre} para {pacienteNombre}";
-                await EnviarCorreoBaseAsync(emails, subject, body, pacienteNombre, medicamentoNombre, baseUrl);
+                await EnviarCorreoBaseAsync(emails, subject, body, pacienteNombre, medicamentoNombre, baseUrl, hospitalizacionId);
 
                 if (dosisActual < cantidadTotal)
                 {
-                    BackgroundJob.Schedule(() =>
-                        EnviarRecordatorioMedicamento(
+                    BackgroundJob.Schedule<MedicamentoNotificacionService>(s =>
+                        s.EnviarRecordatorioMedicamento(
                             hospitalizacionId, pacienteNombre, nombreProducto, cantidad,
                             indicaciones, viaAdministracion, dosisActual + 1,
-                            cantidadTotal,             // ← usa cantidadTotal (no cantidadInt)
-                            intervaloMinutos, emails, medicamentoNombre, baseUrl, frecuencia),
-                        TimeSpan.FromMinutes(intervaloMinutos)); // ← delay directo (no delayForSecond)
+                            cantidadTotal,
+                            intervaloMinutos, emails.ToArray(), medicamentoNombre, baseUrl, frecuencia),
+                        TimeSpan.FromMinutes(intervaloMinutos));
                 }
             }
             catch (Exception ex)
@@ -289,23 +295,27 @@ namespace farmamest.Service
         // MÉTODO BASE PARA ENVIAR CORREO (público, llamado por Hangfire)
         // ============================================================
         public async Task EnviarCorreoBaseAsync(
-            List<string> emailsDestino,
+            IEnumerable<string> emailsDestino,
             string subject,
             string body,
             string pacienteNombre,
             string medicamento,
-            string baseUrl)
+            string baseUrl,
+            int hospitalizacionId = 0)
         {
-            if (emailsDestino == null || emailsDestino.Count == 0)
+            if (emailsDestino == null || !emailsDestino.Any())
             {
                 Console.WriteLine("[Correo] Lista de emails vacía, no se envía nada.");
                 return;
             }
 
-            Console.WriteLine($"[Correo] Iniciando envío. Destinatarios: {emailsDestino.Count}, Subject: {subject}, Body: {System.Text.Encoding.UTF8.GetByteCount(body)} bytes");
+            var emailList = emailsDestino.ToList();
+            Console.WriteLine($"[Correo] Iniciando envío. Destinatarios: {emailList.Count}, Subject: {subject}, Body: {System.Text.Encoding.UTF8.GetByteCount(body)} bytes");
+
+            await EnviarWhatsAppMedicamentoAsync(hospitalizacionId, pacienteNombre, medicamento, subject);
 
             using var client = _httpClientFactory.CreateClient();
-            foreach (var email in emailsDestino)
+            foreach (var email in emailList)
             {
                 Console.WriteLine($"[Correo] Enviando a {email}...");
                 using var form = new MultipartFormDataContent();
@@ -362,6 +372,30 @@ namespace farmamest.Service
         // ============================================================
         // MÉTODOS PRIVADOS AUXILIARES
         // ============================================================
+        private async Task EnviarWhatsAppMedicamentoAsync(int hospitalizacionId, string pacienteNombre, string medicamento, string subject)
+        {
+            try
+            {
+                string telefono = null;
+                if (hospitalizacionId > 0)
+                {
+                    telefono = await _db.Hospitalizaciones
+                        .Where(h => h.Id == hospitalizacionId)
+                        .Select(h => h.Paciente.Telefono)
+                        .FirstOrDefaultAsync();
+                }
+
+                if (string.IsNullOrWhiteSpace(telefono)) return;
+
+                var mensaje = $"{subject}\nMedicamento: {medicamento}\nPaciente: {pacienteNombre}";
+                await _whatsAppService.SendTextMessageAsync(telefono, mensaje);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "No se pudo enviar WhatsApp de medicamento.");
+            }
+        }
+
         private async Task<List<string>> ObtenerEmailsMedicosDesdeCitaAsync(int hospitalizacionId)
         {
             var cita = await ObtenerCitaAsociadaAsync(hospitalizacionId);
@@ -441,7 +475,11 @@ namespace farmamest.Service
                 }
             }
 
-            string[] localFormats = { "dd/MM/yyyy HH:mm", "dd/MM/yyyy H:mm", "dd/MM/yyyy hh:mm tt", "dd/MM/yyyy h:mm tt" };
+            string[] localFormats = {
+                "dd/MM/yyyy HH:mm", "dd/MM/yyyy H:mm", "dd/MM/yyyy hh:mm tt", "dd/MM/yyyy h:mm tt",
+                "MM/dd/yyyy HH:mm", "MM/dd/yyyy H:mm", "MM/dd/yyyy hh:mm tt", "MM/dd/yyyy h:mm tt",
+                "yyyy-MM-dd HH:mm", "yyyy-MM-dd H:mm"
+            };
             var cultures = new[] { System.Globalization.CultureInfo.InvariantCulture, new System.Globalization.CultureInfo("es-GT") };
             foreach (var culture in cultures)
             {
@@ -524,12 +562,11 @@ namespace farmamest.Service
             string fechaAplicacionFormateada = "Inmediata (STAT)";
             if (!string.IsNullOrEmpty(fechaHoraAplicacionManual))
             {
-                // Intentar parsear la fecha (puede venir en UTC o en formato local)
-                if (DateTime.TryParse(fechaHoraAplicacionManual, out var fechaUtc))
+                var parsedUtc = ParseFechaHoraAplicacion(fechaHoraAplicacionManual);
+                if (parsedUtc.HasValue)
                 {
-                    // Convertir UTC a hora local de Guatemala
                     var guatemalaZone = TimeZoneInfo.FindSystemTimeZoneById("America/Guatemala");
-                    var fechaLocal = TimeZoneInfo.ConvertTimeFromUtc(fechaUtc, guatemalaZone);
+                    var fechaLocal = TimeZoneInfo.ConvertTimeFromUtc(parsedUtc.Value, guatemalaZone);
                     fechaAplicacionFormateada = fechaLocal.ToString("dd/MM/yyyy hh:mm tt");
                 }
                 else

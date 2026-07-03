@@ -11,7 +11,7 @@
     ViewData["MostrarDireccion"] = true;
     ViewData["MostrarTelefono"] = true;
     ViewData["MostrarCorreoElectronico"] = true;
-    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarServicios"] = false;
     ViewData["MostrarEmergencias"] = true;
 
     DateTime fecha = DateTime.Now;
@@ -138,6 +138,17 @@
                             </td>
                         </tr>
                         <tr class="kv-row">
+                            <td><span class="label">Registrado por</span></td>
+                            <td><span class="value">@Model.Profesional</span></td>
+                        </tr>
+                        @if (Model.Autorizado && !string.IsNullOrWhiteSpace(Model.AutorizadoPor))
+                        {
+                            <tr class="kv-row">
+                                <td><span class="label">Autorizado por</span></td>
+                                <td><span class="value">@Model.AutorizadoPor</span></td>
+                            </tr>
+                        }
+                        <tr class="kv-row">
                             <td><span class="label">Orden realizada</span></td>
                             <td>
                                 <span class="value">@Model.Realizada</span>
@@ -159,5 +170,48 @@
             </tr>
         </tbody>
     </table>
+
+    @if (!string.IsNullOrEmpty(Model.FirmaBase64))
+    {
+        <table class="section-title">
+            <tr>
+                <td class="bar"></td>
+                <td>@(Model.Autorizado && !string.IsNullOrWhiteSpace(Model.AutorizadoPor) ? "Firma de quien autorizó" : "Firma del profesional")</td>
+            </tr>
+        </table>
+        <table class="block">
+            <tr>
+                <td style="padding:8px; text-align:center;">
+                    <div>@(Model.NombreFirmante ?? Model.Profesional)</div>
+                    @if (Model.Autorizado && !string.IsNullOrWhiteSpace(Model.AutorizadoPor))
+                    {
+                        <div style="color:#64748b;">Validaci&oacute;n con huella digital</div>
+                    }
+                    <div style="color:#64748b;">Registrado por: @Model.Profesional</div>
+                    <div style="color:#64748b;">M&eacute;dico tratante: @Model.EmpleadoText</div>
+                    <div style="color:#64748b;">Colegiado: @Model.ColegioEmpleado</div>
+                    <img src="@Model.FirmaBase64" style="max-height:100px; max-width:300px; border:1px solid #ccc; padding:4px; margin-top:8px;" />
+                </td>
+            </tr>
+        </table>
+    }
+    else if (Model.Autorizado && !string.IsNullOrWhiteSpace(Model.AutorizadoPor))
+    {
+        <table class="section-title">
+            <tr>
+                <td class="bar"></td>
+                <td>Autorización</td>
+            </tr>
+        </table>
+        <table class="block">
+            <tr>
+                <td style="padding:8px; text-align:center;">
+                    <div>Autorizado por: @Model.AutorizadoPor</div>
+                    <div style="color:#64748b;">Registrado por: @Model.Profesional</div>
+                    <div style="color:#64748b;">Médico: @Model.EmpleadoText</div>
+                </td>
+            </tr>
+        </table>
+    }
 
 </div>

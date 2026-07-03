@@ -11,6 +11,7 @@ using Database.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using sistema.Models.DataTables;
 using System.IO;
+using sistema.Helpers;
 
 namespace sistema.Controllers
 {
@@ -35,6 +36,35 @@ namespace sistema.Controllers
             _requisionRepository = requisionRepository;
             _usuarioRepository = usuarioRepository;
             _empleadoRepository = empleadoRepository;
+        }
+
+        private bool TryGetEmpleadoActual(out Empleado empleado, out string errorMessage)
+        {
+            empleado = null;
+            errorMessage = null;
+
+            var username = User?.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                errorMessage = "No se pudo identificar al usuario en sesión.";
+                return false;
+            }
+
+            var usuario = _usuarioRepository.Get(username);
+            if (usuario?.EmpleadoId == null)
+            {
+                errorMessage = "Su usuario no tiene un empleado asociado. Contacte al administrador para vincular su cuenta.";
+                return false;
+            }
+
+            empleado = _empleadoRepository.Get(usuario.EmpleadoId.Value);
+            if (empleado == null)
+            {
+                errorMessage = "No se encontró el registro del empleado asociado a su usuario.";
+                return false;
+            }
+
+            return true;
         }
 
         [HttpGet]
@@ -111,9 +141,14 @@ namespace sistema.Controllers
             try
             {
 
-                var username = User.Identity.Name;
-                var usuariodb = _usuarioRepository.Get(username);
-                var empleado = _empleadoRepository.Get(usuariodb.EmpleadoId.Value);
+                if (!TryGetEmpleadoActual(out var empleado, out var errorEmpleado))
+                {
+                    return JsonSerializer.Serialize(new
+                    {
+                        Exitoso = false,
+                        Mensaje = errorEmpleado
+                    });
+                }
 
                 if (string.IsNullOrEmpty(empleado.FirmaEmpleado))
                 {
@@ -256,10 +291,7 @@ namespace sistema.Controllers
                 };
 
                 var usuario = User?.Identity?.Name;
-
-                var data = _usuarioRepository.Get(usuario);
-                var empleadoDb = _empleadoRepository.Get(data.EmpleadoId.Value);
-                entidad.FirmaSolicitante = empleadoDb.FirmaEmpleado;
+                entidad.FirmaSolicitante = empleado.FirmaEmpleado;
 
                 var requisionGuardada = await _requisionRepository.CrearAsync(entidad, detalles, usuario);
 
@@ -408,8 +440,9 @@ namespace sistema.Controllers
             };
 
             string username = User.Identity.Name;
-            var usuario = _usuarioRepository.Get(username);
-            var empleadoDb = _empleadoRepository.Get(usuario.EmpleadoId.Value);
+            if (!TryGetEmpleadoActual(out var empleadoDb, out var errorEmpleado))
+                return Content($"<div class='alert alert-danger'>{errorEmpleado}</div>");
+
             model.NombreJefaturaCoordinador = empleadoDb.NombreYApellidos;
             model.NombreGerenteAdministrativo = empleadoDb.NombreYApellidos;
             model.NombreEncargadoAlmacen = empleadoDb.NombreYApellidos;
@@ -429,7 +462,7 @@ namespace sistema.Controllers
         {
             if (request == null)
             {
-                return Json(new
+                return DataTablesJsonHelper.Ok(new
                 {
                     draw = 0,
                     recordsTotal = 0,
@@ -438,56 +471,70 @@ namespace sistema.Controllers
                 });
             }
 
-            // DataTables: columna ordenada (index) -> Columns[index].Name (lo configuramos en la vista)
-            string? orderColumn = null;
-            string? orderDir = null;
-
-            if (request.Order != null && request.Order.Count > 0)
+            try
             {
-                var ord = request.Order[0];
-                orderDir = ord.Dir;
+                // DataTables: columna ordenada (index) -> Columns[index].Name (lo configuramos en la vista)
+                string? orderColumn = null;
+                string? orderDir = null;
 
-                if (request.Columns != null
-                    && ord.Column >= 0
-                    && ord.Column < request.Columns.Count)
+                if (request.Order != null && request.Order.Count > 0)
                 {
-                    // Usamos Name (mapeo controlado en el repo)
-                    orderColumn = request.Columns[ord.Column]?.Name;
+                    var ord = request.Order[0];
+                    orderDir = ord.Dir;
+
+                    if (request.Columns != null
+                        && ord.Column >= 0
+                        && ord.Column < request.Columns.Count)
+                    {
+                        // Usamos Name (mapeo controlado en el repo)
+                        orderColumn = request.Columns[ord.Column]?.Name;
+                    }
                 }
+
+                var search = request.Search?.Value;
+
+                var result = await _requisionRepository.ListarDataTableAsync(
+                    start: request.Start,
+                    length: request.Length,
+                    search: search,
+                    orderColumn: orderColumn,
+                    orderDir: orderDir
+                );
+
+                // Respuesta con nombres EXACTOS que la vista DataTable espera (data: '...')
+                var data = result.Items.Select(x => new
+                {
+                    requisicionId = x.RequisicionId,
+                    numeroRequisicion = x.NumeroRequisicion?.ToString() ?? "-",
+                    numeroOrden = x.NumeroOrden?.ToString() ?? "-",
+                    fechaSolicitud = x.FechaSolicitud.HasValue ? DateTime.SpecifyKind(x.FechaSolicitud.Value, DateTimeKind.Local).ToString("dd/MM/yyyy HH:mm") : "-",
+                    solicitanteNombre = string.IsNullOrWhiteSpace(x.SolicitanteNombre) ? "-" : x.SolicitanteNombre,
+                    bodegaOrigenNombre = string.IsNullOrWhiteSpace(x.BodegaOrigenNombre) ? "-" : x.BodegaOrigenNombre,
+                    bodegaDestinoNombre = string.IsNullOrWhiteSpace(x.BodegaDestinoNombre) ? "-" : x.BodegaDestinoNombre,
+                    departamentoNombre = string.IsNullOrWhiteSpace(x.DepartamentoNombre) ? "-" : x.DepartamentoNombre,
+                    unidadNombre = string.IsNullOrWhiteSpace(x.UnidadNombre) ? "-" : x.UnidadNombre,
+                    estado = ((RequisicionEstado)x.Estado).ToString()
+                }).ToList();
+
+                return DataTablesJsonHelper.Ok(new
+                {
+                    draw = request.Draw,
+                    recordsTotal = result.RecordsTotal,
+                    recordsFiltered = result.RecordsFiltered,
+                    data
+                });
             }
-
-            var search = request.Search?.Value;
-
-            var result = await _requisionRepository.ListarDataTableAsync(
-                start: request.Start,
-                length: request.Length,
-                search: search,
-                orderColumn: orderColumn,
-                orderDir: orderDir
-            );
-
-            // Respuesta con nombres EXACTOS que la vista DataTable espera (data: '...')
-            var data = result.Items.Select(x => new
+            catch (Exception ex)
             {
-                requisicionId = x.RequisicionId,
-                numeroRequisicion = x.NumeroRequisicion?.ToString() ?? "-",
-                numeroOrden = x.NumeroOrden?.ToString() ?? "-",
-                fechaSolicitud = x.FechaSolicitud.HasValue ? DateTime.SpecifyKind(x.FechaSolicitud.Value, DateTimeKind.Local).ToString("dd/MM/yyyy HH:mm") : "-",
-                solicitanteNombre = string.IsNullOrWhiteSpace(x.SolicitanteNombre) ? "-" : x.SolicitanteNombre,
-                bodegaOrigenNombre = string.IsNullOrWhiteSpace(x.BodegaOrigenNombre) ? "-" : x.BodegaOrigenNombre,
-                bodegaDestinoNombre = string.IsNullOrWhiteSpace(x.BodegaDestinoNombre) ? "-" : x.BodegaDestinoNombre,
-                departamentoNombre = string.IsNullOrWhiteSpace(x.DepartamentoNombre) ? "-" : x.DepartamentoNombre,
-                unidadNombre = string.IsNullOrWhiteSpace(x.UnidadNombre) ? "-" : x.UnidadNombre,
-                estado = ((RequisicionEstado)x.Estado).ToString()
-            }).ToList();
-
-            return Json(new
-            {
-                draw = request.Draw,
-                recordsTotal = result.RecordsTotal,
-                recordsFiltered = result.RecordsFiltered,
-                data
-            });
+                return DataTablesJsonHelper.Ok(new
+                {
+                    draw = request.Draw,
+                    recordsTotal = 0,
+                    recordsFiltered = 0,
+                    data = Array.Empty<object>(),
+                    error = "Error al cargar requisiciones. " + ex.Message
+                });
+            }
         }
 
         [HttpGet]
@@ -537,19 +584,9 @@ namespace sistema.Controllers
         {
             try
             {
-                string username = User.Identity.Name;
-                var usuario = _usuarioRepository.Get(username);
-
-                if (usuario?.EmpleadoId == null)
+                if (!TryGetEmpleadoActual(out var empleado, out var errorEmpleado))
                 {
-                    return JsonSerializer.Serialize(new { Exitoso = false, Mensaje = "Usuario no tiene empleado asociado." });
-                }
-
-                var empleado = _empleadoRepository.Get(usuario.EmpleadoId.Value);
-
-                if (empleado == null)
-                {
-                    return JsonSerializer.Serialize(new { Exitoso = false, Mensaje = "No se encontró la data del empleado." });
+                    return JsonSerializer.Serialize(new { Exitoso = false, Mensaje = errorEmpleado });
                 }
 
                 return JsonSerializer.Serialize(new
@@ -585,14 +622,8 @@ namespace sistema.Controllers
                     return Json(new { success = false, message = "No se recibió la información de la firma." });
                 }
 
-                string username = User.Identity.Name;
-                var usuario = _usuarioRepository.Get(username);
-                var empleadoDb = _empleadoRepository.Get(usuario.EmpleadoId.Value);
-
-                if (empleadoDb == null)
-                {
-                    return Json(new { success = false, message = "Empleado no encontrado." });
-                }
+                if (!TryGetEmpleadoActual(out var empleadoDb, out var errorEmpleado))
+                    return Json(new { success = false, message = errorEmpleado });
 
                 var carpetaFirmas = "Firmas";
                 var pathRaiz = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", carpetaFirmas);
@@ -706,11 +737,13 @@ namespace sistema.Controllers
                 // - Para Bodega: se ejecuta proceso transaccional (inventario + kardex + estado + historial)
                 if (tipoFirmaLimpia == "autorizacionbodega")
                 {
-                    string username = User.Identity.Name;
-                    var usuario = _usuarioRepository.Get(requisicion.SolicitanteNombre.Trim());
-
-                    var usuario2 = _usuarioRepository.Get(requisicion.EntregadoNombre.Trim());
-
+                    string username = User.Identity?.Name ?? "";
+                    var usuario = !string.IsNullOrWhiteSpace(username)
+                        ? _usuarioRepository.Get(username)
+                        : null;
+                    var usuario2 = !string.IsNullOrWhiteSpace(requisicion.EntregadoNombre)
+                        ? _usuarioRepository.Get(requisicion.EntregadoNombre.Trim())
+                        : null;
 
                     if (usuario == null)
                     {
@@ -718,7 +751,14 @@ namespace sistema.Controllers
                         if (System.IO.File.Exists(fullPath))
                             System.IO.File.Delete(fullPath);
 
-                        return Json(new { success = false, message = "Usuario no encontrado." });
+                        return Json(new { success = false, message = "Usuario solicitante no encontrado." });
+                    }
+                    if (usuario2 == null)
+                    {
+                        var fullPath = Path.Combine(pathRaiz, nombreArchivo);
+                        if (System.IO.File.Exists(fullPath))
+                            System.IO.File.Delete(fullPath);
+                        return Json(new { success = false, message = "Usuario de entrega no encontrado." });
                     }
 
                     var (exitoso, mensaje) = await _requisionRepository.ProcesarEntregaAKardexAsync(

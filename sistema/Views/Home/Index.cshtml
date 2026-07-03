@@ -1,4 +1,4 @@
-﻿@using DocumentFormat.OpenXml.Drawing.Charts
+@using DocumentFormat.OpenXml.Drawing.Charts
 @using DocumentFormat.OpenXml.EMMA
 @using DocumentFormat.OpenXml.InkML
 @inject Microsoft.Extensions.Configuration.IConfiguration Configuration
@@ -55,8 +55,19 @@
     var usuarioCallCenter = User.IsInRole("Call Center");
     var usuarioTecnicoRadiologia = User.IsInRole("TecnicoRadiologia");
 
-    string cliente = Configuration["Cliente"]; 
+    string cliente = Configuration["Cliente"];
 
+    var verHospitalDashboard = usuarioAdministrador || usuarioDesarrollador || usuarioCoordinadorSAP || usuarioCoordinadorRRHH
+        || usuarioAdmisiones || usuarioCajero || usuarioRecepcion || usuarioCoordinadorEnfermeria
+        || usuarioSupervisorEnfermeria || usuarioEnfermeria || usuarioDireccionMedicos
+        || usuarioCoordinadorMedicosResidentes || usuarioMedicosResidentes || usuarioCoordinadorFarmacia
+        || usuarioEncargadoBodegaFarmacia || usuarioAuxiliarFarmacia || usuarioCoordinadorFinanciero
+        || usuarioCoordinadorContable || usuarioCoordinadorCocina || usuarioCoordinadorOperaciones
+        || usuarioSeguros || usuarioMedicoGeneral || usuarioFarmacia || usuarioCaja || usuarioMonitoraSalon
+        || usuarioRecepcionRadiologia || usuarioAdministradorRadiologia || usuarioRecepcionDiurno
+        || usuarioRecepcionNocturno || usuarioCoordinadorLaboratorios || usuarioLaboratorio
+        || usuarioSupervisorLaboratorio || usuarioTecnicoLaboratorio || usuarioMedicoInterno
+        || usuarioRadiologia || usuarioTecnicoRadiologia;
 }
 @model sistema.Models.HomeCitasViewModel;
 @section css {
@@ -206,6 +217,16 @@
     outline: none !important; /* Quita el recuadro de enfoque al hacer clic */
     text-decoration: none !important;
 }
+
+/* SerSalud: solo tab HOSPITAL en inicio */
+#tabs.sersalud-home #tab-general { display: none !important; }
+#tabs.sersalud-home > ul > li:nth-child(1) > a { background: #3b82f6 !important; }
+#tabs.sersalud-home #subtabs-hospital > ul > li > a {
+    background: #14b8a6;
+    color: #fff !important;
+    border-radius: 4px 4px 0 0;
+}
+#tabs.sersalud-home #tabla-habitaciones-ocupadas { width: 100% !important; }
     </style>
 }
 
@@ -224,12 +245,10 @@
     <div class="row">
         <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-xs-12">
     <div class="card-body">
-        <div id="tabs" style="padding: 25px;">
+        <div id="tabs" class="@(cliente == "SS" ? "sersalud-home" : "")" style="padding: 25px;">
 
             <ul>
-                @if (usuarioAdministrador || usuarioMedicoGeneral
-                                        || usuarioRecepcionDiurno || usuarioRecepcionNocturno
-                                        || usuarioFarmacia || usuarioAdmisiones || usuarioCaja || usuarioCajero || usuarioMonitoraSalon || usuarioMedicoInterno || usuarioEnfermeria)
+                @if (verHospitalDashboard)
                                         {
                 @if(cliente != "SS"){
                 <li><a href="#tab-general"><i class="fas fa-house-damage"></i> GENERAL</a></li>
@@ -800,10 +819,7 @@
                 }
             </div>
             
-            @if (usuarioAdministrador || usuarioMedicoGeneral
-                        || usuarioRecepcionDiurno || usuarioRecepcionNocturno
-                        || usuarioFarmacia || usuarioAdmisiones || usuarioCaja || usuarioCajero || usuarioMonitoraSalon ||
-                        usuarioMedicoInterno || usuarioEnfermeria || usuarioAdministradorRadiologia || usuarioRecepcionRadiologia)
+            @if (verHospitalDashboard)
             {
                 
 
@@ -835,7 +851,7 @@
                                         </div>
                                         <div class="col-md-12">
                                             <div class="table-responsive">
-                                                <table id="tabla-habitaciones-ocupadas">
+                                                <table id="tabla-habitaciones-ocupadas" class="table table-striped table-bordered w-100">
                                                     <thead>
                                                         <tr>
                                                             <th>ID</th>
@@ -1813,5 +1829,6 @@
     @*<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>*@
     @*<script src="https://knockoutjs.com/downloads/knockout-3.5.1.js"></script>*@
     @*<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.js"></script>*@
+    <script src="~/js-utilidades-wp-email/SendWhatsApp.js"></script>
     <script src="~/ViewModelKo/HomeVM.js"></script>
 }

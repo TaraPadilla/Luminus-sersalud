@@ -27,5 +27,8 @@ namespace Database.Shared.Models
         public bool Firmado { get; set; }
         public DateTime? FechaFirma { get; set; }
         public string? UsuarioFirmaId { get; set; }
+
+        /// <summary>Ingreso, Traslado, Recepcion, Egreso — para expediente completo.</summary>
+        public string TipoNota { get; set; }
     }
 }

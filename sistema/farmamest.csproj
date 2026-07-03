@@ -1,7 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
 <PropertyGroup>
   <TargetFramework>net8.0</TargetFramework>
+  <CopyRetryCount>15</CopyRetryCount>
+  <CopyRetryDelayMilliseconds>500</CopyRetryDelayMilliseconds>
+  <!-- Artefactos de deploy: no son parte del proyecto fuente -->
+  <DefaultItemExcludes>$(DefaultItemExcludes);Scripts/**;test-servidor/**;publish-sersalud/**;server-deploy/**</DefaultItemExcludes>
 </PropertyGroup>
 
 <PropertyGroup>
@@ -86,6 +90,7 @@
 
 <ItemGroup>
     <PackageReference Include="ClosedXML" Version="0.102.1" />
+    <PackageReference Include="Docnet.Core" Version="2.6.0" />
     <PackageReference Include="DocumentFormat.OpenXml" Version="2.19.0" />
     <PackageReference Include="EPPlus" Version="5.8.0" />
     <PackageReference Include="ExcelDataReader" Version="3.7.0" />
@@ -94,10 +99,10 @@
     <PackageReference Include="Hangfire.AspNetCore" Version="1.8.23" />
     <PackageReference Include="Hangfire.PostgreSql" Version="1.21.1" />
     <PackageReference Include="IronXL.Excel" Version="2023.12.19" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="8.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
 
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0">
@@ -117,6 +122,7 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" />
     <PackageReference Include="Rotativa.AspNetCore" Version="1.2.0-beta" />
     <PackageReference Include="SixLabors.Fonts" Version="2.0.0" />
+    <PackageReference Include="Twilio" Version="7.8.0" />
     <PackageReference Include="Wkhtmltopdf.NetCore" Version="3.0.2" />
 </ItemGroup>
 
@@ -158,6 +164,38 @@
     <Folder Include="wwwroot\hospitalizacion-consentimientos\" />
   </ItemGroup>
 
+  <!-- appsettings.Development* nunca van al publish; appsettings.json si (ver EnsureAppSettingsInPublish) -->
+  <ItemGroup>
+    <Content Update="appsettings.Development.json">
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </Content>
+    <Content Update="appsettings.Development.local.json">
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </Content>
+    <Content Update="appsettings.ESTRUCTURA-SERVIDOR.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </Content>
+    <Content Update="server-deploy\**\*">
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </Content>
+    <Content Update="test-servidor\**\*">
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </Content>
+    <Content Update="publish-sersalud\**\*">
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="test-servidor\**\*" />
+    <Content Remove="publish-sersalud\**\*" />
+    <Content Remove="server-deploy\**\*" />
+    <None Remove="test-servidor\**\*" />
+    <None Remove="publish-sersalud\**\*" />
+    <None Remove="server-deploy\**\*" />
+  </ItemGroup>
+
   <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>
 
   <ItemGroup>
@@ -168,6 +206,69 @@
     <_ContentIncludedByDefault Remove="Views\Productos\HistoricoProductos.cshtml" />
   </ItemGroup>
 
- 
+  <!-- MSB3027: cierra farmamest.exe antes de compilar solo en dotnet build plano.
+       Con launch profile (dotnet run) no mata otras instancias SerSalud 5000 y AVM 5001. -->
+  <Target Name="StopRunningFarmamestBeforeBuild"
+          BeforeTargets="PrepareForBuild"
+          Condition="'$(OS)' == 'Windows_NT' AND '$(DOTNET_WATCH)' != '1' AND '$(LaunchProfile)' == '' AND '$(AllowConcurrentFarmamest)' != 'true'">
+    <Message Importance="high" Text="Deteniendo instancia previa de farmamest.exe (si existe)..." />
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;Get-Process -Name farmamest -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1&quot;"
+          IgnoreExitCode="true" />
+  </Target>
+
+  <!-- Wkhtmltopdf.NetCore busca $(OutputPath)Rotativa/Windows; sincronizar desde wwwroot -->
+  <Target Name="CopyRotativaToOutput" AfterTargets="Build">
+    <PropertyGroup>
+      <_RotativaSource>$(ProjectDir)wwwroot\Rotativa</_RotativaSource>
+      <_RotativaDest>$(OutputPath)Rotativa</_RotativaDest>
+    </PropertyGroup>
+    <ItemGroup>
+      <_RotativaFiles Include="$(_RotativaSource)\**\*" Condition="Exists('$(_RotativaSource)')" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_RotativaFiles)"
+          DestinationFiles="@(_RotativaFiles->'$(_RotativaDest)\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true"
+          Condition="'@(_RotativaFiles)' != ''" />
+  </Target>
+
+  <!-- Production exige appsettings.json en /app; incluir local o plantilla ESTRUCTURA-SERVIDOR -->
+  <Target Name="EnsureAppSettingsInPublish" AfterTargets="Publish">
+    <PropertyGroup>
+      <_AppSettingsLocal>$(ProjectDir)appsettings.json</_AppSettingsLocal>
+      <_AppSettingsTemplate>$(ProjectDir)appsettings.ESTRUCTURA-SERVIDOR.json</_AppSettingsTemplate>
+      <_AppSettingsPublish>$(PublishDir)appsettings.json</_AppSettingsPublish>
+    </PropertyGroup>
+    <Copy SourceFiles="$(_AppSettingsLocal)"
+          DestinationFiles="$(_AppSettingsPublish)"
+          SkipUnchangedFiles="true"
+          Condition="Exists('$(_AppSettingsLocal)')" />
+    <Copy SourceFiles="$(_AppSettingsTemplate)"
+          DestinationFiles="$(_AppSettingsPublish)"
+          SkipUnchangedFiles="true"
+          Condition="!Exists('$(_AppSettingsPublish)') AND Exists('$(_AppSettingsTemplate)')" />
+    <Warning Condition="Exists('$(_AppSettingsPublish)') and !$([System.IO.File]::Exists('$(_AppSettingsLocal)'))"
+             Text="ADVERTENCIA: publish usa appsettings.ESTRUCTURA-SERVIDOR.json (plantilla). Docker y produccion requieren appsettings.json real." />
+    <Warning Condition="Exists('$(_AppSettingsLocal)') and Exists('$(_AppSettingsPublish)') and '$(_AppSettingsLocal)' != '$(_AppSettingsPublish)'"
+             Text="appsettings.json del proyecto copiado al publish." />
+    <Error Condition="!Exists('$(_AppSettingsPublish)')"
+           Text="Falta appsettings.json en el publish. Cree sistema/appsettings.json o appsettings.ESTRUCTURA-SERVIDOR.json." />
+  </Target>
+
+  <Target Name="CopyRotativaToPublish" AfterTargets="Publish">
+    <PropertyGroup>
+      <_RotativaSource>$(ProjectDir)wwwroot\Rotativa</_RotativaSource>
+    </PropertyGroup>
+    <ItemGroup>
+      <_RotativaPubWww Include="$(_RotativaSource)\**\*" Condition="Exists('$(_RotativaSource)')" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_RotativaPubWww)"
+          DestinationFiles="@(_RotativaPubWww->'$(PublishDir)\wwwroot\Rotativa\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true"
+          Condition="'@(_RotativaPubWww)' != ''" />
+    <Copy SourceFiles="@(_RotativaPubWww)"
+          DestinationFiles="@(_RotativaPubWww->'$(PublishDir)\Rotativa\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true"
+          Condition="'@(_RotativaPubWww)' != ''" />
+  </Target>
 
 </Project>

@@ -2,6 +2,7 @@ using Database.Shared;
 using Database.Shared.IRepository;
 using Database.Shared.Models;
 using farmamest.Service.IService;
+using farmamest.Utilidades;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -65,24 +66,40 @@ namespace farmamest.Controllers
             {
                 var turnos = _turnoEnfermeriaService.GetTurnosByHospitalizacionId(hospitalizacionId);
 
-                // Resolver nombres desde _userManager sin depender de propiedad de navegación
-                var userIds = turnos.Select(t => t.UserId).Distinct().ToList();
+                var userIds = turnos.Select(t => t.UserId).Where(id => !string.IsNullOrWhiteSpace(id)).Distinct().ToList();
                 var usuarios = _userManager.Users
+                    .Include(u => u.Persona)
                     .Where(u => userIds.Contains(u.Id))
-                    .Select(u => new { u.Id, u.UserName })
                     .ToList();
+
+                string ResolverNombreProfesional(string userId)
+                {
+                    if (string.IsNullOrWhiteSpace(userId))
+                        return "-";
+
+                    var user = usuarios.FirstOrDefault(u => u.Id == userId);
+                    var nombreEmpleado = PdfReportHelper.ObtenerNombreEmpleadoPorUser(user, _empleadoRepository);
+                    if (!string.IsNullOrWhiteSpace(nombreEmpleado) && nombreEmpleado != "-")
+                        return nombreEmpleado;
+
+                    var display = _usuarioRepository.GetDisplayName(userId);
+                    if (!string.IsNullOrWhiteSpace(display) && display != userId && display != "-")
+                        return display;
+
+                    return "-";
+                }
 
                 var resultado = turnos.Select(t => new
                 {
                     t.Id,
-                    t.FechaRegistro,
+                    FechaRegistro = t.FechaRegistro,
                     t.NumeroTurno,
                     t.NombreTurno,
                     t.HospitalizacionId,
                     t.UserId,
                     t.Firmado,
                     FirmaRuta = t.FirmaRuta ?? "",
-                    Profesional = usuarios.FirstOrDefault(u => u.Id == t.UserId)?.UserName ?? ""
+                    Profesional = ResolverNombreProfesional(t.UserId)
                 }).ToList();
 
                 var opts = new JsonSerializerOptions { PropertyNamingPolicy = null };

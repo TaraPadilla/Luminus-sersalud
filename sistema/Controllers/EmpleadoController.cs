@@ -12,6 +12,7 @@ using System.Linq;
 using System.Globalization;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
+using sistema.Helpers;
 
 namespace sistema.Controllers
 {
@@ -254,26 +255,24 @@ namespace sistema.Controllers
                     var data = page.Select(item => new
                     {
                         id = item.Id,
-                        nombre = item.Nombre,
-                        apellido = item.Apellido,
-                        telefono = item.Telefono,
-                        // direccion = item.Direccion,
+                        nombre = DataTablesJsonHelper.DtStr(item.Nombre),
+                        apellido = DataTablesJsonHelper.DtStr(item.Apellido),
+                        telefono = DataTablesJsonHelper.DtStr(item.Telefono),
                         especialidad = item.Especialidad != null ? item.Especialidad.NombreEspecialidad : "-",
-                        dpi = item.Dpi,
-                        nit = item.Nit,
+                        dpi = DataTablesJsonHelper.DtStr(item.Dpi),
+                        nit = DataTablesJsonHelper.DtStr(item.Nit),
                         sucursalNombre = item.Sucursal != null ? item.Sucursal.NombreSucursal : "-",
-                        colorHexadecimalFondo = item.ColorHexadecimalFondo,
-                        colorHexadecimalTexto = item.ColorHexadecimalTexto,
-
-                        colegiado = item.Colegiado,
-                        credenciales = item.Credenciales,
-                        direccionClinica = item.DireccionClinica,
-                        telefonoClinica = item.TelefonoClinica,
-                        tipoRegimen = item.TipoRegimen,
-                        tipoEmpleado = item.TipoEmpleado
+                        colorHexadecimalFondo = item.ColorHexadecimalFondo ?? "#FFFFFF",
+                        colorHexadecimalTexto = item.ColorHexadecimalTexto ?? "#000000",
+                        colegiado = DataTablesJsonHelper.DtStr(item.Colegiado),
+                        credenciales = DataTablesJsonHelper.DtStr(item.Credenciales),
+                        direccionClinica = DataTablesJsonHelper.DtStr(item.DireccionClinica),
+                        telefonoClinica = DataTablesJsonHelper.DtStr(item.TelefonoClinica),
+                        tipoRegimen = DataTablesJsonHelper.DtStr(item.TipoRegimen),
+                        tipoEmpleado = DataTablesJsonHelper.DtStr(item.TipoEmpleado)
                     }).ToList();
 
-                    return Json(new
+                    return DataTablesJsonHelper.Ok(new
                     {
                         draw = draw,
                         recordsTotal = recordsTotal,
@@ -288,22 +287,20 @@ namespace sistema.Controllers
                     var data = page.Select(item => new
                     {
                         id = item.Id,
-                        nombre = item.Nombre,
-                        apellido = item.Apellido,
-                        telefono = item.Telefono,
-                        // direccion = item.Direccion,
+                        nombre = DataTablesJsonHelper.DtStr(item.Nombre),
+                        apellido = DataTablesJsonHelper.DtStr(item.Apellido),
+                        telefono = DataTablesJsonHelper.DtStr(item.Telefono),
                         departamento = (item.UnidadOrg != null && item.UnidadOrg.DepartamentoOrg != null) ? item.UnidadOrg.DepartamentoOrg.Nombre : "-",
-                        dpi = item.Dpi,
-                        nit = item.Nit,
+                        dpi = DataTablesJsonHelper.DtStr(item.Dpi),
+                        nit = DataTablesJsonHelper.DtStr(item.Nit),
                         sucursalNombre = item.Sucursal != null ? item.Sucursal.NombreSucursal : "-",
-                        colorHexadecimalFondo = item.ColorHexadecimalFondo,
-                        colorHexadecimalTexto = item.ColorHexadecimalTexto,
-
-                        salario = item.Salario,
-                        estadoCivil = item.EstadoCivil
+                        colorHexadecimalFondo = item.ColorHexadecimalFondo ?? "#FFFFFF",
+                        colorHexadecimalTexto = item.ColorHexadecimalTexto ?? "#000000",
+                        salario = DataTablesJsonHelper.DtStr(item.Salario),
+                        estadoCivil = DataTablesJsonHelper.DtStr(item.EstadoCivil)
                     }).ToList();
 
-                    return Json(new
+                    return DataTablesJsonHelper.Ok(new
                     {
                         draw = draw,
                         recordsTotal = recordsTotal,
@@ -317,7 +314,7 @@ namespace sistema.Controllers
                 _logger.LogError(ex, "Error en ListaDataTable: {0}", ex.Message);
 
                 // DataTables espera estructura válida incluso en error
-                return Json(new
+                return DataTablesJsonHelper.Ok(new
                 {
                     draw = ParseInt(Request.Form["draw"], 0),
                     recordsTotal = 0,

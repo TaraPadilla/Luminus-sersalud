@@ -20,15 +20,35 @@ var VisitadorMedicoAddUpdateVM = function () {
             alert("El campo 'Contacto de la Farmacéutica' es obligatorio.");
             return false;
         }
-        if (!$("#Observaciones").val().trim()) {
-            alert("El campo 'Observaciones' es obligatorio.");
-            return false;
-        }
-        if (!$("#UrlCatalogo").val().trim()) {
-            alert("El campo 'URL del Catálogo' es obligatorio.");
+        var urlCatalogo = $("#UrlCatalogo").val().trim();
+        if (urlCatalogo && !self.esUrlCatalogoValida(urlCatalogo)) {
+            alert("La URL del catálogo no es válida. Use un enlace completo, por ejemplo: https://www.ejemplo.com/catalogo");
             return false;
         }
         return true;
+    };
+
+    self.esUrlCatalogoValida = function (rawUrl) {
+        if (!rawUrl) {
+            return false;
+        }
+
+        var url = rawUrl.trim();
+        if (!/^https?:\/\//i.test(url)) {
+            url = "https://" + url;
+        }
+
+        try {
+            var parsed = new URL(url);
+            if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+                return false;
+            }
+
+            var host = (parsed.hostname || "").toLowerCase();
+            return host.length > 0 && host !== "0.0.0.0" && host !== "0.0.0.1";
+        } catch (e) {
+            return false;
+        }
     };
 
     // Obtener los datos del formulario

@@ -16,6 +16,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
 using Hangfire;
 using System.Globalization;
+using farmamest.Service;
 
 namespace farmamest.Controllers
 {
@@ -30,6 +31,7 @@ namespace farmamest.Controllers
         private readonly IHospitalizacion _hospitalizacionRepository;
         private readonly IWebHostEnvironment _env;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IMedicamentoNotificacionService _medicamentoNotificacionService;
 
         private readonly Context _db;
 
@@ -45,7 +47,8 @@ namespace farmamest.Controllers
             IProducto productosRepository,
             IHospitalizacion hospitalizacionRepository,
             Context db,
-             IHttpClientFactory httpClientFactory
+             IHttpClientFactory httpClientFactory,
+             IMedicamentoNotificacionService medicamentoNotificacionService
 )
         {
             _solicitudMedicamentoService = solicitudMedicamentoService;
@@ -56,6 +59,7 @@ namespace farmamest.Controllers
             _hospitalizacionRepository = hospitalizacionRepository;
             _db = db;
             _httpClientFactory = httpClientFactory;
+            _medicamentoNotificacionService = medicamentoNotificacionService;
         }
 
         // ✅ Método para obtener el ID del usuario actual
@@ -489,32 +493,7 @@ namespace farmamest.Controllers
 
                 if (!refused && solicitud.HospitalizacionId > 0)
                 {
-                    // Crear HospitalizacionProducto y sus aplicaciones (sin enviar correos)
-                    var hospitalizacionProducto = _hospitalizacionRepository.AddMedicamento(new HospitalizacionProducto
-                    {
-                        HospitalizacionId = solicitud.HospitalizacionId,
-                        ProductoId = solicitud.ProductoId,
-                        UnidadMedidaVentaId = solicitud.UnidadMedidaVentaId,
-                        PrecioId = solicitud.PrecioId,
-                        PrecioValor = solicitud.Precio,
-                        Cantidad = (int)solicitud.Cantidad,
-                        Indicaciones = solicitud.Indicaciones ?? "",
-                        ViaAdministracion = solicitud.ViaAdministracion ?? "",
-                        FrecuenciaAdministracion = solicitud.FrecuenciaAdministracion ?? "",
-                        FechaHoraAplicacionManual = solicitud.FechaHoraAplicacionManual
-                    });
-
-                    for (var i = 1; i <= hospitalizacionProducto.Cantidad; i++)
-                    {
-                        _hospitalizacionRepository.AddProductoAplicacion(new HospitalizacionProductoAplicacion
-                        {
-                            HospitalizacionProductoId = hospitalizacionProducto.Id,
-                            Cantidad = 1,
-                            Aplicado = false,
-                            UsuarioCreaId = userId
-                        });
-                    }
-
+                    await RegistrarMedicamentoDesdeSolicitudAsync(solicitud, userId);
                     solicitud.EsRegistroHospitalizacion = true;
                     _solicitudMedicamentoService.UpdateSolicitudMedicamento(solicitud);
                 }
@@ -554,7 +533,7 @@ namespace farmamest.Controllers
         // ✅ Endpoint para aprobar todas las solicitudes de una hospitalización específica
 
         [HttpPut]
-        public ActionResult AprobarTodasSolicitudesPorHospitalizacion([FromQuery] int hospitalizacionId)
+        public async Task<ActionResult> AprobarTodasSolicitudesPorHospitalizacion([FromQuery] int hospitalizacionId)
         {
             try
             {
@@ -587,31 +566,7 @@ namespace farmamest.Controllers
 
                     if (solicitud.HospitalizacionId > 0 && !solicitud.EsRegistroHospitalizacion)
                     {
-                        var hospitalizacionProducto = _hospitalizacionRepository.AddMedicamento(new HospitalizacionProducto
-                        {
-                            HospitalizacionId = solicitud.HospitalizacionId,
-                            ProductoId = solicitud.ProductoId,
-                            UnidadMedidaVentaId = solicitud.UnidadMedidaVentaId,
-                            PrecioId = solicitud.PrecioId,
-                            PrecioValor = solicitud.Precio,
-                            Cantidad = (int)solicitud.Cantidad,
-                            Indicaciones = solicitud.Indicaciones ?? "",
-                            ViaAdministracion = solicitud.ViaAdministracion ?? "",
-                            FrecuenciaAdministracion = solicitud.FrecuenciaAdministracion ?? "",
-                            FechaHoraAplicacionManual = solicitud.FechaHoraAplicacionManual
-                        });
-
-                        for (var i = 1; i <= hospitalizacionProducto.Cantidad; i++)
-                        {
-                            _hospitalizacionRepository.AddProductoAplicacion(new HospitalizacionProductoAplicacion
-                            {
-                                HospitalizacionProductoId = hospitalizacionProducto.Id,
-                                Cantidad = 1,
-                                Aplicado = false,
-                                UsuarioCreaId = userId
-                            });
-                        }
-
+                        await RegistrarMedicamentoDesdeSolicitudAsync(solicitud, userId);
                         solicitud.EsRegistroHospitalizacion = true;
                         _solicitudMedicamentoService.UpdateSolicitudMedicamento(solicitud);
                     }
@@ -673,6 +628,43 @@ namespace farmamest.Controllers
 
 
 
+
+        private async Task RegistrarMedicamentoDesdeSolicitudAsync(SolicitudMedicamento solicitud, string userId)
+        {
+            var hospitalizacionProducto = _hospitalizacionRepository.AddMedicamento(new HospitalizacionProducto
+            {
+                HospitalizacionId = solicitud.HospitalizacionId,
+                ProductoId = solicitud.ProductoId,
+                UnidadMedidaVentaId = solicitud.UnidadMedidaVentaId,
+                PrecioId = solicitud.PrecioId,
+                PrecioValor = solicitud.Precio,
+                Cantidad = (int)solicitud.Cantidad,
+                Indicaciones = solicitud.Indicaciones ?? "",
+                ViaAdministracion = solicitud.ViaAdministracion ?? "",
+                FrecuenciaAdministracion = solicitud.FrecuenciaAdministracion ?? "",
+                FechaHoraAplicacionManual = solicitud.FechaHoraAplicacionManual
+            });
+
+            MedicamentoAplicacionHelper.CrearAplicacionesConHorario(
+                _hospitalizacionRepository,
+                hospitalizacionProducto.Id,
+                hospitalizacionProducto.Cantidad,
+                solicitud.FrecuenciaAdministracion,
+                solicitud.FechaHoraAplicacionManual,
+                userId);
+
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            await _medicamentoNotificacionService.ProgramarNotificacionesAsync(
+                solicitud.HospitalizacionId,
+                solicitud.NombreProducto ?? "Medicamento",
+                solicitud.Cantidad,
+                solicitud.Indicaciones ?? "",
+                solicitud.ViaAdministracion ?? "",
+                solicitud.FrecuenciaAdministracion ?? "",
+                solicitud.FechaHoraAplicacionManual,
+                baseUrl,
+                userId);
+        }
 
         private async Task EnviarNotificacionMedicosAsync(SolicitudMedicamento solicitud, string pacienteNombre, List<string> emailsDestino, HttpRequest request)
         {

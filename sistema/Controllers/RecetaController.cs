@@ -336,42 +336,57 @@ namespace farmamest.Controllers
 
                 if (recetasAplicacion != null)
                 {
-                    const string cantidad = "1";
+                    var grupos = recetasAplicacion
+                        .Where(r => r?.HospitalizacionReceta?.Receta != null)
+                        .GroupBy(r => r.HospitalizacionRecetaId);
 
-                    foreach (var receta in recetasAplicacion)
+                    foreach (var grupo in grupos)
                     {
-                        if (receta?.HospitalizacionReceta?.Receta == null)
+                        var receta = grupo.First();
+                        var parent = receta.HospitalizacionReceta;
+                        var totalDetalles = grupo.Count();
+                        var aplicados = grupo.Count(x => x.Aplicado);
+
+                        if (parent.Eliminado && aplicados == 0)
                             continue;
 
                         var persona = "-";
-                        if (receta.UsuarioId != null)
+                        var ultimoAplicado = grupo
+                            .Where(x => x.Aplicado && x.UsuarioId != null)
+                            .OrderByDescending(x => x.FechaHoraAplicada)
+                            .FirstOrDefault();
+                        if (ultimoAplicado?.UsuarioId != null)
                         {
-                            var user = _userRepository.GetbyId(receta.UsuarioId);
+                            var user = _userRepository.GetbyId(ultimoAplicado.UsuarioId);
                             persona = user?.NormalizedUserName ?? "-";
+                            var display = _userRepository.GetDisplayName(ultimoAplicado.UsuarioId);
+                            if (!string.IsNullOrWhiteSpace(display) && display != ultimoAplicado.UsuarioId)
+                                persona = display;
                         }
 
-                        var fechaAplicacion = receta.FechaHoraAplicada?.ToString() ?? "-";
+                        var fechaAplicacion = ultimoAplicado?.FechaHoraAplicada?.ToString("dd/MM/yyyy HH:mm") ?? "-";
 
-                        // Persona crea
                         var personaCrea = "-";
-                        if (receta.HospitalizacionReceta.UsuarioCreacionId != null)
+                        if (parent.UsuarioCreacionId != null)
                         {
-                            var uCrea = _userRepository.GetbyId(receta.HospitalizacionReceta.UsuarioCreacionId);
+                            var uCrea = _userRepository.GetbyId(parent.UsuarioCreacionId);
                             personaCrea = uCrea?.NormalizedUserName ?? "-";
+                            var displayCrea = _userRepository.GetDisplayName(parent.UsuarioCreacionId);
+                            if (!string.IsNullOrWhiteSpace(displayCrea) && displayCrea != parent.UsuarioCreacionId)
+                                personaCrea = displayCrea;
                         }
 
-                        // Misma estructura que tenías, manteniendo condiciones
-                        if (receta.Aplicado || (!receta.Aplicado && !receta.HospitalizacionReceta.Eliminado))
+                        if (aplicados > 0 || !parent.Eliminado)
                         {
                             listaRecetasAplicacion.Add(new RecetaAplicacionViewModel
                             {
-                                IdHospitalizacionReceta = receta.Id,
+                                IdHospitalizacionReceta = parent.Id,
                                 IdReceta = receta.Id,
-                                NombreReceta = receta.HospitalizacionReceta.Receta.NombreReceta,
-                                Ingredientes = receta.HospitalizacionReceta.Receta.Ingredientes,
-                                Cantidad = cantidad,
-                                Indicaciones = receta.HospitalizacionReceta.Inidicaciones,
-                                Aplicado = receta.Aplicado,
+                                NombreReceta = parent.Receta.NombreReceta,
+                                Ingredientes = parent.Receta.Ingredientes,
+                                Cantidad = totalDetalles.ToString(),
+                                Indicaciones = parent.Inidicaciones,
+                                Aplicado = aplicados >= totalDetalles,
                                 FechaHoraAplicacion = fechaAplicacion,
                                 PersonaAplica = persona,
                                 PersonaCrea = personaCrea,
@@ -555,10 +570,13 @@ namespace farmamest.Controllers
                     {
                         if (receta == null) continue;
 
+                        var nombre = (receta.NombreReceta ?? "").Trim();
+                        if (string.IsNullOrWhiteSpace(nombre)) continue;
+
                         listaRecetas.Add(new RecetaViewModel
                         {
                             Id = receta.Id,
-                            NombreReceta = receta.NombreReceta,
+                            NombreReceta = nombre,
                             Ingredientes = receta.Ingredientes
                         });
                     }

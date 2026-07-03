@@ -1,6 +1,8 @@
 ﻿@model farmamest.Models.CuentaContableViewModel;
 
 @Html.HiddenFor(m => m.CuentaId)
+@Html.HiddenFor(m => m.BancoId)
+@Html.HiddenFor(m => m.CategoriaCuentaId)
 
 <div class="main-card mb-3 card">
     <div class="card-body">
@@ -15,41 +17,50 @@
                         <label>Nombre de la cuenta</label>
                         @Html.TextBoxFor(a => a.NombreCuenta, new
                         {
-                        @class = "form-control",
-                        @placeholder = "Nombre de la cuenta"
+                            @class = "form-control",
+                            @placeholder = "Nombre de la cuenta"
                         })
                     </div>
                     <div class="col-md-12">
                         <label>Especificaciones</label>
                         @Html.TextBoxFor(a => a.Especificaciones, new
                         {
-                        @class = "form-control",
-                        @placeholder = "Especificaciones de la cuenta"
+                            @class = "form-control",
+                            @placeholder = "Especificaciones de la cuenta"
                         })
                     </div>
                     <div class="col-md-12">
                         <label>Banco</label>
-                        <select class="form-control" data-bind="options:bancos, optionsText:'Nombre', value:bancoSeleccionado">
+                        <select class="form-control"
+                                data-bind="options: bancos,
+                                           optionsText: 'Nombre',
+                                           value: bancoSeleccionado,
+                                           optionsCaption: 'Seleccione un banco'">
                         </select>
-
                     </div>
                     <div class="col-md-12">
                         <label>Cuentas</label>
-                        <select class="form-control" data-bind="options:cuentasBanco, optionsText:'NumeroCuenta', value:cuentaSeleccionado">
+                        <select class="form-control"
+                                data-bind="options: cuentasBanco,
+                                           optionsText: 'NumeroCuenta',
+                                           value: cuentaSeleccionado,
+                                           optionsCaption: 'Seleccione una cuenta bancaria'">
                         </select>
+                        <small class="form-text text-muted">Primero seleccione un banco. Si no hay cuentas, registrelas en Cuentas bancarias.</small>
                     </div>
                     <div class="col-md-12">
                         <label>Nomenclatura</label>
-                        @Html.DropDownList("NomenclaturaId",ViewBag.Nomenclatura as SelectList, "Ambas", new { @class = "form-control"})
-
+                        @Html.DropDownListFor(a => a.NomenclaturaId, ViewBag.Nomenclatura as SelectList, "Ambas", new { @class = "form-control" })
                     </div>
-
                     <div class="col-md-12">
                         <label>Categoria</label>
-                        @Html.DropDownList("CategoriaCuentaId",ViewBag.Categoria as SelectList, "",  new { @class = "form-control"})
-
+                        <select class="form-control"
+                                data-bind="options: categorias,
+                                           optionsText: 'Nombre',
+                                           value: categoriaSeleccionada,
+                                           optionsCaption: 'Seleccione una categoria'">
+                        </select>
                     </div>
-
                 </div>
             </div>
         </div>

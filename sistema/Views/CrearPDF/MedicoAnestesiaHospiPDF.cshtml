@@ -3,7 +3,10 @@
 @inject IConfiguration Config
 
 @{
-    Layout = "_HojaMembreteLayout"; // Usamos un layout específico para documentos PDF con membrete
+    var embebido = ViewData["EmbebidoEnExpediente"] as bool? ?? false;
+    Layout = embebido ? null : "_HojaMembreteLayout";
+    ViewData["MostrarServicios"] = false;
+    ViewData["MostrarEmergencias"] = false;
     var imagenLogoBase64 = Config["ImagenLogoBase64"];
     ViewData["Direccion"]          = Config["EstablecimientoDireccion"];
     ViewData["Telefono"]           = Config["EstablecimientoTelefono"];
@@ -26,7 +29,24 @@
 
       <p style="margin-bottom: 30px;">
         He asignado a:<br><br>
-        @(Model.NombreAnestesista ?? "Nombre del Anestesista"), Colegiado No, @(Model.ColegiadoAnestesista ?? "Número de Colegiado"),
+        @{
+            var nombreAnest = Model.NombreAnestesista;
+            var colAnest = Model.ColegiadoAnestesista;
+            if (string.IsNullOrWhiteSpace(nombreAnest)
+                || nombreAnest == "Nombre del Anestesista"
+                || nombreAnest == "Anestesiólogo asignado"
+                || nombreAnest == "-")
+            {
+                nombreAnest = "___________________________";
+            }
+            if (string.IsNullOrWhiteSpace(colAnest)
+                || colAnest == "Número de Colegiado"
+                || colAnest == "-")
+            {
+                colAnest = "___________";
+            }
+        }
+        @nombreAnest, Colegiado No. @colAnest,
     </p>
 
     <p style="margin-bottom: 30px; line-height: 1.8;">
@@ -42,12 +62,54 @@
     </p>
 
     <div style="margin-top: 40px;">
-        <p>Firma y Sello:</p>
-        <div style="text-align: center; margin-top: 80px;">
-             <img src="@Model.UrlFirmaMedico" alt="Firma del Médico">
-             
-            <div style="width: 350px; border-bottom: 2px solid black; margin: 0 auto;"></div>
-        </div>
+        <p><strong>Firma médico tratante:</strong></p>
+        @if (!string.IsNullOrEmpty(Model.UrlFirmaMedico))
+        {
+            <div style="text-align: center; margin-top: 20px;">
+                <img src="@Model.UrlFirmaMedico" alt="Firma del Médico" style="max-height:100px;" />
+                <div style="width: 350px; border-bottom: 2px solid black; margin: 12px auto 0;"></div>
+                <p>@(Model.NombreMedicoTratante ?? "")</p>
+                @if (!string.IsNullOrWhiteSpace(Model.ColegiadoMedico))
+                {
+                    <p style="color:#64748b;">Colegiado: @Model.ColegiadoMedico</p>
+                }
+            </div>
+        }
+        else if (!string.IsNullOrWhiteSpace(Model.NombreMedicoTratante) && Model.NombreMedicoTratante != "Nombre del Médico")
+        {
+            <div style="text-align: center; margin-top: 20px;">
+                <div style="width: 350px; border-bottom: 2px solid black; margin: 12px auto 0;"></div>
+                <p>@(Model.NombreMedicoTratante)</p>
+                @if (!string.IsNullOrWhiteSpace(Model.ColegiadoMedico) && Model.ColegiadoMedico != "Número de Colegiado")
+                {
+                    <p style="color:#64748b;">Colegiado: @Model.ColegiadoMedico</p>
+                }
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(Model.UrlFirmaAnestesista))
+        {
+            <p style="margin-top: 30px;"><strong>Firma anestesiólogo asignado:</strong></p>
+            <div style="text-align: center; margin-top: 20px;">
+                <img src="@Model.UrlFirmaAnestesista" alt="Firma anestesiólogo" style="max-height:100px;" />
+                <div style="width: 350px; border-bottom: 2px solid black; margin: 12px auto 0;"></div>
+                <p>@(Model.NombreAnestesista ?? "")</p>
+                @if (!string.IsNullOrWhiteSpace(Model.ColegiadoAnestesista))
+                {
+                    <p style="color:#64748b;">Colegiado: @Model.ColegiadoAnestesista</p>
+                }
+            </div>
+        }
+        else if (!string.IsNullOrWhiteSpace(Model.NombreAnestesista) && Model.NombreAnestesista != "Nombre del Anestesista")
+        {
+            <p style="margin-top: 30px;"><strong>Anestesiólogo asignado:</strong></p>
+            <div style="text-align: center; margin-top: 12px;">
+                <p>@(Model.NombreAnestesista)</p>
+                @if (!string.IsNullOrWhiteSpace(Model.ColegiadoAnestesista) && Model.ColegiadoAnestesista != "Número de Colegiado")
+                {
+                    <p style="color:#64748b;">Colegiado: @Model.ColegiadoAnestesista</p>
+                }
+            </div>
+        }
     </div>
 
 </div>

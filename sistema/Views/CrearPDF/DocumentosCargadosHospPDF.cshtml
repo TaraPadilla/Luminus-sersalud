@@ -1,0 +1,27 @@
+@model DocumentosCargadosPdfViewModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Hospitalización - Documentos cargados";
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = false;
+    ViewData["MostrarEmergencias"] = true;
+}
+
+<div class="doc">
+    <div class="doc-title">REPORTE - @ViewData["Title"]</div>
+    <div class="doc-underline"></div>
+
+    <table class="block">
+        <tr><td style="padding:8px;">
+            <strong>Paciente:</strong> @Model.PacienteNombre &nbsp;|&nbsp;
+            <strong>Hospitalización:</strong> #@Model.HospitalizacionId
+        </td></tr>
+    </table>
+
+    @await Html.PartialAsync("CrearPDF/_ExpedienteDocumentosCargados", (Model.DocumentosEmbebidos, Model.DocumentoConsentimientoEmbebido))
+</div>

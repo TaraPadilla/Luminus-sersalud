@@ -117,38 +117,44 @@
                                                     <td>
                                                         <label>@habitacion.HabitacionNumeroCamas</label>
                                                     </td>
+                                                    @* Mostrar botones de ocupar/finalizar sólo para roles autorizados, pero
+                                                       mostrar el botón "Detalles" para cualquier usuario autenticado *@
                                                     @if (usuarioAdministrador || usuarioDesarrollador || usuarioMedicoGeneral || usuarioMedicoInterno || usuarioRecepcionDiurno || usuarioRecepcionNocturno || usuarioRecepcion || usuarioEnfermeria || usuarioTecnicoLaboratorio || usuarioMedicoExterno)
                                                     {
                                                         <td>
-                                                            @if (estadoId == (int)EstadoHabitacionEnum.Disponible)
-                                                            {
-                                                                <button class="btn btn-primary"
-                                                                        onclick="registrarHospitalizacion(@habitacion.HabitacionId)">
-                                                                    <i class="metismenu-icon fa fa-bed"></i>
-                                                                </button>
-                                                            }
-                                                         </td>
-
-                                                         <td>
-                                                            @if (estadoId == (int)EstadoHabitacionEnum.Ocupada)
-                                                            {
-                                                                <center>
+                                                                @if (estadoId == (int)EstadoHabitacionEnum.Disponible)
+                                                                {
                                                                     <button class="btn btn-primary"
-                                                                        onclick="detallesHospitalizacion(@habitacion.HospitalizacionId, @(habitacion.CitaId ?? 0))">
-                                                                        <i class="fas fa-eye"></i>
+                                                                            onclick="registrarHospitalizacion(@habitacion.HabitacionId)">
+                                                                        <i class="metismenu-icon fa fa-bed"></i>
                                                                     </button>
-                                                                </center>
-                                                            }
-                                                         </td>
+                                                                }
+                                                             </td>
                                                     }
+
+                                                    <td>
+                                                        @if (estadoId == (int)EstadoHabitacionEnum.Ocupada && habitacion.HospitalizacionId.HasValue && habitacion.HospitalizacionId.Value > 0)
+                                                        {
+                                                            <center>
+                                                                <button class="btn btn-primary"
+                                                                    onclick="detallesHospitalizacion(@habitacion.HospitalizacionId.Value, @(habitacion.CitaId ?? 0))">
+                                                                    <i class="fas fa-eye"></i>
+                                                                </button>
+                                                            </center>
+                                                        }
+                                                        else if (estadoId == (int)EstadoHabitacionEnum.Ocupada)
+                                                        {
+                                                            <center><span class="text-muted small">Sin hospitalización activa</span></center>
+                                                        }
+                                                    </td>
                                                     @if (usuarioAdministrador || usuarioDesarrollador || usuarioMedicoInterno || usuarioRecepcionDiurno || usuarioRecepcionNocturno || usuarioAdmisiones || usuarioRecepcion || usuarioEnfermeria || usuarioTecnicoLaboratorio)
                                                     {
                                                          <td>
-                                                            @if (estadoId == (int)EstadoHabitacionEnum.Ocupada)
+                                                            @if (estadoId == (int)EstadoHabitacionEnum.Ocupada && habitacion.HospitalizacionId.HasValue && habitacion.HospitalizacionId.Value > 0)
                                                             {
                                                                 <center>
                                                                     <button class="btn btn-danger"
-                                                                            onclick="finalizarHospitalizacion(@habitacion.HospitalizacionId)">
+                                                                            onclick="finalizarHospitalizacion(@habitacion.HospitalizacionId.Value)">
                                                                         <i class="fas fa-sign-out-alt"></i>
                                                                     </button>
                                                                 </center>

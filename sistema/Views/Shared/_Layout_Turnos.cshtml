@@ -1,4 +1,4 @@
-Ôªø@using System.Security.Claims
+@using System.Security.Claims
 @using Database.Shared.Enumeraciones
 @{
     // var tipoBodegaClinica = (int)TipoBodegaEnum.Clinica;
@@ -119,11 +119,13 @@
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.js"></script>
 
     <script src="https://knockoutjs.com/downloads/knockout-3.5.1.js"></script>
+    <script type="text/javascript" src="~/js/selectHelpers.js"></script>
     <script type="text/javascript" src="~/js/bootstrap.bundle.min.js"></script>
     <script type="text/javascript" src="~/js/moment.min.js"></script>
     <script type="text/javascript" src="~/js/select2.full.min.js"></script>
     <script type="text/javascript" src="~/assets/scripts/main.js"></script>
     <script type="text/javascript" src="~/js/daterangepicker.js"></script>
+    @await Html.PartialAsync("_AppConfigScript")
     <script type="text/javascript" src="~/js/site.js"></script>
 
 
@@ -133,7 +135,7 @@
   $(function() {
     $("#tabs").tabs();
     $("#subtabs-general").tabs();
-    // Agrega aqu√≠ los dem√°s subtabs si tienes (ej: $("#subtabs-hospital").tabs();)
+    // Agrega aquÌ los dem·s subtabs si tienes (ej: $("#subtabs-hospital").tabs();)
   });
 </script>
 

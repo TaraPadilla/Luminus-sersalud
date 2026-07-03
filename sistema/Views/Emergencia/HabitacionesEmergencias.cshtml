@@ -117,13 +117,18 @@
                                                         </td>
                                                     }
                                                     <td>
-                                                        @if (estadoId == (int)EstadoHabitacionEnum.Ocupada)
+                                                        @if (estadoId == (int)EstadoHabitacionEnum.Ocupada && habitacion.HospitalizacionId.HasValue && habitacion.HospitalizacionId.Value > 0)
                                                         {
                                                             <center>
-                                                                <button class="btn btn-primary" onclick="detallesHospitalizacion(@habitacion.HospitalizacionId)">
+                                                                <button class="btn btn-primary"
+                                                                    onclick="detallesHospitalizacion(@habitacion.HospitalizacionId.Value, @(habitacion.CitaId ?? 0))">
                                                                     <i class="fas fa-eye"></i>
                                                                 </button>
                                                             </center>
+                                                        }
+                                                        else if (estadoId == (int)EstadoHabitacionEnum.Ocupada)
+                                                        {
+                                                            <center><span class="text-muted small">Sin hospitalización activa</span></center>
                                                         }
                                                     </td>
                                                     @if (usuarioAdministrador || usuarioDesarrollador
@@ -131,10 +136,10 @@
                                                 || usuarioRecepcionDiurno || usuarioRecepcionNocturno || usuarioAdmisiones || usuarioRecepcion)
                                                     {
                                                         <td>
-                                                            @if (estadoId == (int)EstadoHabitacionEnum.Ocupada)
+                                                            @if (estadoId == (int)EstadoHabitacionEnum.Ocupada && habitacion.HospitalizacionId.HasValue && habitacion.HospitalizacionId.Value > 0)
                                                             {
                                                                 <center>
-                                                                    <button class="btn btn-danger" onclick="finalizarHospitalizacion(@habitacion.HospitalizacionId)">
+                                                                    <button class="btn btn-danger" onclick="finalizarHospitalizacion(@habitacion.HospitalizacionId.Value)">
                                                                         <i class="fas fa-sign-out-alt"></i>
                                                                     </button>
                                                                 </center>

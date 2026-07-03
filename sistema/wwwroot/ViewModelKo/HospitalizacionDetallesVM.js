@@ -1,4 +1,177 @@
-﻿var HospitalizarDetallesVM = function () {
+function parseAjaxJson(dataResult) {
+  if (dataResult == null) return null;
+  if (typeof dataResult === "object") return dataResult;
+  try {
+    return JSON.parse(dataResult);
+  } catch (e) {
+    console.error("parseAjaxJson:", e, dataResult);
+    return null;
+  }
+}
+
+function formatFechaDisplay(val) {
+  if (val == null || val === "") return "";
+  if (typeof val === "string") {
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val;
+    var d = new Date(val);
+    if (!isNaN(d.getTime())) {
+      var day = String(d.getDate()).padStart(2, "0");
+      var month = String(d.getMonth() + 1).padStart(2, "0");
+      return day + "/" + month + "/" + d.getFullYear();
+    }
+    if (val.indexOf("T") >= 0) {
+      var part = val.split("T")[0];
+      var bits = part.split("-");
+      if (bits.length === 3) return bits[2] + "/" + bits[1] + "/" + bits[0];
+      return part;
+    }
+    return val;
+  }
+  return String(val);
+}
+
+function formatFechaInput(val) {
+  if (val == null || val === "") return "";
+  if (typeof val === "string") {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) {
+      var p = val.split("/");
+      return p[2] + "-" + p[1] + "-" + p[0];
+    }
+    var d = new Date(val);
+    if (!isNaN(d.getTime())) {
+      return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    }
+    if (val.indexOf("T") >= 0) return val.split("T")[0];
+  }
+  return String(val);
+}
+
+function actualizarVitalsHeaderEnPagina(peso, talla, tipoSangre) {
+  if (peso) {
+    $("#PacientePeso").val(peso);
+    if ($("#spanPeso").length) {
+      $("#spanPeso").html('<i class="fas fa-weight mr-2"></i>' + peso);
+    }
+  }
+  if (talla) {
+    $("#PacienteTalla").val(talla);
+    if ($("#spanEstatura").length) {
+      $("#spanEstatura").html('<i class="fas fa-ruler-vertical mr-2"></i>' + talla);
+    }
+  }
+  if (tipoSangre) {
+    $("#PacienteTipoSangre").val(tipoSangre);
+    if ($("#spanTipoSangre").length) {
+      $("#spanTipoSangre").html('<i class="fas fa-tint mr-2"></i>' + tipoSangre);
+    }
+  }
+  if (typeof detallesVm !== "undefined" && detallesVm.syncMedNoControladosDatosPaciente) {
+    detallesVm.syncMedNoControladosDatosPaciente();
+  }
+}
+
+function initPreanestDialogs() {
+  var common = {
+    autoOpen: false,
+    modal: true,
+    appendTo: "body",
+    open: function () {
+      if (typeof forceHideLoading === "function") forceHideLoading();
+      else if (typeof hideLoading === "function") hideLoading();
+    },
+  };
+
+  var $add = $("#mdl-agregar-preanestesico");
+  if ($add.length && !$add.hasClass("ui-dialog-content")) {
+    $add.dialog($.extend({}, common, {
+      width: 1100,
+      title: "Cuestionario Pre-Anestésico",
+    }));
+  }
+
+  var $edit = $("#mdl-editar-preanestesico");
+  if ($edit.length && !$edit.hasClass("ui-dialog-content")) {
+    $edit.dialog($.extend({}, common, {
+      width: 1000,
+      title: "Editar Cuestionario Pre-Anestésico",
+    }));
+  }
+}
+
+function initPaqueteDialogs() {
+  var common = {
+    autoOpen: false,
+    modal: true,
+    appendTo: "body",
+    open: function () {
+      if (typeof forceHideLoading === "function") forceHideLoading();
+      else if (typeof hideLoading === "function") hideLoading();
+    },
+  };
+
+  var $add = $("#modalAgregarProductoPaquete");
+  if ($add.length && !$add.hasClass("ui-dialog-content")) {
+    $add.dialog($.extend({}, common, {
+      width: 700,
+      title: "Agregar Medicamento / Insumo al Paquete",
+      buttons: {
+        Cancelar: function () {
+          $(this).dialog("close");
+        },
+        Agregar: function () {
+          if (window.detallesVm && typeof window.detallesVm.confirmarAgregarProductoAPaquete === "function") {
+            window.detallesVm.confirmarAgregarProductoAPaquete();
+          }
+          $(this).dialog("close");
+        },
+      },
+    }));
+  }
+
+  var $dev = $("#modalDevolucionPaquete");
+  if ($dev.length && !$dev.hasClass("ui-dialog-content")) {
+    $dev.dialog($.extend({}, common, {
+      width: 500,
+      title: "Devolver ítem a Pendiente",
+      buttons: {
+        Cancelar: function () {
+          $(this).dialog("close");
+          window._paqueteItemDevolucion = null;
+        },
+        Confirmar: function () {
+          var motivo = $("#selectMotivoPaqueteDevolucion").val();
+          if (!motivo) {
+            mensajeEmergenteError("Seleccione un motivo.");
+            return;
+          }
+          if (motivo === "Otro") {
+            motivo = $("#inputOtroMotivoPaquete").val().trim();
+            if (!motivo) {
+              mensajeEmergenteError("Escriba el motivo.");
+              return;
+            }
+          }
+          if (window.detallesVm && typeof window.detallesVm.confirmarDevolverDetallePaquete === "function") {
+            window.detallesVm.confirmarDevolverDetallePaquete(window._paqueteItemDevolucion, motivo);
+          }
+          $(this).dialog("close");
+          window._paqueteItemDevolucion = null;
+        },
+      },
+    }));
+  }
+}
+
+function refrescarSelectsKoEnTab(tabSelector) {
+  if (!window.jQuery || !window.SelectHelpers) return;
+  var $tab = tabSelector ? $(tabSelector) : $(document);
+  $tab.find("select.select2bs4").each(function () {
+    SelectHelpers.refreshSelect2($(this));
+  });
+}
+
+var HospitalizarDetallesVM = function () {
   let modelPagarFactura = {};
   var modelReceta = {};
 
@@ -119,7 +292,6 @@
   self.servicioAgregarSeleccionado = ko.observable();
   self.cantidadServicioAgregar = ko.observable(0);
   self.valoresServicioAgregar = ko.observableArray(); // Lista de precios
-  self.valorServicioAgregar = ko.observableArray(); // Lista de precios
   self.valorServicioSeleccionado = ko.observable(); // Precio seleccionado
   //Medicamentos
   self.registrosInventario = ko.observableArray();
@@ -176,6 +348,8 @@
   //Archivos
   self.archivosPaciente = ko.observableArray();
   self.archivosAutorizaciones = ko.observableArray([]);
+  self.autorizacionPreviewUrl = ko.observable(null);
+  self.autorizacionPreviewNombre = ko.observable("");
 
   //Historial de consultas
   self.historialConsultasPaciente = ko.observableArray();
@@ -203,6 +377,7 @@
   self.notaHistoriaProblema = ko.observable();
   self.notaSintomas = ko.observable();
   self.notaDiagnostico = ko.observable();
+  self.notaTipoClinica = ko.observable("");
   self.periodo = ko.observable();
 
   //Nota operatoria
@@ -532,6 +707,22 @@
   self.mensajeBalanceNoControlados = ko.observable("");
 
   self.listaProductosNoControlados = ko.observableArray([]);
+  self.busquedaMedNoControlado = ko.observable("");
+  self.productosNoControladosFiltrados = ko.computed(function () {
+    var q = (self.busquedaMedNoControlado() || "").toLowerCase().trim();
+    var list = self.listaProductosNoControlados();
+    if (!q) return list;
+    return list.filter(function (p) {
+      var nombre = (p.productoNombre || "").toLowerCase();
+      var codigo = (p.productoCodigo || "").toLowerCase();
+      var id = String(p.productoId || "");
+      return nombre.indexOf(q) >= 0 || codigo.indexOf(q) >= 0 || id.indexOf(q) >= 0;
+    });
+  });
+  self.sinResultadosMedNoControlado = ko.computed(function () {
+    return self.listaProductosNoControlados().length > 0
+      && self.productosNoControladosFiltrados().length === 0;
+  });
   self.productoSeleccionadoNoControlado = ko.observable();
   self.productoSeleccionadoNoControladoId = ko.observable();
 
@@ -617,6 +808,17 @@
     self.filtroActivo(estado);
   };
 
+  self.abrirTabCirugiaPaquete = function () {
+    self.consultarPaquetesAplicados();
+    self.consultarPaquetesHospitalizacion();
+  };
+
+  self.buscarPaquetePorId = function (detalleId) {
+    return self.listaProductosAplicacion().find(function (item) {
+      return String(ko.unwrap(item.Id)) === String(detalleId);
+    }) || null;
+  };
+
   self.elementosPaginadosPaquetes = ko.pureComputed(function () {
     var lista = self.listaProductosAplicacion();
     var busqueda = self.filtroBusquedaPaquetes().toLowerCase();
@@ -697,9 +899,9 @@
   //#region Funciones TABS
   self.abrirTabNotaMedica2 = function () {
     if (!self.tabNotaMedica2Abierta()) {
-      self.consultarNotasMedicas();
       self.tabNotaMedica2Abierta(true);
     }
+    self.consultarNotasMedicas();
   };
   self.abrirTabNotaOperatoria = function () {
     if (!self.tabNotaOperatoriaAbierta()) {
@@ -764,9 +966,9 @@
 
   self.abrirTabChequeo = function () {
     if (!self.tabChequeoAbierta()) {
-      self.consultarListasChequeo();
       self.tabChequeoAbierta(true);
     }
+    self.consultarListasChequeo();
   };
 
   self.abrirTabPreanestesico = function () {
@@ -778,17 +980,125 @@
 
   self.abrirTabKitIngreso = function () {
     if (!self.tabKitIngresoAbierta()) {
-      self.consultarKitsIngreso();
-      self.kit_cargarProductosInventario();
       self.tabKitIngresoAbierta(true);
+    }
+    self.consultarKitsIngreso();
+    self.kit_cargarProductosInventario();
+  };
+
+  self.abrirTabAutorizaciones = function () {
+    var id = self.hospitalizacionId() || parseInt($("#HospitalizacionId").val(), 10);
+    if (id > 0) {
+      self.cargarArchivosAutorizaciones(id);
     }
   };
 
   self.abrirTabMedicamentosNoControlados = function () {
+    self.syncMedNoControladosDatosPaciente();
     if (!self.tabMedicamentosNoControladosAbierta()) {
       self.tabMedicamentosNoControladosAbierta(true);
       self.cargarProductosNoControlados();
-      self.cargarHistorialMedicamentosNoControlados();
+      if (!self.cargarMedicamentosControladosInicialServidor()) {
+        self.cargarHistorialMedicamentosNoControlados();
+      }
+    }
+  };
+
+  self.syncMedNoControladosDatosPaciente = function () {
+    function mostrar(valor) {
+      return valor && String(valor).trim() ? String(valor).trim() : "No registrado";
+    }
+    function leerTextoSpan(selector) {
+      var $el = $(selector);
+      if (!$el.length) return "";
+      var clone = $el.clone();
+      clone.find("i").remove();
+      return (clone.text() || "").trim();
+    }
+    var nombre = ($("#PacienteNombreAdmision").val() || "").trim();
+    if (!nombre) {
+      nombre = ($("#medNoCtrlPacienteNombre").val() || "").trim();
+    }
+    if (!nombre) {
+      nombre = leerTextoSpan("#hospPacienteNombreDisplay");
+    }
+    if (nombre) {
+      self.nombrePacienteNoControlados(nombre);
+      $("#medNoCtrlPacienteNombre").val(nombre);
+    }
+    var sangre = ($("#PacienteTipoSangre").val() || "").trim();
+    if (!sangre) {
+      var sangreSpan = leerTextoSpan("#spanTipoSangre");
+      if (sangreSpan && sangreSpan !== "No registrado") {
+        sangre = sangreSpan;
+      }
+    }
+    var peso = ($("#PacientePeso").val() || "").trim();
+    if (!peso) {
+      var pesoSpan = leerTextoSpan("#spanPeso");
+      if (pesoSpan && pesoSpan !== "No registrado") {
+        peso = pesoSpan;
+      }
+    }
+    var talla = ($("#PacienteTalla").val() || "").trim();
+    if (!talla) {
+      var tallaSpan = leerTextoSpan("#spanEstatura");
+      if (tallaSpan && tallaSpan !== "No registrado") {
+        talla = tallaSpan;
+      }
+    }
+    var $sangre = $("#medNoCtrlTipoSangre");
+    var $peso = $("#medNoCtrlPeso");
+    var $talla = $("#medNoCtrlEstatura");
+    if ($sangre.length) {
+      $sangre.html('<i class="fas fa-tint text-danger mr-1"></i>' + mostrar(sangre));
+    }
+    if ($peso.length) {
+      $peso.html('<i class="fas fa-weight mr-1"></i>' + mostrar(peso));
+    }
+    if ($talla.length) {
+      $talla.html('<i class="fas fa-ruler-vertical mr-1"></i>' + mostrar(talla));
+    }
+  };
+
+  self.cargarMedicamentosControladosInicialServidor = function () {
+    var $json = $("#med-no-ctrl-inicial-json");
+    if (!$json.length) return false;
+
+    try {
+      var items = JSON.parse($json.text() || "[]");
+      if (!Array.isArray(items) || !items.length) return false;
+
+      var mapped = items.map(function (h) {
+        return {
+          productoId: parseInt(h.productoId, 10) || 0,
+          nombre: h.nombre || "",
+          unidadesIniciales: ko.observable(parseFloat(h.unidadesIniciales) || 0),
+          unidadesExtra: ko.observable(parseFloat(h.unidadesExtra) || 0),
+          utilizado: ko.observable(parseFloat(h.utilizado) || 0),
+          descartado: ko.observable(parseFloat(h.descartado) || 0),
+          retornadas: ko.observable(parseFloat(h.retornadas) || 0),
+        };
+      });
+
+      self.medicamentosNoControlados(mapped);
+      self.registrosPreviosNoControlados(items);
+
+      var fp = $("#MedNoCtrlFechaProcedimientoServer").val();
+      if (fp) {
+        self.fechaProcedimientoNoControlados(fp);
+      } else if (items[0] && items[0].fechaProcedimiento) {
+        var raw = items[0].fechaProcedimiento;
+        if (typeof raw === "string" && raw.indexOf("T") >= 0) {
+          self.fechaProcedimientoNoControlados(raw.split("T")[0]);
+        }
+      }
+
+      renderMedicamentosNoControladosTabla();
+      return true;
+    } catch (e) {
+      console.warn("No se pudo cargar medicamentos controlados iniciales:", e);
+      return false;
     }
   };
 
@@ -830,28 +1140,41 @@
 
   // Función para cargar los archivos desde el servidor
   self.cargarArchivosAutorizaciones = function (hospitalizacionId) {
+    var id = hospitalizacionId || self.hospitalizacionId() || parseInt($("#HospitalizacionId").val(), 10);
+    if (!id) return;
+
+    $("#texto-cargando-autorizaciones").show();
     $.ajax({
       url: "/Hospitalizacion/ConsultarArchivosAutorizaciones",
       type: "POST",
-      contentType: "application/json",
-      data: JSON.stringify({ hospitalizacionId: hospitalizacionId }),
+      data: { hospitalizacionId: id },
       success: function (data) {
-        var respuesta = JSON.parse(data);
+        $("#texto-cargando-autorizaciones").hide();
+        var respuesta = typeof data === "string" ? JSON.parse(data) : data;
         if (respuesta.Exitoso) {
-          self.archivosAutorizaciones(respuesta.Resultado);
+          var archivos = respuesta.Resultado || [];
+          self.archivosAutorizaciones(archivos);
+          self._archivosAutorizacionesCache = archivos;
+          renderAutorizacionesTabla(archivos);
         } else {
           console.error("Error: ", respuesta.Mensaje);
         }
       },
       error: function (xhr, status, error) {
+        $("#texto-cargando-autorizaciones").hide();
         console.error("Error al cargar los archivos: ", error);
       },
     });
   };
 
-  // Llamar a la función al inicializar
-  self.cargarArchivosAutorizaciones();
-  //self.cargarArchivosAutorizaciones(parseInt($("#HospitalizacionId").val(), 10));
+  self.visualizarArchivoAutorizacion = function (archivo) {
+    if (!archivo) return;
+    var url = archivo.ArchivoUrl || archivo.archivoUrl || "";
+    var nombre = archivo.ArchivoNombre || archivo.archivoNombre || "";
+    self.autorizacionPreviewUrl(url);
+    self.autorizacionPreviewNombre(nombre);
+    actualizarAutorizacionPreview(url, nombre);
+  };
 
   self.consultarHistorialConsultasPaciente = function () {
     let textoCargando = $("#texto-cargando-consultas");
@@ -935,19 +1258,6 @@
     } else {
       self.nombreRecetaAgregar("");
       self.ingredientesRecetaAgregar("");
-    }
-  });
-
-  self.servicioAgregarSeleccionado.subscribe(function (value) {
-    console.log("[Servicios] servicioAgregarSeleccionado changed:", value);
-
-    if (value && value.Precio) {
-      console.log("[Servicios] value.Precio detectado:", value.Precio);
-      self.valorServicioAgregar(value.Precio);
-    } else {
-      console.log(
-        "[Servicios] value.Precio no existe para este objeto (esperable si viene de ConsultarServiciosExistentes).",
-      );
     }
   });
 
@@ -1146,6 +1456,8 @@
     self.isUpdateObservacionProductsHospi("");
   };
 
+  self._guardAgregarTurnoEnfermeria = false;
+
   self.consultarTurnoEnfermeria = function () {
     showLoading();
     $.ajax({
@@ -1154,7 +1466,11 @@
       data: { hospitalizacionId: $("#HospitalizacionId").val() },
       success: function (dataResult) {
         hideLoading();
-        let data = JSON.parse(dataResult);
+        let data = parseAjaxJson(dataResult);
+        if (!data) {
+          mensajeEmergenteError("Error al consultar turnos de enfermería.");
+          return;
+        }
         if (data.exitoso) {
           var turnos = data.resultado.map(function (t) {
             return {
@@ -1303,6 +1619,9 @@
 
   // Método para agregar turno de enfermería
   self.agregarTurnoEnfermeria = function () {
+    if (self._guardAgregarTurnoEnfermeria) return;
+    self._guardAgregarTurnoEnfermeria = true;
+
     let dtFechaRegistro = new Date().toISOString();
     let dtNumeroTurno;
     let dtNombreTurno;
@@ -1361,6 +1680,7 @@
     });
 
     if (turnoExistente) {
+      self._guardAgregarTurnoEnfermeria = false;
       mensajeEmergenteError(
         "Ya existe un turno con el mismo nombre. No se puede agregar.",
       );
@@ -1383,16 +1703,18 @@
       data: nuevoTurno,
       success: function (dataResult) {
         hideLoading();
-        var data = JSON.parse(dataResult);
-        if (data.exitoso) {
+        self._guardAgregarTurnoEnfermeria = false;
+        var data = parseAjaxJson(dataResult);
+        if (data && data.exitoso) {
           self.consultarTurnoEnfermeria();
           mensajeEmergente("Turno de enfermería agregado");
         } else {
-          mensajeEmergenteError("Error: " + data.resultado);
+          mensajeEmergenteError("Error: " + ((data && data.resultado) || "No se pudo agregar el turno"));
         }
       },
       error: function (dataError) {
         hideLoading();
+        self._guardAgregarTurnoEnfermeria = false;
         console.log(dataError);
         mensajeEmergenteError("Error al agregar el turno de enfermería");
       },
@@ -2447,17 +2769,20 @@
       method: "POST",
       success: function (dataResult) {
         hideLoading();
-        let data = JSON.parse(dataResult);
-        if (data.Exitoso) {
-          self.serviciosExistentes(data.Resultado);
+        var data = parseAjaxJson(dataResult);
+        if (data && data.Exitoso) {
+          self.serviciosExistentes(data.Resultado || []);
+          setTimeout(function () {
+            refrescarSelectsKoEnTab("#tab-content-0");
+          }, 0);
         } else {
-          alert(data.Mensaje);
+          mensajeEmergenteError((data && data.Mensaje) || "Error al consultar servicios.");
         }
       },
       error: function (dataError) {
         hideLoading();
-        console.log(dataError);
-        alert(dataError);
+        console.error(dataError);
+        mensajeEmergenteError("Error al consultar servicios.");
       },
     });
   };
@@ -2641,6 +2966,16 @@
 
           // console.log(JSON.stringify(datos, null, 2));
           // Actualiza el observable con los datos modificados
+          var pesoPaciente = $("#PacientePeso").val();
+          var tallaPaciente = $("#PacienteTalla").val();
+          datos.forEach(function (d) {
+            if (d.NombreDato === "Peso" && pesoPaciente && !d.ValorDato) {
+              d.ValorDato = pesoPaciente;
+            }
+            if (d.NombreDato === "Estatura" && tallaPaciente && !d.ValorDato) {
+              d.ValorDato = tallaPaciente;
+            }
+          });
           self.datosExamenFisicoAgregar(datos);
         } else {
           mensajeEmergenteError(data.Mensaje);
@@ -2756,7 +3091,37 @@
   });
 
 
-  self.consultarPaquetesHospitalizacion = function () {
+  self.obtenerPaquetesActivosHospitalizacion = function () {
+    return self.paquetesHospitalizacion().filter(function (p) {
+      return !ko.unwrap(p.Eliminado);
+    });
+  };
+
+  self.poblarSelectPaquetesDestino = function () {
+    var paquetesActivos = self.obtenerPaquetesActivosHospitalizacion();
+    var $selectPaquete = $("#selectPaqueteDestino");
+    $selectPaquete.empty().append('<option value="">-- Seleccione paquete --</option>');
+    paquetesActivos.forEach(function (p) {
+      var id = ko.unwrap(p.Id);
+      var codigo = ko.unwrap(p.Codigo) || "";
+      var nombre = ko.unwrap(p.Nombre) || "Paquete";
+      $selectPaquete.append(
+        $("<option>").val(id).text((codigo ? codigo + " - " : "") + nombre)
+      );
+    });
+    if ($selectPaquete.data("select2")) {
+      $selectPaquete.select2("destroy");
+    }
+    $selectPaquete.select2({
+      dropdownParent: $("#modalAgregarProductoPaquete"),
+      width: "100%",
+      placeholder: "-- Seleccione paquete --",
+      allowClear: true,
+    });
+    return paquetesActivos.length;
+  };
+
+  self.consultarPaquetesHospitalizacion = function (callback) {
     let textoCargando = $("#texto-cargando-paquetes-hospitalizacion");
     let textoError = $("#texto-error-carga-paquetes-hospitalizacion");
     textoCargando.show();
@@ -2780,8 +3145,7 @@
               Codigo: item.Codigo || item.PaqueteCodigo || 'N/A',
               Nombre: item.Nombre || item.PaqueteNombre || 'Sin nombre',
               Precio: item.Precio || item.Valor || 0,
-              // ── Sublistas: deben incluirse para que los tabs de
-              //    Productos / Servicios / Laboratorios funcionen
+              Eliminado: item.Eliminado === true,
               Servicios: item.Servicios || [],
               Productos: item.Productos || [],
               Laboratorios: item.Laboratorios || [],
@@ -2798,15 +3162,18 @@
 
           textoError.hide();
           textoCargando.hide();
+          if (typeof callback === "function") callback(paquetesNormalizados);
         } else {
           textoCargando.hide();
           textoError.show();
+          if (typeof callback === "function") callback([]);
         }
       },
       error: function (dataError) {
         textoCargando.hide();
         console.log(dataError);
         textoError.show();
+        if (typeof callback === "function") callback([]);
       },
     });
   };
@@ -3246,13 +3613,9 @@
           );
         }
 
-        // Si Select2 está inicializado, a veces necesita refresh visual
-        // (No afecta KO, solo la UI)
-        try {
-          $(".select2bs4").trigger("change.select2");
-        } catch (e) {
-          // Silencioso: no queremos romper flujo por UI
-        }
+        setTimeout(function () {
+          refrescarSelectsKoEnTab("#tab-content-0");
+        }, 0);
       },
       error: function (xhr, status, err) {
         console.error(
@@ -4155,54 +4518,63 @@
 
 
   self.abrirModalAgregarProductoPaquete = function () {
-    var paquetesActivos = self.paquetesHospitalizacion().filter(function (p) { return !p.Eliminado; });
-    var $selectPaquete = $('#selectPaqueteDestino');
-    $selectPaquete.empty().append('<option value="">-- Seleccione paquete --</option>');
-    paquetesActivos.forEach(function (p) {
-      $selectPaquete.append('<option value="' + p.Id + '">' + (p.Codigo || '') + ' - ' + p.Nombre + '</option>');
-    });
-    if ($selectPaquete.data('select2')) $selectPaquete.select2('destroy');
-    $selectPaquete.select2({ dropdownParent: $('#modalAgregarProductoPaquete'), width: '100%' });
-
-    $('#selectProductoPaquete').empty().append('<option value="">-- Seleccione producto --</option>');
-    $('#selectUnidadPaquete').empty().append('<option value="">-- Seleccione unidad --</option>');
-    $('#selectPrecioPaquete').empty().append('<option value="">-- Seleccione precio --</option>');
-    $('#inputCantidadProductoPaquete').val(1);
-    $('#inputIndicacionesPaquete').val('');
-
-    var tipoProductoMap = { medicamentos: 1, insumos: 2, equipos: 3 };
-    var tipoId = tipoProductoMap[self.switchMedicamentosEquipos()] || 1;
-    var productosUnicos = [];
-    var productosMap = new Map();
-    self.registrosInventario().forEach(function (vl) {
-      if (vl.TipoProductoId === tipoId && !productosMap.has(vl.ProductoId)) {
-        productosMap.set(vl.ProductoId, {
-          ProductoId: vl.ProductoId,
-          ProductoCodigo: vl.ProductoCodigo,
-          ProductoNombre: vl.ProductoNombre
-        });
+    var abrirModal = function () {
+      var totalPaquetes = self.poblarSelectPaquetesDestino();
+      if (totalPaquetes === 0) {
+        mensajeEmergenteError(
+          "No hay paquetes asignados a esta hospitalización. Agregue un paquete en Cargos Enfermería antes de continuar."
+        );
+        return;
       }
-    });
-    productosUnicos = Array.from(productosMap.values());
-    var $productoSelect = $('#selectProductoPaquete');
-    productosUnicos.forEach(function (p) {
-      $productoSelect.append('<option value="' + p.ProductoId + '">' + p.ProductoCodigo + ' - ' + p.ProductoNombre + '</option>');
-    });
-    if ($productoSelect.data('select2')) $productoSelect.select2('destroy');
-    $productoSelect.select2({ dropdownParent: $('#modalAgregarProductoPaquete'), width: '100%' });
 
-    $('#modalAgregarProductoPaquete').dialog({
-      modal: true,
-      width: 700,
-      title: 'Agregar Medicamento / Insumo al Paquete',
-      buttons: {
-        "Cancelar": function () { $(this).dialog("close"); },
-        "Agregar": function () {
-          self.confirmarAgregarProductoAPaquete();
-          $(this).dialog("close");
+      $("#selectProductoPaquete").empty().append('<option value="">-- Seleccione producto --</option>');
+      $("#selectUnidadPaquete").empty().append('<option value="">-- Seleccione unidad --</option>');
+      $("#selectPrecioPaquete").empty().append('<option value="">-- Seleccione precio --</option>');
+      $("#inputCantidadProductoPaquete").val(1);
+      $("#inputIndicacionesPaquete").val("");
+
+      var tipoProductoMap = { medicamentos: 1, insumos: 2, equipos: 3 };
+      var tipoId = tipoProductoMap[self.switchMedicamentosEquipos()] || 1;
+      var productosMap = new Map();
+      self.registrosInventario().forEach(function (vl) {
+        if (vl.TipoProductoId === tipoId && !productosMap.has(vl.ProductoId)) {
+          productosMap.set(vl.ProductoId, {
+            ProductoId: vl.ProductoId,
+            ProductoCodigo: vl.ProductoCodigo,
+            ProductoNombre: vl.ProductoNombre,
+          });
         }
+      });
+      var $productoSelect = $("#selectProductoPaquete");
+      Array.from(productosMap.values()).forEach(function (p) {
+        $productoSelect.append(
+          $("<option>").val(p.ProductoId).text(p.ProductoCodigo + " - " + p.ProductoNombre)
+        );
+      });
+      if ($productoSelect.data("select2")) {
+        $productoSelect.select2("destroy");
       }
-    });
+      $productoSelect.select2({
+        dropdownParent: $("#modalAgregarProductoPaquete"),
+        width: "100%",
+        placeholder: "-- Seleccione producto --",
+        allowClear: true,
+      });
+
+      initPaqueteDialogs();
+      $("#modalAgregarProductoPaquete").dialog("open");
+    };
+
+    if (self.obtenerPaquetesActivosHospitalizacion().length === 0) {
+      showLoading();
+      self.consultarPaquetesHospitalizacion(function () {
+        hideLoading();
+        abrirModal();
+      });
+      return;
+    }
+
+    abrirModal();
   };
 
   self.confirmarAgregarProductoAPaquete = function () {
@@ -4280,25 +4652,8 @@
     $('#selectMotivoPaqueteDevolucion').val('');
     $('#divOtroMotivoPaquete').hide();
     $('#inputOtroMotivoPaquete').val('');
-    $('#modalDevolucionPaquete').dialog({
-      modal: true,
-      width: 500,
-      title: "Devolver ítem a Pendiente",
-      buttons: {
-        "Cancelar": function () { $(this).dialog("close"); window._paqueteItemDevolucion = null; },
-        "Confirmar": function () {
-          var motivo = $('#selectMotivoPaqueteDevolucion').val();
-          if (!motivo) { mensajeEmergenteError("Seleccione un motivo."); return; }
-          if (motivo === "Otro") {
-            motivo = $('#inputOtroMotivoPaquete').val().trim();
-            if (!motivo) { mensajeEmergenteError("Escriba el motivo."); return; }
-          }
-          self.confirmarDevolverDetallePaquete(window._paqueteItemDevolucion, motivo);
-          $(this).dialog("close");
-          window._paqueteItemDevolucion = null;
-        }
-      }
-    });
+    initPaqueteDialogs();
+    $('#modalDevolucionPaquete').dialog('open');
   };
 
   self.confirmarDevolverDetallePaquete = function (item, motivo) {
@@ -4555,12 +4910,34 @@
       });
     }
   };
+  self.syncNotaMedicaModalFromDom = function () {
+    var tipo = $("#nota-medica-tipo-select").val() || "";
+    self.notaTipoClinica(tipo);
+    if (self.quillMedica && self.quillMedica.root) {
+      self.notaDiagnostico(self.quillMedica.root.innerHTML);
+    }
+  };
+
   self.verModalAgregarNotaMedica2 = function () {
     self.editandoNotaMedica(false);
     self.editNotaMedicaId(null);
     self.notaDiagnostico("");
+    self.notaTipoClinica("");
     if (self.quillMedica) self.quillMedica.setText("");
-    $("#mdl-agregar-nota-medica").dialog({ width: 1000 });
+    $("#nota-medica-tipo-select").val("");
+    actualizarUiModalNotaMedica(false);
+    var $modal = $("#mdl-agregar-nota-medica");
+    if (!$modal.hasClass("ui-dialog-content")) {
+      $modal.dialog({
+        autoOpen: false,
+        width: 1000,
+        modal: true,
+        title: "Nota de evolución médica",
+      });
+    } else {
+      $modal.dialog("option", "title", "Nota de evolución médica");
+    }
+    $modal.dialog("open");
   };
 
   self.editarNotaMedica2 = function (nota) {
@@ -4571,20 +4948,31 @@
     self.editandoNotaMedica(true);
     self.editNotaMedicaId(nota.Id);
     self.notaDiagnostico(nota.Diagnostico || "");
-    $("#mdl-agregar-nota-medica").dialog({
-      width: 1000,
-      open: function () {
-        if (self.quillMedica) {
-          self.quillMedica.root.innerHTML = nota.Diagnostico || "";
-        }
-      },
-      close: function () {
-        self.editandoNotaMedica(false);
-        self.editNotaMedicaId(null);
-        self.notaDiagnostico("");
-        if (self.quillMedica) self.quillMedica.setText("");
-      }
-    });
+    self.notaTipoClinica(nota.TipoNota || "");
+    $("#nota-medica-tipo-select").val(nota.TipoNota || "");
+    actualizarUiModalNotaMedica(true);
+    var $modal = $("#mdl-agregar-nota-medica");
+    if (!$modal.hasClass("ui-dialog-content")) {
+      $modal.dialog({
+        autoOpen: false,
+        width: 1000,
+        modal: true,
+        title: "Editar nota de evolución médica",
+        close: function () {
+          self.editandoNotaMedica(false);
+          self.editNotaMedicaId(null);
+          self.notaDiagnostico("");
+          self.notaTipoClinica("");
+          if (self.quillMedica) self.quillMedica.setText("");
+          actualizarUiModalNotaMedica(false);
+        },
+      });
+    }
+    $modal.dialog("option", "title", "Editar nota de evolución médica");
+    $modal.dialog("open");
+    if (self.quillMedica) {
+      self.quillMedica.root.innerHTML = nota.Diagnostico || "";
+    }
   };
   self.verModalAgregarNotaOperatoria = function () {
     var hoy = new Date().toISOString().split("T")[0];
@@ -4593,8 +4981,32 @@
     // Precargar desde ultima NotaOperatoria (fuente de verdad)
     var hospitalizacionId = $("#HospitalizacionId").val() || 0;
     var cirujanoId = $("#CitaCirujanoId").val() || "";
-    var primerAyudante = $("#CitaPrimerAyudanteNombre").val() || "";
-    var fallback = { cirujanoId: cirujanoId, primerAyudante: primerAyudante, segundoAyudante: "", anestesista: "", instrumentista: "", circulante: "" };
+    var cirujanoNombre = ($("#MedicoAsignadoNombre").val() || "").trim();
+    var primerAyudante = $("#CitaPrimerAyudante").val() || $("#CitaPrimerAyudanteNombre").val() || "";
+    var fallback = {
+      cirujanoId: cirujanoId,
+      cirujanoNombre: cirujanoNombre,
+      primerAyudante: primerAyudante,
+      segundoAyudante: $("#CitaSegundoAyudante").val() || "",
+      anestesista: $("#CitaAnestesista").val() || "",
+      instrumentista: $("#CitaInstrumentista").val() || "",
+      circulante: $("#CitaCirculante").val() || ""
+    };
+
+    function abrirModalNotaOperatoria() {
+      $("#mdl-agregar-nota-operatoria").dialog({
+        width: 1000,
+        title: "Agregar nota operatoria",
+        open: function () {
+          if (window.currentActiveId) {
+            window.stopRecording(window.currentActiveId);
+          }
+          setTimeout(function () {
+            self.inicializarSelect2Personal();
+          }, 300);
+        }
+      });
+    }
 
     $.ajax({
       url: "/NotaOperatoria/GetUltimaNotaOperatoria",
@@ -4604,38 +5016,19 @@
         var data = typeof dataResult === "string" ? JSON.parse(dataResult) : dataResult;
         if (data.exitoso) {
           self.cargarMedicosModal({
-            cirujanoNombre: data.cirujano || "",
-            primerAyudante: data.primerAyudante || "",
-            segundoAyudante: data.segundoAyudante || "",
-            anestesista: data.anestesista || "",
-            instrumentista: data.instrumentista || "",
-            circulante: data.circulante || ""
-          }); // destino = "agregar" por defecto
+            cirujanoNombre: data.cirujano || cirujanoNombre,
+            cirujanoId: cirujanoId,
+            primerAyudante: data.primerAyudante || fallback.primerAyudante,
+            segundoAyudante: data.segundoAyudante || fallback.segundoAyudante,
+            anestesista: data.anestesista || fallback.anestesista,
+            instrumentista: data.instrumentista || fallback.instrumentista,
+            circulante: data.circulante || fallback.circulante
+          }, "agregar", abrirModalNotaOperatoria);
         } else {
-          self.cargarMedicosModal(fallback);
+          self.cargarMedicosModal(fallback, "agregar", abrirModalNotaOperatoria);
         }
       },
-      error: function () { self.cargarMedicosModal(fallback); }
-    });
-
-    $("#mdl-agregar-nota-operatoria").dialog({
-      width: 1000,
-      title: "Agregar nota operatoria",
-      open: function () {
-        if (window.currentActiveId) {
-          // detener dictado anterior
-          window.stopRecording(window.currentActiveId);
-        }
-        setTimeout(function () {
-          self.inicializarSelect2Personal();
-          // Inicializar select2 para los selects de médicos
-          $("#mdl-agregar-nota-operatoria .select2-medicos-modal").select2({
-            width: "100%",
-            dropdownParent: $("#mdl-agregar-nota-operatoria"),
-            language: { noResults: function () { return "No se encontraron resultados"; } }
-          });
-        }, 300);
-      }
+      error: function () { self.cargarMedicosModal(fallback, "agregar", abrirModalNotaOperatoria); }
     });
   };
 
@@ -5234,6 +5627,7 @@
         var items = data.resultado || [];
         if (items.length === 0) {
           self.kitsIngreso([]);
+          renderKitsIngresoTabla();
           return;
         }
 
@@ -5317,6 +5711,7 @@
         self.kitsIngreso(kitsVM);
 
         self.cargarUtilizadosParaHospitalizacion();
+        renderKitsIngresoTabla();
       },
       error: function (err) {
         hideLoading();
@@ -5727,28 +6122,27 @@
   self.recalcularTotalKit = function () { };
 
 
-  self.verModalAgregarPreanestesico = function () {
+    self.verModalAgregarPreanestesico = function () {
+    if (typeof forceHideLoading === "function") forceHideLoading();
     var hoy = new Date().toISOString().split("T")[0];
     self.pa_FechaCuestionario(hoy);
 
     // Datos del paciente
     self.pa_NombreCompleto($("#PacienteNombreAdmision").val() || "");
+    self.pa_RegistroMedico($("#PacienteDpi").val() || "");
     self.pa_Edad($("#PacienteEdad").val() || "");
     self.pa_Cirujano($("#MedicoAsignadoNombre").val() || "");
     self.pa_Peso($("#PacientePeso").val() || "");
     self.pa_Estatura($("#PacienteTalla").val() || "");
     self.pa_ProcedimientoProgramado($("#CitaProcedimiento").val() || "");
 
-    $("#mdl-agregar-preanestesico").dialog({
-      width: 1100,
-      title: "Cuestionario Pre-Anestésico",
-    });
+    initPreanestDialogs();
+    $("#mdl-agregar-preanestesico").dialog("open");
   };
 
   self.verDetalleCuestionarioPreAnest = function (item) {
     self.cuestionarioPreAnestDetalle(item);
-    var modal = new bootstrap.Modal(document.getElementById("mdl-detalle-preanestesico"));
-    modal.show();
+    $("#mdl-detalle-preanestesico").modal("show");
   };
 
   self.agregarCuestionarioPreAnest = function () {
@@ -5827,14 +6221,15 @@
       data: JSON.stringify(payload),
       success: function (dataResult) {
         hideLoading();
-        var data = JSON.parse(dataResult);
-        if (data.exitoso) {
+        var data = parseAjaxJson(dataResult);
+        if (data && data.exitoso) {
+          actualizarVitalsHeaderEnPagina(self.pa_Peso(), self.pa_Estatura(), null);
           self.consultarCuestionariosPreAnest();
           self.limpiarModalPreanestesico();
           $("#mdl-agregar-preanestesico").dialog("close");
           mensajeEmergente("Cuestionario pre-anestésico guardado exitosamente");
         } else {
-          mensajeEmergenteError(data.resultado || "Error al guardar.");
+          mensajeEmergenteError((data && data.resultado) || "Error al guardar.");
         }
       },
       error: function (err) {
@@ -5867,8 +6262,8 @@
       data: { idHospitalizacion: $("#HospitalizacionId").val() },
       success: function (dataResult) {
         hideLoading();
-        var data = JSON.parse(dataResult);
-        if (data.exitoso) {
+        var data = parseAjaxJson(dataResult);
+        if (data && data.exitoso) {
           function prop(obj, name) {
             if (obj[name] !== undefined && obj[name] !== null) return obj[name];
             var lower = name.charAt(0).toLowerCase() + name.slice(1);
@@ -5876,15 +6271,17 @@
           }
           var lista = (data.resultado || []).map(function (n) {
             return {
-              Id: prop(n, "Id"),
-              FechaRegistro: prop(n, "FechaRegistro"),
-              FechaCuestionario: prop(n, "FechaCuestionario"),
+              Id: parseInt(prop(n, "Id"), 10) || 0,
+              FechaRegistro: formatFechaDisplay(prop(n, "FechaRegistro")),
+              FechaCuestionario: formatFechaDisplay(prop(n, "FechaCuestionario")),
               NombreCompleto: prop(n, "NombreCompleto"),
+              RegistroMedico: prop(n, "RegistroMedico"),
+              Edad: prop(n, "Edad"),
               ProcedimientoProgramado: prop(n, "ProcedimientoProgramado"),
               Cirujano: prop(n, "Cirujano"),
               Peso: prop(n, "Peso"),
               Estatura: prop(n, "Estatura"),
-              FechaProcedimiento: prop(n, "FechaProcedimiento"),
+              FechaProcedimiento: formatFechaDisplay(prop(n, "FechaProcedimiento")),
               PA_Alergia: prop(n, "PA_Alergia"),
               PA_AlergiaCual: prop(n, "PA_AlergiaCual"),
               PA_Fuma: prop(n, "PA_Fuma"),
@@ -5933,8 +6330,12 @@
               AI_OperacionesPrevias: prop(n, "AI_OperacionesPrevias"),
               AI_Comentarios: prop(n, "AI_Comentarios"),
             };
+          }).filter(function (item) {
+            return item.Id > 0;
           });
+          self._cuestionariosPreAnestCache = lista;
           self.cuestionariosPreAnest(lista);
+          renderCuestionariosPreAnestTabla(lista);
         } else {
           mensajeEmergenteError(data.mensaje || "Error al obtener cuestionarios.");
         }
@@ -6150,6 +6551,8 @@
             };
           });
           self.listasChequeo(lista);
+          self._listasChequeoCache = lista;
+          renderListasChequeoTabla(lista);
         } else {
           mensajeEmergenteError(data.mensaje || "Error al obtener listas de chequeo.");
         }
@@ -6299,9 +6702,35 @@
   };
 
   self.verDetalleNotaOperatoria = function (nota) {
-    self.notaOperatoriaDetalle(nota);
-    var modal = new bootstrap.Modal(document.getElementById("mdl-detalle-nota-operatoria"));
-    modal.show();
+    if (!nota) return;
+    var detalle = {
+      Id: nota.Id,
+      Diagnostico: nota.Diagnostico || "",
+      Profesional: nota.Profesional || "",
+      FechaRegistro: nota.FechaRegistro || "",
+      HospitalizacionId: nota.HospitalizacionId || null,
+      FechaOperacion: nota.FechaOperacion || "",
+      HoraComenzo: nota.HoraComenzo || "",
+      HoraTermino: nota.HoraTermino || "",
+      Cirujano: nota.Cirujano || "",
+      PrimerAyudante: nota.PrimerAyudante || "",
+      SegundoAyudante: nota.SegundoAyudante || "",
+      Anestesista: nota.Anestesista || "",
+      Instrumentista: nota.Instrumentista || "",
+      Circulante: nota.Circulante || "",
+      DiagnosticoPreOperatorio: nota.DiagnosticoPreOperatorio || "",
+      DiagnosticoPostOperatorio: nota.DiagnosticoPostOperatorio || "",
+      OperacionEfectuada: nota.OperacionEfectuada || "",
+      HallazgosTransOperatorios: nota.HallazgosTransOperatorios || "",
+      FirmaRuta: nota.FirmaRuta || "",
+      FechaFirma: nota.FechaFirma || "",
+      Firmado: !!(nota.Firmado || nota.FirmaRuta),
+    };
+    self.notaOperatoriaDetalle(detalle);
+    renderDetalleNotaOperatoriaModal(detalle);
+    var $modal = $("#mdl-detalle-nota-operatoria");
+    if (!$modal.length) return;
+    $modal.modal("show");
   };
 
 
@@ -7142,6 +7571,7 @@
   // };
 
   self.agregarNotaMedica2 = function () {
+    self.syncNotaMedicaModalFromDom();
     var hospId = parseInt($("#HospitalizacionId").val());
     if (!hospId || hospId === 0) {
       mensajeEmergenteError("No se encontró el ID de hospitalización.");
@@ -7167,7 +7597,11 @@
         url: "/NotaMedica2/ActualizarNotaMedica2",
         method: "POST",
         contentType: "application/json",
-        data: JSON.stringify({ Id: notaId, Diagnostico: contenido }),
+        data: JSON.stringify({
+          Id: notaId,
+          Diagnostico: contenido,
+          TipoNota: self.notaTipoClinica() || null,
+        }),
         success: function (dataResult) {
           hideLoading();
           var data = JSON.parse(dataResult);
@@ -7195,7 +7629,8 @@
       Sintomas: self.notaSintomas(),
       Diagnostico: contenido,
       HospitalizacionId: hospId,
-      ProfesionalId: $("#ProfesionalId").val()
+      ProfesionalId: $("#ProfesionalId").val(),
+      TipoNota: self.notaTipoClinica() || null,
     };
 
     showLoading();
@@ -7301,6 +7736,7 @@
     self.notaHistoriaProblema("");
     self.notaSintomas("");
     self.notaDiagnostico("");
+    self.notaTipoClinica("");
   };
   self.consultarNotasMedicas = function () {
     showLoading();
@@ -7317,6 +7753,8 @@
 
         if (data.exitoso) {
           self.notasMedicas(data.resultado);
+          self._notasMedicasCache = data.resultado || [];
+          renderNotasMedicasTabla(self._notasMedicasCache);
         } else {
           alert(
             data.mensaje ||
@@ -7353,28 +7791,22 @@
 
     // Cargar listas y preseleccionar directo en observables de edicion
     self.cargarMedicosModal({
-      cirujanoNombre: nota.Cirujano || "",
-      primerAyudante: nota.PrimerAyudante || "",
-      segundoAyudante: nota.SegundoAyudante || "",
-      anestesista: nota.Anestesista || "",
-      instrumentista: nota.Instrumentista || "",
-      circulante: nota.Circulante || ""
-    }, "editar");
-
-    $("#mdl-editar-nota-operatoria").dialog({
-      width: 1000,
-      title: "Editar Nota Operatoria #" + nota.Id,
-      open: function () {
-        $("#diagnostico_NO_ID").val(nota.Diagnostico || "");
-        $("#diagnostico_NO_ID").trigger('change');
-        setTimeout(function () {
-          $("#mdl-editar-nota-operatoria .select2-medicos-modal").select2({
-            width: "100%",
-            dropdownParent: $("#mdl-editar-nota-operatoria"),
-            language: { noResults: function () { return "No se encontraron resultados"; } }
-          });
-        }, 300);
-      }
+      cirujanoNombre: nota.Cirujano || $("#MedicoAsignadoNombre").val() || "",
+      cirujanoId: $("#CitaCirujanoId").val() || "",
+      primerAyudante: nota.PrimerAyudante || $("#CitaPrimerAyudante").val() || $("#CitaPrimerAyudanteNombre").val() || "",
+      segundoAyudante: nota.SegundoAyudante || $("#CitaSegundoAyudante").val() || "",
+      anestesista: nota.Anestesista || $("#CitaAnestesista").val() || "",
+      instrumentista: nota.Instrumentista || $("#CitaInstrumentista").val() || "",
+      circulante: nota.Circulante || $("#CitaCirculante").val() || ""
+    }, "editar", function () {
+      $("#mdl-editar-nota-operatoria").dialog({
+        width: 1000,
+        title: "Editar Nota Operatoria #" + nota.Id,
+        open: function () {
+          $("#diagnostico_NO_ID").val(nota.Diagnostico || "");
+          $("#diagnostico_NO_ID").trigger('change');
+        }
+      });
     });
   };
 
@@ -7607,11 +8039,26 @@
 
     var fechaFinal = "";
     if (item.FechaCuestionario) {
-      fechaFinal = item.FechaCuestionario.split("T")[0];
+      if (item.FechaCuestionario.indexOf("T") >= 0) {
+        fechaFinal = item.FechaCuestionario.split("T")[0];
+      } else if (item.FechaCuestionario.indexOf("/") >= 0) {
+        var partesFecha = item.FechaCuestionario.split("/");
+        if (partesFecha.length === 3) {
+          fechaFinal = partesFecha[2] + "-" + partesFecha[1] + "-" + partesFecha[0];
+        }
+      } else {
+        fechaFinal = item.FechaCuestionario;
+      }
     } else {
       fechaFinal = new Date().toISOString().split("T")[0];
     }
     self.editPa_FechaCuestionario(fechaFinal);
+
+    var fechaProcFinal = formatFechaInput(item.FechaProcedimiento || "");
+    if (!fechaProcFinal) {
+      fechaProcFinal = formatFechaInput($("#FechaProcedimiento").val() || "");
+    }
+    self.editPa_FechaProcedimiento(fechaProcFinal);
 
     var edadFinal = item.Edad || $("#PacienteEdad").val() || "";
     self.editPa_Edad(edadFinal);
@@ -7621,8 +8068,8 @@
     self.editPa_RegistroMedico(item.RegistroMedico || "");
     // self.editPa_Edad(item.Edad || "");
     // self.editPa_FechaCuestionario(item.FechaCuestionario || "");
-    self.editPa_Peso(item.Peso || "");
-    self.editPa_Estatura(item.Estatura || "");
+    self.editPa_Peso(item.Peso || $("#PacientePeso").val() || "");
+    self.editPa_Estatura(item.Estatura || $("#PacienteTalla").val() || "");
     self.editPa_FechaUltimaRegla(item.FechaUltimaRegla || "");
     self.editPa_Cirujano(item.Cirujano || "");
     self.editPa_AlergiaCual(item.PA_AlergiaCual || "");
@@ -7682,7 +8129,11 @@
       setRadio("edit_pa_actividad", item.AI_Actividad);
     }, 200);
 
-    $("#mdl-editar-preanestesico").dialog({ width: 1000, title: "Editar Cuestionario Pre-Anestésico #" + item.Id });
+    var $editDlg = $("#mdl-editar-preanestesico");
+    initPreanestDialogs();
+    $editDlg.dialog("option", "title", "Editar Cuestionario Pre-Anestésico #" + item.Id);
+    if (typeof forceHideLoading === "function") forceHideLoading();
+    $editDlg.dialog("open");
   };
 
   self.guardarEdicionCuestionarioPreAnest = function () {
@@ -7755,7 +8206,12 @@
       success: function (r) {
         hideLoading();
         var d = typeof r === "string" ? JSON.parse(r) : r;
-        if (d.exitoso) { $("#mdl-editar-preanestesico").dialog("close"); self.consultarCuestionariosPreAnest(); mensajeEmergente("Cuestionario pre-anestésico actualizado correctamente"); }
+        if (d.exitoso) {
+          actualizarVitalsHeaderEnPagina(self.editPa_Peso(), self.editPa_Estatura(), null);
+          $("#mdl-editar-preanestesico").dialog("close");
+          self.consultarCuestionariosPreAnest();
+          mensajeEmergente("Cuestionario pre-anestésico actualizado correctamente");
+        }
         else { mensajeEmergenteError(d.resultado || d.mensaje || "Error al actualizar"); }
       },
       error: function () { hideLoading(); mensajeEmergenteError("Error de servidor al actualizar el cuestionario pre-anestésico"); }
@@ -7963,10 +8419,30 @@
   // Carga los selects del equipo quirúrgico en el modal indicado.
   // destino = "agregar" (default) -> usa observables notaCirujano etc.
   // destino = "editar"            -> usa observables editNotaCirujano etc.
-  self.cargarMedicosModal = function (valoresCita, destino) {
+  self.refrescarSelect2MedicosModal = function (selector) {
+    var $scope = selector ? $(selector) : $(".select2-medicos-modal");
+    $scope.each(function () {
+      var $sel = $(this);
+      if ($.fn.select2 && $sel.hasClass("select2-hidden-accessible")) {
+        $sel.select2("destroy");
+      }
+      $sel.select2({
+        width: "100%",
+        dropdownParent: $sel.closest(".ui-dialog-content"),
+        minimumResultsForSearch: 0,
+        placeholder: $sel.attr("data-placeholder") || "Buscar...",
+        allowClear: true,
+        language: {
+          noResults: function () { return "No se encontraron resultados"; },
+          searching: function () { return "Buscando..."; }
+        }
+      });
+    });
+  };
+
+  self.cargarMedicosModal = function (valoresCita, destino, callback) {
     var esEditar = (destino === "editar");
 
-    // Resuelve nombre desde valor (ID numerico o nombre directo)
     function resolverNombre(valor, lista) {
       if (!valor || valor === "") return "";
       if (/^\d+$/.test(String(valor))) {
@@ -7976,9 +8452,17 @@
       return valor;
     }
 
+    function asegurarEnLista(lista, nombre) {
+      var copia = (lista || []).slice();
+      if (nombre && !copia.some(function (e) { return e.nombre === nombre; })) {
+        copia.push({ id: 0, nombre: nombre });
+      }
+      return copia;
+    }
+
     var cfg = [
       {
-        obs: self.listaMedicosModal, esp: "", uni: "", setFns: [
+        obs: self.listaMedicosModal, esp: "", uni: "", espNombre: "", uniNombre: "", setFns: [
           function (d) {
             var nombre = valoresCita.cirujanoNombre
               || (valoresCita.cirujanoId ? resolverNombre(valoresCita.cirujanoId, d) : "");
@@ -7998,27 +8482,30 @@
         ]
       },
       {
-        obs: self.listaAnestesistas, esp: "22", uni: "", setFns: [
-          function (d) {
+        obs: self.listaAnestesistas, esp: "", uni: "", espNombre: "Anestesista", uniNombre: "", setFns: [
+          function (d, cfgItem) {
             var v = resolverNombre(valoresCita.anestesista, d);
+            cfgItem.obs(asegurarEnLista(d, v));
             if (esEditar) self.editNotaAnestesista(v);
             else self.notaAnestesista(v);
           }
         ]
       },
       {
-        obs: self.listaInstrumentistas, esp: "", uni: "12", setFns: [
-          function (d) {
+        obs: self.listaInstrumentistas, esp: "", uni: "", espNombre: "", uniNombre: "Instrumentista", setFns: [
+          function (d, cfgItem) {
             var v = resolverNombre(valoresCita.instrumentista, d);
+            cfgItem.obs(asegurarEnLista(d, v));
             if (esEditar) self.editNotaInstrumentista(v);
             else self.notaInstrumentista(v);
           }
         ]
       },
       {
-        obs: self.listaCirculantes, esp: "", uni: "13", setFns: [
-          function (d) {
+        obs: self.listaCirculantes, esp: "", uni: "", espNombre: "", uniNombre: "Circulante", setFns: [
+          function (d, cfgItem) {
             var v = resolverNombre(valoresCita.circulante, d);
+            cfgItem.obs(asegurarEnLista(d, v));
             if (esEditar) self.editNotaCirculante(v);
             else self.notaCirculante(v);
           }
@@ -8026,21 +8513,43 @@
       },
     ];
 
+    var pending = cfg.length;
+    var modalSelector = esEditar ? "#mdl-editar-nota-operatoria" : "#mdl-agregar-nota-operatoria";
+
+    function onLoadComplete() {
+      pending--;
+      if (pending <= 0) {
+        self.refrescarSelect2MedicosModal(modalSelector + " .select2-medicos-modal");
+        if (typeof callback === "function") callback();
+      }
+    }
+
     cfg.forEach(function (item) {
       var params = {};
       if (item.esp !== "") params.especialidadId = item.esp;
       if (item.uni !== "") params.unidadOrgId = item.uni;
+      if (item.espNombre) params.especialidadNombre = item.espNombre;
+      if (item.uniNombre) params.unidadNombre = item.uniNombre;
 
       $.ajax({
         url: "/Cita/GetEmpleadosPorTipo",
         type: "GET",
         data: params,
         success: function (data) {
-          item.obs(data);
-          // Asignar valor DESPUÉS de cargar las opciones — así KO puede preseleccionar
-          item.setFns.forEach(function (fn) { fn(data); });
+          var lista = data || [];
+          if (item.setFns.length === 1) {
+            item.setFns.forEach(function (fn) { fn(lista, item); });
+          } else {
+            item.obs(lista);
+            item.setFns.forEach(function (fn) { fn(lista, item); });
+          }
+          onLoadComplete();
         },
-        error: function () { console.error("Error al cargar empleados modal operatorio"); }
+        error: function () {
+          console.error("Error al cargar empleados modal operatorio");
+          item.obs([]);
+          onLoadComplete();
+        }
       });
     });
   };
@@ -8536,6 +9045,34 @@
         hideLoading();
         console.error("Error historial medicamentos:", xhr);
         mensajeEmergenteError("No se pudo cargar el historial de medicamentos.");
+      }
+    });
+  };
+
+  self.verModalHistorialServicios = function () {
+    if (typeof window.cargarHistorialServicios === "function") {
+      window.cargarHistorialServicios();
+    }
+    $("#mdl-historial-servicios").dialog({
+      modal: true,
+      width: 1300,
+      title: "Historial de Servicios",
+      buttons: {
+        Cerrar: function () { $(this).dialog("close"); }
+      }
+    });
+  };
+
+  self.verModalHistorialExamenes = function () {
+    if (typeof window.cargarHistorialExamenes === "function") {
+      window.cargarHistorialExamenes();
+    }
+    $("#mdl-historial-examenes").dialog({
+      modal: true,
+      width: 1200,
+      title: "Historial de Exámenes y Laboratorios",
+      buttons: {
+        Cerrar: function () { $(this).dialog("close"); }
       }
     });
   };
@@ -10257,49 +10794,127 @@
   };
 
   self.cargarProductosNoControlados = function (callback) {
+    var bodegaId = $("#BodegaId").val();
+    if (!bodegaId) {
+      mensajeEmergenteError("No se encontró la bodega de esta hospitalización.");
+      if (callback) callback();
+      return;
+    }
+
     showLoading();
     $.ajax({
       url: "/MedicamentoNoControlado/ConsultarProductosNoControlados",
       method: "POST",
+      data: { bodegaId: bodegaId },
       success: function (dataResult) {
         hideLoading();
-        var data = dataResult;
-        console.log("Respuesta completa:", data);
-        if (data.exitoso) {
-          console.log("Resultado (array):", data.resultado);
-          self.listaProductosNoControlados(data.resultado);
+        var data = parseAjaxJson(dataResult);
+        if (!(data && (data.exitoso === true || data.Exitoso === true))) {
+          mensajeEmergenteError((data && (data.resultado || data.Mensaje || data.mensaje)) || "Error al cargar medicamentos.");
           if (callback) callback();
-        } else {
-          mensajeEmergenteError(data.mensaje);
-          if (callback) callback();
+          return;
         }
+
+        var registros = data.resultado || data.Resultado || [];
+        var map = new Map();
+        registros.forEach(function (vl) {
+          var id = vl.ProductoId != null ? vl.ProductoId : vl.productoId;
+          if (!id || map.has(id)) return;
+          var codigo = vl.ProductoCodigo || vl.productoCodigo || "";
+          var nombre = vl.ProductoNombre || vl.productoNombre || "";
+          map.set(id, {
+            productoId: parseInt(id, 10),
+            productoCodigo: codigo,
+            productoNombre: nombre,
+            displayLabel: (codigo ? codigo + " - " : "") + nombre
+          });
+        });
+
+        var lista = Array.from(map.values()).sort(function (a, b) {
+          return (a.productoNombre || "").localeCompare(b.productoNombre || "");
+        });
+        self.listaProductosNoControlados(lista);
+
+        if (lista.length === 0) {
+          mensajeEmergenteError("No hay medicamentos con stock en la bodega de esta hospitalización.");
+        }
+        if (callback) callback();
       },
       error: function () {
         hideLoading();
-        mensajeEmergenteError("Error al cargar productos no controlados.");
+        mensajeEmergenteError("Error al cargar medicamentos controlados.");
         if (callback) callback();
       }
     });
   };
-  self.abrirModalAgregarMedNoControlado = function () {
-    self.productoSeleccionadoNoControladoId(null);
-    if (self.listaProductosNoControlados().length > 0) {
-      $("#modalAgregarMedNoControlado").dialog("open");
+  self.poblarSelectMedNoControlado = function () {
+    var $sel = $("#selectMedNoControlado");
+    var lista = self.listaProductosNoControlados();
+    var $count = $("#medNoControladoCount");
+    var $sinStock = $("#medNoControladoSinStock");
+
+    if (!$sel.length) return;
+
+    if ($.fn.select2 && $sel.hasClass("select2-hidden-accessible")) {
+      $sel.select2("destroy");
+    }
+
+    $sel.empty().append('<option value="">Seleccione un medicamento...</option>');
+    lista.forEach(function (p) {
+      $sel.append(
+        $("<option>").val(p.productoId).text(p.displayLabel || p.productoNombre)
+      );
+    });
+
+    if (lista.length === 0) {
+      $count.text("");
+      $sinStock.removeClass("d-none");
     } else {
-      self.cargarProductosNoControlados(function () {
-        $("#modalAgregarMedNoControlado").dialog("open");
+      $sinStock.addClass("d-none");
+      $count.text(lista.length + " medicamento(s) disponibles en inventario");
+    }
+
+    if ($.fn.select2) {
+      $sel.select2({
+        theme: "bootstrap4",
+        dropdownParent: $("#modalAgregarMedNoControlado"),
+        placeholder: "Buscar medicamento por nombre o código...",
+        allowClear: true,
+        width: "100%",
+        language: {
+          noResults: function () {
+            return "No se encontraron medicamentos";
+          },
+          searching: function () {
+            return "Buscando...";
+          },
+        },
       });
     }
   };
 
+  self.abrirModalAgregarMedNoControlado = function () {
+    var abrir = function () {
+      if (typeof forceHideLoading === "function") forceHideLoading();
+      self.poblarSelectMedNoControlado();
+      $("#modalAgregarMedNoControlado").modal("show");
+    };
+
+    if (self.listaProductosNoControlados().length > 0) {
+      abrir();
+    } else {
+      self.cargarProductosNoControlados(abrir);
+    }
+  };
+
   self.agregarMedicamentoNoControlado = function () {
-    var idSeleccionado = self.productoSeleccionadoNoControladoId();
-    console.log("ID seleccionado:", idSeleccionado);
-    if (!idSeleccionado) {
+    var idSeleccionado = $("#selectMedNoControlado").val();
+    if (idSeleccionado == null || idSeleccionado === "") {
       mensajeEmergenteError("Seleccione un medicamento.");
       return;
     }
 
+    idSeleccionado = parseInt(idSeleccionado, 10);
     var producto = self.listaProductosNoControlados().find(function (p) {
       return p.productoId === idSeleccionado;
     });
@@ -10325,17 +10940,54 @@
       unidadesExtra: ko.observable(0),
       utilizado: ko.observable(0),
       descartado: ko.observable(0),
-      retornadas: ko.observable(0)
+      retornadas: ko.observable(0),
     };
 
     self.medicamentosNoControlados.push(nuevo);
-    $("#modalAgregarMedNoControlado").dialog("close");
+    renderMedicamentosNoControladosTabla();
+    $("#modalAgregarMedNoControlado").modal("hide");
   };
 
   self.eliminarMedicamentoNoControlado = function (item) {
     if (confirm("¿Desea eliminar este medicamento de la lista?")) {
       self.medicamentosNoControlados.remove(item);
+      renderMedicamentosNoControladosTabla();
     }
+  };
+
+  self.cargarMedicamentosNoControladosDesdeHistorial = function (historial) {
+    historial = historial || self.registrosPreviosNoControlados() || [];
+    if (!historial.length) {
+      self.medicamentosNoControlados([]);
+      renderMedicamentosNoControladosTabla();
+      return;
+    }
+
+    var ultimaFecha = historial[0].fechaRegistro;
+    var recientes = historial.filter(function (h) {
+      return h.fechaRegistro === ultimaFecha;
+    });
+
+    if (recientes[0] && recientes[0].fechaProcedimiento) {
+      var fp = recientes[0].fechaProcedimiento;
+      if (typeof fp === "string" && fp.indexOf("T") >= 0) {
+        self.fechaProcedimientoNoControlados(fp.split("T")[0]);
+      }
+    }
+
+    var mapped = recientes.map(function (h) {
+      return {
+        productoId: parseInt(h.productoId, 10) || 0,
+        nombre: h.nombre || "",
+        unidadesIniciales: ko.observable(parseFloat(h.unidadesIniciales) || 0),
+        unidadesExtra: ko.observable(parseFloat(h.unidadesExtra) || 0),
+        utilizado: ko.observable(parseFloat(h.utilizado) || 0),
+        descartado: ko.observable(parseFloat(h.descartado) || 0),
+        retornadas: ko.observable(parseFloat(h.retornadas) || 0),
+      };
+    });
+    self.medicamentosNoControlados(mapped);
+    renderMedicamentosNoControladosTabla();
   };
 
 
@@ -10381,10 +11033,14 @@
   };
 
   self.guardarMedicamentosNoControlados = function () {
-
+    if (!self.medicamentosNoControlados().length) {
+      mensajeEmergenteError("Agregue al menos un medicamento antes de guardar.");
+      return;
+    }
 
     var dataToSave = {
       HospitalizacionId: parseInt($("#HospitalizacionId").val()),
+      BodegaId: parseInt($("#BodegaId").val(), 10) || null,
       FechaProcedimiento: self.fechaProcedimientoNoControlados(),
       Registros: ko.toJS(self.medicamentosNoControlados()).map(function (r) {
         return {
@@ -10407,13 +11063,13 @@
       data: JSON.stringify(dataToSave),
       success: function (dataResult) {
         hideLoading();
-        var data = dataResult;
+        var data = parseAjaxJson(dataResult);
 
-        if (data.exitoso) {
+        if (data && data.exitoso) {
           mensajeEmergente("Registro guardado correctamente.");
           self.cargarHistorialMedicamentosNoControlados();
         } else {
-          mensajeEmergenteError(data.resultado || "Error al guardar.");
+          mensajeEmergenteError((data && data.resultado) || "Error al guardar.");
         }
       },
       error: function () {
@@ -10497,7 +11153,7 @@
             return {
               NombreArchivo: doc.nombreArchivo,
               FechaSubida: doc.fechaSubida,
-              TamanoFormateado: doc.tamanfoFormatado,
+              TamanoFormateado: doc.tamanoFormateado || doc.tamanfoFormatado,
               UrlDescarga: doc.urlDescarga,
               Id: doc.id,
               Autorizado: doc.autorizado
@@ -10524,12 +11180,14 @@
       data: { hospitalizacionId: hospitalizacionId },
       success: function (dataResult) {
         hideLoading();
-        var data = dataResult;
+        var data = parseAjaxJson(dataResult);
 
-        if (data.exitoso) {
-          self.registrosPreviosNoControlados(data.resultado);
+        if (data && data.exitoso) {
+          var historial = data.resultado || [];
+          self.registrosPreviosNoControlados(historial);
+          self.cargarMedicamentosNoControladosDesdeHistorial(historial);
         } else {
-          console.warn("Error al cargar historial:", data.mensaje);
+          console.warn("Error al cargar historial:", data && (data.mensaje || data.resultado));
         }
       },
       error: function () {
@@ -10541,7 +11199,7 @@
 
   self.verHistorialNoControlados = function () {
     self.cargarHistorialMedicamentosNoControlados();
-    $("#modalHistorialMedNoControlados").dialog("open");
+    $("#modalHistorialMedNoControlados").modal("show");
   };
 
 
@@ -10569,8 +11227,925 @@
   };
 };
 
+function enhanceHospitalizacionButtons() {
+  var koRoot = document.getElementById("hospitalizacion-ko-root");
+  $("[data-bind*='click:']").each(function () {
+    var $el = $(this);
+    if ($el.attr("data-hosp-accion")) return;
+    // Knockout already binds clicks inside the main root and modals; skip to avoid double handlers.
+    if (koRoot && koRoot.contains(this)) return;
+    if (this.closest && this.closest("[id^='mdl-']")) return;
+    var bind = $el.attr("data-bind") || "";
+    if (/click:\s*function/.test(bind)) return;
+
+    var direct = bind.match(/click:\s*([A-Za-z_][A-Za-z0-9_]*)/);
+    if (direct && typeof detallesVm !== "undefined" && detallesVm && typeof detallesVm[direct[1]] === "function") {
+      $el.attr("data-hosp-accion", direct[1]);
+      if (!$el.attr("type") && $el.is("button")) $el.attr("type", "button");
+      return;
+    }
+
+    var rootFn = bind.match(/\$root\.([A-Za-z_][A-Za-z0-9_]*)/);
+    if (rootFn && typeof detallesVm !== "undefined" && detallesVm && typeof detallesVm[rootFn[1]] === "function") {
+      $el.attr("data-hosp-accion", rootFn[1]);
+      if (!$el.attr("type") && $el.is("button")) $el.attr("type", "button");
+    }
+  });
+}
+
+function actualizarUiModalNotaMedica(editando) {
+  if (editando) {
+    $("#btn-cancelar-nota-medica").show();
+    $("#btn-guardar-nota-medica-text").text("Actualizar");
+    $("#mdl-agregar-nota-medica .nota-medica-modal-modo").html(
+      '<span class="text-warning"><i class="fas fa-edit mr-1"></i> Editando nota</span>',
+    );
+  } else {
+    $("#btn-cancelar-nota-medica").hide();
+    $("#btn-guardar-nota-medica-text").text("Guardar");
+    $("#mdl-agregar-nota-medica .nota-medica-modal-modo").text("Evolución");
+  }
+}
+
+function renderDetalleNotaOperatoriaModal(nota) {
+  function esc(text) {
+    if (text == null) return "";
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+  function val(text) {
+    return text && String(text).trim()
+      ? esc(String(text).trim())
+      : '<span class="text-muted">—</span>';
+  }
+  if (!nota) {
+    $("#detalle-nota-operatoria-inner").html(
+      '<div class="p-4 text-center text-muted">No hay datos para mostrar.</div>'
+    );
+    return;
+  }
+
+  var fechaOp = nota.FechaOperacion || nota.FechaRegistro || "—";
+  var firmado = !!(nota.Firmado || nota.FirmaRuta);
+  var firmaHtml = firmado
+    ? '<img src="' + esc(nota.FirmaRuta) + '" alt="Firma" style="max-height:120px;max-width:320px;border:1px solid #dee2e6;border-radius:8px;padding:6px;background:#fff;" />'
+      + '<div class="mt-2"><span class="badge badge-success px-3 py-2"><i class="fas fa-check-circle mr-1"></i> Firmado</span>'
+      + (nota.FechaFirma ? '<small class="text-muted d-block mt-1">Fecha de firma: ' + esc(nota.FechaFirma) + "</small>" : "")
+      + "</div>"
+    : '<div class="text-muted py-3"><i class="fas fa-signature fa-2x mb-2 d-block" style="opacity:.3;"></i><small>Esta nota aún no ha sido firmada.</small></div>';
+
+  var html =
+    '<div class="modal-header py-3" style="background:linear-gradient(135deg,#eef1f5 0%,#dce2ec 100%); border-bottom:3px solid var(--operatoria-color);">' +
+    '<div class="d-flex align-items-center">' +
+    '<div style="width:40px;height:40px;border-radius:10px;background:var(--operatoria-mid);display:flex;align-items:center;justify-content:center;margin-right:12px;">' +
+    '<i class="fas fa-procedures" style="color:var(--operatoria-color);"></i></div>' +
+    '<div><h5 class="modal-title mb-0 font-weight-bold" style="color:var(--nota-text);">Detalle de Nota Operatoria</h5>' +
+    '<small style="color:var(--nota-muted);">Registro #' + esc(nota.Id) + " &mdash; " + esc(nota.FechaRegistro) + "</small></div></div>" +
+    '<button type="button" class="close ml-auto" data-dismiss="modal" aria-label="Cerrar"><i class="fas fa-times"></i></button></div>' +
+    '<div class="modal-body p-4" style="background:#f7f9fc;">' +
+    '<div class="row mb-3">' +
+    '<div class="col-md-4 mb-2"><div class="p-3 bg-white rounded shadow-sm" style="border-left:4px solid var(--operatoria-color);"><small class="text-uppercase font-weight-bold text-muted d-block">Fecha de Operación</small><span class="font-weight-bold">' + val(fechaOp) + "</span></div></div>" +
+    '<div class="col-md-4 mb-2"><div class="p-3 bg-white rounded shadow-sm" style="border-left:4px solid var(--operatoria-color);"><small class="text-uppercase font-weight-bold text-muted d-block">Comenzó</small><span class="font-weight-bold">' + val(nota.HoraComenzo) + "</span></div></div>" +
+    '<div class="col-md-4 mb-2"><div class="p-3 bg-white rounded shadow-sm" style="border-left:4px solid var(--operatoria-color);"><small class="text-uppercase font-weight-bold text-muted d-block">Terminó</small><span class="font-weight-bold">' + val(nota.HoraTermino) + "</span></div></div></div>" +
+    '<div class="card mb-3" style="border:0;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.07);"><div class="card-header font-weight-bold" style="background:var(--operatoria-light);color:var(--operatoria-color);"><i class="fas fa-user-md mr-2"></i> Personal Quirúrgico</div><div class="card-body p-3"><div class="row">' +
+    '<div class="col-md-6 mb-2"><small class="text-uppercase font-weight-bold text-muted d-block">Cirujano</small>' + val(nota.Cirujano || nota.Profesional) + "</div>" +
+    '<div class="col-md-6 mb-2"><small class="text-uppercase font-weight-bold text-muted d-block">1er. Ayudante</small>' + val(nota.PrimerAyudante) + "</div>" +
+    '<div class="col-md-6 mb-2"><small class="text-uppercase font-weight-bold text-muted d-block">Anestesista</small>' + val(nota.Anestesista) + "</div>" +
+    '<div class="col-md-6 mb-2"><small class="text-uppercase font-weight-bold text-muted d-block">2do. Ayudante</small>' + val(nota.SegundoAyudante) + "</div>" +
+    '<div class="col-md-6 mb-2"><small class="text-uppercase font-weight-bold text-muted d-block">Instrumentista</small>' + val(nota.Instrumentista) + "</div>" +
+    '<div class="col-md-6 mb-2"><small class="text-uppercase font-weight-bold text-muted d-block">Circulante</small>' + val(nota.Circulante) + "</div></div></div></div>" +
+    '<div class="card mb-3" style="border:0;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.07);"><div class="card-header font-weight-bold" style="background:var(--operatoria-light);color:var(--operatoria-color);"><i class="fas fa-stethoscope mr-2"></i> Diagnósticos</div><div class="card-body p-3">' +
+    '<div class="mb-3"><small class="text-uppercase font-weight-bold text-muted d-block mb-1">Diagnóstico Pre-Operatorio</small><div class="p-2 rounded" style="background:#f0f4f8;border-left:3px solid var(--operatoria-color);min-height:36px;white-space:pre-wrap;">' + val(nota.DiagnosticoPreOperatorio) + "</div></div>" +
+    '<div><small class="text-uppercase font-weight-bold text-muted d-block mb-1">Diagnóstico Post-Operatorio</small><div class="p-2 rounded" style="background:#f0f4f8;border-left:3px solid var(--operatoria-color);min-height:36px;white-space:pre-wrap;">' + val(nota.DiagnosticoPostOperatorio) + "</div></div></div></div>" +
+    '<div class="card mb-3" style="border:0;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.07);"><div class="card-header font-weight-bold" style="background:var(--operatoria-light);color:var(--operatoria-color);"><i class="fas fa-cut mr-2"></i> Operación y Hallazgos</div><div class="card-body p-3">' +
+    '<div class="mb-3"><small class="text-uppercase font-weight-bold text-muted d-block mb-1">Operación Efectuada y Técnica Quirúrgica</small><div class="p-2 rounded" style="background:#f0f4f8;border-left:3px solid var(--operatoria-color);min-height:36px;white-space:pre-wrap;">' + val(nota.OperacionEfectuada) + "</div></div>" +
+    '<div><small class="text-uppercase font-weight-bold text-muted d-block mb-1">Hallazgos Trans-Operatorios</small><div class="p-2 rounded" style="background:#f0f4f8;border-left:3px solid var(--operatoria-color);min-height:36px;white-space:pre-wrap;">' + val(nota.HallazgosTransOperatorios) + "</div></div></div></div>" +
+    (nota.Diagnostico
+      ? '<div class="card mb-3" style="border:0;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.07);"><div class="card-header font-weight-bold" style="background:var(--operatoria-light);color:var(--operatoria-color);"><i class="fas fa-notes-medical mr-2"></i> Descripción General</div><div class="card-body p-3"><div class="p-2 rounded" style="background:#f0f4f8;border-left:3px solid var(--operatoria-color);white-space:pre-wrap;">' + val(nota.Diagnostico) + "</div></div></div>"
+      : "") +
+    '<div class="card mt-3" style="border:0;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.07);"><div class="card-header font-weight-bold" style="background:var(--operatoria-light);color:var(--operatoria-color);"><i class="fas fa-signature mr-2"></i> Firma del Cirujano</div><div class="card-body p-3 text-center">' +
+    firmaHtml + "</div></div></div>" +
+    '<div class="modal-footer" style="background:#fff;border-top:1px solid var(--nota-border);">' +
+    (!firmado
+      ? '<button type="button" class="btn btn-nota-firmar btn-nota-primary" style="background:#e6a817;color:#fff;border:0;" id="btnDetNotaOpFirmar"><i class="fas fa-signature mr-1"></i> Firmar Nota</button>'
+      : "") +
+    '<button type="button" class="btn btn-nota-primary btn-nota-primary-operatoria" id="btnDetNotaOpPdf"><i class="fas fa-file-pdf mr-1"></i> Generar PDF</button>' +
+    '<button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="fas fa-times mr-1"></i> Cerrar</button></div>';
+
+  $("#detalle-nota-operatoria-inner").html(html);
+
+  $("#btnDetNotaOpPdf").off("click").on("click", function () {
+    if (window.detallesVm) window.detallesVm.imprimirNotaOperatoria(nota);
+  });
+  $("#btnDetNotaOpFirmar").off("click").on("click", function () {
+    $("#mdl-detalle-nota-operatoria").modal("hide");
+    if (window.detallesVm) window.detallesVm.abrirModalFirmaNotaOperatoria(nota);
+  });
+}
+
+function bindHospitalizacionKnockout() {
+  if (typeof detallesVm !== "undefined" && detallesVm) {
+    var nombrePac = ($("#PacienteNombreAdmision").val() || $("#medNoCtrlPacienteNombre").val() || "").trim();
+    if (nombrePac) {
+      detallesVm.nombrePacienteNoControlados(nombrePac);
+    }
+    if (typeof detallesVm.syncMedNoControladosDatosPaciente === "function") {
+      detallesVm.syncMedNoControladosDatosPaciente();
+    }
+    if (typeof detallesVm.cargarMedicamentosControladosInicialServidor === "function") {
+      detallesVm.cargarMedicamentosControladosInicialServidor();
+    }
+  }
+
+  var root = document.getElementById("hospitalizacion-ko-root");
+  var hadError = false;
+
+  if (root) {
+    try {
+      ko.applyBindings(detallesVm, root);
+    } catch (err) {
+      hadError = true;
+      console.error("Knockout bind root:", err);
+    }
+  }
+
+  $("[id^='mdl-']").each(function () {
+    if (root && root.contains(this)) return;
+    try {
+      ko.cleanNode(this);
+      ko.applyBindings(detallesVm, this);
+    } catch (err) {
+      hadError = true;
+      console.warn("Knockout bind modal " + this.id + ":", err);
+    }
+  });
+
+  return !hadError;
+}
+
+function wireNotaMedicaTab() {
+  var $tab = $("#tab-content-nota-medica");
+  if (!$tab.length || $tab.data("notaMedicaWired")) return;
+  $tab.data("notaMedicaWired", true);
+
+  $tab.on("click.notaMedica", "[data-nota-medica-accion]", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof detallesVm === "undefined" || !detallesVm) return;
+
+    var accion = $(this).attr("data-nota-medica-accion");
+    var notaId = $(this).attr("data-nota-id");
+    var hospId = parseInt($("#HospitalizacionId").val(), 10);
+
+    if (accion === "nueva" && typeof detallesVm.verModalAgregarNotaMedica2 === "function") {
+      detallesVm.verModalAgregarNotaMedica2();
+      return;
+    }
+    if (accion === "pdf-todo" && typeof detallesVm.imprimirNotasMedicasAll === "function" && hospId > 0) {
+      detallesVm.imprimirNotasMedicasAll(hospId);
+      return;
+    }
+    if (accion === "editar" && notaId) {
+      var notaEdit = (detallesVm._notasMedicasCache || []).find(function (n) {
+        return String(n.Id) === String(notaId);
+      });
+      if (notaEdit && typeof detallesVm.editarNotaMedica2 === "function") {
+        detallesVm.editarNotaMedica2(notaEdit);
+      }
+      return;
+    }
+    if (accion === "pdf" && notaId && typeof detallesVm.imprimirNotaMedica2 === "function") {
+      detallesVm.imprimirNotaMedica2({ Id: parseInt(notaId, 10) });
+    }
+  });
+}
+
+function renderNotasMedicasTabla(notas) {
+  var $tbody = $("#tbody-notas-medicas");
+  if (!$tbody.length) return;
+
+  var puedeEditar = $("#NotaMedicaPuedeEditar").val() === "1";
+  var lista = Array.isArray(notas) ? notas : [];
+  var html = "";
+
+  if (lista.length === 0) {
+    html =
+      '<tr><td colspan="4"><div class="nota-empty-state">' +
+      '<i class="fas fa-notes-medical d-block"></i>' +
+      '<p>No hay notas de evoluci&oacute;n registradas. Haz clic en "Nueva Nota" para agregar el primer registro.</p>' +
+      "</div></td></tr>";
+  } else {
+    lista.forEach(function (nota) {
+      var acciones = "";
+      if (nota.Autorizado) {
+        acciones +=
+          '<span class="badge badge-success" style="align-self:center;"><i class="fas fa-check-circle mr-1"></i> Autorizada</span>';
+      } else if (puedeEditar) {
+        acciones +=
+          '<button type="button" class="btn btn-nota-accion btn-nota-outline-evolucion" data-nota-medica-accion="editar" data-nota-id="' +
+          nota.Id +
+          '"><i class="fas fa-edit mr-1"></i> Editar</button>';
+      }
+      acciones +=
+        '<button type="button" class="btn btn-nota-accion btn-nota-evolucion" data-nota-medica-accion="pdf" data-nota-id="' +
+        nota.Id +
+        '"><i class="fas fa-print mr-1"></i> PDF</button>';
+
+      html +=
+        "<tr>" +
+        '<td><div class="nota-fecha-wrapper">' +
+        '<div class="nota-fecha-icon nota-fecha-icon-evolucion"><i class="fas fa-calendar-alt"></i></div>' +
+        '<div><div class="nota-fecha-text">' +
+        (nota.FechaRegistro || "-") +
+        '</div><div class="nota-fecha-label">Registro cl&iacute;nico</div></div></div></td>' +
+        '<td><span class="nota-badge-evolucion"><i class="fas fa-user-md mr-1"></i>' +
+        (nota.Profesional || "-") +
+        "</span></td>" +
+        '<td><div class="nota-contenido-cell nota-contenido-cell-evolucion">' +
+        (nota.Diagnostico || "") +
+        "</div></td>" +
+        '<td class="text-center"><div class="d-flex justify-content-center" style="gap: 6px;">' +
+        acciones +
+        "</div></td></tr>";
+    });
+  }
+
+  $tbody.html(html);
+  $("#notas-medicas-total").text(lista.length);
+}
+
+function escapeHtmlHosp(text) {
+  if (text == null) return "";
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function renderCuestionariosPreAnestTabla(lista) {
+  var $tbody = $("#tbody-cuestionarios-preanest");
+  if (!$tbody.length) return;
+
+  var puedeEditar = $("#PreanestPuedeEditar").val() === "1";
+  var items = Array.isArray(lista) ? lista : [];
+  var html = "";
+
+  if (items.length === 0) {
+    html =
+      '<tr><td colspan="5"><div class="nota-empty-state">' +
+      '<i class="fas fa-notes-medical d-block"></i>' +
+      "<p>No hay cuestionarios pre-anest&eacute;sicos registrados</p>" +
+      "</div></td></tr>";
+  } else {
+    items.forEach(function (item) {
+      var fecha = item.FechaProcedimiento || item.FechaCuestionario || item.FechaRegistro || "-";
+      var procHtml = item.ProcedimientoProgramado
+        ? '<div class="nota-contenido-cell nota-contenido-cell-preanest">' + escapeHtmlHosp(item.ProcedimientoProgramado) + "</div>"
+        : '<span class="text-muted" style="font-size:0.82rem;">—</span>';
+      var cirHtml = item.Cirujano
+        ? '<div class="nota-contenido-cell nota-contenido-cell-preanest">' + escapeHtmlHosp(item.Cirujano) + "</div>"
+        : '<span class="text-muted" style="font-size:0.82rem;">—</span>';
+
+      var acciones =
+        '<button type="button" class="btn btn-nota-accion btn-nota-preanest" data-preanest-accion="ver" data-preanest-id="' +
+        item.Id +
+        '"><i class="fas fa-eye mr-1"></i> Ver</button>';
+      if (puedeEditar) {
+        acciones =
+          '<button type="button" class="btn btn-warning text-white btn-nota-accion" data-preanest-accion="editar" data-preanest-id="' +
+          item.Id +
+          '"><i class="fas fa-edit mr-1"></i> Editar</button>' +
+          acciones;
+      }
+
+      html +=
+        "<tr>" +
+        '<td><div class="nota-fecha-wrapper">' +
+        '<div class="nota-fecha-icon nota-fecha-icon-preanest"><i class="fas fa-clock"></i></div>' +
+        '<div><div class="nota-fecha-text">' +
+        escapeHtmlHosp(fecha) +
+        "</div></div></div></td>" +
+        '<td><div class="nota-contenido-cell nota-contenido-cell-preanest">' +
+        escapeHtmlHosp(item.NombreCompleto || "—") +
+        "</div></td>" +
+        "<td>" +
+        procHtml +
+        "</td>" +
+        "<td>" +
+        cirHtml +
+        "</td>" +
+        '<td class="text-center"><div class="d-flex justify-content-center" style="gap:6px;">' +
+        acciones +
+        "</div></td></tr>";
+    });
+  }
+
+  $tbody.html(html);
+  $("#preanest-total-count").text(items.length);
+  if (typeof detallesVm !== "undefined" && detallesVm) {
+    detallesVm._cuestionariosPreAnestCache = items;
+  }
+}
+
+function renderMedicamentosNoControladosTabla() {
+  var $tbody = $("#tbody-medicamentos-no-controlados");
+  if (!$tbody.length || typeof detallesVm === "undefined" || !detallesVm) return;
+
+  var lista = detallesVm.medicamentosNoControlados() || [];
+  var html = "";
+
+  if (!lista.length) {
+    html =
+      '<tr><td colspan="7" class="text-center text-muted py-3">' +
+      '<i class="fas fa-capsules mr-1"></i> No hay medicamentos en el registro. Use "Agregar Medicamento".' +
+      "</td></tr>";
+  } else {
+    lista.forEach(function (item, idx) {
+      html +=
+        '<tr data-med-nc-idx="' + idx + '">' +
+        "<td><strong>" + escapeHtmlHosp(item.nombre) + "</strong></td>" +
+        '<td><input type="number" class="form-control form-control-sm med-nc-ini" step="0.5" min="0" placeholder="0.0" value="' +
+        (parseFloat(ko.unwrap(item.unidadesIniciales)) || 0) +
+        '"></td>' +
+        '<td><input type="number" class="form-control form-control-sm med-nc-extra" step="0.5" min="0" placeholder="0.0" value="' +
+        (parseFloat(ko.unwrap(item.unidadesExtra)) || 0) +
+        '"></td>' +
+        '<td><input type="number" class="form-control form-control-sm med-nc-util" step="0.1" min="0" placeholder="0.0" value="' +
+        (parseFloat(ko.unwrap(item.utilizado)) || 0) +
+        '"></td>' +
+        '<td><input type="number" class="form-control form-control-sm med-nc-desc" step="0.1" min="0" placeholder="0.0" value="' +
+        (parseFloat(ko.unwrap(item.descartado)) || 0) +
+        '"></td>' +
+        '<td><input type="number" class="form-control form-control-sm med-nc-ret" step="0.5" min="0" placeholder="0.0" value="' +
+        (parseFloat(ko.unwrap(item.retornadas)) || 0) +
+        '"></td>' +
+        '<td class="text-center">' +
+        '<button type="button" class="btn btn-sm btn-outline-danger btn-med-nc-delete" data-med-nc-idx="' +
+        idx +
+        '" title="Eliminar"><i class="fas fa-trash-alt"></i></button>' +
+        "</td></tr>";
+    });
+  }
+
+  $tbody.html(html);
+  $("#med-no-ctrl-count").text(lista.length);
+
+  $tbody.find(".med-nc-ini").on("input", function () {
+    var idx = parseInt($(this).closest("tr").attr("data-med-nc-idx"), 10);
+    var row = detallesVm.medicamentosNoControlados()[idx];
+    if (row) row.unidadesIniciales(parseFloat(this.value) || 0);
+  });
+  $tbody.find(".med-nc-extra").on("input", function () {
+    var idx = parseInt($(this).closest("tr").attr("data-med-nc-idx"), 10);
+    var row = detallesVm.medicamentosNoControlados()[idx];
+    if (row) row.unidadesExtra(parseFloat(this.value) || 0);
+  });
+  $tbody.find(".med-nc-util").on("input", function () {
+    var idx = parseInt($(this).closest("tr").attr("data-med-nc-idx"), 10);
+    var row = detallesVm.medicamentosNoControlados()[idx];
+    if (row) row.utilizado(parseFloat(this.value) || 0);
+  });
+  $tbody.find(".med-nc-desc").on("input", function () {
+    var idx = parseInt($(this).closest("tr").attr("data-med-nc-idx"), 10);
+    var row = detallesVm.medicamentosNoControlados()[idx];
+    if (row) row.descartado(parseFloat(this.value) || 0);
+  });
+  $tbody.find(".med-nc-ret").on("input", function () {
+    var idx = parseInt($(this).closest("tr").attr("data-med-nc-idx"), 10);
+    var row = detallesVm.medicamentosNoControlados()[idx];
+    if (row) row.retornadas(parseFloat(this.value) || 0);
+  });
+  $tbody.find(".btn-med-nc-delete").on("click", function () {
+    var idx = parseInt($(this).attr("data-med-nc-idx"), 10);
+    var row = detallesVm.medicamentosNoControlados()[idx];
+    if (row) detallesVm.eliminarMedicamentoNoControlado(row);
+  });
+}
+
+function fixBootstrapModalLayering() {
+  $("#modalAgregarMedNoControlado, #modalHistorialMedNoControlados").appendTo("body");
+
+  $(document)
+    .off("show.bs.modal.hospFix hidden.bs.modal.hospFix")
+    .on("show.bs.modal.hospFix", ".modal", function () {
+      if (typeof forceHideLoading === "function") forceHideLoading();
+      var $modal = $(this);
+      if (!$modal.parent().is("body")) {
+        $modal.appendTo("body");
+      }
+      setTimeout(function () {
+        $(".modal-backdrop").css("z-index", 1050);
+        $modal.css("z-index", 1060);
+        if (typeof forceHideLoading === "function") forceHideLoading();
+      }, 0);
+    })
+    .on("hidden.bs.modal.hospFix", ".modal", function () {
+      if ($(".modal.show").length === 0) {
+        $(".modal-backdrop").remove();
+        $("body").removeClass("modal-open").css({ overflow: "", paddingRight: "" });
+      }
+      if (typeof forceHideLoading === "function") forceHideLoading();
+    });
+}
+
+function renderListasChequeoTabla(lista) {
+  var $tbody = $("#tbody-listas-chequeo");
+  if (!$tbody.length) return;
+
+  var puedeEditar = $("#ChequeoPuedeEditar").val() === "1";
+  var items = Array.isArray(lista) ? lista : [];
+  var html = "";
+
+  if (items.length === 0) {
+    html =
+      '<tr><td colspan="4"><div class="nota-empty-state">' +
+      '<i class="fas fa-clipboard-check d-block"></i>' +
+      "<p>No hay listas de chequeo registradas</p>" +
+      "</div></td></tr>";
+  } else {
+    items.forEach(function (item) {
+      var fecha = item.FechaChequeo || item.FechaRegistro || "-";
+      var hora = item.HoraChequeo
+        ? '<div class="nota-fecha-label">' + escapeHtmlHosp(item.HoraChequeo) + "</div>"
+        : "";
+      var procHtml = "";
+      if (item.CP_NombreCirugia) {
+        procHtml +=
+          '<div class="nota-contenido-cell nota-contenido-cell-chequeo">' +
+          escapeHtmlHosp(item.CP_NombreCirugia) +
+          "</div>";
+      }
+      if (item.CI_Operacion) {
+        procHtml +=
+          '<div class="nota-contenido-cell nota-contenido-cell-chequeo" style="font-size:0.8rem;opacity:.8;">' +
+          escapeHtmlHosp(item.CI_Operacion) +
+          "</div>";
+      }
+      if (!procHtml) {
+        procHtml = '<span class="text-muted" style="font-size:0.82rem;">Sin descripci&oacute;n</span>';
+      }
+
+      var etapas = "";
+      if (item.EntradaCompleta) {
+        etapas +=
+          '<span class="badge badge-info px-2 py-1" style="font-size:0.72rem;border-radius:6px;"><i class="fas fa-sign-in-alt mr-1"></i>Entrada</span>';
+      }
+      if (item.PausaCompleta) {
+        etapas +=
+          '<span class="badge badge-warning px-2 py-1" style="font-size:0.72rem;border-radius:6px;"><i class="fas fa-pause-circle mr-1"></i>Pausa</span>';
+      }
+      if (item.SalidaCompleta) {
+        etapas +=
+          '<span class="badge badge-success px-2 py-1" style="font-size:0.72rem;border-radius:6px;"><i class="fas fa-sign-out-alt mr-1"></i>Salida</span>';
+      }
+      if (!etapas) {
+        etapas = '<span class="text-muted" style="font-size:0.8rem;">Sin completar</span>';
+      }
+
+      var acciones =
+        '<button type="button" class="btn btn-nota-accion btn-nota-chequeo" data-chequeo-accion="ver" data-chequeo-id="' +
+        item.Id +
+        '"><i class="fas fa-eye mr-1"></i> Ver</button>';
+      if (puedeEditar) {
+        acciones =
+          '<button type="button" class="btn btn-warning text-white btn-nota-accion" data-chequeo-accion="editar" data-chequeo-id="' +
+          item.Id +
+          '"><i class="fas fa-edit mr-1"></i> Editar</button>' +
+          acciones;
+      }
+
+      html +=
+        "<tr>" +
+        '<td><div class="nota-fecha-wrapper">' +
+        '<div class="nota-fecha-icon nota-fecha-icon-chequeo"><i class="fas fa-clock"></i></div>' +
+        '<div><div class="nota-fecha-text">' +
+        escapeHtmlHosp(fecha) +
+        "</div>" +
+        hora +
+        "</div></div></td>" +
+        "<td>" +
+        procHtml +
+        "</td>" +
+        '<td class="text-center"><div style="display:flex;justify-content:center;gap:6px;flex-wrap:wrap;">' +
+        etapas +
+        "</div></td>" +
+        '<td class="text-center"><div class="d-flex justify-content-center" style="gap:6px;">' +
+        acciones +
+        "</div></td></tr>";
+    });
+  }
+
+  $tbody.html(html);
+  $("#listas-chequeo-total").text(items.length);
+}
+
+function renderKitsIngresoTabla() {
+  var $tbody = $("#tbody-kits-ingreso");
+  if (!$tbody.length) return;
+
+  var puedeReutilizar = $("#KitPuedeReutilizar").val() === "1";
+  var kits =
+    typeof detallesVm !== "undefined" && detallesVm && typeof detallesVm.kitsIngreso === "function"
+      ? detallesVm.kitsIngreso()
+      : [];
+  var html = "";
+
+  if (!kits.length) {
+    html =
+      '<tr><td colspan="5"><div class="nota-empty-state">' +
+      '<i class="fas fa-box-open d-block"></i>' +
+      "<p>No hay kits de ingreso registrados</p>" +
+      "</div></td></tr>";
+  } else {
+    kits.forEach(function (kit) {
+      var fecha = kit.FechaKit || kit.FechaRegistro || "-";
+      var nombre = ko.unwrap(kit.NombreKit) || "Kit sin nombre";
+      var detalles = kit.Detalles ? kit.Detalles() : [];
+      var activos = detalles.filter(function (d) {
+        return !ko.unwrap(d.Eliminado);
+      });
+      var totalItems = activos.length;
+      var totalUsado = activos.reduce(function (acc, d) {
+        return acc + (parseFloat(ko.unwrap(d.Utilizado)) || 0);
+      }, 0);
+
+      var acciones =
+        '<button type="button" class="btn btn-nota-accion btn-nota-kit" data-kit-accion="ver" data-kit-id="' +
+        kit.Id +
+        '"><i class="fas fa-eye mr-1"></i> Ver</button>';
+      if (puedeReutilizar) {
+        acciones +=
+          '<button type="button" class="btn btn-nota-accion btn-nota-kit" data-kit-accion="reutilizar" data-kit-id="' +
+          kit.Id +
+          '" style="background:#e3f2fd;color:#0d47a1;"><i class="fas fa-copy mr-1"></i> Reutilizar</button>';
+      }
+
+      html +=
+        "<tr>" +
+        '<td><div class="nota-fecha-wrapper">' +
+        '<div class="nota-fecha-icon nota-fecha-icon-kit"><i class="fas fa-clock"></i></div>' +
+        '<div><div class="nota-fecha-text">' +
+        escapeHtmlHosp(fecha) +
+        "</div></div></div></td>" +
+        '<td><div class="d-flex align-items-center" style="gap:6px;">' +
+        '<span class="nota-contenido-cell nota-contenido-cell-kit">' +
+        escapeHtmlHosp(nombre) +
+        "</span></div></td>" +
+        '<td class="text-center"><span class="badge badge-info px-2 py-1" style="font-size:0.78rem;border-radius:6px;">' +
+        totalItems +
+        " &iacute;tem(s)</span></td>" +
+        '<td class="text-center"><span class="badge badge-success px-2 py-1" style="font-size:0.78rem;border-radius:6px;">Usados: ' +
+        totalUsado +
+        "</span></td>" +
+        '<td class="text-center"><div class="d-flex justify-content-center" style="gap:6px;">' +
+        acciones +
+        "</div></td></tr>";
+    });
+  }
+
+  $tbody.html(html);
+  $("#kits-ingreso-total").text(kits.length);
+}
+
+function actualizarAutorizacionPreview(url, nombre) {
+  if (url) {
+    $("#autorizacion-preview-iframe").attr("src", url);
+    $("#autorizacion-preview-nombre").text(nombre || "");
+    $("#autorizacion-preview-wrap").show();
+    $("#autorizacion-preview-empty").hide();
+  } else {
+    $("#autorizacion-preview-iframe").attr("src", "");
+    $("#autorizacion-preview-nombre").text("");
+    $("#autorizacion-preview-wrap").hide();
+    $("#autorizacion-preview-empty").show();
+  }
+}
+
+function renderAutorizacionesTabla(archivos) {
+  var $tbody = $("#tbody-autorizaciones");
+  if (!$tbody.length) return;
+
+  var lista = Array.isArray(archivos) ? archivos : [];
+  var html = "";
+
+  if (lista.length === 0) {
+    html =
+      '<tr><td colspan="2" class="text-center text-muted py-3">' +
+      "No hay archivos de autorizaci&oacute;n cargados para esta hospitalizaci&oacute;n." +
+      "<br /><small>Coloque PDFs en <code>wwwroot/Autorizaciones/</code> con el ID de admisi&oacute;n en el nombre.</small>" +
+      "</td></tr>";
+    actualizarAutorizacionPreview("", "");
+  } else {
+    lista.forEach(function (archivo, idx) {
+      var url = archivo.ArchivoUrl || archivo.archivoUrl || "#";
+      var nombre = archivo.ArchivoNombre || archivo.archivoNombre || "";
+      html +=
+        "<tr>" +
+        "<td>" +
+        escapeHtmlHosp(nombre) +
+        "</td>" +
+        '<td class="text-nowrap">' +
+        '<button type="button" class="btn btn-sm btn-info" data-autorizacion-accion="visualizar" data-autorizacion-idx="' +
+        idx +
+        '"><i class="fas fa-eye"></i> Visualizar</button> ' +
+        '<a href="' +
+        escapeHtmlHosp(url) +
+        '" target="_blank" class="btn btn-sm btn-success" data-autorizacion-accion="abrir"><i class="fas fa-file-pdf"></i> Abrir</a>' +
+        "</td></tr>";
+    });
+  }
+
+  $tbody.html(html);
+}
+
+function wirePaqueteCirugiaTab() {
+  var $tab = $("#tab-content-cirugia");
+  if (!$tab.length || $tab.data("paqueteWired")) return;
+  $tab.data("paqueteWired", true);
+
+  $tab.on("click.paquete", "[data-paquete-accion]", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof detallesVm === "undefined" || !detallesVm) return;
+
+    var accion = $(this).attr("data-paquete-accion");
+    if (accion === "agregar" && typeof detallesVm.abrirModalAgregarProductoPaquete === "function") {
+      detallesVm.abrirModalAgregarProductoPaquete();
+      return;
+    }
+    if (accion === "filtrar") {
+      var filtro = $(this).attr("data-paquete-filtro");
+      if (filtro && typeof detallesVm.filtrarPaquetes === "function") {
+        detallesVm.filtrarPaquetes(filtro);
+      }
+      return;
+    }
+    if (accion === "reintentar" && typeof detallesVm.consultarPaquetesAplicados === "function") {
+      detallesVm.consultarPaquetesAplicados();
+      return;
+    }
+    if (accion === "pagina-anterior" && typeof detallesVm.cambiarPaginaPaquetes === "function") {
+      detallesVm.cambiarPaginaPaquetes(-1);
+      return;
+    }
+    if (accion === "pagina-siguiente" && typeof detallesVm.cambiarPaginaPaquetes === "function") {
+      detallesVm.cambiarPaginaPaquetes(1);
+      return;
+    }
+
+    var detalleId = $(this).attr("data-paquete-id");
+    if (!detalleId) return;
+    var item = typeof detallesVm.buscarPaquetePorId === "function"
+      ? detallesVm.buscarPaquetePorId(detalleId)
+      : null;
+    if (!item) return;
+
+    if (accion === "aplicar" && typeof detallesVm.aplicarPaquete === "function") {
+      detallesVm.aplicarPaquete(item);
+    } else if (accion === "eliminar" && typeof detallesVm.eliminarDetallePaquete === "function") {
+      detallesVm.eliminarDetallePaquete(item);
+    } else if (accion === "devolver" && typeof detallesVm.abrirModalDevolucionPaquete === "function") {
+      detallesVm.abrirModalDevolucionPaquete(item);
+    }
+  });
+
+  $tab.on("input.paquete", "[data-paquete-busqueda]", function () {
+    if (typeof detallesVm === "undefined" || !detallesVm) return;
+    detallesVm.filtroBusquedaPaquetes($(this).val());
+    detallesVm.paginaActualPaquetes(1);
+  });
+
+  $tab.on("change.paquete", "[data-paquete-items-pagina]", function () {
+    if (typeof detallesVm === "undefined" || !detallesVm) return;
+    detallesVm.itemsPorPaginaPaquetes(parseInt($(this).val(), 10) || 10);
+    detallesVm.paginaActualPaquetes(1);
+  });
+}
+
+function wireChequeoTab() {
+  var $tab = $("#tab-content-chequeo");
+  if (!$tab.length || $tab.data("chequeoWired")) return;
+  $tab.data("chequeoWired", true);
+
+  $tab.on("click.chequeo", "[data-chequeo-accion]", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof detallesVm === "undefined" || !detallesVm) return;
+
+    var accion = $(this).attr("data-chequeo-accion");
+    var id = $(this).attr("data-chequeo-id");
+    var item = (detallesVm._listasChequeoCache || []).find(function (n) {
+      return String(n.Id) === String(id);
+    });
+    if (!item) return;
+
+    if (accion === "ver" && typeof detallesVm.verDetalleListaChequeo === "function") {
+      detallesVm.verDetalleListaChequeo(item);
+    } else if (accion === "editar" && typeof detallesVm.abrirEditarListaChequeo === "function") {
+      detallesVm.abrirEditarListaChequeo(item);
+    }
+  });
+}
+
+function wirePreanestesicoTab() {
+  if ($(document).data("preanestWired")) return;
+  $(document).data("preanestWired", true);
+
+  $(document).on("click.preanest", "[data-preanest-accion]", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof detallesVm === "undefined" || !detallesVm) return;
+
+    var accion = $(this).attr("data-preanest-accion");
+    if (accion === "nuevo") {
+      if (typeof detallesVm.verModalAgregarPreanestesico === "function") {
+        detallesVm.verModalAgregarPreanestesico();
+      }
+      return;
+    }
+    if (accion === "guardar") {
+      if (typeof detallesVm.agregarCuestionarioPreAnest === "function") {
+        detallesVm.agregarCuestionarioPreAnest();
+      }
+      return;
+    }
+    if (accion === "guardar-edicion") {
+      if (typeof detallesVm.guardarEdicionCuestionarioPreAnest === "function") {
+        detallesVm.guardarEdicionCuestionarioPreAnest();
+      }
+      return;
+    }
+
+    var id = $(this).attr("data-preanest-id");
+    if (!id) return;
+    var item = (detallesVm._cuestionariosPreAnestCache || detallesVm.cuestionariosPreAnest() || []).find(function (n) {
+      return String(n.Id) === String(id);
+    });
+    if (!item) return;
+
+    if (accion === "ver" && typeof detallesVm.verDetalleCuestionarioPreAnest === "function") {
+      if (typeof forceHideLoading === "function") forceHideLoading();
+      detallesVm.verDetalleCuestionarioPreAnest(item);
+    } else if (accion === "editar" && typeof detallesVm.abrirEditarCuestionarioPreAnest === "function") {
+      detallesVm.abrirEditarCuestionarioPreAnest(item);
+    }
+  });
+}
+
+function wireMedicamentosNoControladosTab() {
+  if ($(document).data("medNcWired")) return;
+  $(document).data("medNcWired", true);
+
+  $(document).on("click.medNc", "[data-med-nc-accion]", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof detallesVm === "undefined" || !detallesVm) return;
+
+    var accion = $(this).attr("data-med-nc-accion");
+    if (accion === "abrir-modal" && typeof detallesVm.abrirModalAgregarMedNoControlado === "function") {
+      detallesVm.abrirModalAgregarMedNoControlado();
+    } else if (accion === "guardar" && typeof detallesVm.guardarMedicamentosNoControlados === "function") {
+      detallesVm.guardarMedicamentosNoControlados();
+    } else if (accion === "historial" && typeof detallesVm.verHistorialNoControlados === "function") {
+      if (typeof forceHideLoading === "function") forceHideLoading();
+      detallesVm.verHistorialNoControlados();
+    }
+  });
+
+  $("#modalAgregarMedNoControlado, #modalHistorialMedNoControlados").on("shown.bs.modal", function () {
+    if (typeof forceHideLoading === "function") forceHideLoading();
+  });
+}
+
+function wireKitIngresoTab() {
+  var $tab = $("#tab-content-kitIngreso");
+  if (!$tab.length || $tab.data("kitIngresoWired")) return;
+  $tab.data("kitIngresoWired", true);
+
+  $tab.on("click.kitIngreso", "[data-kit-accion]", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof detallesVm === "undefined" || !detallesVm) return;
+
+    var accion = $(this).attr("data-kit-accion");
+    var id = $(this).attr("data-kit-id");
+    var kit = (detallesVm.kitsIngreso() || []).find(function (k) {
+      return String(k.Id) === String(id);
+    });
+    if (!kit) return;
+
+    if (accion === "ver" && typeof detallesVm.verDetalleKitIngreso === "function") {
+      detallesVm.verDetalleKitIngreso(kit);
+    } else if (accion === "reutilizar" && typeof detallesVm.clonarKitIngreso === "function") {
+      detallesVm.clonarKitIngreso(kit);
+    }
+  });
+}
+
+function wireAutorizacionesTab() {
+  var $tab = $("#tab-content-historial-autorizaciones");
+  if (!$tab.length || $tab.data("autorizacionesWired")) return;
+  $tab.data("autorizacionesWired", true);
+
+  $tab.on("click.autorizaciones", "[data-autorizacion-accion]", function (e) {
+    if (typeof detallesVm === "undefined" || !detallesVm) return;
+
+    var accion = $(this).attr("data-autorizacion-accion");
+    if (accion === "actualizar") {
+      e.preventDefault();
+      e.stopPropagation();
+      var id = detallesVm.hospitalizacionId() || parseInt($("#HospitalizacionId").val(), 10);
+      if (id > 0) detallesVm.cargarArchivosAutorizaciones(id);
+      return;
+    }
+    if (accion === "visualizar") {
+      e.preventDefault();
+      e.stopPropagation();
+      var idx = parseInt($(this).attr("data-autorizacion-idx"), 10);
+      var archivo = (detallesVm._archivosAutorizacionesCache || [])[idx];
+      if (archivo && typeof detallesVm.visualizarArchivoAutorizacion === "function") {
+        detallesVm.visualizarArchivoAutorizacion(archivo);
+      }
+    }
+  });
+}
+
+function wireAccionesCuentaHospitalizacion() {
+  $(document)
+    .off("click.hospAcciones", "[data-hosp-accion]")
+    .on("click.hospAcciones", "[data-hosp-accion]", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var accion = $(this).attr("data-hosp-accion");
+      if (!accion || typeof detallesVm === "undefined" || !detallesVm) return;
+      if (accion === "cerrar-dialog") {
+        var target = $(this).attr("data-dialog-target");
+        if (target && $("#" + target).length) {
+          $("#" + target).dialog("close");
+        }
+        return;
+      }
+      if (typeof detallesVm[accion] === "function") {
+        detallesVm[accion]();
+      }
+    });
+
+  $(document)
+    .off("click.hospEmailPaciente", ".btn-hosp-email-paciente")
+    .on("click.hospEmailPaciente", ".btn-hosp-email-paciente", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof enviarHospitalizacionEmail !== "function") {
+        alert("No se cargó el módulo de correo. Recargue la página.");
+        return;
+      }
+      var $el = $(this);
+      enviarHospitalizacionEmail(
+        $el.attr("data-hosp-id"),
+        $el.attr("data-paciente"),
+        $el.attr("data-email"),
+        $el.attr("data-paciente-id"),
+        $el.attr("data-habitacion-id"),
+        $el.attr("data-cita-id")
+      );
+    });
+
+  $(document)
+    .off("click.hospEmailInventario", ".btn-hosp-email-inventario")
+    .on("click.hospEmailInventario", ".btn-hosp-email-inventario", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof enviarAlertaInventarioEmail !== "function") {
+        alert("No se cargó el módulo de correo. Recargue la página.");
+        return;
+      }
+      enviarAlertaInventarioEmail($(this).attr("data-email"));
+    });
+
+  $(document)
+    .off("click.hospWhatsapp", ".btn-hosp-whatsapp")
+    .on("click.hospWhatsapp", ".btn-hosp-whatsapp", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof enviarNotificacionHospitalizacionWhatsApp !== "function") {
+        alert("No se cargó el módulo de WhatsApp. Recargue la página.");
+        return;
+      }
+      var $el = $(this);
+      enviarNotificacionHospitalizacionWhatsApp(
+        $el.attr("data-hosp-id"),
+        $el.attr("data-paciente"),
+        $el.attr("data-celular")
+      );
+    });
+}
+
 var detallesVm = new HospitalizarDetallesVM();
-ko.applyBindings(detallesVm);
+window.detallesVm = detallesVm;
 
 
 function base64UrlToBuffer(b64) {
@@ -10593,6 +12168,37 @@ function bufferToBase64Url(buf) {
 
 
 $(document).ready(function () {
+
+  var koOk = bindHospitalizacionKnockout();
+  enhanceHospitalizacionButtons();
+  if (!koOk && typeof mensajeEmergenteError === "function") {
+    console.warn("Algunos bindings KO fallaron; acciones con data-hosp-accion siguen activas.");
+  }
+  wireAccionesCuentaHospitalizacion();
+  wireNotaMedicaTab();
+  wirePaqueteCirugiaTab();
+  wireChequeoTab();
+  wirePreanestesicoTab();
+  wireMedicamentosNoControladosTab();
+  wireKitIngresoTab();
+  wireAutorizacionesTab();
+  initPreanestDialogs();
+  initPaqueteDialogs();
+  fixBootstrapModalLayering();
+  renderCuestionariosPreAnestTabla([]);
+  renderMedicamentosNoControladosTabla();
+  if (typeof detallesVm !== "undefined" && detallesVm.syncMedNoControladosDatosPaciente) {
+    detallesVm.syncMedNoControladosDatosPaciente();
+  }
+
+  if ($("#mdl-agregar-nota-medica").length && !$("#mdl-agregar-nota-medica").hasClass("ui-dialog-content")) {
+    $("#mdl-agregar-nota-medica").dialog({
+      autoOpen: false,
+      width: 1000,
+      modal: true,
+      title: "Nota de evolución médica",
+    });
+  }
 
   var idInput = $("#HospitalizacionId").val();
   if (idInput) {
@@ -10641,6 +12247,13 @@ $(document).ready(function () {
 
     if (detallesVm.hospitalizacionId() > 0) {
       detallesVm.consultarIdEmergencia();
+    }
+
+    if (window.location.hash === "#tab-content-nota-medica") {
+      detallesVm.consultarNotasMedicas();
+    }
+    if (window.location.hash === "#tab-content-cirugia") {
+      detallesVm.consultarPaquetesAplicados();
     }
   }, 1500);
 

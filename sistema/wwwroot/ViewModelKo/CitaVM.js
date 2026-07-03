@@ -70,6 +70,30 @@ var CitaVM = function (serverModel) {
     initialCirculanteId = serverModel.CirculanteId;
   }
 
+  self.pacientes.subscribe(function () {
+    syncSelectPacienteCita();
+  });
+
+  self.departamentosExistentes.subscribe(function () {
+    refreshKoSelect2ById("departamentoSeleccionado", "Seleccione...");
+  });
+
+  self.municipiosExistentes.subscribe(function () {
+    syncSelectMunicipioCita();
+  });
+
+  self.municipioSeleccionado.subscribe(function (val) {
+    var $sel = $("#municipioSeleccionado");
+    if (!$sel.length) return;
+    var id = val != null && val !== "" ? String(val) : "";
+    if ($sel.val() !== id) {
+      $sel.val(id);
+      if ($sel.hasClass("select2-hidden-accessible")) {
+        $sel.trigger("change.select2");
+      }
+    }
+  });
+
   //FUNCIONES VIEWMODEL
   self.pacienteSeleccionado.subscribe(function (paciente) {
     if (paciente.Id == null || paciente.Id == undefined) {
@@ -126,10 +150,9 @@ var CitaVM = function (serverModel) {
     $("#departamentoSeleccionado")
       .val(serverModel.DepartamentoId)
       .trigger("change");
-    self.consultarMunicipiosExistentes(serverModel.DepartamentoId);
-    $("#municipioSeleccionado").val(serverModel.MunicipioId).trigger("change");
     self.departamentoPaciente(serverModel.DepartamentoId);
     self.municipioPaciente(serverModel.MunicipioId);
+    self.consultarMunicipiosExistentes(serverModel.DepartamentoId);
   }
 
   self.consultarServiciosExistentes = function () {
@@ -152,6 +175,7 @@ var CitaVM = function (serverModel) {
               self.servicioAgregarSeleccionado().ServicioId
             );
           }
+          setTimeout(refreshAllKoSelect2OnPage, 0);
         } else {
           alert(data.Mensaje);
         }
@@ -243,12 +267,12 @@ var CitaVM = function (serverModel) {
           self.pacientes.push(pacienteActual);
         }
         if (!isNaN(pacienteId)) {
-          $("#selectPaciente").val(pacienteId).trigger("change");
-          let seleccionado = self.pacientes().find((p) => p.Id === pacienteId);
+          var seleccionado = self.pacientes().find((p) => p.Id === pacienteId);
           if (seleccionado) {
             self.pacienteSeleccionado(seleccionado);
           }
         }
+        syncSelectPacienteCita();
       },
       error: function (dataError) {
         textoCargando.hide();
@@ -280,6 +304,9 @@ var CitaVM = function (serverModel) {
               Number(self.departamentoPaciente())
             );
           }
+          setTimeout(function () {
+            refreshKoSelect2ById("departamentoSeleccionado", "Seleccione...");
+          }, 0);
         } else {
           alert(data.Mensaje);
         }
@@ -319,11 +346,20 @@ var CitaVM = function (serverModel) {
     $.ajax({
       url: "/Cita/ConsultarMunicipiosExistentes",
       method: "POST",
-      data: { DepartamentoId: deptoId },
+      data: { departamentoId: deptoId },
       success: function (res) {
         var data = JSON.parse(res);
         if (data.Exitoso) {
-          self.municipiosExistentes(data.Resultado);
+          var lista = (data.Resultado || []).map(function (m) {
+            return {
+              Id: m.Id,
+              NombreMunicipio: m.NombreMunicipio,
+              DepartamentoId: m.DepartamentoId,
+              MunicipioNombreMostrar: m.MunicipioNombreMostrar
+                || ((m.Id || "") + " - " + (m.NombreMunicipio || "")),
+            };
+          });
+          self.municipiosExistentes(lista);
           if (self.municipioPaciente()) {
             self.municipioSeleccionado(self.municipioPaciente());
           }
@@ -616,8 +652,8 @@ var CitaVM = function (serverModel) {
       NivelPrioridadCita: $("#NivelPrioridadCita").val(),
       EtniaPaciente: $("#EtniaPaciente").val(),
       OrigenPaciente: $("#OrigenPaciente").val(),
-      DepartamentoId: $("#DepartamentoId").val(),
-      MunicipioId: $("#MunicipioId").val(),
+      DepartamentoId: $("#DepartamentoId").val() || null,
+      MunicipioId: $("#MunicipioId").val() || null,
       Dia: $("#Dia").val(),
       Hora: $("#Hora").val(),
       Examenes: self.examenesAgregados(),
@@ -1128,6 +1164,7 @@ var CitaVM = function (serverModel) {
         let data = JSON.parse(dataResult);
         if (data.Exitoso) {
           self.examenesExistentes(data.Resultado);
+          setTimeout(refreshAllKoSelect2OnPage, 0);
         } else {
           hideLoading();
           alert(data.Mensaje);
@@ -1209,11 +1246,14 @@ var CitaVM = function (serverModel) {
         targetArray(mapped);
         if (observableDestino && initialValue !== undefined && initialValue !== null && initialValue !== 0) {
           observableDestino(initialValue);
-          if (selectId) {
-            setTimeout(function () {
-              $('#' + selectId).trigger('change.select2');
-            }, 100);
-          }
+        }
+        if (selectId) {
+          setTimeout(function () {
+            refreshKoSelect2ById(selectId, "Seleccione...");
+            if (observableDestino && initialValue !== undefined && initialValue !== null && initialValue !== 0) {
+              $("#" + selectId).val(String(initialValue)).trigger("change.select2");
+            }
+          }, 0);
         }
       },
       error: function (err) {
@@ -1229,8 +1269,8 @@ var CitaVM = function (serverModel) {
       return;
     }
 
-    if (modelo.EmpleadoId && modelo.EmpleadoNombre) {
-      self.cirujanoNombre(modelo.EmpleadoNombre);
+    if (modelo.EmpleadoId && (modelo.EmpleadoNombre || modelo.EmpleadoText)) {
+      self.cirujanoNombre(modelo.EmpleadoNombre || modelo.EmpleadoText);
     } else {
       var selectedOption = $("#EmpleadoId option:selected");
       if (selectedOption.length) {
@@ -1244,9 +1284,155 @@ var CitaVM = function (serverModel) {
     self.cargarEmpleados(null, 'Instrumentista', self.instrumentistaOptions, self.instrumentistaId, modelo.InstrumentistaId, 'selectInstrumentista');
     self.cargarEmpleados(null, 'Circulante', self.circulanteOptions, self.circulanteId, modelo.CirculanteId, 'selectCirculante');
   };
+
+  self.cargarEquipoQuirurgico = self.cargarEquipoQuirurgicoDesdeModel;
 };
 
-var citaVm = new CitaVM();
+function citaSelect2Options(placeholder) {
+  return {
+    theme: "bootstrap4",
+    width: "100%",
+    minimumResultsForSearch: 0,
+    allowClear: true,
+    placeholder: placeholder || "Buscar...",
+    language: {
+      noResults: function () { return "No se encontraron resultados"; },
+      searching: function () { return "Buscando..."; }
+    }
+  };
+}
+
+function refreshKoSelect2($el, placeholder) {
+  if (!$el || !$el.length || !$.fn.select2) return;
+  if (typeof ko !== "undefined" && ko.tasks && ko.tasks.runEarly) {
+    ko.tasks.runEarly();
+  }
+  if ($el.find("option").length <= 1) {
+    if ($el.hasClass("select2-hidden-accessible")) {
+      $el.select2("destroy");
+    }
+    return;
+  }
+  var currentVal = $el.val();
+  if ($el.hasClass("select2-hidden-accessible")) {
+    $el.select2("destroy");
+  }
+  $el.select2(citaSelect2Options(placeholder));
+  if (currentVal) {
+    $el.val(currentVal).trigger("change.select2");
+  }
+}
+
+function refreshKoSelect2ById(id, placeholder) {
+  refreshKoSelect2($("#" + id), placeholder);
+}
+
+function refreshAllKoSelect2OnPage() {
+  if (!window.jQuery || !$.fn.select2) return;
+  $("select.select2bs4").each(function () {
+    var $el = $(this);
+    if ($el.attr("id") === "selectPaciente" || $el.attr("id") === "municipioSeleccionado") return;
+    var bindAttr = $el.attr("data-bind") || "";
+    if (bindAttr.indexOf("options:") < 0) return;
+    var placeholder = $el.find('option[value=""]').first().text() || "Buscar...";
+    refreshKoSelect2($el, placeholder);
+  });
+}
+
+function syncSelectPacienteCita() {
+  if (typeof window.citaVm === "undefined" || !window.citaVm) return;
+  var $sel = $("#selectPaciente");
+  if (!$sel.length || !$.fn.select2) return;
+
+  var pacientes = citaVm.pacientes() || [];
+  var selected = citaVm.pacienteSeleccionado();
+  var selectedId = selected && selected.Id ? String(selected.Id) : "";
+
+  if ($sel.hasClass("select2-hidden-accessible")) {
+    $sel.select2("destroy");
+  }
+
+  $sel.empty();
+  $sel.append($("<option>").val("").text("Seleccionar paciente"));
+  pacientes.forEach(function (p) {
+    if (!p || p.Id == null) return;
+    var label = p.NombreConDpi || p.Nombre || String(p.Id);
+    $sel.append($("<option>").val(String(p.Id)).text(label));
+  });
+
+  if (selectedId) {
+    $sel.val(selectedId);
+  }
+
+  $sel.select2(citaSelect2Options("Seleccionar paciente"));
+
+  $sel.off("change.citaPaciente").on("change.citaPaciente", function () {
+    var raw = $(this).val();
+    if (!raw) {
+      citaVm.pacienteSeleccionado(null);
+      return;
+    }
+    var id = parseInt(raw, 10);
+    var paciente = citaVm.pacientes().find(function (p) { return p.Id === id; });
+    if (paciente) {
+      citaVm.pacienteSeleccionado(paciente);
+    }
+  });
+}
+
+function syncSelectMunicipioCita() {
+  if (typeof window.citaVm === "undefined" || !window.citaVm) return;
+  var $sel = $("#municipioSeleccionado");
+  if (!$sel.length || !$.fn.select2) return;
+
+  var municipios = citaVm.municipiosExistentes() || [];
+  var selected = citaVm.municipioSeleccionado();
+  var selectedId = selected != null && selected !== "" ? String(selected) : "";
+
+  if ($sel.hasClass("select2-hidden-accessible")) {
+    $sel.select2("destroy");
+  }
+
+  $sel.empty();
+  $sel.append($("<option>").val("").text("Seleccione..."));
+  municipios.forEach(function (m) {
+    if (!m || m.Id == null) return;
+    var label = m.MunicipioNombreMostrar
+      || ((m.Id || "") + " - " + (m.NombreMunicipio || ""));
+    $sel.append($("<option>").val(String(m.Id)).text(label));
+  });
+
+  if (selectedId) {
+    $sel.val(selectedId);
+  }
+
+  $sel.select2(citaSelect2Options("Seleccione..."));
+
+  $sel.off("change.citaMunicipio").on("change.citaMunicipio", function () {
+    var raw = $(this).val();
+    if (!raw) {
+      citaVm.municipioSeleccionado(null);
+      return;
+    }
+    citaVm.municipioSeleccionado(parseInt(raw, 10));
+  });
+}
+
+function initCitaFormSelect2Static() {
+  if (!window.jQuery || !$.fn.select2) return;
+  $("select.select2bs4").each(function () {
+    var $el = $(this);
+    var bindAttr = $el.attr("data-bind") || "";
+    if (bindAttr.indexOf("options:") >= 0) return;
+    if ($el.attr("id") === "selectPaciente" || $el.attr("id") === "municipioSeleccionado") return;
+    var placeholder = $el.find('option[value=""]').first().text() || "Buscar...";
+    refreshKoSelect2($el, placeholder);
+  });
+}
+
+if (typeof window.citaVm === "undefined") {
+var citaVm = new CitaVM(typeof serverModel !== "undefined" ? serverModel : null);
+window.citaVm = citaVm;
 ko.applyBindings(citaVm);
 
 $(function () {
@@ -1265,6 +1451,8 @@ $(function () {
   if (citaId2 && citaId2.trim() !== "" && $("#selectHabitacionEdicion").length) {
     citaVm.cargarHabitacionesEdicion(parseInt(citaId2));
   }
+
+  syncSelectMunicipioCita();
 
   citaVm.consultarPacientes();
   citaVm.consultarServiciosExistentes();
@@ -1297,7 +1485,10 @@ $(function () {
   $("#CitaTipoAtencion").on("change", function () {
     citaVm.citaTipoAtencion($(this).val());
   });
+
+  setTimeout(initCitaFormSelect2Static, 300);
 });
+}
 
 function getEdad() {
   let hoy = new Date();

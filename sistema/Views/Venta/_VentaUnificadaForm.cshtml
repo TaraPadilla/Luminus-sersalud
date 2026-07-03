@@ -1,10 +1,18 @@
 @using sistema.Models
 @model VentaUnificadaViewModel
 
+@{
+    if (!string.IsNullOrWhiteSpace(Model.TipoVenta))
+    {
+        Model.ApplyTipoVenta();
+    }
+}
+
 @* @Html.HiddenFor(m => m.ClienteId) *@
 @Html.HiddenFor(m => m.ConsultaId)
 @Html.HiddenFor(m => m.EmergenciaId)
 @Html.HiddenFor(m => m.AmbienteId)
+@Html.HiddenFor(m => m.TipoVenta)
 @Html.HiddenFor(m => m.IsClinica)
 @Html.HiddenFor(m => m.IsFarmacia)
 @Html.HiddenFor(m => m.IsLaboratorio)
@@ -17,7 +25,9 @@
 @Html.HiddenFor(m => m.ResponsableCorreo)
 @Html.HiddenFor(m => m.Origen)
 @if (Context.Request.Query["isEmergencia"] == "true" || 
+     Context.Request.Query["tipoVenta"] == "laboratorio" ||
      Context.Request.Query["isLaboratorio"] == "True" || 
+     Context.Request.Query["tipoVenta"] == "clinica" ||
      Context.Request.Query["isClinica"] == "True")
 {
     @Html.HiddenFor(m => m.ClienteId)
@@ -54,9 +64,24 @@
                                     </div>
 
                                     <div class="col-md-4 mt-2">
-                                        <label class="font-weight-bold">Paciente</label>
+                                        <label class="font-weight-bold">@(Model.IsFarmacia ? "Cliente" : "Paciente")</label>
                                         <select class="form-control select2bs4" style="width: 100%;" id="select-cliente" 
                                                 @( !string.IsNullOrWhiteSpace(Model.ResponsableNombre) ? "disabled" : "" )>
+                                            <option value="">Seleccione cliente...</option>
+                                            @if (Model.ListaClientes != null)
+                                            {
+                                                foreach (var item in Model.ListaClientes)
+                                                {
+                                                    if (item.Selected)
+                                                    {
+                                                        <option value="@item.Value" selected="selected">@item.Text</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="@item.Value">@item.Text</option>
+                                                    }
+                                                }
+                                            }
                                         </select>
                                     </div>
 

@@ -1,0 +1,52 @@
+@using Database.Shared.Models
+@model CuestionarioPreAnestesico
+
+@{
+    string Val(string s) => string.IsNullOrWhiteSpace(s) ? "-" : s;
+    string Pa(string respuesta, string detalle) =>
+        string.IsNullOrWhiteSpace(respuesta)
+            ? "-"
+            : (string.IsNullOrWhiteSpace(detalle) ? respuesta : $"{respuesta} — {detalle}");
+    string FmtDate(DateTime? d) => d.HasValue ? d.Value.ToString("dd/MM/yyyy") : "-";
+    string Imc(double? peso, double? estatura)
+    {
+        if (!peso.HasValue || !estatura.HasValue || estatura.Value <= 0) return "-";
+        return (peso.Value / (estatura.Value * estatura.Value)).ToString("0.00");
+    }
+}
+
+@if (Model == null)
+{
+    <p class="muted">No registrado.</p>
+}
+else
+{
+    <div class="phase">Datos del paciente</div>
+    <table class="kv">
+        <tr><th>Registro médico</th><td>@Val(Model.RegistroMedico)</td></tr>
+        <tr><th>Nombre completo</th><td>@Val(Model.NombreCompleto)</td></tr>
+        <tr><th>Edad</th><td>@Val(Model.Edad)</td></tr>
+        <tr><th>Fecha cuestionario</th><td>@FmtDate(Model.FechaCuestionario)</td></tr>
+        <tr><th>Peso / Estatura / IMC</th><td>@(Model.Peso?.ToString("0.##") ?? "-") kg / @(Model.Estatura?.ToString("0.##") ?? "-") m / @Imc(Model.Peso, Model.Estatura)</td></tr>
+        <tr><th>Procedimiento programado</th><td>@Val(Model.ProcedimientoProgramado)</td></tr>
+        <tr><th>Cirujano</th><td>@Val(Model.Cirujano)</td></tr>
+    </table>
+
+    <div class="phase">Antecedentes médicos</div>
+    <table class="kv">
+        <tr><th>Alergias</th><td>@Pa(Model.PA_Alergia, Model.PA_AlergiaCual)</td></tr>
+        <tr><th>Fuma</th><td>@Pa(Model.PA_Fuma, Model.PA_FumaCuanto)</td></tr>
+        <tr><th>Alcohol</th><td>@Pa(Model.PA_Alcohol, Model.PA_AlcoholCuanto)</td></tr>
+        <tr><th>Diabetes</th><td>@Pa(Model.PA_Diabetes, Model.PA_DiabetesCual)</td></tr>
+        <tr><th>Cardíaco</th><td>@Pa(Model.PA_Corazon, Model.PA_CorazonCual)</td></tr>
+        <tr><th>Asma</th><td>@Pa(Model.PA_Asma, Model.PA_AsmaCual)</td></tr>
+        <tr><th>Problemas con anestesia</th><td>@Pa(Model.PA_Anestesico, Model.PA_AnestesicoCual)</td></tr>
+    </table>
+
+    <div class="phase">Información adicional</div>
+    <table class="kv">
+        <tr><th>Medicamentos actuales</th><td>@Val(Model.AI_Medicamentos)</td></tr>
+        <tr><th>Operaciones previas</th><td>@Val(Model.AI_OperacionesPrevias)</td></tr>
+        <tr><th>Comentarios</th><td>@Val(Model.AI_Comentarios)</td></tr>
+    </table>
+}

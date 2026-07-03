@@ -1,3 +1,4 @@
+@model sistema.Models.ProveedorBaseViewModel
 @{
     ViewData["Title"] = "Nuevo Proveedor";
 }
@@ -17,37 +18,26 @@
     </div>
 </div>
  @await Html.PartialAsync("_MensajeExito")
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
 <form asp-controller="Proveedor" asp-action="Nuevo" method="post">
-    @await Html.PartialAsync("_ProveedorForm")
+    @await Html.PartialAsync("_ProveedorForm", Model)
 </form>
 
 
 @section Scripts
 {
     <script>
-    $(function(){
-        $('.select2').select2({
-            tags: true
-        });
-        
-    $('.select2bs4').select2({
-      theme: 'bootstrap4',
-    })
-    });
-    
-</script>
-    <script>
         $(document).ready(function () {
             $('#SelectedTipoCompraId').change(function () {
                 var selectedValue = $(this).val();
+                var $diasCredito = $('#DiasCredito');
                 if (selectedValue == "1") {
-                    $('#DiasCredito').prop('disabled', true);
+                    $diasCredito.prop('readonly', true).val('');
                 } else {
-                    $('#DiasCredito').prop('disabled', false);
+                    $diasCredito.prop('readonly', false);
                 }
             });
 
-            // Ejecutar al cargar la página para establecer el estado inicial
             $('#SelectedTipoCompraId').trigger('change');
         });
     </script>

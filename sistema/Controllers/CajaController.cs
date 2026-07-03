@@ -94,6 +94,14 @@ namespace sisrest.Controllers
                 else
                 {
                     var user = await _userManager.GetUserAsync(HttpContext.User);
+                    if (user == null)
+                    {
+                        return JsonSerializer.Serialize(new
+                        {
+                            Exitoso = false,
+                            Mensaje = "No se pudo identificar el usuario actual."
+                        });
+                    }
 
                     var nuevaCaja = new Caja()
                     {
@@ -153,7 +161,16 @@ namespace sisrest.Controllers
             try
             {
                 var usuarioLog = HttpContext.User;
-                var guidUsuario = usuarioLog.FindFirst(ClaimTypes.NameIdentifier).Value;
+                var claim = usuarioLog.FindFirst(ClaimTypes.NameIdentifier);
+                if (claim == null)
+                {
+                    return JsonSerializer.Serialize(new
+                    {
+                        Exitoso = false,
+                        Mensaje = "Sesión de usuario no válida."
+                    });
+                }
+                var guidUsuario = claim.Value;
 
                 var resultadoVerificarEmpleado = _cajaService.VerificarEmpleado(guidUsuario, empleadoId);
                 if (resultadoVerificarEmpleado)
@@ -202,7 +219,11 @@ namespace sisrest.Controllers
             {
 
                 //var cajaAbierta = _cajaRepository.GetCajaAbierta();
-                var cajaAbierta = _cajaRepository.GetCajaAbiertaById((int)cajaClinicaId);
+                if (!cajaClinicaId.HasValue)
+                    return Json("Debe seleccionar una caja abierta.");
+                var cajaAbierta = _cajaRepository.GetCajaAbiertaById(cajaClinicaId.Value);
+                if (cajaAbierta == null)
+                    return Json("No hay caja abierta para registrar el ingreso.");
 
                 var nuevoDetalleCaja = new DetalleCaja()
                 {
@@ -235,7 +256,11 @@ namespace sisrest.Controllers
             if (monto != null && descripcion != null)
             {
                 //var cajaAbierta = _cajaRepository.GetCajaAbierta();
-                var cajaAbierta = _cajaRepository.GetCajaAbiertaById((int)cajaClinicaId);
+                if (!cajaClinicaId.HasValue)
+                    return Json("Debe seleccionar una caja abierta.");
+                var cajaAbierta = _cajaRepository.GetCajaAbiertaById(cajaClinicaId.Value);
+                if (cajaAbierta == null)
+                    return Json("No hay caja abierta para registrar el egreso.");
 
                 var nuevoDetalleCaja = new DetalleCaja()
                 {

@@ -129,7 +129,22 @@ var CuentasPorCobrarListaVM = function () {
         window.location.href = "/CuentasPorCobrar/VerDetallesCuenta?cuentaId=" + value.id;
     };
     self.pagarCuenta = function (value) {
-        window.location.href = "/CuentasPorCobrar/Pagar?cuentaId=" + value.id;
+        var admisionId = 0;
+        var detalles = value.detallesCuentaPorCobrar || value.DetallesCuentaPorCobrar;
+        if (detalles && detalles.length) {
+            for (var i = 0; i < detalles.length; i++) {
+                var hospId = detalles[i].hospitalizacionId || detalles[i].HospitalizacionId;
+                if (hospId) {
+                    admisionId = hospId;
+                    break;
+                }
+            }
+        }
+        var url = "/CuentasPorCobrar/Pagar?cuentaId=" + value.id;
+        if (admisionId > 0) {
+            url += "&AdmisionId=" + admisionId;
+        }
+        window.location.href = url;
     };
     self.verDetallesProveedores = function (value) {
         window.location.href = "/Compra/Modificar?compraId=" + value.id;

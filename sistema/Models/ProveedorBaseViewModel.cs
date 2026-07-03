@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Database.Shared.IRepository;
 using Microsoft.AspNetCore.Http;
+using System.ComponentModel.DataAnnotations;
 
 namespace sistema.Models
 {
@@ -21,10 +22,12 @@ namespace sistema.Models
         public string ProveedorNombre { get; set; }
         public int? ProveedorPoliticasDevolucion { get; set; }
         public int? ProveedorDiasCredito { get; set; }
+
         public void Init(IProveedor proveedorRepository)
         {
             Listbancos = new SelectList(proveedorRepository.ListarBancos(), "Id", "Nombre");
         }
+
         public int Id
         {
             get { return Proveedor.Id; }

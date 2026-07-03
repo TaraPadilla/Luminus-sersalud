@@ -28,10 +28,12 @@
     // Crear y mostrar la tarjeta de notificación
     // =============================================
     function mostrarNotificacion(n) {
+        var hora = n.hora ? '<div class="notif-hora text-muted small">' + n.hora + '</div>' : '';
         var card = $(
             '<div class="notif-card" data-id="' + n.id + '">' +
                 '<button class="notif-cerrar" onclick="cerrarNotificacion(' + n.id + ')">✕</button>' +
                 '<div class="notif-titulo">' + n.titulo + '</div>' +
+                hora +
                 '<div class="notif-mensaje">' + n.mensaje + '</div>' +
                 '<div class="notif-barra"></div>' +
             '</div>'

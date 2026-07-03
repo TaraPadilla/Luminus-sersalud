@@ -18,14 +18,13 @@
                         <br>
                         <div class="col-md-12">
                             <label>Vendedor</label>
-                            <select class="form-control select2bs4" style="width: 100%;" name="empleadoid" asp-items="@Model.ListaEmpleados" id="empleadoselect">
-                                <option selected value="">Sin asignar</option>
+                            <select class="form-control" style="width: 100%;" name="empleadoid" id="empleadoselect">
+                                @await Html.PartialAsync("_EmpleadoSelectOptions", Model.ListaEmpleados)
                             </select>
                         </div>
                     </div>
 
                     <br/>
-                    @* <button type="submit" id="generarpdf" class="btn btn-primary">Generar PDF</button> *@
                     <button type="button" id="generarexcel" class="btn btn-success">Generar Excel</button>
                 </form>
             </div>
@@ -45,23 +44,6 @@
 
     <script>
        $(function(){
-            $('.select2').select2({
-                tags: true
-            });
-            
-            $('.select2bs4').select2({
-                theme: 'bootstrap4',
-                tags: true,
-            });
-
-            // Configuración del rango de fecha
-            $('#reservationtime').daterangepicker({
-                timePicker: true,
-                timePickerIncrement: 30,
-                locale: {
-                    format: 'MM/DD/YYYY hh:mm A'
-                }
-            });
             $('#reservationtime2').daterangepicker({
                 timePicker: true,
                 timePickerIncrement: 30,
@@ -70,14 +52,8 @@
                 }
             });
 
-            // Maneja el envío del formulario para generar PDF o Excel
-            $('#generarpdf').on('click', function() {
-                $('#report-form').attr('action', '@Url.Action("ReportePDFVentasFarmacia", "Venta")'); // Acción para PDF
-                $('#report-form').submit();
-            });
-
             $('#generarexcel').on('click', function() {
-                $('#report-form').attr('action', '@Url.Action("ReporteExcelVentasFarmacia", "CrearExcel")'); // Acción para Excel
+                $('#report-form').attr('action', '@Url.Action("ReporteExcelVentasFarmacia", "CrearExcel")');
                 $('#report-form').submit();
             });
         });

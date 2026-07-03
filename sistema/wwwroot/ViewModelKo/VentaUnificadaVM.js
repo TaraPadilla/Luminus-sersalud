@@ -100,17 +100,17 @@ var VentaUnificadaVM = function () {
     let textoCargando = $("#texto-cargando-productos-existentes");
     let textoError = $("#texto-error-consultar-productos-existentes");
 
-    var IsEmergencia = $("#IsEmergencia").val()
-    var ambiente = 1
-
-    switch (IsEmergencia.toUpperCase()) {
-      case "TRUE":
-        ambiente = 3
-        break;
-
-      default:
-        ambiente = 1
-        break;
+    var ambiente = parseInt($("#AmbienteId").val(), 10);
+    if (isNaN(ambiente) || ambiente <= 0) {
+      if ($("#IsClinica").val() === "true" || $("#IsClinica").val() === "True") {
+        ambiente = 2;
+      } else if ($("#IsLaboratorio").val() === "true" || $("#IsLaboratorio").val() === "True") {
+        ambiente = 4;
+      } else if ($("#IsFarmacia").val() === "true" || $("#IsFarmacia").val() === "True") {
+        ambiente = 1;
+      } else {
+        return;
+      }
     }
 
     self.productosExistentes([]);
@@ -1292,9 +1292,9 @@ self.quitarServicio = function (value) {
 
     // --- CÁLCULO DE SALDO Y VUELTO ---
     let sumaPagos = 0;
-    if (self.pagosAgregados) {
-      $(self.pagosAgregados()).each(function (i, p) {
-        sumaPagos += parseFloat(ko.unwrap(p.Monto)) || 0;
+    if (self.multipagos().length > 0) {
+      self.multipagos().forEach(function (p) {
+        sumaPagos += parseFloat(ko.unwrap(p.ValorTotal)) || 0;
       });
     } else {
       sumaPagos = parseFloat(ko.unwrap(self.pagoMonto)) || 0;
@@ -1348,10 +1348,10 @@ self.quitarServicio = function (value) {
       PagoMonto: self.pagoMonto(),
       PagoVuelto: self.pagoVuelto(),
 
-      Productos: self.productosVenta(),
-      Servicios: self.serviciosVenta(),
-      Examenes: self.examenesVenta(),
-      Pagos: self.multipagos(),
+      Productos: ko.toJS(self.productosVenta()),
+      Servicios: ko.toJS(self.serviciosVenta()),
+      Examenes: ko.toJS(self.examenesVenta()),
+      Pagos: ko.toJS(self.multipagos()),
 
       //Valor cubierto seguro
       ValorCubiertoSeguro: self.ventaCubiertoSeguro(),
@@ -1546,10 +1546,17 @@ self.quitarServicio = function (value) {
   }
 
   function cargarListaPacientes(clienteIdPresel) {
+    var isFarmacia = $("#IsFarmacia").val() === "true" || $("#IsFarmacia").val() === "True";
+    if ($("#select-cliente option").length > 1) {
+      if (clienteIdPresel) {
+        $("#select-cliente").val(clienteIdPresel).trigger("change.select2");
+      }
+      return;
+    }
 
     $.ajax({
       method: "POST",
-      url: "/Emergencias/ConsultarPacientes", 
+      url: isFarmacia ? "/Cita/ConsultarPacientes" : "/Emergencias/ConsultarPacientes",
       success: function (dataResult) {
         console.log("Respuesta lista pacientes:", dataResult);
 
@@ -1871,9 +1878,14 @@ self.quitarServicio = function (value) {
         $("#IsEmergencia").val() == "True" ||
         $("#IsEmergencia").val() == "true"
       ) {
-        window.location.href = "/Venta/ListaVentasClinica";
+        window.location.href = "/Venta/ListaVentasHospital";
+      } else if (
+        $("#IsHospital").val() == "True" ||
+        $("#IsHospital").val() == "true"
+      ) {
+        window.location.href = "/Venta/ListaVentasHospital";
       } else {
-        window.location.href = "/Venta/Lista";
+        window.location.href = "/Venta/ListaVentasClinica";
       }
     } else {
       hideLoading();
@@ -2101,50 +2113,33 @@ self.quitarServicio = function (value) {
     //
   };
 
+  self.fixMissingProperties = function () {
+    self.serviciosVenta().forEach(function (s) {
+      if (!s.Recargo) s.Recargo = ko.observable(0);
+      if (!s.DescuentoServicioPorcentaje) s.DescuentoServicioPorcentaje = ko.observable(0);
+      if (!s.esDescuento) {
+        s.esDescuento = ko.observable(true);
+        s.esDescuento.subscribe(function (v) {
+          if (v) s.Recargo(0); else s.DescuentoServicioPorcentaje(0);
+          self.actualizarTotales();
+        });
+      }
+    });
+
+    self.examenesVenta().forEach(function (e) {
+      if (!e.Recargo) e.Recargo = ko.observable(0);
+      if (!e.DescuentoExamenPorcentaje) e.DescuentoExamenPorcentaje = ko.observable(0);
+      if (!e.esDescuento) {
+        e.esDescuento = ko.observable(true);
+        e.esDescuento.subscribe(function (v) {
+          if (v) e.Recargo(0); else e.DescuentoExamenPorcentaje(0);
+          self.actualizarTotales();
+        });
+      }
+    });
+  };
+
   //aqui terminan las funciones
-};
-
-self.fixMissingProperties = function () {
-  // Reparar Productos/Insumos
-  // self.productosVenta().forEach(function (p) {
-  //   if (!p.TipoProductoId) p.TipoProductoId = ko.observable(1);
-  //   else if (!ko.isObservable(p.TipoProductoId)) p.TipoProductoId = ko.observable(p.TipoProductoId);
-
-  //   // Inicializar observables de seguridad
-  //   if (!p.Recargo) p.Recargo = ko.observable(0);
-  //   if (!p.DescuentoProductoPorcentaje) p.DescuentoProductoPorcentaje = ko.observable(0);
-  //   if (!p.esDescuento) {
-  //     p.esDescuento = ko.observable(true);
-  //     p.esDescuento.subscribe(function (v) {
-  //       if (v) p.Recargo(0); else p.DescuentoProductoPorcentaje(0);
-  //       self.actualizarTotales();
-  //     });
-  //   }
-  // });
-
-  self.serviciosVenta().forEach(function (s) {
-    if (!s.Recargo) s.Recargo = ko.observable(0);
-    if (!s.DescuentoServicioPorcentaje) s.DescuentoServicioPorcentaje = ko.observable(0); // O el nombre que uses
-    if (!s.esDescuento) {
-      s.esDescuento = ko.observable(true);
-      s.esDescuento.subscribe(function (v) {
-        if (v) s.Recargo(0); else s.DescuentoServicioPorcentaje(0);
-        self.actualizarTotales();
-      });
-    }
-  });
-
-  self.examenesVenta().forEach(function (e) {
-    if (!e.Recargo) e.Recargo = ko.observable(0);
-    if (!e.DescuentoExamenPorcentaje) e.DescuentoExamenPorcentaje = ko.observable(0);
-    if (!e.esDescuento) {
-      e.esDescuento = ko.observable(true);
-      e.esDescuento.subscribe(function (v) {
-        if (v) e.Recargo(0); else e.DescuentoExamenPorcentaje(0);
-        self.actualizarTotales();
-      });
-    }
-  });
 };
 
 var ventaVm = new VentaUnificadaVM();

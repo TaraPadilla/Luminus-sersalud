@@ -15,10 +15,18 @@ namespace farmamest.Service.IService
         // Método para obtener un consentimiento por el ID del paciente, el ID de la habitación y el ID de la hospitalización
         ConsentimientoHospiVM GetConsentimientoByPacienteHabitacionAndHospitalizacion(int pacienteId, int habitacionId, string hospitalizacionId);
 
+        ConsentimientoHospiVM GetConsentimientoByPacienteAndHospitalizacion(int pacienteId, string hospitalizacionId);
+
+        ConsentimientoHospiVM GetLatestConsentimientoByPaciente(int pacienteId);
+
         // Método para actualizar el HospitalizacionId utilizando PacienteId y HabitacionId
         bool UpdateHospitalizacionId(int pacienteId, int habitacionId, string newHospitalizacionId);
 
         void UpdateConsentimiento(ConsentimientoHospi consentimiento);
+
+        void UpdateFirmas(int pacienteId, int habitacionId, string urlFirmaPaciente, string urlFirmaResponsable);
+
+        void UpsertConsentimiento(ConsentimientoHospi consentimiento);
 
     }
 }

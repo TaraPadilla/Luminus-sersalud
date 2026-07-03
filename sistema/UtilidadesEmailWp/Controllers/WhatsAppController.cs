@@ -1,11 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using System;
 using sistema.UtilidadesEmailWp.Services.IService;
 
 namespace farmamest.UtilidadesEmailWp.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class WhatsAppController : ControllerBase
@@ -22,11 +24,13 @@ namespace farmamest.UtilidadesEmailWp.Controllers
         {
             try
             {
-                //using (var fileStream = request.File.OpenReadStream())
-                //{
-                //    await _whatsAppService.SendMessageAsync(request.To, request.Body, fileStream);
-                //}
-                return Ok("Mensaje enviado exitosamente.");
+                if (request == null || string.IsNullOrWhiteSpace(request.To) || string.IsNullOrWhiteSpace(request.Body))
+                    return BadRequest("Teléfono y mensaje son requeridos.");
+
+                var ok = await _whatsAppService.SendTextMessageAsync(request.To, request.Body);
+                return ok
+                    ? Ok("Mensaje enviado exitosamente.")
+                    : StatusCode(StatusCodes.Status502BadGateway, "No se pudo enviar el mensaje de WhatsApp.");
             }
             catch (Exception ex)
             {

@@ -1,0 +1,9 @@
+@inject Microsoft.Extensions.Configuration.IConfiguration Config
+@{
+    var nombre = Config["EstablecimientoNombreEmpresa"];
+    if (string.IsNullOrWhiteSpace(nombre))
+    {
+        nombre = "SerSalud";
+    }
+}
+<span class="sersalud-sidebar-title">@nombre</span>

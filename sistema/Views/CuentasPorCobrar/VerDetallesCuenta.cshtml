@@ -8,7 +8,7 @@
 
 
 
-    //Información de la cuenta
+    //Informacin de la cuenta
 
     var fechaLimitePago = Model.CuentasPorCobrar.FechaLimitePago == null ? "-" : Convert.ToDateTime(Model.CuentasPorCobrar.FechaLimitePago).ToString("yyyy/MM/dd");
 
@@ -17,9 +17,13 @@
     var cuentaPagada = Model.CuentasPorCobrar.Pagada ? "Si" : "No";
 
     var observacionesCuenta = Model.CuentasPorCobrar.Observaciones ?? "-";
+
+    var admisionId = Model.CuentasPorCobrar.DetallesCuentaPorCobrar?
+        .FirstOrDefault(d => d.HospitalizacionId.HasValue)?.HospitalizacionId ?? 0;
 }
 
 @await Html.PartialAsync("_MensajeExito")
+<input type="hidden" id="PacienteId" value="@Model.CuentasPorCobrar.PacienteId" />
 @Html.HiddenFor(m => m.CuentasPorCobrar.PacienteId)
 @Html.HiddenFor(m => m.CuentaId)
 
@@ -48,7 +52,7 @@
                     <div id="tab-paciente">
                         <div class="form-row">
                             <div class="col-md-12">
-                                <button class="btn btn-primary" data-bind="click:verInformacionPaciente">
+                                <button type="button" class="btn btn-primary" data-bind="click:verInformacionPaciente">
                                     <i class="fas fa-external-link-alt"></i>&nbsp;
                                     Ver informaci&oacute;n del paciente
                                 </button>
@@ -255,7 +259,7 @@
     <div class="card-body">
         <div class="col-md-12">
             <a class="btn btn-primary" href="/CuentasPorCobrar/Modificar?cuentaId=@Model.CuentasPorCobrar.Id">Modificar</a>
-            <a class="btn btn-primary" href="/CuentasPorCobrar/Pagar?cuentaId=@Model.CuentasPorCobrar.Id">Pagar</a>
+            <a class="btn btn-primary" href="/CuentasPorCobrar/Pagar?cuentaId=@Model.CuentasPorCobrar.Id@(admisionId > 0 ? $"&AdmisionId={admisionId}" : "")">Pagar</a>
         </div>
     </div>
 </div>

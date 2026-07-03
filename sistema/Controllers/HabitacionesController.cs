@@ -8,16 +8,25 @@ using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Database.Shared.IRepository;
-using sistema.Models;
 using Database.Shared.Models;
+using farmamest.Helpers;
+using sistema.Models;
 
 namespace sistema.Controllers
 {
     [Authorize]
     public class HabitacionesController : Controller
     {
+        private static readonly JsonSerializerOptions _jsonInputOpts = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            ReferenceHandler = ReferenceHandler.IgnoreCycles
+        };
+
         private readonly IHabitacion _habitacionRepository = null;
 
         public HabitacionesController(
@@ -216,10 +225,22 @@ namespace sistema.Controllers
             return View();
         }
         [HttpPost]
-        public string NuevaCategoria(HabitacionesCategoriaViewModel model)
+        [ActionName("NuevaCategoria")]
+        public async Task<string> GuardarNuevaCategoria()
         {
             try
             {
+                var model = await HttpRequestJsonHelper.LeerCuerpoJsonAsync<HabitacionesCategoriaViewModel>(
+                    Request, this, _jsonInputOpts);
+                if (model == null)
+                {
+                    return JsonSerializer.Serialize(new
+                    {
+                        Exitoso = false,
+                        Mensaje = "No se recibieron datos de la categoría."
+                    });
+                }
+
                 var categoria = new CategoriaHabitacion
                 {
                     NombreCategoria = model.Nombre,
@@ -278,11 +299,40 @@ namespace sistema.Controllers
             return View(model);
         }
         [HttpPost]
-        public string ModificarCategoria(HabitacionesCategoriaViewModel model)
+        public async Task<string> ModificarCategoria()
         {
             try
             {
+                var model = await HttpRequestJsonHelper.LeerCuerpoJsonAsync<HabitacionesCategoriaViewModel>(
+                    Request, this, _jsonInputOpts);
+                if (model == null || model.CategoriaId <= 0)
+                {
+                    return JsonSerializer.Serialize(new
+                    {
+                        Exitoso = false,
+                        Mensaje = "Datos de categoría inválidos."
+                    });
+                }
+
+                if (model.Tarifas == null || !model.Tarifas.Any())
+                {
+                    return JsonSerializer.Serialize(new
+                    {
+                        Exitoso = false,
+                        Mensaje = "Debe incluir al menos una tarifa antes de guardar."
+                    });
+                }
+
                 var categoria = _habitacionRepository.GetCategoria(model.CategoriaId);
+                if (categoria == null)
+                {
+                    return JsonSerializer.Serialize(new
+                    {
+                        Exitoso = false,
+                        Mensaje = "La categoría no existe."
+                    });
+                }
+
                 categoria.NombreCategoria = model.Nombre;
                 if (categoria.CategoriaHabitacionTarifas != null)
                 {
@@ -370,7 +420,7 @@ namespace sistema.Controllers
                 {
                     if (categoria.CategoriaHabitacionTarifas != null)
                     {
-                        foreach (var tarifa in categoria.CategoriaHabitacionTarifas)
+                        foreach (var tarifa in categoria.CategoriaHabitacionTarifas.Where(t => !t.Eliminada))
                         {
                             tarifas.Add(new HabitacionesCategoriaTarifaViewModel
                             {
@@ -431,5 +481,6 @@ namespace sistema.Controllers
                 });
             }
         }
+
     }
 }

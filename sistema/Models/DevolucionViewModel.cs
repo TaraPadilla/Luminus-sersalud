@@ -62,17 +62,14 @@ namespace sistema.Models
         public void Init(IBodega bodegaRepository, bool rolFarmacia)
         {
             var bodegas = bodegaRepository.GetList();
-
-            var bodegasOrigen = bodegas.Where(b => b.Id == 41).ToList();
+            var bodegasOrigen = bodegas;
             var bodegasDestino = bodegas;
 
             if (rolFarmacia)
                 bodegasOrigen = bodegasOrigen.Where(a => a.NombreBodega != "Bodega").ToList();
 
-            this.BodegaOrigenId = 41;
-
-            ListaBodegasOrigen = new SelectList(bodegasOrigen, "Id", "BodegaSucursalText");
-            ListaBodegasDestino = new SelectList(bodegasDestino, "Id", "BodegaSucursalText");
+            ListaBodegasOrigen = new SelectList(bodegasOrigen, "Id", "BodegaSucursalText", BodegaOrigenId);
+            ListaBodegasDestino = new SelectList(bodegasDestino, "Id", "BodegaSucursalText", BodegaDestinoId);
         }
     }
 }

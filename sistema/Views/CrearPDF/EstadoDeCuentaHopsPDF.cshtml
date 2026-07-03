@@ -1,3 +1,4 @@
+@using farmamest.Utilidades
 @model farmamest.Models.EstadoCuentaViewModel
 
 @{
@@ -17,6 +18,13 @@
 
     var honorariosValidos = Model.Honorarios
         .Where(h => h.Medico != "Seleccione un médico" || h.Monto != 0.0m)
+        .ToList();
+
+    var gruposProductos = Model.Productos
+        .GroupBy(p => p.Tipo)
+        .Where(g => g.Key != "Paquete")
+        .OrderBy(g => HospitalizacionCargosHelper.OrdenSeccionProductoCuenta(g.Key))
+        .ThenBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
         .ToList();
 }
 
@@ -246,7 +254,7 @@
 
 
     <!-- ========== PRODUCTOS / SERVICIOS ========== -->
-    @foreach (var grupo in Model.Productos.GroupBy(p => p.Tipo).Where(g => g.Key != "Paquete"))
+    @foreach (var grupo in gruposProductos)
     {
         <div class="section-heading">@grupo.Key</div>
         <table class="report-table">

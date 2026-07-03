@@ -242,6 +242,20 @@ namespace Database.Shared.Data
             return consulta;
         }
 
+        public Consulta GetConsultaPorCita(int citaId)
+        {
+            var consultaId = _context.Consultas
+                .Where(c => c.CitasId == citaId)
+                .OrderByDescending(c => c.Id)
+                .Select(c => c.Id)
+                .FirstOrDefault();
+
+            if (consultaId == 0)
+                return null;
+
+            return GetConsulta(consultaId);
+        }
+
         public Consulta GetConsulta(int id, bool relatedEntities = true)
         {
             if (relatedEntities)

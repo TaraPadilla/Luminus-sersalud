@@ -27,6 +27,15 @@ namespace farmamest.Controllers
         [HttpPost]
         public string Nuevo(BancoViewModel model)
         {
+            if (string.IsNullOrWhiteSpace(model?.Nombre))
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = false,
+                    Mensaje = "El nombre del banco es obligatorio."
+                });
+            }
+
             try
             {
                 var banco = new Banco
@@ -74,6 +83,15 @@ namespace farmamest.Controllers
         [HttpPost]
         public string ModificarBanco(BancoViewModel model)
         {
+            if (string.IsNullOrWhiteSpace(model?.Nombre))
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = false,
+                    Mensaje = "El nombre del banco es obligatorio."
+                });
+            }
+
             try
             {
                 var banco = _bancoRepository.GetBanco(model.Id);

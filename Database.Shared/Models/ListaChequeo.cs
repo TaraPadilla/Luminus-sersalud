@@ -19,6 +19,7 @@ namespace Database.Shared.Models
         public DateTime? FechaNacimiento  { get; set; }
         public DateTime? FechaChequeo     { get; set; }
         public string    HoraChequeo      { get; set; }
+        public string    MedicoTratante   { get; set; }
 
         // ── ENTRADA: El paciente despierto confirma ───────────────────────────
         public string    CI_NombreConfirma    { get; set; }
@@ -42,6 +43,8 @@ namespace Database.Shared.Models
         // ── PAUSA: El cirujano confirma ───────────────────────────────────────
         public string CP_Presentacion            { get; set; }
         public string CP_NombrePacienteCirujano  { get; set; }
+        public string CP_ApellidoPacienteCirujano { get; set; }
+        public DateTime? CP_FechaNacCirujano      { get; set; }
         public string CP_NombreCirugia           { get; set; }
         public string CP_EventosCriticos         { get; set; }
         public string CP_TiempoDuracion          { get; set; }

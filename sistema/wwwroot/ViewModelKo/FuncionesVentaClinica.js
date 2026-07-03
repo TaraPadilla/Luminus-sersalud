@@ -9,14 +9,14 @@ actualizarPreciosVenta();
 /// Funciones Venta /////////
 $('#boton').click(function () {
     var fecha = document.getElementById('reservationtime').value;
-    var empleadoid = document.getElementById('empleadoselect').vaalue;
+    var empleadoid = document.getElementById('empleadoselect').value;
 
     var datos = "";
     $.ajax({
         method: "POST",
         data: datos,
         dataType: 'json',
-        url: '/CrearPDF/VentasPdf?fecha= ' + fecha + '&empleadoid=' + empleadoid,
+        url: '/Reportes/ReporteVentas?fecha=' + encodeURIComponent(fecha) + '&empleadoid=' + empleadoid,
         traditional: true,
         success: function (data, state) {
 

@@ -43,6 +43,15 @@ namespace sisrest.Controllers
         [HttpPost]
         public string Nueva(SucursalViewModel model)
         {
+            if (string.IsNullOrWhiteSpace(model?.Nombre))
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = false,
+                    Mensaje = "El nombre de la sucursal es obligatorio."
+                });
+            }
+
             try
             {
                 var sucursal = new Sucursal
@@ -111,9 +120,26 @@ namespace sisrest.Controllers
         [HttpPost]
         public string Modificar(SucursalViewModel model)
         {
+            if (string.IsNullOrWhiteSpace(model?.Nombre))
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = false,
+                    Mensaje = "El nombre de la sucursal es obligatorio."
+                });
+            }
+
             try
             {
                 var sucursal = _sucursalRepository.Get((int)model.SucursalId);
+                if (sucursal == null)
+                {
+                    return JsonSerializer.Serialize(new
+                    {
+                        Exitoso = false,
+                        Mensaje = "La sucursal no existe."
+                    });
+                }
 
                 sucursal.NombreSucursal = model.Nombre;
                 sucursal.Direccion = model.Direccion;

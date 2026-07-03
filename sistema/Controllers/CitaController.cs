@@ -15,6 +15,9 @@ using DocumentFormat.OpenXml.EMMA;
 using Database.Shared.IRepository;
 using System.Globalization;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using sistema.UtilidadesEmailWp.Services.IService;
+using Microsoft.Extensions.Configuration;
+using farmamest.Utilidades;
 
 
 namespace sistema.Controllers
@@ -36,6 +39,8 @@ namespace sistema.Controllers
         private readonly ISeguro _seguroRepository = null;
 
         private readonly IHabitacion _habitacionRepository = null;
+        private readonly IWhatsAppService _whatsAppService;
+        private readonly IConfiguration _configuration;
 
         public CitaController(
             ICitas citasRepository,
@@ -49,7 +54,9 @@ namespace sistema.Controllers
             ISucursal sucursalRepository,
             IConsultas consultaRepository,
             ISeguro seguroRepository,
-             IHabitacion habitacionRepository
+             IHabitacion habitacionRepository,
+             IWhatsAppService whatsAppService,
+             IConfiguration configuration
             )
         {
             _citasRepository = citasRepository;
@@ -64,6 +71,8 @@ namespace sistema.Controllers
             _consultaRepository = consultaRepository;
             _seguroRepository = seguroRepository;
             _habitacionRepository = habitacionRepository;
+            _whatsAppService = whatsAppService;
+            _configuration = configuration;
 
 
         }
@@ -437,15 +446,21 @@ namespace sistema.Controllers
         }
 
         [HttpGet]
-        public JsonResult GetEmpleadosPorTipo(string especialidadNombre = null, string unidadNombre = null)
+        public JsonResult GetEmpleadosPorTipo(
+            string especialidadNombre = null,
+            string unidadNombre = null,
+            string especialidadId = null,
+            string unidadOrgId = null)
         {
             try
             {
-                // CORRECCIÓN: Declaramos explícitamente como IEnumerable<Empleado> 
-                // en lugar de usar 'var'. Así permite reasignaciones con .Where()
                 IEnumerable<Empleado> empleadosQuery = _empleadoRepository.GetEmpleadosConDetalles();
 
-                if (!string.IsNullOrWhiteSpace(especialidadNombre))
+                if (!string.IsNullOrWhiteSpace(especialidadId) && int.TryParse(especialidadId, out var espId))
+                {
+                    empleadosQuery = empleadosQuery.Where(e => e.EspecialidadId == espId);
+                }
+                else if (!string.IsNullOrWhiteSpace(especialidadNombre))
                 {
                     string busqueda = especialidadNombre.Trim().ToLower();
 
@@ -455,15 +470,17 @@ namespace sistema.Controllers
                         e.Especialidad.NombreEspecialidad.ToLower().Contains(busqueda));
                 }
 
-                // 3. Filtramos por Unidad (Trae a todos los del departamento de esa unidad)
-                if (!string.IsNullOrWhiteSpace(unidadNombre))
+                if (!string.IsNullOrWhiteSpace(unidadOrgId) && int.TryParse(unidadOrgId, out var uniId))
+                {
+                    empleadosQuery = empleadosQuery.Where(e => e.UnidadOrgId == uniId);
+                }
+                else if (!string.IsNullOrWhiteSpace(unidadNombre))
                 {
                     string busquedaUnidad = unidadNombre.Trim().ToLower();
 
                     empleadosQuery = empleadosQuery.Where(e =>
                         e.UnidadOrg != null &&
                         e.UnidadOrg.DepartamentoOrg != null &&
-                        // Verificamos si CUALQUIERA de las unidades de este departamento coincide con la búsqueda
                         e.UnidadOrg.DepartamentoOrg.Unidades.Any(u =>
                             u.Nombre != null &&
                             u.Nombre.ToLower().Contains(busquedaUnidad))
@@ -471,7 +488,8 @@ namespace sistema.Controllers
                 }
 
                 var resultado = empleadosQuery
-                    .OrderBy(e => e.Nombre) // Asegúrate de que la propiedad e.Nombre exista en el modelo Empleado, si no, usa e.NombreYApellidos
+                    .Where(e => !string.IsNullOrWhiteSpace(e.NombreYApellidos))
+                    .OrderBy(e => e.Nombre)
                     .Select(e => new
                     {
                         id = e.Id,
@@ -1070,6 +1088,15 @@ namespace sistema.Controllers
 
                 _citasRepository.Add(nuevaCita);
 
+                if (!string.IsNullOrWhiteSpace(paciente.Telefono))
+                {
+                    var medicoNombre = model.EmpleadoId.HasValue
+                        ? _empleadoRepository.Get(model.EmpleadoId.Value, false)?.NombreYApellidos ?? "su médico"
+                        : "su médico";
+                    var msgCita = $"Confirmación de cita (Hospitalización)\nPaciente: {paciente.Nombre}\nFecha: {model.FechaHora:dd/MM/yyyy HH:mm}\nMédico: {medicoNombre}";
+                    await _whatsAppService.SendTextMessageAsync(paciente.Telefono, msgCita);
+                }
+
                 TempData["Message"] = "¡La cita se ha agendado con éxito!";
 
                 // ✅ Return exitoso para cubrir todas las rutas (evita CS0161)
@@ -1358,6 +1385,15 @@ namespace sistema.Controllers
 
                 _citasRepository.Add(nuevaCita);
 
+                if (!string.IsNullOrWhiteSpace(paciente.Telefono))
+                {
+                    var medicoNombre = model.EmpleadoId.HasValue
+                        ? _empleadoRepository.Get(model.EmpleadoId.Value, false)?.NombreYApellidos ?? "su médico"
+                        : "su médico";
+                    var msgCita = $"Confirmación de cita\nPaciente: {paciente.Nombre}\nFecha: {model.FechaHora:dd/MM/yyyy HH:mm}\nMédico: {medicoNombre}";
+                    await _whatsAppService.SendTextMessageAsync(paciente.Telefono, msgCita);
+                }
+
                 TempData["Message"] = "¡La cita se ha agendado con éxito!";
 
                 // return JsonSerializer.Serialize(new
@@ -1463,6 +1499,17 @@ namespace sistema.Controllers
                 //Cita = cita,
                 //HoraYFecha = cita.FechaInicio ?? DateTime.Now
             };
+
+            if (cita.EmpleadoId != null)
+            {
+                var empCirujano = _empleadoRepository.Get(cita.EmpleadoId.Value);
+                if (empCirujano != null)
+                    model.EmpleadoText = empCirujano.NombreYApellidos;
+            }
+            else if (!string.IsNullOrWhiteSpace(cita.EmpleadoText))
+            {
+                model.EmpleadoText = cita.EmpleadoText;
+            }
 
             var categoriaId = cita.CategoriaHabitacionId;
             if (categoriaId.HasValue)
@@ -2278,8 +2325,7 @@ namespace sistema.Controllers
         {
             var citas = _citasRepository.CitasNormales(currentFilter);
 
-            var user = _userManager.GetUserAsync(HttpContext.User);
-            var u = _userRepository.GetbyId(user.Result.Id).Persona.Nombre;
+            var u = _userRepository.GetDisplayName(_userManager.GetUserId(HttpContext.User));
 
             var model = new ReporteCitasViewModel()
             {
@@ -2293,8 +2339,8 @@ namespace sistema.Controllers
 
         public IActionResult CalendarioLineal(string buscar, string buscar2, int? sucursalId, int? empleadoId, int? especialidadId, int? servicioId, string pacienteNombre, string modo, int? habitacionId)
         {
-            // Normalizar modo; por defecto "consulta"
-            modo = string.IsNullOrWhiteSpace(modo) ? "consulta" : modo.ToLower().Trim();
+            // Normalizar modo; SerSalud (SS) siempre hospitalización
+            modo = ClienteConfigHelper.ResolverModoCalendario(_configuration, modo);
             bool esHospitalizacion = modo == "hospitalizacion";
 
             ViewData["Modo"] = modo;
@@ -2598,8 +2644,7 @@ namespace sistema.Controllers
                     .ToList();
             }
 
-            var user = _userManager.GetUserAsync(HttpContext.User);
-            var u = _userRepository.GetbyId(user.Result.Id).Persona.Nombre;
+            var u = _userRepository.GetDisplayName(_userManager.GetUserId(HttpContext.User));
 
             var model = new ReporteCitasViewModel()
             {
@@ -2668,7 +2713,7 @@ namespace sistema.Controllers
             string pacienteNombre,
             string modo)
         {
-            modo = string.IsNullOrWhiteSpace(modo) ? "consulta" : modo.ToLower().Trim();
+            modo = ClienteConfigHelper.ResolverModoCalendario(_configuration, modo);
             bool esHospitalizacion = modo == "hospitalizacion";
 
             DateTime temp;
@@ -2767,12 +2812,21 @@ namespace sistema.Controllers
         }
 
         [HttpGet]
-        public JsonResult ObtenerDatosMedicoPorCita(int citaId, int consultaId = 0)
+        public JsonResult ObtenerDatosMedicoPorCita(int citaId = 0, int consultaId = 0)
         {
             try
             {
-                // 1. Buscamos la cita (El repositorio ya incluye Empleado y Especialidad automáticamente)
-                var cita = _citasRepository.GetCita(citaId);
+                Citas cita = null;
+                if (citaId > 0)
+                    cita = _citasRepository.GetCita(citaId);
+                else if (consultaId > 0)
+                {
+                    var consulta = _consultaRepository.GetConsulta(consultaId);
+                    if (consulta?.CitasId != null && consulta.CitasId.Value > 0)
+                        cita = _citasRepository.GetCita(consulta.CitasId.Value);
+                    else if (consulta?.Citas != null)
+                        cita = consulta.Citas;
+                }
 
                 if (cita == null)
                     return Json(new { exitoso = false, mensaje = "Cita no encontrada" });
@@ -2780,29 +2834,25 @@ namespace sistema.Controllers
                 var nombreMedico = "No suministrado";
                 var especialidad = "";
                 var urlFirma = "";
+                var colegiado = "";
 
-                // 2. Extraemos los datos del Empleado (si tiene uno asignado)
                 if (cita.Empleado != null)
                 {
                     nombreMedico = cita.Empleado.NombreYApellidos;
-
-                    // Usamos la propiedad correcta de tu modelo Empleado
                     urlFirma = cita.Empleado.FirmaEmpleado ?? "";
+                    colegiado = cita.Empleado.Colegiado ?? "";
                 }
 
-                // 3. Extraemos la especialidad usando tu propiedad 'EspecialidadText' de Citas.cs
                 if (cita.EspecialidadText != "N/A")
-                {
                     especialidad = cita.EspecialidadText;
-                }
 
-                // 4. Retornamos los datos listos para que Knockout.js los atrape
                 return Json(new
                 {
                     exitoso = true,
                     nombreMedico = nombreMedico,
                     especialidad = especialidad,
-                    urlFirma = urlFirma
+                    urlFirma = urlFirma,
+                    colegiado = colegiado
                 });
             }
             catch (Exception ex)

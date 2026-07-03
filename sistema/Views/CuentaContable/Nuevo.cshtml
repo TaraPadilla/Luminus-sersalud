@@ -12,7 +12,8 @@
     </div>
 </div>
 
-@await Html.PartialAsync("_CuentaContableForm")
+@model farmamest.Models.CuentaContableViewModel
+@await Html.PartialAsync("_CuentaContableForm", Model)
 
 <div class="main-card mb-3 card">
     <div class="card-body">

@@ -43,7 +43,8 @@ namespace farmamest.Service
                                   : "-",
                     Autorizado = x.Autorizado,
                     UsuarioAutoriza = x.UsuarioAutoriza,
-                    FechaAutorizacion = x.FechaAutorizacion?.ToString("yyyy-MM-dd HH:mm:ss")
+                    FechaAutorizacion = x.FechaAutorizacion?.ToString("yyyy-MM-dd HH:mm:ss"),
+                    TipoNota = x.TipoNota
                 };
             }).ToList();
 

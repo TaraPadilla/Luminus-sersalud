@@ -77,6 +77,15 @@ namespace sistema.Controllers
         [HttpPost]
         public async Task<string> ModificarVacuna(VacunaViewModel model)
         {
+            if (string.IsNullOrWhiteSpace(model?.Nombre))
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = false,
+                    Mensaje = "El nombre de la vacuna es obligatorio."
+                });
+            }
+
             try
             {
                 var user = await _userManager.GetUserAsync(HttpContext.User);
@@ -115,6 +124,15 @@ namespace sistema.Controllers
         [HttpPost]
         public string CrearVacuna(VacunaViewModel model)
         {
+            if (string.IsNullOrWhiteSpace(model?.Nombre))
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    Exitoso = false,
+                    Mensaje = "El nombre de la vacuna es obligatorio."
+                });
+            }
+
             try
             {
 

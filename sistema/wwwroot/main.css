@@ -10322,7 +10322,8 @@ button,
 .app-header__logo .logo-src {
     height: 37px;
     width: 167px;
-    background: url(assets/images/farm.png);
+    background: url(/assets/images/farm.png) no-repeat center;
+    background-size: contain;
 }
 
 .app-header__menu,
@@ -10448,7 +10449,7 @@ button,
 }
 
 .app-header.header-text-light .app-header__logo .logo-src {
-    background: url(assets/images/farm.png)
+    background: none
 }
 
 .app-header.header-text-light .app-header__mobile-menu .hamburger-inner,
@@ -10546,7 +10547,7 @@ button,
 }
 
 .app-header.header-text-dark .app-header__logo .logo-src {
-    background: url(assets/images/farm.png)
+    background: none
 }
 
 .app-sidebar {
@@ -10825,7 +10826,7 @@ button,
 }
 
 .app-sidebar.sidebar-text-light .app-header__logo .logo-src {
-    background: url(assets/images/farm.png)
+    background: none
 }
 
 .app-sidebar.sidebar-text-light .app-header__logo .hamburger-inner,
@@ -24666,12 +24667,22 @@ a.fc-more:hover {
     }
 
     /* --- ESTILOS ESCRITORIO ---  */
-    @media (min-width: 1650px) {
+    @media (min-width: 1200px) {
         .navbar-custom-container {
             display: flex !important;
             width: 100% !important;
             justify-content: center !important;
             background-color: #0d1619 !important;
+        }
+        .collapse-custom {
+            display: block !important;
+            position: static !important;
+            width: auto !important;
+            max-height: none !important;
+            overflow: visible !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
         }
         .navbar-nav-custom {
             display: flex !important;
@@ -24696,7 +24707,7 @@ a.fc-more:hover {
     }
 
     /* --- ESTILOS MÓVIL/TABLET (< 1650px) --- */
-    @media (max-width: 1649.98px) {
+    @media (max-width: 1199.98px) {
         .navbar-custom-container {
             width: 100% !important;
             display: block !important;

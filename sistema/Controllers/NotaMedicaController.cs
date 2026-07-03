@@ -103,7 +103,8 @@ namespace farmamest.Controllers
                     HospitalizacionId = hospitalizacionId,
                     Autorizado = false,
                     UsuarioAutoriza = null,
-                    FechaAutorizacion = null
+                    FechaAutorizacion = null,
+                    TipoNota = string.IsNullOrWhiteSpace(viewModel.TipoNota) ? null : viewModel.TipoNota.Trim()
                 };
 
                 _notaMedicaService.Add(notaMedica);
@@ -224,6 +225,8 @@ namespace farmamest.Controllers
                     return JsonSerializer.Serialize(new { exitoso = false, resultado = "No se puede editar una nota ya autorizada." });
 
                 nota.Diagnostico = model.Diagnostico;
+                if (!string.IsNullOrWhiteSpace(model.TipoNota))
+                    nota.TipoNota = model.TipoNota.Trim();
                 _notaMedicaService.Update(nota);
 
                 return JsonSerializer.Serialize(new { exitoso = true, resultado = "Nota actualizada correctamente." });
@@ -238,6 +241,7 @@ namespace farmamest.Controllers
         {
             public int Id { get; set; }
             public string Diagnostico { get; set; }
+            public string TipoNota { get; set; }
         }
     }
 }

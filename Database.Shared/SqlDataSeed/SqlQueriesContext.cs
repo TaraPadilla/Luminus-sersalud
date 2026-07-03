@@ -178,7 +178,7 @@ namespace Database.Shared.SqlDataSeed
 			                                    ,""D"".""Valor"" AS ""PrecioValor""
 			                                    ,""B"".""PrecioCosto"" AS ""PrecioCompra""
                                     FROM        ""Productos"" AS ""A""
-                                    LEFT JOIN   ""ProductosInventario"" AS ""B"" ON ""A"".""Id"" = ""B"".""ProductoId""
+                                    LEFT JOIN   ""ProductosInventario"" AS ""B"" ON ""A"".""Id"" = ""B"".""ProductoId"" AND ""B"".""Eliminado"" = false
                                     LEFT JOIN   ""UnidadesMedidaVenta"" AS ""C"" ON ""B"".""UnidadMedidaVentaId"" = ""C"".""Id""
                                     LEFT JOIN   ""ProductosInventarioPrecios"" AS ""D"" ON ""D"".""ProductoInventarioId"" = ""B"".""Id""  AND ""D"".""Eliminado"" = false
                                     LEFT JOIN   ""Precios"" AS ""E"" ON ""E"".""Id"" = ""D"".""PrecioId""
@@ -204,28 +204,30 @@ namespace Database.Shared.SqlDataSeed
             {
                 return @"
 
+DROP FUNCTION IF EXISTS public.inventario_productos(integer, integer, integer, integer, integer);
+
                 CREATE OR REPLACE FUNCTION inventario_productos(
 	                    tipo_producto_id integer,
 	                    grupo_terapeutico_id integer,
 	                    bodega_id integer,
 	                    sucursal_id integer,
 	                    ambiente_id integer)
-                        RETURNS TABLE(id integer, tipobodegaid integer, 
-				                      viadminid integer, 
-				                      tipoproductoid integer, 
-				                      ambienteid integer,
-				                      grupotproductoid integer, 
-				                      presentacionproductoid integer, 
-				                      laboratorioproductoid integer, 
-				                      marcaid integer, categoriaid integer, 
-				                      grupoid integer, nombreproducto text, 
-				                      precio numeric, precio_2 numeric, 
-				                      precio_3 numeric, precio_4 numeric, 
-				                      precio_5 numeric, precio_6 numeric, 
-				                      precio_7 numeric, preciocosto numeric, 
-				                      stock numeric, stockinical integer, codigoreferencia text, 
-				                      imagen text, descripcion text, activoyconcentracion text, 
-				                      dosis text, fechavencimiento date, eliminado boolean, ubicacion text) 
+                        RETURNS TABLE(""Id"" integer, ""TipoBodegaId"" integer, 
+				                      ""ViadminId"" integer, 
+				                      ""TipoProductoId"" integer, 
+				                      ""AmbienteId"" integer,
+				                      ""GrupoTProductoId"" integer, 
+				                      ""PresentacionProductoId"" integer, 
+				                      ""LaboratorioProductoId"" integer, 
+				                      ""MarcaId"" integer, ""CategoriaId"" integer, 
+				                      ""GrupoId"" integer, ""NombreProducto"" text, 
+				                      ""Precio"" numeric, ""Precio_2"" numeric, 
+				                      ""Precio_3"" numeric, ""Precio_4"" numeric, 
+				                      ""Precio_5"" numeric, ""Precio_6"" numeric, 
+				                      ""Precio_7"" numeric, ""PrecioCosto"" numeric, 
+				                      ""Stock"" numeric, ""StockInical"" integer, ""CodigoReferencia"" text, 
+				                      ""Imagen"" text, ""Descripcion"" text, ""ActivoYConcentracion"" text, 
+				                      ""Dosis"" text, ""FechaVencimiento"" date, ""Eliminado"" boolean, ""Ubicacion"" text) 
                         LANGUAGE 'plpgsql'
                         COST 100
                         VOLATILE PARALLEL UNSAFE
@@ -235,11 +237,11 @@ namespace Database.Shared.SqlDataSeed
 
                                     BEGIN
                                         RETURN QUERY
-                                        SELECT p.""Id"" AS ""Id"",
+                                        SELECT DISTINCT p.""Id"" AS ""Id"",
 		                                    p.""TipoBodegaId"" AS ""TipoBodegaId"",
 		                                    p.""ViadminId"" AS ""ViadminId"",
 		                                    p.""TipoProductoId"" AS ""TipoProductoId"",
-						                    p.""AmbienteId"",
+						                    p.""AmbienteId"" AS ""AmbienteId"",
 		                                    p.""GrupoTProductoId"" AS ""GrupoTProductoId"",
 		                                    p.""PresentacionProductoId"" AS ""PresentacionProductoId"",
 		                                    p.""LaboratorioProductoId"" AS ""LaboratorioProductoId"",
@@ -312,7 +314,7 @@ namespace Database.Shared.SqlDataSeed
                     LEFT JOIN ""ServiciosPrecios"" AS B ON A.""Id"" = B.""ServicioId""
                     LEFT JOIN ""Precios"" AS C ON B.""PrecioId"" = C.""Id""
                     WHERE A.""Eliminado"" = false
-                    AND C.""Eliminado"" = null OR C.""Eliminado"" = false;
+                    AND (C.""Eliminado"" IS NULL OR C.""Eliminado"" = false);
 
                 END;
                         $$ LANGUAGE plpgsql;
@@ -325,10 +327,12 @@ namespace Database.Shared.SqlDataSeed
             {
                 return @"
 
+DROP FUNCTION IF EXISTS public.auditoria_nuevo_inventario_producto(integer, integer);
+
 CREATE OR REPLACE FUNCTION public.auditoria_nuevo_inventario_producto(
 	tipoproductoid integer,
 	tipobodegaid integer)
-    RETURNS TABLE(idproducto integer, nombreproducto text, codigoreferencia text, lote text, fecharecepcionlote date, idproductoinventario integer, stock numeric, preciocosto numeric, fechavencimiento date, nombreunidadcompra text, nombreunidadventa text) 
+    RETURNS TABLE(idproducto integer, nombreproducto text, codigoreferencia text, lote text, fecharecepcionlote date, idproductoinventario integer, stock numeric, preciocosto numeric, fechavencimiento date, nombreunidadcompra text, nombreunidadventa text, presentacionproductoid integer, presentacionproductoid2 integer, presentacionproductoid3 integer, presentacionproductoid4 integer, presentacionproductoid5 integer) 
     LANGUAGE 'plpgsql'
     COST 100
     VOLATILE PARALLEL UNSAFE
@@ -355,7 +359,12 @@ AS $BODY$
 									pi.""PrecioCosto"" AS PrecioCosto,
 									pi.""FechaVencimientoArticuloCompra""::date AS FechaVencimiento,
 									uc.""Nombre"" AS ""NombreUnidadCompra"",
-									uv.""Nombre"" AS ""NombreUnidadVenta""
+									uv.""Nombre"" AS ""NombreUnidadVenta"",
+									p.""PresentacionProductoId"",
+									p.""PresentacionProductoId2"",
+									p.""PresentacionProductoId3"",
+									p.""PresentacionProductoId4"",
+									p.""PresentacionProductoId5""
 								FROM 
 									""Productos"" AS p
 								JOIN 
@@ -384,7 +393,12 @@ AS $BODY$
 									pi.""PrecioCosto"" AS PrecioCosto,
 									pi.""FechaVencimientoArticuloCompra""::date AS FechaVencimiento,
 									uc.""Nombre"" AS ""NombreUnidadCompra"",
-									uv.""Nombre"" AS ""NombreUnidadVenta""
+									uv.""Nombre"" AS ""NombreUnidadVenta"",
+									p.""PresentacionProductoId"",
+									p.""PresentacionProductoId2"",
+									p.""PresentacionProductoId3"",
+									p.""PresentacionProductoId4"",
+									p.""PresentacionProductoId5""
 								FROM 
 									""Productos"" AS p
 								JOIN 
@@ -412,7 +426,12 @@ AS $BODY$
 									pi.""PrecioCosto"" AS PrecioCosto,
 									pi.""FechaVencimientoArticuloCompra""::date AS FechaVencimiento,
 									uc.""Nombre"" AS ""NombreUnidadCompra"",
-									uv.""Nombre"" AS ""NombreUnidadVenta""
+									uv.""Nombre"" AS ""NombreUnidadVenta"",
+									p.""PresentacionProductoId"",
+									p.""PresentacionProductoId2"",
+									p.""PresentacionProductoId3"",
+									p.""PresentacionProductoId4"",
+									p.""PresentacionProductoId5""
 								FROM 
 									""Productos"" AS p
 								JOIN 
@@ -440,7 +459,12 @@ AS $BODY$
 									pi.""PrecioCosto"" AS PrecioCosto,
 									pi.""FechaVencimientoArticuloCompra""::date AS FechaVencimiento,
 									uc.""Nombre"" AS ""NombreUnidadCompra"",
-									uv.""Nombre"" AS ""NombreUnidadVenta""
+									uv.""Nombre"" AS ""NombreUnidadVenta"",
+									p.""PresentacionProductoId"",
+									p.""PresentacionProductoId2"",
+									p.""PresentacionProductoId3"",
+									p.""PresentacionProductoId4"",
+									p.""PresentacionProductoId5""
 								FROM 
 									""Productos"" AS p
 								JOIN 
@@ -527,15 +551,23 @@ AS $BODY$
         {
             get
             {
-                return Sp_registrar_auditoria_producto
-                        + Sp_get_inventario
-                        + Sp_inventario_productos
-                        + Sp_get_servicios
-                        + Sp_get_ventas_producto_annio
-                        + Sp_obtener_examenes_lab_clinicos
-                        + Sp_auditoria_nuevo_inventario_producto
-                        + Sp_consultas_productos_existentes_venta;
+                return string.Concat(GetStoredProcedureScripts());
             }
+        }
+
+        public IReadOnlyList<string> GetStoredProcedureScripts()
+        {
+            return new[]
+            {
+                Sp_registrar_auditoria_producto,
+                Sp_get_inventario,
+                Sp_inventario_productos,
+                Sp_get_servicios,
+                Sp_get_ventas_producto_annio,
+                Sp_obtener_examenes_lab_clinicos,
+                Sp_auditoria_nuevo_inventario_producto,
+                Sp_consultas_productos_existentes_venta,
+            };
         }
     }
 }

@@ -112,6 +112,16 @@ namespace farmamest.Models
 
         public string UrlFirmaAnestesista { get; set; }
 
+        public string UrlFirmaFarmacia { get; set; }
 
+        public string FirmaPacienteBase64 { get; set; }
+        public string FirmaResponsableBase64 { get; set; }
+        public string FirmaNotariaBase64 { get; set; }
+        public string FirmaRepresentanteBase64 { get; set; }
+        public string FirmaMedicoBase64 { get; set; }
+
+        public string RadiacionEmbarazada { get; set; }
+        public string RadiacionAmamantando { get; set; }
+        public string RadiacionFUM { get; set; }
     }
 }

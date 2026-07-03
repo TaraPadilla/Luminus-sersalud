@@ -111,11 +111,11 @@
                         <tr class="kv-row">
                             <td>
                                 <span class="label">Nombre</span>
-                                <span class="value">@Model.Paciente.Nombre</span>
+                                <span class="value">@(Model.Paciente?.Nombre ?? "-")</span>
                             </td>
                             <td>
                                 <span class="label">Sexo</span>
-                                <span class="value">@Model.Paciente.sexoText</span>
+                                <span class="value">@(Model.Paciente?.sexoText ?? "-")</span>
                             </td>
                             <td>
                                 <span class="label">Tipo de sangre</span>
@@ -153,13 +153,14 @@
                         {
                             foreach (var medicamento in Model.HospitalizacionesProductos)
                             {
-                                var cantidadAplicada = medicamento.HospitalizacionesProductosAplicaciones
-                                    .Count(a => a.Aplicado && !a.Eliminado);
+                                var aplicaciones = medicamento.HospitalizacionesProductosAplicaciones
+                                    ?? Enumerable.Empty<HospitalizacionProductoAplicacion>();
+                                var cantidadAplicada = aplicaciones.Count(a => a.Aplicado && !a.Eliminado);
                                 var valorTotalMedicamento = medicamento.PrecioValor * cantidadAplicada;
                                 valorMedicamentos += valorTotalMedicamento;
 
                                 <tr class="kv-row">
-                                    <td>@medicamento.Producto.NombreProducto</td>
+                                    <td>@(medicamento.Producto?.NombreProducto ?? "-")</td>
                                     <td>@cantidadAplicada</td>
                                     <td>@medicamento.Precio</td>
                                     <td>@valorTotalMedicamento.ToString("N2")</td>
@@ -211,7 +212,7 @@
                                 valorServicios += valorTotalServicio;
 
                                 <tr class="kv-row">
-                                    <td>@servicio.Servicio.NombreServicio</td>
+                                    <td>@(servicio.Servicio?.NombreServicio ?? "-")</td>
                                     <td>@servicio.Cantidad</td>
                                     <td>@servicio.Precio</td>
                                     <td>@valorTotalServicio.ToString("N2")</td>
@@ -257,12 +258,12 @@
                         {
                             foreach (var examen in Model.HospitalizacionesExamenes)
                             {
-                                var det = examen.Examen.DetalleExamenes.FirstOrDefault();
+                                var det = examen.Examen?.DetalleExamenes?.FirstOrDefault();
                                 if (det != null)
                                 {
                                     valorExamenes += det.PrecioValor;
                                     <tr class="kv-row">
-                                        <td>@det.ExamenLabClinico.NombreExamen</td>
+                                        <td>@(det.ExamenLabClinico?.NombreExamen ?? "-")</td>
                                         <td>@det.PrecioValor.ToString("N2")</td>
                                     </tr>
                                 }
@@ -308,11 +309,11 @@
                         {
                             foreach (var paquete in Model.HospitalizacionesPaquetesHospitalizacion)
                             {
-                                var precioPaquete = paquete.PaqueteHospitalizacion.Precio ?? 0m;
+                                var precioPaquete = paquete.PaqueteHospitalizacion?.Precio ?? 0m;
                                 valorPaquetes += precioPaquete;
 
                                 <tr class="kv-row">
-                                    <td>@paquete.PaqueteHospitalizacion.NombrePaquete</td>
+                                    <td>@(paquete.PaqueteHospitalizacion?.NombrePaquete ?? "-")</td>
                                     <td>@precioPaquete.ToString("N2")</td>
                                 </tr>
                             }

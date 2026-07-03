@@ -14,10 +14,18 @@ namespace Database.Shared.IRepository
         // Método para obtener un consentimiento por ID de paciente, habitación y hospitalización
         ConsentimientoHospi GetConsentimientoByPacienteHabitacionAndHospitalizacion(int pacienteId, int habitacionId, string hospitalizacionId);
 
+        ConsentimientoHospi GetConsentimientoByPacienteAndHospitalizacion(int pacienteId, string hospitalizacionId);
+
+        ConsentimientoHospi GetLatestConsentimientoByPaciente(int pacienteId);
+
         // Método para actualizar el HospitalizacionId utilizando PacienteId y HabitacionId
         bool UpdateHospitalizacionId(int pacienteId, int habitacionId, string newHospitalizacionId);
 
         void UpdateConsentimiento(ConsentimientoHospi consentimiento);
+
+        void UpdateFirmas(int pacienteId, int habitacionId, string urlFirmaPaciente, string urlFirmaResponsable);
+
+        void UpsertConsentimiento(ConsentimientoHospi consentimiento);
 
     }
 }

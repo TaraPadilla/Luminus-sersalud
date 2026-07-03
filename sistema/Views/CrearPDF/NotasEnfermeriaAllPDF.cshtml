@@ -11,8 +11,8 @@
     ViewData["MostrarDireccion"] = true;
     ViewData["MostrarTelefono"] = true;
     ViewData["MostrarCorreoElectronico"] = true;
-    ViewData["MostrarServicios"] = true;
-    ViewData["MostrarEmergencias"] = true;
+    ViewData["MostrarServicios"] = false;
+    ViewData["MostrarEmergencias"] = false;
 
     DateTime fecha = DateTime.Now;
 }
@@ -113,6 +113,20 @@
                                     <td><span class="label">Estado</span></td>
                                     <td><span class="value">@(nota.Firmado ? "Firmado" : "Pendiente")</span></td>
                                 </tr>
+                                @if (nota.Firmado && !string.IsNullOrWhiteSpace(nota.FirmadoPor))
+                                {
+                                    <tr class="kv-row">
+                                        <td><span class="label">Firmado por</span></td>
+                                        <td><span class="value">@nota.FirmadoPor</span></td>
+                                    </tr>
+                                }
+                                @if (nota.Firmado && !string.IsNullOrWhiteSpace(nota.FechaFirma))
+                                {
+                                    <tr class="kv-row">
+                                        <td><span class="label">Fecha de firma</span></td>
+                                        <td><span class="value">@nota.FechaFirma</span></td>
+                                    </tr>
+                                }
                                 <tr class="kv-row">
                                     <td><span class="label">Registro de enfermería</span></td>
                                     <td class="notes">
@@ -126,6 +140,13 @@
                                         <td>
                                             <img src="@nota.FirmaBase64" style="max-height:70px; max-width:250px; border:1px solid #ccc; padding:4px;" />
                                         </td>
+                                    </tr>
+                                }
+                                else if (nota.Firmado && !string.IsNullOrWhiteSpace(nota.FirmadoPor))
+                                {
+                                    <tr class="kv-row">
+                                        <td><span class="label">Firma</span></td>
+                                        <td><span class="value">@(nota.FirmadoPor) — sin imagen de firma registrada</span></td>
                                     </tr>
                                 }
                             </tbody>

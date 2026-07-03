@@ -32,13 +32,15 @@ namespace sistema.Controllers
         private readonly IEmpleado _empleadoRepository = null;
         private readonly ICliente _clienteRepository = null;
         private readonly IProveedor _proveedorRepository = null;
+        private readonly IEnvio _envioRepository = null;
         private readonly Context _context;
         private readonly IWebHostEnvironment _env;
 
 
         public ReportesController(IVenta ventaRepository, ICompra compraRepository,
             //IVentaServicio ventaServicioRepository,
-            Context context, IEmpleado empleadoRepository, ICliente clienteRepository, IProveedor proveedorRepository, IWebHostEnvironment env)
+            Context context, IEmpleado empleadoRepository, ICliente clienteRepository, IProveedor proveedorRepository,
+            IEnvio envioRepository, IWebHostEnvironment env)
         {
             _context = context;
             _ventaRepository = ventaRepository;
@@ -47,6 +49,7 @@ namespace sistema.Controllers
             _empleadoRepository = empleadoRepository;
             _clienteRepository = clienteRepository;
             _proveedorRepository = proveedorRepository;
+            _envioRepository = envioRepository;
             _env = env;
 
         }
@@ -94,7 +97,8 @@ namespace sistema.Controllers
                         // costot += item.Producto.PrecioCosto;
                         // pventa = item.Precio;
                         ventat += item.Total;
-                        costot += (item.Producto.PrecioCosto) * item.Cantidad;
+                        if (item.Producto != null)
+                            costot += item.Producto.PrecioCosto * item.Cantidad;
                         utilidad = ventat - costot;
                         // cantidad = item.Cantidad;
                         // utilidad += cantidad * (pventa - pcosto);
@@ -189,7 +193,7 @@ namespace sistema.Controllers
                     row++;
                     worksheet.Cell(row, 1).Value = ven.Empleado.Nombre;
                     worksheet.Cell(row, 2).Value = ven.Id;
-                    worksheet.Cell(row, 3).Value = ven.Clientes.Nombre;
+                    worksheet.Cell(row, 3).Value = ven.Paciente?.Nombre ?? ven.Clientes?.Nombre ?? ven.Nombres;
                     worksheet.Cell(row, 4).Value = ven.NoComprobante;
                     worksheet.Cell(row, 5).Value = ven.Nit;
                     worksheet.Cell(row, 6).Value = ven.Nombres;
@@ -232,6 +236,91 @@ namespace sistema.Controllers
 
             }
 
+        }
+
+        [Authorize]
+        public IActionResult ReporteClientes()
+        {
+            var clientes = _clienteRepository.GetList()
+                .Where(c => c != null && !c.Eliminado)
+                .OrderBy(c => c.Nombre)
+                .ToList();
+
+            using (var workbook = new XLWorkbook())
+            {
+                var worksheet = workbook.Worksheets.Add("Clientes");
+                worksheet.Cell(1, 1).Value = "Id";
+                worksheet.Cell(1, 2).Value = "Nombre";
+                worksheet.Cell(1, 3).Value = "Telefono";
+                worksheet.Cell(1, 4).Value = "Celular";
+                worksheet.Cell(1, 5).Value = "NIT";
+                worksheet.Cell(1, 6).Value = "Direccion";
+
+                var row = 2;
+                foreach (var cliente in clientes)
+                {
+                    worksheet.Cell(row, 1).Value = cliente.Id;
+                    worksheet.Cell(row, 2).Value = cliente.Nombre;
+                    worksheet.Cell(row, 3).Value = cliente.Telefono;
+                    worksheet.Cell(row, 4).Value = cliente.Celular;
+                    worksheet.Cell(row, 5).Value = cliente.Nit;
+                    worksheet.Cell(row, 6).Value = cliente.Direccion;
+                    row++;
+                }
+
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    return File(
+                        stream.ToArray(),
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        "Clientes.xlsx");
+                }
+            }
+        }
+
+        [Authorize]
+        public IActionResult ReporteEnvios(string fecha)
+        {
+            var fechas = fecha.Split('-');
+            var inicio = DateTime.ParseExact(fechas[0].Trim(), "MM/dd/yyyy hh:mm tt", CultureInfo.InvariantCulture);
+            var fin = DateTime.ParseExact(fechas[1].Trim(), "MM/dd/yyyy hh:mm tt", CultureInfo.InvariantCulture).AddDays(1);
+
+            var envios = _envioRepository.GetListadoFecha(inicio, fin);
+            var row = 1;
+
+            using (var workbook = new XLWorkbook())
+            {
+                var worksheet = workbook.Worksheets.Add("Envios");
+                worksheet.Cell(row, 1).Value = "Envio #";
+                worksheet.Cell(row, 2).Value = "Ruta #";
+                worksheet.Cell(row, 3).Value = "Piloto";
+                worksheet.Cell(row, 4).Value = "Fecha envio";
+                worksheet.Cell(row, 5).Value = "Fecha entrega";
+                worksheet.Cell(row, 6).Value = "Direccion";
+                worksheet.Cell(row, 7).Value = "Estado";
+
+                foreach (var envio in envios)
+                {
+                    row++;
+                    worksheet.Cell(row, 1).Value = envio.Id;
+                    worksheet.Cell(row, 2).Value = envio.RutaId;
+                    worksheet.Cell(row, 3).Value = envio.NombrePiloto;
+                    worksheet.Cell(row, 4).Value = envio.FechaEnvio;
+                    worksheet.Cell(row, 5).Value = envio.FechaEntrega;
+                    worksheet.Cell(row, 6).Value = envio.DireccionExacta;
+                    worksheet.Cell(row, 7).Value = envio.EstadosEnvio?.Estado;
+                }
+
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    return File(
+                        stream.ToArray(),
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        "Envios.xlsx");
+                }
+            }
         }
 
         public IActionResult ReporteCompras(string fecha, int? empleadoid)
@@ -773,40 +862,14 @@ namespace sistema.Controllers
             }
             if (!string.IsNullOrWhiteSpace(rangoFechas))
             {
-                // 1) Quitamos espacios y separamos en 6 trozos
-                var partes = rangoFechas
-                    .Trim()
-                    .Split('-', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(p => p.Trim())
-                    .ToArray();
-
-                if (partes.Length == 6)
+                if (TryParseIneRangoFechas(rangoFechas, out var inicio, out var fin))
                 {
-                    var inicioTxt = $"{partes[0]}-{partes[1]}-{partes[2]}";
-                    var finTxt = $"{partes[3]}-{partes[4]}-{partes[5]}";
-
-                    // 2) Parseo seguro
-                    if (DateTime.TryParseExact(inicioTxt, "yyyy-MM-dd", CultureInfo.InvariantCulture,
-                                               DateTimeStyles.None, out var inicio)
-                     && DateTime.TryParseExact(finTxt, "yyyy-MM-dd", CultureInfo.InvariantCulture,
-                                               DateTimeStyles.None, out var finSinDia))
-                    {
-                        // Sumamos un día al fin para incluir todo el último día
-                        var fin = finSinDia.AddDays(1);
-
-                        // 3) Llenamos los registros con tu método común
-                        model.Registros = GetIneRegistros(inicio, fin, departamentoId, municipioId);
-                    }
-                    else
-                    {
-                        ModelState.AddModelError("rangoFechas",
-                            "Formato de fecha inválido. Debe ser YYYY-MM-DD-YYYY-MM-DD.");
-                    }
+                    model.Registros = GetIneRegistros(inicio, fin, departamentoId, municipioId);
                 }
                 else
                 {
                     ModelState.AddModelError("rangoFechas",
-                        "El rango debe tener el formato yyyy-MM-dd-yyyy-MM-dd.");
+                        "El rango debe tener el formato yyyy-MM-dd - yyyy-MM-dd.");
                 }
             }
 
@@ -1119,6 +1182,53 @@ namespace sistema.Controllers
             $"INE_{inicio:yyyyMMdd}-{fin:yyyyMMdd}.xlsx"
         );
     }
+
+        private static bool TryParseIneRangoFechas(string rangoFechas, out DateTime inicio, out DateTime fin)
+        {
+            inicio = default;
+            fin = default;
+
+            if (string.IsNullOrWhiteSpace(rangoFechas))
+                return false;
+
+            var texto = rangoFechas.Trim();
+            const string formato = "yyyy-MM-dd";
+
+            foreach (var separador in new[] { " - ", " – " })
+            {
+                if (!texto.Contains(separador, StringComparison.Ordinal))
+                    continue;
+
+                var trozos = texto.Split(separador, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+                if (trozos.Length != 2)
+                    continue;
+
+                if (DateTime.TryParseExact(trozos[0], formato, CultureInfo.InvariantCulture, DateTimeStyles.None, out inicio)
+                    && DateTime.TryParseExact(trozos[1], formato, CultureInfo.InvariantCulture, DateTimeStyles.None, out var finSinDia))
+                {
+                    fin = finSinDia.AddDays(1);
+                    return true;
+                }
+            }
+
+            var partes = texto
+                .Split('-', StringSplitOptions.RemoveEmptyEntries)
+                .Select(p => p.Trim())
+                .ToArray();
+
+            if (partes.Length != 6)
+                return false;
+
+            var inicioTxt = $"{partes[0]}-{partes[1]}-{partes[2]}";
+            var finTxt = $"{partes[3]}-{partes[4]}-{partes[5]}";
+
+            if (!DateTime.TryParseExact(inicioTxt, formato, CultureInfo.InvariantCulture, DateTimeStyles.None, out inicio)
+                || !DateTime.TryParseExact(finTxt, formato, CultureInfo.InvariantCulture, DateTimeStyles.None, out var finDia))
+                return false;
+
+            fin = finDia.AddDays(1);
+            return true;
+        }
 
         private List<ConsultaIneViewModel> GetIneRegistros(DateTime inicio, DateTime fin, int? departamentoId = null, int? municipioId    = null )
         {

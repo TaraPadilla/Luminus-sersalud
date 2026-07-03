@@ -2,19 +2,22 @@
 @model NotaMedica2ViewModel
 
 @{
-    Layout = "_HojaMembreteLayout";
+    var embebido = ViewData["EmbebidoEnExpediente"] as bool? ?? false;
+    Layout = embebido ? null : "_HojaMembreteLayout";
     ViewData["Title"] = "Hospitalización - Nota médica";
-
-    // Configuración estándar de membrete
     ViewData["MostrarLogo"] = true;
     ViewData["MostrarNombreEmpresa"] = true;
     ViewData["MostrarDireccion"] = true;
     ViewData["MostrarTelefono"] = true;
     ViewData["MostrarCorreoElectronico"] = true;
-    ViewData["MostrarServicios"] = true;
-    ViewData["MostrarEmergencias"] = true;
+    ViewData["MostrarServicios"] = false;
+    ViewData["MostrarEmergencias"] = false;
 
     DateTime fecha = DateTime.Now;
+    var medicoTratante = Model.EmpleadoText ?? Model.Profesional ?? "-";
+    var nombreFirmante = Model.NombreFirmante ?? Model.RegistradoPor ?? "-";
+    var mostrarCapturadoPor = !string.IsNullOrWhiteSpace(Model.RegistradoPor)
+        && !string.Equals(Model.RegistradoPor, medicoTratante, StringComparison.OrdinalIgnoreCase);
 }
 
 <style>
@@ -114,10 +117,93 @@
                                 @Html.Raw(Model.Diagnostico)
                             </td>
                         </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">Médico tratante</span></td>
+                            <td><span class="value">@medicoTratante</span></td>
+                        </tr>
+                        @if (mostrarCapturadoPor)
+                        {
+                            <tr class="kv-row">
+                                <td><span class="label">Capturado por</span></td>
+                                <td><span class="value">@Model.RegistradoPor</span></td>
+                            </tr>
+                        }
+                        @if (Model.Autorizado && !string.IsNullOrWhiteSpace(Model.AutorizadoPor))
+                        {
+                            <tr class="kv-row">
+                                <td><span class="label">Autorizado por</span></td>
+                                <td><span class="value">@Model.AutorizadoPor</span></td>
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </td>
         </tr>
     </table>
+
+    @if (!string.IsNullOrEmpty(Model.FirmaBase64))
+    {
+        <table class="section-title">
+            <tr>
+                <td class="bar"></td>
+                <td>@(Model.Autorizado && !string.IsNullOrWhiteSpace(Model.AutorizadoPor) ? "Firma de quien autorizó" : "Firma del profesional")</td>
+            </tr>
+        </table>
+        <table class="block">
+            <tr>
+                <td style="padding:8px; text-align:center;">
+                    <div>@nombreFirmante</div>
+                    @if (Model.Autorizado && !string.IsNullOrWhiteSpace(Model.AutorizadoPor))
+                    {
+                        <div style="color:#64748b;">Validaci&oacute;n con huella digital</div>
+                    }
+                    <div style="color:#64748b;">M&eacute;dico tratante: @medicoTratante</div>
+                    <div style="color:#64748b;">Colegiado: @Model.ColegioEmpleado</div>
+                    <img src="@Model.FirmaBase64" style="max-height:100px; max-width:300px; border:1px solid #ccc; padding:4px; margin-top:8px;" />
+                </td>
+            </tr>
+        </table>
+    }
+    else if (Model.Autorizado && !string.IsNullOrWhiteSpace(Model.AutorizadoPor))
+    {
+        <table class="section-title">
+            <tr>
+                <td class="bar"></td>
+                <td>Autorización</td>
+            </tr>
+        </table>
+        <table class="block">
+            <tr>
+                <td style="padding:8px; text-align:center;">
+                    <div>Autorizado por: @Model.AutorizadoPor</div>
+                    <div style="color:#64748b;">Médico tratante: @medicoTratante</div>
+                </td>
+            </tr>
+        </table>
+    }
+    else
+    {
+        <table class="section-title">
+            <tr>
+                <td class="bar"></td>
+                <td>Profesional responsable</td>
+            </tr>
+        </table>
+        <table class="block">
+            <tr>
+                <td style="padding:8px; text-align:center;">
+                    <div><strong>Médico tratante:</strong> @medicoTratante</div>
+                    <div style="color:#64748b;"><strong>Colegiado:</strong> @(Model.ColegioEmpleado ?? "-")</div>
+                    @if (mostrarCapturadoPor)
+                    {
+                        <div style="color:#64748b; margin-top:4px; font-size:11px;">Capturado por: @Model.RegistradoPor</div>
+                    }
+                    <div style="color:#b45309; margin-top:8px; font-style:italic;">
+                        @(Model.Autorizado ? "Firma digital no disponible en archivo del profesional." : "Pendiente de autorización y firma.")
+                    </div>
+                </td>
+            </tr>
+        </table>
+    }
 
 </div>

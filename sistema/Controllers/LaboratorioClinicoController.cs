@@ -149,22 +149,46 @@ namespace sistema.Controllers
 
         public IActionResult NuevaCategoria()
         {
-            return View();
+            return View(new ModCategoriaListados
+            {
+                CategoriaLabClinico = new CategoriaLabClinico()
+            });
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult NuevaCategoria(ModCategoriaListados model)
         {
-            if (ModelState.IsValid)
+            model ??= new ModCategoriaListados();
+            model.CategoriaLabClinico ??= new CategoriaLabClinico();
+
+            if (string.IsNullOrWhiteSpace(model.CategoriaLabClinico.Nombre))
+            {
+                ModelState.AddModelError("CategoriaLabClinico.Nombre", "Este campo es obligatorio.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                TempData["Message"] = "Complete el nombre de la categoría.";
+                TempData["MessageType"] = "error";
+                return View(model);
+            }
+
+            try
             {
                 model.CategoriaLabClinico.FechaCreacion = DateTime.Now;
                 model.CategoriaLabClinico.Activo = true;
+                model.CategoriaLabClinico.Eliminado = false;
                 _laboratorioClinico.Add(model.CategoriaLabClinico);
                 TempData["Message"] = "¡El registro se ha guardado con éxito.!";
                 return RedirectToAction("ListaCategorias");
             }
-
-            return View(model);
+            catch (Exception ex)
+            {
+                TempData["Message"] = "Error al guardar la categoría: " + ex.Message;
+                TempData["MessageType"] = "error";
+                return View(model);
+            }
         }
 
         public IActionResult ModificarCategoriaLab(int? id)
@@ -226,6 +250,8 @@ namespace sistema.Controllers
         public IActionResult ActivarODesactivarNombreExamenLab(int? id, int cat2)
         {
             var categoriaLab = _laboratorioClinico.GetExamenLab((int)id);
+            if (categoriaLab == null)
+                return RedirectToAction("ModificarCategoriaLab", new { id = cat2 });
 
             if (categoriaLab.Activo == true)
             {
@@ -248,6 +274,8 @@ namespace sistema.Controllers
         public IActionResult EliminarCategoria(int? id)
         {
             var categoriaLab = _laboratorioClinico.GetCategoriaLab((int)id);
+            if (categoriaLab == null)
+                return RedirectToAction("ListaCategorias");
             categoriaLab.Eliminado = true;
 
             _laboratorioClinico.Update(categoriaLab);
@@ -260,6 +288,8 @@ namespace sistema.Controllers
         public IActionResult EliminarDatosLab(int? id, int? cat2)
         {
             var categoriaLab = _laboratorioClinico.GetDatosExamenLab((int)id);
+            if (categoriaLab == null)
+                return RedirectToAction("ModificarExamenLab", new { id = cat2 });
             categoriaLab.Eliminado = true;
 
             _laboratorioClinico.Update(categoriaLab);
@@ -272,6 +302,8 @@ namespace sistema.Controllers
         public IActionResult EliminarExamen(int? id)
         {
             var examen = _laboratorioClinico.GetExamenLab((int)id);
+            if (examen == null)
+                return RedirectToAction("ListaExamenes");
             examen.Eliminado = true;
 
             _laboratorioClinico.Update(examen);
@@ -284,6 +316,8 @@ namespace sistema.Controllers
         public IActionResult EliminarExamen2(int? id, int cat2)
         {
             var examen = _laboratorioClinico.GetExamenLab((int)id);
+            if (examen == null)
+                return RedirectToAction("ModificarCategoriaLab", new { id = cat2 });
             examen.Eliminado = true;
 
             _laboratorioClinico.Update(examen);
@@ -297,6 +331,8 @@ namespace sistema.Controllers
         public IActionResult EliminarExamenRealizado(int? id)
         {
             var examen = _laboratorioClinico.GetExamenRealizado((int)id);
+            if (examen == null)
+                return RedirectToAction("ListaExamenesRealizados");
             examen.Eliminado = true;
 
             _laboratorioClinico.Update(examen);
@@ -355,6 +391,7 @@ namespace sistema.Controllers
             var dato = _laboratorioClinico.GetDatosExamenLab((int)id);
             var model = new DatosExamenesLabClinicoViewModel()
             {
+                Id = dato.Id,
                 ExamenLabClinicoId = dato.ExamenLabClinicoId,
                 Campos = dato.Campos,
                 Tipo = dato.Tipo,
@@ -447,19 +484,43 @@ namespace sistema.Controllers
         [HttpPost]
         public async Task<IActionResult> ModificarCategoriaLab(ModCategoriaListados model)
         {
-            if (ModelState.IsValid)
+            if (model?.CategoriaLabClinico == null || model.CategoriaLabClinico.Id <= 0)
             {
-                var user = await _userManager.GetUserAsync(HttpContext.User);
-
-                model.CategoriaLabClinico.UltimoUsuarioModificado = user.UserName;
-                _laboratorioClinico.Update(model.CategoriaLabClinico);
-
-                TempData["Message"] = "¡El registro se ha modificado con éxito!";
-                // return RedirectToAction("ListaCategorias");
-                return View(model);
-
+                TempData["Message"] = "No se pudo identificar la categoría a modificar.";
+                return RedirectToAction("ListaCategorias");
             }
 
+            if (!ModelState.IsValid)
+            {
+                model.NombresExamenes = _laboratorioClinico.ExamenesLabList(model.CategoriaLabClinico.Id);
+                return View(model);
+            }
+
+            var existing = _laboratorioClinico.GetCategoriaLab(model.CategoriaLabClinico.Id);
+            if (existing == null)
+            {
+                TempData["Message"] = "La categoría no existe o fue eliminada.";
+                return RedirectToAction("ListaCategorias");
+            }
+
+            var user = await _userManager.GetUserAsync(HttpContext.User);
+            existing.Nombre = model.CategoriaLabClinico.Nombre;
+            existing.UltimoUsuarioModificado = user?.UserName ?? user?.Email ?? "-";
+
+            try
+            {
+                _laboratorioClinico.Update(existing);
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["Message"] = ex.Message;
+                model.NombresExamenes = _laboratorioClinico.ExamenesLabList(model.CategoriaLabClinico.Id);
+                return View(model);
+            }
+
+            model.CategoriaLabClinico = existing;
+            model.NombresExamenes = _laboratorioClinico.ExamenesLabList(existing.Id);
+            TempData["Message"] = "¡El registro se ha modificado con éxito!";
             return View(model);
         }
 
@@ -564,16 +625,17 @@ namespace sistema.Controllers
         [HttpPost]
         public IActionResult ModificarDatosLab(DatosExamenesLabClinico model)
         {
-
-            if (ModelState.IsValid)
+            if (model == null || model.Id <= 0)
             {
-                //  var user = await _userManager.GetUserAsync(HttpContext.User);
+                TempData["Message"] = "No se pudo identificar el dato a modificar.";
+                return RedirectToAction("ListaCategorias");
+            }
 
-                // model.ExamenLabClinico.UltimaModificacion = user.UserName;
-                _laboratorioClinico.Update(model);
-
-                var modelo = new DatosExamenesLabClinicoViewModel()
+            if (!ModelState.IsValid)
+            {
+                var invalidModel = new DatosExamenesLabClinicoViewModel
                 {
+                    Id = model.Id,
                     ExamenLabClinicoId = model.ExamenLabClinicoId,
                     Campos = model.Campos,
                     Tipo = model.Tipo,
@@ -581,16 +643,49 @@ namespace sistema.Controllers
                     ValorReferencia = model.ValorReferencia,
                     Indicaciones = model.Indicaciones
                 };
-
-                TempData["Message"] = "¡El registro se ha modificado con éxito!";
-                // return RedirectToAction("ListaCategorias");
-                modelo.Init(_laboratorioClinico);
+                invalidModel.Init(_laboratorioClinico);
                 ViewBag.MostrarEstado = true;
-                return View(modelo);
-
+                return View(invalidModel);
             }
 
-            return View(model);
+            var existing = _laboratorioClinico.GetDatosExamenLab(model.Id);
+            if (existing == null)
+            {
+                TempData["Message"] = "El dato no existe o fue eliminado.";
+                return RedirectToAction("ModificarExamenLab", new { id = model.ExamenLabClinicoId });
+            }
+
+            existing.Campos = model.Campos;
+            existing.Tipo = model.Tipo;
+            existing.Resultado = model.Resultado;
+            existing.ValorReferencia = model.ValorReferencia;
+            existing.Indicaciones = model.Indicaciones;
+
+            try
+            {
+                _laboratorioClinico.Update(existing);
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["Message"] = ex.Message;
+                return RedirectToAction("ModificarDatosLab", new { id = model.Id });
+            }
+
+            var modelo = new DatosExamenesLabClinicoViewModel()
+            {
+                Id = existing.Id,
+                ExamenLabClinicoId = existing.ExamenLabClinicoId,
+                Campos = existing.Campos,
+                Tipo = existing.Tipo,
+                Resultado = existing.Resultado,
+                ValorReferencia = existing.ValorReferencia,
+                Indicaciones = existing.Indicaciones
+            };
+
+            TempData["Message"] = "¡El registro se ha modificado con éxito!";
+            modelo.Init(_laboratorioClinico);
+            ViewBag.MostrarEstado = true;
+            return View(modelo);
         }
 
 
@@ -1323,6 +1418,8 @@ namespace sistema.Controllers
                 {
                     ExamenNumero = item.Id,
                     Paciente = item.Paciente?.Nombre ?? "N/A",
+                    PacienteEmail = item.Paciente?.Email ?? "",
+                    PacienteCelular = item.Paciente?.Celular ?? item.Paciente?.Telefono ?? "",
                     FechaRealizacion = item.FechaActualizacion,
                     FechaSolicitud = item.FechaRealizacion,
                     MedicoReferido = item.Medicos?.Nombres ?? "Sin referencia",
@@ -1368,11 +1465,21 @@ namespace sistema.Controllers
             ViewBag.Estado = new SelectList(
                 _estadoExamenRepository.GetAll(), "Nombre", "Nombre");
 
-            ViewBag.usuarioSolicitaRequest = new SelectList(
-                modelo.Select(x => x.UsuarioSolicita).Distinct());
+            var usuariosSolicita = modelo
+                .Select(x => x.UsuarioSolicita)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .OrderBy(x => x)
+                .ToList();
+            var usuariosIngreso = modelo
+                .Select(x => x.UsuarioIngreso)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .OrderBy(x => x)
+                .ToList();
 
-            ViewBag.usuarioIngresoRequest = new SelectList(
-                modelo.Select(x => x.UsuarioIngreso).Distinct());
+            ViewBag.UsuarioSolicita = new SelectList(usuariosSolicita);
+            ViewBag.UsuarioIngreso = new SelectList(usuariosIngreso);
         }
 
 
@@ -2332,20 +2439,29 @@ namespace sistema.Controllers
         [HttpPost]
         public async Task<IActionResult> ModificarCategoriaGeneralLab(CategoriaGeneralLabClinicoViewModel model)
         {
-            if (ModelState.IsValid)
+            if (model == null || model.Id <= 0)
             {
-                var user = await _userManager.GetUserAsync(HttpContext.User);
-
-                model.UltimoUsuarioModificado = user.UserName;
-                _categoriaGeneralLabClinicoService.Update(model);
-
-                TempData["Message"] = "¡El registro se ha modificado con éxito!";
-                // return RedirectToAction("ListaCategorias");
-                return View(model);
-
+                TempData["Message"] = "No se pudo identificar la categoría a modificar.";
+                return RedirectToAction("ListaCategoriasGenerales");
             }
 
-            return View(model);
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var existing = _categoriaGeneralLabClinicoService.GetCategoriaGeneralLab(model.Id);
+            if (existing == null)
+            {
+                TempData["Message"] = "La categoría no existe o fue eliminada.";
+                return RedirectToAction("ListaCategoriasGenerales");
+            }
+
+            var user = await _userManager.GetUserAsync(HttpContext.User);
+            existing.Nombre = model.Nombre;
+            existing.UltimoUsuarioModificado = user?.UserName ?? user?.Email ?? "-";
+            _categoriaGeneralLabClinicoService.Update(existing);
+
+            TempData["Message"] = "¡El registro se ha modificado con éxito!";
+            return View(existing);
         }
 
         public IActionResult EliminarCategoriaGeneral(int? id)

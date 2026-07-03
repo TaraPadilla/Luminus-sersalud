@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace farmamest.Models
 {
@@ -38,5 +39,23 @@ namespace farmamest.Models
         public string FirmaRuta { get; set; }
         public string FechaFirma { get; set; }
         public bool Firmado => !string.IsNullOrEmpty(FirmaRuta);
+
+        // Campos auxiliares para PDF
+        public string FirmaBase64 { get; set; }
+        public string Colegiado { get; set; }
+        public string PacienteNombre { get; set; }
+        public string PacienteSexoText { get; set; }
+        public string PacienteEdad { get; set; }
+    }
+
+    public class NotaOperatoriaListaViewModel
+    {
+        public string PacienteNombre { get; set; }
+        public string PacienteEdad { get; set; }
+        public string PacienteSexoText { get; set; }
+        public string EmpleadoText { get; set; }
+        public string Colegiado { get; set; }
+        public string EmpleadoEspecialidad { get; set; }
+        public List<NotaOperatoriaVM> Notas { get; set; } = new();
     }
 }

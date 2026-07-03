@@ -34,20 +34,23 @@ var CategoriaHabitacionVM = function () {
 
     self.getModel = function () {
         model = {
-            CategoriaId: $("#CategoriaId").val(),
+            CategoriaId: parseInt($("#CategoriaId").val(), 10) || 0,
             Nombre: $("#Nombre").val(),
-            Tarifas: self.tarifas()
+            Tarifas: ko.toJS(self.tarifas)
         };
     };
     self.registrarCategoria = function () {
-        if (confirm("¿Desea registrar esta categoria?")) {
+        if (confirm("Desea registrar esta categoria?")) {
             showLoading();
             self.getModel();
             $.ajax({
                 url: "/Habitaciones/NuevaCategoria",
                 method: "POST",
-                data: model,
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(model),
+                processData: false,
                 success: function (dataResult) {
+                    hideLoading();
                     var data = JSON.parse(dataResult);
                     if (data.Exitoso) {
                         window.location.href = "/Habitaciones/ListaCategorias";
@@ -58,19 +61,23 @@ var CategoriaHabitacionVM = function () {
                 error: function (dataError) {
                     hideLoading();
                     console.log(dataError);
+                    alert("Error al registrar la categoria.");
                 }
             })
         }
     };
     self.modificarCategoria = function () {
-        if (confirm("¿Desea modificar esta categoria?")) {
+        if (confirm("Desea modificar esta categoria?")) {
             showLoading();
             self.getModel();
             $.ajax({
                 url: "/Habitaciones/ModificarCategoria",
                 method: "POST",
-                data: model,
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(model),
+                processData: false,
                 success: function (dataResult) {
+                    hideLoading();
                     var data = JSON.parse(dataResult);
                     if (data.Exitoso) {
                         window.location.href = "/Habitaciones/ListaCategorias";
@@ -81,6 +88,7 @@ var CategoriaHabitacionVM = function () {
                 error: function (dataError) {
                     hideLoading();
                     console.log(dataError);
+                    alert("Error al modificar la categoria. Verifique que cada tarifa tenga nombre y valor.");
                 }
             });
         }
@@ -94,13 +102,19 @@ var CategoriaHabitacionVM = function () {
                 url: "/Habitaciones/ConsultarTarifasCategoria",
                 method: "POST",
                 data: {
-                    categoriaId: parseInt($("#CategoriaId").val())
+                    categoriaId: parseInt($("#CategoriaId").val(), 10)
                 },
                 success: function (dataResult) {
                     hideLoading();
                     var data = JSON.parse(dataResult);
                     if (data.Exitoso) {
-                        self.tarifas(data.Resultado);
+                        var item = 1;
+                        var tarifas = (data.Resultado || []).map(function (t) {
+                            t.Item = item++;
+                            return t;
+                        });
+                        self.tarifas(tarifas);
+                        itemTarifa = item;
                     } else {
                         alert(data.Mensaje);
                     }
@@ -114,9 +128,38 @@ var CategoriaHabitacionVM = function () {
     };
 }
 
-var categoriaVm = new CategoriaHabitacionVM();
-ko.applyBindings(categoriaVm);
+(function () {
+    function wireHabitacionCategoriaButtons() {
+        $(document).off("click.habitacionCat", "[data-habitacion-cat-accion]").on("click.habitacionCat", "[data-habitacion-cat-accion]", function (e) {
+            e.preventDefault();
+            var accion = $(this).attr("data-habitacion-cat-accion");
+            var vm = window.categoriaHabitacionVm;
+            if (!vm) return;
+            if (accion === "guardar-nuevo" && typeof vm.registrarCategoria === "function") vm.registrarCategoria();
+            else if (accion === "guardar-editar" && typeof vm.modificarCategoria === "function") vm.modificarCategoria();
+            else if (accion === "agregar-tarifa" && typeof vm.agregarTarifa === "function") vm.agregarTarifa();
+        });
+    }
 
-$(document).ready(function () {
-    categoriaVm.consultarTarifas();
-});
+    function initCategoriaHabitacionVm() {
+        if (typeof ko === "undefined") {
+            console.error("Knockout no esta cargado. Verifique el orden de scripts en el layout.");
+            return;
+        }
+        window.categoriaHabitacionVm = new CategoriaHabitacionVM();
+        var root = document.getElementById("habitacion-categoria-ko-root");
+        if (root) {
+            ko.applyBindings(window.categoriaHabitacionVm, root);
+        } else {
+            ko.applyBindings(window.categoriaHabitacionVm);
+        }
+        wireHabitacionCategoriaButtons();
+        window.categoriaHabitacionVm.consultarTarifas();
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initCategoriaHabitacionVm);
+    } else {
+        initCategoriaHabitacionVm();
+    }
+})();

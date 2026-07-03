@@ -3,8 +3,11 @@
 @inject IConfiguration Config
 
 @{
-    Layout = "_HojaMembreteLayout";
+    var embebido = ViewData["EmbebidoEnExpediente"] as bool? ?? false;
+    Layout = embebido ? null : "_HojaMembreteLayout";
     ViewData["Title"]              = "Consentimiento de Hospitalización";
+    ViewData["MostrarServicios"]   = false;
+    ViewData["MostrarEmergencias"] = false;
     ViewData["ImagenLogo"]         = Config["ImagenLogoBase64"];
     ViewData["Direccion"]          = Config["EstablecimientoDireccion"];
     ViewData["Telefono"]           = Config["EstablecimientoTelefono"];
@@ -13,7 +16,7 @@
     DateTime fecha                 = DateTime.Now;
 }
 
-@await Html.PartialAsync("_ReportStyles")
+@await Html.PartialAsync("Shared/_ReportStyles")
 
 <style>
   /* Mantener títulos rojos y espaciados del original */
@@ -212,7 +215,7 @@
             </td>
             <th style="width:25%;">Tipos de Sangre</th>
             <td style="width:25%; word-wrap:break-word; white-space:normal;">
-              @(!string.IsNullOrEmpty(Model.TipoSangre) ? Model.Direccion : "No especificado")
+              @(!string.IsNullOrEmpty(Model.TipoSangre) ? Model.TipoSangre : "No especificado")
             </td>
           </tr>
           <tr>

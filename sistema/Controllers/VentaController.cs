@@ -23,6 +23,8 @@ using DocumentFormat.OpenXml.Presentation;
 using farmamest.Service.IService;
 using System.Security.Cryptography.Xml;
 using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
+using sistema.Utilidades;
 
 namespace sistema.Controllers
 {
@@ -286,7 +288,14 @@ namespace sistema.Controllers
             var modelo = new VentaBaseViewModel(0);
             modelo.Init(_empleadoRepository);
             return View(modelo);
+        }
 
+        [Authorize]
+        public IActionResult ReporteEnviosFechas()
+        {
+            var modelo = new VentaBaseViewModel(0);
+            modelo.Init(_empleadoRepository);
+            return View(modelo);
         }
 
 
@@ -358,6 +367,7 @@ namespace sistema.Controllers
                     NoComprobante = det.datosenvio.NoComprobante,
                     Nit = det.datosenvio.Nit,
                     EmpleadoId = Convert.ToInt32(det.datosenvio.EmpleadoId),
+                    UserId2 = user?.Id,
                     User = user,
                     FechaEnvio = DateTime.Now,
                     EstadosEnvioId = 1,
@@ -669,7 +679,8 @@ namespace sistema.Controllers
 
             // Eliminar el registro en caja, sin importar el contexto
             var detallecaja = _cajaRepository.GetDetalleCaja((int)Id);
-            _cajaRepository.GetDetalleCajaPorVentaId(detallecaja.Id, false);
+            if (detallecaja != null)
+                _cajaRepository.GetDetalleCajaPorVentaId(detallecaja.Id, false);
 
             // Redirección dinámica basada en el returnAction
             return RedirectToAction(returnAction);
@@ -1143,19 +1154,43 @@ namespace sistema.Controllers
             }
         }
 
+        [HttpGet]
         [Authorize]
-        public IActionResult NuevaVentaUnificada
-        (
-        bool isClinica,
-        bool isFarmacia,
-        bool isLaboratorio,
-        bool isEmergencia,
-        bool isHospital,
-        int? consultaId = null,
-        int? emergenciaId = null
-        )
+        public IActionResult NuevaVentaClinica(int? consultaId = null, int? emergenciaId = null)
+            => NuevaVentaUnificadaPorTipo("clinica", consultaId, emergenciaId);
+
+        [HttpGet]
+        [Authorize]
+        public IActionResult NuevaVentaFarmacia(int? consultaId = null, int? emergenciaId = null)
+            => NuevaVentaUnificadaPorTipo("farmacia", consultaId, emergenciaId);
+
+        [HttpGet]
+        [Authorize]
+        public IActionResult NuevaVentaLaboratorio(int? consultaId = null, int? emergenciaId = null)
+            => NuevaVentaUnificadaPorTipo("laboratorio", consultaId, emergenciaId);
+
+        [HttpGet]
+        [Authorize]
+        public IActionResult NuevaVentaUnificada(int? consultaId = null, int? emergenciaId = null)
         {
-            if (!isClinica && !isFarmacia && !isLaboratorio && !isEmergencia)
+            if (!TryResolveTipoVentaDesdeRequest(Request.Query, out var tipoVenta, out _, out _, out _, out _, out _))
+            {
+                TempData["Message"] = "Error de navegación";
+                return RedirectToAction("Index", "Home");
+            }
+
+            return NuevaVentaUnificadaPorTipo(tipoVenta, consultaId, emergenciaId);
+        }
+
+        private IActionResult NuevaVentaUnificadaPorTipo(
+            string tipoVenta,
+            int? consultaId = null,
+            int? emergenciaId = null)
+        {
+            var model = new VentaUnificadaViewModel();
+            model.ApplyTipoVenta(tipoVenta);
+
+            if (!model.IsClinica && !model.IsFarmacia && !model.IsLaboratorio && !model.IsEmergencia && !model.IsHospital)
             {
                 TempData["Message"] = "Error de navegación";
                 return RedirectToAction("Index", "Home");
@@ -1163,6 +1198,12 @@ namespace sistema.Controllers
 
             var userName = _userManager.GetUserName(HttpContext.User);
             var user = _userRepository.Get(userName);
+            if (user == null)
+            {
+                TempData["Message"] = "No se encontró el usuario en el sistema.";
+                return RedirectToAction("Index", "Home");
+            }
+
             string cliente = "";
             string citaTipoAtencion = "";
             int clienteId = 0;
@@ -1180,14 +1221,20 @@ namespace sistema.Controllers
             if (consultaId != null)
             {
                 var consulta = _consultasRepository.GetConsulta((int)consultaId);
-                condigoMedico = consulta.Citas.EmpleadoId;
-                if (consulta == null)
+                if (consulta == null || consulta.Citas == null)
                 {
                     TempData["Message"] = "La consulta no existe";
                     return RedirectToAction("Index", "Home");
                 }
-                cliente = _pacienteRepository.GetPacientePorId((int)consulta.Citas.PacienteId).Nombre;
-                clienteId = _pacienteRepository.GetPacientePorId((int)consulta.Citas.PacienteId).Id;
+                condigoMedico = consulta.Citas.EmpleadoId;
+                var pacienteConsulta = _pacienteRepository.GetPacientePorId((int)consulta.Citas.PacienteId);
+                if (pacienteConsulta == null)
+                {
+                    TempData["Message"] = "Paciente de la consulta no encontrado";
+                    return RedirectToAction("Index", "Home");
+                }
+                cliente = pacienteConsulta.Nombre;
+                clienteId = pacienteConsulta.Id;
                 citaTipoAtencion = consulta.Citas.CitaTipoAtencion;
                 ResponsableNit = consulta.Citas.ResponsableNit;
                 ResponsableNombre = consulta.Citas.ResponsableNombre;
@@ -1210,6 +1257,11 @@ namespace sistema.Controllers
                 condigoMedico = emergencia.EmpleadoId;
 
                 var paciente = _pacienteRepository.GetPacientePorId((int)emergencia.PacienteId);
+                if (paciente == null)
+                {
+                    TempData["Message"] = "Paciente de la emergencia no encontrado";
+                    return RedirectToAction("Index", "Home");
+                }
 
                 cliente = paciente.Nombre;
                 clienteId = paciente.Id;
@@ -1222,70 +1274,34 @@ namespace sistema.Controllers
                 ResponsableDPI = paciente.ResponsableDPI;
                 Origen = "EMERGENCIA";
             }
-            var model = new VentaUnificadaViewModel
-            {
-                IsClinica = isClinica,
-                IsFarmacia = isFarmacia,
-                IsLaboratorio = isLaboratorio,
-                IsEmergencia = isEmergencia,
-                IsHospital = isHospital,
-                ConsultaId = consultaId,
-                EmergenciaId = emergenciaId,
-                CitaTipoAtencion = citaTipoAtencion,
-                CodigoVendedor = user.EmpleadoId,
-                ResponsableNit = ResponsableNit,
-                ResponsableNombre = ResponsableNombre,
-                ResponsableDireccion = ResponsableDireccion,
-                ResponsableCorreo = ResponsableCorreo,
-                ResponsableDPI = ResponsableDPI,
-                PacienteFechaNacimiento = FechaNacimientoPaciente ?? DateTime.MinValue,
-                Origen = Origen
-            };
 
-            if (isHospital)
-                model.AmbienteId = (int)AmbienteEnum.Hospital;
-            else if (isClinica)
-                model.AmbienteId = (int)AmbienteEnum.Clinica;
-            else if (isFarmacia)
-                model.AmbienteId = (int)AmbienteEnum.Farmacia;
-            else if (isLaboratorio)
-                model.AmbienteId = (int)AmbienteEnum.Laboratorio;
-            else if (isEmergencia)
-                model.AmbienteId = (int)AmbienteEnum.Clinica;
-            else
-                model.AmbienteId = (int)AmbienteEnum.Hospital;
-
-            // var userRole = _userManager.GetRolesAsync(user).Result;
-
-            // if (userRole.Contains("Admisiones"))
-            //     model.AmbienteId = (int)AmbienteEnum.Hospital;
-            // else if (userRole.Contains("Recepcion"))
-            //     model.AmbienteId = (int)AmbienteEnum.Clinica;
-            // else
-            //     model.AmbienteId = (int)AmbienteEnum.Clinica;
-
-
-            // if (isClinica)
-            //     model.AmbienteId = (int)AmbienteEnum.Clinica;
-            // if (isLaboratorio)
-            //     model.AmbienteId = (int)AmbienteEnum.Laboratorio;
-            // if (isFarmacia)
-            //     model.AmbienteId = (int)AmbienteEnum.Farmacia;
+            model.ConsultaId = consultaId;
+            model.EmergenciaId = emergenciaId;
+            model.CitaTipoAtencion = citaTipoAtencion;
+            model.CodigoVendedor = user.EmpleadoId;
+            model.ResponsableNit = ResponsableNit;
+            model.ResponsableNombre = ResponsableNombre;
+            model.ResponsableDireccion = ResponsableDireccion;
+            model.ResponsableCorreo = ResponsableCorreo;
+            model.ResponsableDPI = ResponsableDPI;
+            model.PacienteFechaNacimiento = FechaNacimientoPaciente ?? DateTime.MinValue;
+            model.Origen = Origen;
 
             model.Init(_pacienteRepository, _clienteRepository,
                 _envioRepository, _empleadoRepository, _sucursalRepository);
             model.Cliente = (consultaId != null || emergenciaId != null) ? cliente : null;
             model.ClienteId = clienteId;
             model.CodigoMedico = condigoMedico;
-            model.Origen = Origen;
-            return View(model);
-
+            return View("NuevaVentaUnificada", model);
         }
         [HttpPost]
         public string NuevaVentaUnificada(VentaUnificadaViewModel model)
         {
             try
             {
+                if (!string.IsNullOrWhiteSpace(model.TipoVenta))
+                    model.ApplyTipoVenta();
+
                 var fechaHora = DateTime.Now;
 
                 //Empleado
@@ -1296,10 +1312,7 @@ namespace sistema.Controllers
                 //}
 
                 #region CLIENTE O PACIENTE
-                //Cliente
-                var cliente = new Clientes();
-                //Paciente
-                var paciente = new Paciente();
+                Paciente paciente = null;
 
                 int EdadCalculada = (model.PacienteFechaNacimiento == DateTime.MinValue)
                             ? 0
@@ -1310,16 +1323,20 @@ namespace sistema.Controllers
                 if (model.ClienteId != null && model.ClienteId > 0)
                 {
                     paciente = _pacienteRepository.Get((int)model.ClienteId, false);
+                    if (paciente == null)
+                    {
+                        return JsonSerializer.Serialize(new { Exitoso = false, Mensaje = "El paciente seleccionado no existe." });
+                    }
                     paciente.FechaNacimiento = model.PacienteFechaNacimiento;
                     paciente.Edad = EdadCalculada;
                     _pacienteRepository.Update(paciente);
 
                 }
-                else if (model.Cliente != null)
+                else if (!string.IsNullOrWhiteSpace(model.Cliente))
                 {
                     paciente = new Paciente
                     {
-                        Nombre = model.Cliente,
+                        Nombre = model.Cliente.Trim(),
                         Direccion = model.Direccion,
                         Nit = model.Nit,
                         EstadoPacienteId = (int)EstadoPacienteEnum.Activo,
@@ -1329,6 +1346,11 @@ namespace sistema.Controllers
                     };
 
                 }
+
+                var nombreVenta = paciente?.Nombre
+                    ?? model.ResponsableNombre
+                    ?? model.Cliente
+                    ?? "CF";
 
                 #endregion
 
@@ -1376,14 +1398,18 @@ namespace sistema.Controllers
                 var venta = new Venta
                 {
                     NoComprobante = model.NumeroComprobante,
-                    Nombres = paciente.Nombre,
+                    Nombres = nombreVenta,
                     Nit = !string.IsNullOrWhiteSpace(model.Nit)
                         ? model.Nit
                         : (!string.IsNullOrWhiteSpace(model.ResponsableNit)
                             ? model.ResponsableNit
-                            : paciente.Nit),
-                    Direccion = !string.IsNullOrWhiteSpace(model.ResponsableDireccion) ? model.ResponsableDireccion : paciente.Direccion,
-                    Correo = !string.IsNullOrWhiteSpace(model.ResponsableCorreo) ? model.ResponsableCorreo : paciente.Email,
+                            : paciente?.Nit),
+                    Direccion = !string.IsNullOrWhiteSpace(model.ResponsableDireccion)
+                        ? model.ResponsableDireccion
+                        : paciente?.Direccion,
+                    Correo = !string.IsNullOrWhiteSpace(model.ResponsableCorreo)
+                        ? model.ResponsableCorreo
+                        : paciente?.Email,
                     ResponsableNombre = model.ResponsableNombre,
                     Paciente = paciente,
                     FechaVenta = fechaHora,
@@ -1494,7 +1520,7 @@ namespace sistema.Controllers
                                     MontoTotal = nuevodetalle.Total,
                                     Cantidad = nuevodetalle.Cantidad,
                                     DescripcionMovimiento = "Venta de producto",
-                                    SaldoActual = registroProductoInventario.Stock - nuevodetalle.Cantidad,
+                                    SaldoActual = registroProductoInventario.Stock,
                                     TipoMovimientoProductoId = (int)TipoMovimientoProductoEnum.SalidaVenta
                                 };
                                 _productoRepository.Add(movimiento);
@@ -1618,7 +1644,7 @@ namespace sistema.Controllers
                 #region Registro final de datos de VENTA
                 var descripcion = "";
                 if (model.AmbienteId == (int)AmbienteEnum.Laboratorio)
-                    descripcion = "Venta de examen: " + paciente.Nombre;
+                    descripcion = "Venta de examen: " + nombreVenta;
                 if (model.AmbienteId == (int)AmbienteEnum.Global)
                 {
                     cajaGlobal.DetalleCajas.Add(new DetalleCaja
@@ -1867,22 +1893,22 @@ namespace sistema.Controllers
                 {
                     Exitoso = true,
                     Resultado = venta.Id,
-                    ExamenId = examen.Id,
+                    ExamenId = model.Examenes != null && model.Examenes.Any() && examen.Id > 0 ? examen.Id : (int?)null,
                     AmbienteId = model.AmbienteId
                 });
 
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "   ///");
+                var detalle = ExceptionHelper.ObtenerMensajeRaiz(ex);
+                Console.WriteLine(detalle + "   ///");
                 return JsonSerializer.Serialize(new
                 {
                     Exitoso = false,
-                    Mensaje = "Error de servidor al registrar venta: " + ex.Message
+                    Mensaje = "Error de servidor al registrar venta: " + detalle
                 });
             }
         }
-
 
         [HttpPost]
         public string ConsultarServiciosConsulta(int consultaId) //Consulta los servicios agregados 
@@ -2256,12 +2282,313 @@ namespace sistema.Controllers
         }
 
         [Authorize]
-        public IActionResult ReporteVentasGeneral()
+        [HttpPost]
+        public IActionResult GuardarVentaFarmacia([FromBody] VentaClinicaAddViewModel model)
+            => GuardarVentaLegacy(model, (int)AmbienteEnum.Farmacia, retornarExamenId: false);
+
+        [Authorize]
+        [HttpPost]
+        public IActionResult GuardarVentaClinica([FromBody] VentaClinicaAddViewModel model)
+            => GuardarVentaLegacy(model, (int)AmbienteEnum.Clinica, retornarExamenId: false);
+
+        /// <summary>
+        /// Endpoint usado por RealizarExamenClinico (botón Listo). Devuelve el Id del examen creado.
+        /// </summary>
+        [Authorize]
+        [HttpPost]
+        public IActionResult GuardarVentaLab([FromBody] VentaClinicaAddViewModel model)
+            => GuardarVentaLegacy(model, (int)AmbienteEnum.Laboratorio, retornarExamenId: true);
+
+        private IActionResult GuardarVentaLegacy(VentaClinicaAddViewModel model, int ambienteId, bool retornarExamenId)
         {
-            return View(); // Views/Venta/ReporteVentasGeneral.cshtml
+            try
+            {
+                if (model?.encabezado == null || model.detalle == null || !model.detalle.Any())
+                    return new JsonErrorResult(LegacyVentaError("Datos de venta incompletos."));
+
+                var enc = model.encabezado;
+                if (string.IsNullOrWhiteSpace(enc.Nombres)) enc.Nombres = "CF";
+                if (string.IsNullOrWhiteSpace(enc.Nit)) enc.Nit = "CF";
+                if (string.IsNullOrWhiteSpace(enc.Direccion)) enc.Direccion = "CF";
+
+                var empleado = _empleadoRepository.Get(enc.EmpleadoId);
+                if (empleado == null)
+                    return new JsonErrorResult(LegacyVentaError("Código de empleado incorrecto."));
+
+                var cajaLocal = _cajaRepository.GetCajaAbierta(ambienteId);
+                if (cajaLocal == null)
+                    return new JsonErrorResult(LegacyVentaError("No hay cajas abiertas. Por favor abra una caja."));
+
+                var fechaHora = DateTime.Now;
+                Paciente paciente = null;
+                if (ambienteId == (int)AmbienteEnum.Laboratorio && enc.ClienteId > 0)
+                    paciente = _pacienteRepository.Get(enc.ClienteId, false);
+
+                var venta = new Venta
+                {
+                    NoComprobante = enc.NoComprobante,
+                    Nombres = enc.Nombres.Trim(),
+                    Nit = enc.Nit,
+                    Direccion = enc.Direccion,
+                    Paciente = paciente,
+                    FechaVenta = fechaHora,
+                    EmpleadoId = enc.EmpleadoId,
+                    AmbienteId = ambienteId,
+                    MontoPago = enc.Monto,
+                    Vuelto = enc.Vuelto,
+                    TipoVenta = ambienteId switch
+                    {
+                        (int)AmbienteEnum.Farmacia => "farmacia",
+                        (int)AmbienteEnum.Clinica => "clinica",
+                        (int)AmbienteEnum.Laboratorio => "laboratorio",
+                        _ => null
+                    }
+                };
+
+                venta.Pagos.Add(new Pagos
+                {
+                    FechaHora = fechaHora,
+                    FormaPagoId = enc.FormaPago,
+                    Monto = enc.Monto
+                });
+
+                Examen examen = null;
+                if (ambienteId == (int)AmbienteEnum.Laboratorio)
+                {
+                    var medico = _empleadoRepository.GetMedicoByName(enc.Medico);
+                    if (medico == null && !string.IsNullOrWhiteSpace(enc.Medico))
+                        medico = new Medicos { Nombres = enc.Medico };
+
+                    var clinica = _empleadoRepository.GetClinicaByName(enc.Clinica);
+                    if (clinica == null && !string.IsNullOrWhiteSpace(enc.Clinica))
+                        clinica = new Clinica { NombreClinica = enc.Clinica };
+
+                    examen = new Examen
+                    {
+                        Paciente = paciente,
+                        EstadoExamenId = 1,
+                        FechaRealizacion = fechaHora,
+                        Medicos = medico,
+                        Clinicas = clinica,
+                        ClinicaReferida = enc.ClinicaReferida ?? enc.Clinica,
+                        UsuarioSolicita = _userManager.GetUserId(HttpContext.User),
+                        EmpleadoId = enc.EmpleadoId
+                    };
+                }
+
+                var userId = _userManager.GetUserId(HttpContext.User);
+                foreach (var item in model.detalle)
+                {
+                    if (ambienteId == (int)AmbienteEnum.Laboratorio)
+                    {
+                        var detalleVenta = new DetalleVenta
+                        {
+                            Venta = venta,
+                            Cantidad = item.Cantidad,
+                            Precio = item.Precio,
+                            Descuento = item.Descuento,
+                            Subtotal = item.Subtotal,
+                            Total = item.Total,
+                            ExamenLabClinicoId = item.ProductoId,
+                            BienOServicio = "S",
+                            UsuarioAutorizaModificacion = item.UsuarioAutorizaModificacion
+                        };
+                        venta.DetalleVenta.Add(detalleVenta);
+
+                        var nuevoDetalleExamen = new DetalleExamen
+                        {
+                            Cantidad = item.Cantidad,
+                            PrecioValor = item.Precio,
+                            Descuento = item.Descuento,
+                            Subtotal = item.Subtotal,
+                            Total = item.Total,
+                            ExamenLabClinicoId = item.ProductoId
+                        };
+                        foreach (var dato in _laboratorioRepository.DatosLabList(item.ProductoId))
+                        {
+                            nuevoDetalleExamen.Resultados.Add(new Resultados { DatosExamenesLabClinico = dato });
+                        }
+                        examen.DetalleExamenes.Add(nuevoDetalleExamen);
+                        _laboratorioRepository.ActualizarInventarioInsumoVentaExamenesLaboratorio(item.ProductoId);
+                    }
+                    else if (ambienteId == (int)AmbienteEnum.Farmacia
+                        || string.Equals(item.BienOServicio, "B", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var registroInventario = _productoRepository.GetRegistroInventarioProducto(0, item.ProductoId);
+                        if (registroInventario == null)
+                            return new JsonErrorResult(LegacyVentaError($"Producto {item.ProductoId} sin inventario."));
+
+                        var detalleVenta = new DetalleVenta
+                        {
+                            Venta = venta,
+                            Cantidad = item.Cantidad,
+                            Precio = item.Precio,
+                            Descuento = item.Descuento,
+                            Subtotal = item.Subtotal,
+                            Total = item.Total,
+                            ProductoId = item.ProductoId,
+                            BienOServicio = "B",
+                            UsuarioAutorizaModificacion = item.UsuarioAutorizaModificacion
+                        };
+                        venta.DetalleVenta.Add(detalleVenta);
+
+                        registroInventario.Stock -= item.Cantidad;
+                        if (registroInventario.Stock < 0) registroInventario.Stock = 0;
+                        _productoRepository.UpdateRegistroInventario(registroInventario, false);
+                        _productoRepository.Add(new MovimientoProducto
+                        {
+                            UsuarioRealizaId = userId,
+                            ProductoInventarioId = registroInventario.Id,
+                            Fecha = fechaHora,
+                            PrecioUnitario = item.Precio,
+                            MontoTotal = detalleVenta.Total,
+                            Cantidad = detalleVenta.Cantidad,
+                            DescripcionMovimiento = "Venta de producto",
+                            SaldoActual = registroInventario.Stock,
+                            TipoMovimientoProductoId = (int)TipoMovimientoProductoEnum.SalidaVenta
+                        });
+                    }
+                    else
+                    {
+                        venta.DetalleVenta.Add(new DetalleVenta
+                        {
+                            Venta = venta,
+                            Cantidad = item.Cantidad,
+                            Precio = item.Precio,
+                            Descuento = item.Descuento,
+                            Subtotal = item.Subtotal,
+                            Total = item.Total,
+                            ServicioId = item.ProductoId,
+                            BienOServicio = "S",
+                            UsuarioAutorizaModificacion = item.UsuarioAutorizaModificacion
+                        });
+                        _servicioRepository.ActualizarInventarioVentaServicio(item.ProductoId);
+                    }
+                }
+
+                if (examen != null)
+                {
+                    _laboratorioRepository.Add(examen);
+                    venta.ExamenId = examen.Id;
+                }
+
+                var descripcion = ambienteId == (int)AmbienteEnum.Laboratorio
+                    ? "Venta de examen: " + (paciente?.Nombre ?? enc.Nombres)
+                    : "Venta " + venta.TipoVenta;
+
+                cajaLocal.DetalleCajas.Add(new DetalleCaja
+                {
+                    Venta = venta,
+                    Descripcion = descripcion,
+                    Ingreso = venta.DetalleVenta.Sum(a => a.Total),
+                    Fecha = fechaHora
+                });
+                _cajaRepository.Update(cajaLocal);
+
+                if (retornarExamenId)
+                {
+                    if (examen == null || examen.Id <= 0)
+                        return new JsonErrorResult(LegacyVentaError("No se pudo registrar el examen."));
+                    return Json(examen.Id);
+                }
+
+                return Json(venta.Id);
+            }
+            catch (Exception ex)
+            {
+                return new JsonErrorResult(LegacyVentaError("Error al guardar la venta: " + ExceptionHelper.ObtenerMensajeRaiz(ex)));
+            }
         }
 
+        private static object LegacyVentaError(string mensaje) => new { message = mensaje, messsage = mensaje };
 
+        [Authorize]
+        public IActionResult ReporteVentasGeneral()
+        {
+            var empleados = _empleadoRepository.GetList()
+                .Where(e => !e.Eliminado)
+                .OrderBy(e => e.Nombre)
+                .ThenBy(e => e.Apellido)
+                .ToList();
+            ViewBag.Empleados = Utilidades.EmpleadoSelectListHelper.Crear(empleados);
+            return View();
+        }
+
+        private static bool TryResolveTipoVentaDesdeRequest(
+            IQueryCollection query,
+            out string tipoVenta,
+            out bool isClinica,
+            out bool isFarmacia,
+            out bool isLaboratorio,
+            out bool isEmergencia,
+            out bool isHospital)
+        {
+            isClinica = false;
+            isFarmacia = false;
+            isLaboratorio = false;
+            isEmergencia = false;
+            isHospital = false;
+            tipoVenta = ObtenerTipoVentaDesdeQuery(query);
+
+            if (string.IsNullOrWhiteSpace(tipoVenta))
+                return false;
+
+            switch (tipoVenta)
+            {
+                case "clinica":
+                    isClinica = true;
+                    return true;
+                case "farmacia":
+                    isFarmacia = true;
+                    return true;
+                case "laboratorio":
+                    isLaboratorio = true;
+                    return true;
+                case "emergencia":
+                    isEmergencia = true;
+                    return true;
+                case "hospital":
+                    isHospital = true;
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static string ObtenerTipoVentaDesdeQuery(IQueryCollection query)
+        {
+            var explicito = query["tipoVenta"].FirstOrDefault()
+                ?? query["TipoVenta"].FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(explicito))
+                return explicito.Trim().ToLowerInvariant();
+
+            if (EsQueryVerdadero(query, "isEmergencia"))
+                return "emergencia";
+            if (EsQueryVerdadero(query, "isHospital"))
+                return "hospital";
+            if (EsQueryVerdadero(query, "isLaboratorio") || EsQueryVerdadero(query, "islaboratorio"))
+                return "laboratorio";
+            if (EsQueryVerdadero(query, "isFarmacia"))
+                return "farmacia";
+            if (EsQueryVerdadero(query, "isClinica"))
+                return "clinica";
+
+            return null;
+        }
+
+        private static bool EsQueryVerdadero(IQueryCollection query, string key)
+        {
+            if (!query.TryGetValue(key, out var values) || values.Count == 0)
+                return false;
+
+            var val = values[0];
+            if (string.IsNullOrEmpty(val))
+                return true;
+
+            return val.Equals("true", StringComparison.OrdinalIgnoreCase)
+                || val == "1"
+                || val == "True";
+        }
 
     }
     #endregion

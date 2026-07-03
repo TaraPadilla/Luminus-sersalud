@@ -1,3 +1,17 @@
+function _parseEmailApiResponse(response) {
+  return response.text().then(function (text) {
+    if (!response.ok) {
+      var detail = text;
+      try {
+        var json = JSON.parse(text);
+        detail = json.error || json.message || text;
+      } catch (e) { /* usar texto plano */ }
+      throw new Error(detail || ("Error HTTP " + response.status));
+    }
+    return text;
+  });
+}
+
 function enviarResultadosLaboratorioEmail(
   examenId,
   nombrePaciente,
@@ -38,7 +52,7 @@ function enviarResultadosLaboratorioEmail(
       formData.append("Subject", "Resultados de laboratorio - " + window.EmpresaConfig.Nombre);
       formData.append("Body", bodyMessage);
       formData.append("To", emailPaciente);
-      formData.append("Attachment", blob, "Resultados.pdf");
+      formData.append("Attachments", blob, "Resultados.pdf");
 
       // 5. Enviar el correo
       return fetch("/api/SendEmail", {
@@ -46,11 +60,11 @@ function enviarResultadosLaboratorioEmail(
         body: formData,
       });
     })
-    .then((response) => response.text())
-    .then((data) => {
+    .then(_parseEmailApiResponse)
+    .then(function () {
       alert("Correo enviado exitosamente.");
     })
-    .catch((error) => {
+    .catch(function (error) {
       console.error("Error en enviarResultadosLaboratorioEmail:", error.message);
       alert("Error al enviar el correo: " + error.message);
     });
@@ -96,18 +110,18 @@ function enviarReporteCompraEmail(compraId, proveedorCorreo) {
       formData.append("Subject", `Orden de compra - ${window.EmpresaConfig.Nombre}`);
       formData.append("Body", bodyMessage);
       formData.append("To", proveedorCorreo);
-      formData.append("Attachment", blob, "Orden.pdf");
+      formData.append("Attachments", blob, "Orden.pdf");
 
       return fetch("/api/SendEmail", {
         method: "POST",
         body: formData,
       });
     })
-    .then((response) => response.text())
-    .then((data) => {
+    .then(_parseEmailApiResponse)
+    .then(function () {
       alert("Correo enviado exitosamente.");
     })
-    .catch((error) => {
+    .catch(function (error) {
       console.error("Error en enviarReporteCompraEmail:", error.message);
       alert("Error al enviar el correo: " + error.message);
     });
@@ -126,7 +140,7 @@ function enviarHospitalizacionEmail(
 ) {
   // RETORNO de promesa resuelta si no hay correo para que no rompa el flujo
   if (!emailPaciente || emailPaciente.trim() === "") {
-    console.warn("enviarHospitalizacionEmail: sin correo, se omite.");
+    alert("El paciente no tiene un correo electrónico registrado.");
     return Promise.resolve();
   }
 
@@ -174,12 +188,18 @@ function enviarHospitalizacionEmail(
         body: formData,
       });
     })
-    .then((response) => response.text())
-    .then((data) => {
+    .then(_parseEmailApiResponse)
+    .then(function () {
       console.log("Correo enviado a: " + emailPaciente);
+      if (typeof toastr !== "undefined") {
+        toastr.success("Correo enviado a " + emailPaciente);
+      }
     })
-    .catch((error) => {
+    .catch(function (error) {
       console.error("Error al enviar correo a " + emailPaciente + ":", error.message);
+      if (typeof toastr !== "undefined") {
+        toastr.error("No se pudo enviar el correo: " + error.message);
+      }
       return Promise.resolve();
     });
 }
@@ -221,7 +241,7 @@ function enviarAlertaInventarioEmail(emailDestino) {
       formData.append("Subject", "Alerta de Inventario: Productos Vencidos - " + window.EmpresaConfig.Nombre);
       formData.append("Body", bodyMessage);
       formData.append("To", emailDestino);
-      formData.append("Attachment", blob, "Reporte_Inventario.pdf");
+      formData.append("Attachments", blob, "Reporte_Inventario.pdf");
 
       // 5. Enviar el correo
       return fetch("/api/SendEmail", {
@@ -229,11 +249,11 @@ function enviarAlertaInventarioEmail(emailDestino) {
         body: formData,
       });
     })
-    .then((response) => response.text())
-    .then((data) => {
+    .then(_parseEmailApiResponse)
+    .then(function () {
       alert("Alerta de inventario enviada exitosamente.");
     })
-    .catch((error) => {
+    .catch(function (error) {
       console.error("Error en enviarAlertaInventarioEmail:", error.message);
       alert("Error al enviar la alerta de inventario: " + error.message);
     });
@@ -274,6 +294,16 @@ function enviarConfirmacionHospitalizacion(pacienteNombre, emailDestino, hospita
           return fetch("/api/SendEmail", { method: "POST", body: formData });
         });
     })
-    .then(() => mensajeEmergente("Correo enviado con éxito"))
-    .catch(err => console.error("Error detallado en SendEmail:", err));
+    .then(_parseEmailApiResponse)
+    .then(function () {
+      if (typeof mensajeEmergente === "function") {
+        mensajeEmergente("Correo enviado con éxito");
+      }
+    })
+    .catch(function (err) {
+      console.error("Error detallado en SendEmail:", err);
+      if (typeof mensajeEmergenteError === "function") {
+        mensajeEmergenteError(err.message || "Error al enviar correo");
+      }
+    });
 }

@@ -365,26 +365,52 @@
   };
 
   self.consultarTarifas = function () {
+    var ctx = obtenerContextoHospitalizar();
+    if (ctx.habitacionId <= 0 && ctx.categoriaId <= 0) {
+      console.error("Hospitalizar: habitacionId y categoriaId inválidos", ctx);
+      alert("No se pudo identificar la habitación o categoría. Recargue la página.");
+      return;
+    }
+
     showLoading();
     $.ajax({
       url: "/Hospitalizacion/ConsultarTarifasHabitacion",
       method: "POST",
       data: {
-        habitacionId: $("#HabitacionId").val(),
-        codigoSeguro: $("#CodigoSeguro").val(),
+        habitacionId: ctx.habitacionId,
+        categoriaId: ctx.categoriaId,
+        codigoSeguro: ctx.codigoSeguro,
       },
       success: function (dataResult) {
         hideLoading();
-        var data = JSON.parse(dataResult);
-        if (data.Exitoso) {
-          self.tarifas(data.Resultado);
+        var data = parseAjaxJson(dataResult);
+        if (!data) {
+          alert("Error al leer las tarifas del servidor. Recargue la página e intente de nuevo.");
+          return;
+        }
 
-          // Seleccionar automáticamente la primera tarifa válida
-          if (data.Resultado.length > 0) {
-            self.tarifaSeleccionada(data.Resultado[0]); // Seleccionar automáticamente la primera tarifa
+        var exitoso = data.Exitoso === true || data.exitoso === true;
+        var resultado = data.Resultado || data.resultado || [];
+
+        if (exitoso) {
+          self.tarifas(resultado);
+          $("#texto-validacion-tarifas").hide();
+          $("#mensaje-sin-tarifas").toggle(resultado.length === 0);
+
+          if (resultado.length > 0) {
+            var seleccionActual = self.tarifaSeleccionada();
+            var mismaTarifa = seleccionActual
+              ? ko.utils.arrayFirst(resultado, function (t) {
+                  return t.TarifaId === seleccionActual.TarifaId;
+                })
+              : null;
+            self.tarifaSeleccionada(mismaTarifa || resultado[0]);
+          } else {
+            self.tarifaSeleccionada(null);
+            $("#texto-validacion-tarifas").show();
           }
         } else {
-          alert(data.Mensaje);
+          alert(data.Mensaje || data.mensaje || "Error al consultar tarifas.");
         }
       },
       error: function (dataError) {
@@ -413,6 +439,7 @@
       ) {
         //Si el paciente existe
         self.pacienteId(pacienteSeleccionado.Id);
+        $("#PacienteId").val(pacienteSeleccionado.Id);
         self.pacienteNombre(pacienteSeleccionado.Nombre);
         self.pacienteDpi(pacienteSeleccionado.Dpi);
         self.pacienteTelefono(pacienteSeleccionado.Telefono);
@@ -445,6 +472,17 @@
   };
 
   self.validateModel = function () {
+    let pacienteIdVal = parseInt(self.pacienteId(), 10);
+    if (!pacienteIdVal || isNaN(pacienteIdVal) || pacienteIdVal <= 0) {
+      pacienteIdVal = parseInt($("#PacienteId").val(), 10);
+    }
+    if (!pacienteIdVal || isNaN(pacienteIdVal) || pacienteIdVal <= 0) {
+      alert("Seleccione un paciente válido de la lista (paso 3).");
+      return false;
+    }
+    self.pacienteId(pacienteIdVal);
+    $("#PacienteId").val(pacienteIdVal);
+
     let pacienteNombre = self.pacienteNombre();
     if (
       pacienteNombre == null ||
@@ -938,7 +976,6 @@
         self.pacienteFechaNacimiento() || "",
       );
 
-
       // ===== PRECARGAR PROCEDIMIENTO =====
       var citaId = $("#CitaId").val();
       if (citaId && citaId !== "0" && citaId !== "") {
@@ -1021,9 +1058,11 @@
     }
     irAPaso(9, "#paso-resumen");
 
-    if (typeof actualizarEstadoBtnFinalizar === "function") {
-      var tieneConsentimiento = !!(self.urlArchivoConsentimiento && self.urlArchivoConsentimiento());
-      actualizarEstadoBtnFinalizar(tieneConsentimiento);
+    if (typeof window.consultarExistenciaConsentimiento === "function") {
+      window.consultarExistenciaConsentimiento();
+    } else if (typeof window.actualizarEstadoBtnFinalizar === "function") {
+      var tieneConsentimiento = $("#botonImprimir2").is(":visible");
+      window.actualizarEstadoBtnFinalizar(tieneConsentimiento);
     }
   };
 
@@ -1153,8 +1192,9 @@
     $.ajax({
       url: "/CuestionarioPreAnestesico/AgregarCuestionario",
       type: "POST",
-      contentType: "application/json",
+      contentType: "application/json; charset=utf-8",
       data: JSON.stringify(cuestionarioData),
+      processData: false,
       success: function (response) {
         try {
           let data =
@@ -1264,6 +1304,7 @@
       // Encabezado
       NombrePaciente: primerNombre,
       ApellidoPaciente: apellido,
+      MedicoTratante: self.cuestionario.cirujano() || "",
       FechaNacimiento: self.pacienteFechaNacimiento()
         ? new Date(self.pacienteFechaNacimiento())
         : null,
@@ -1336,8 +1377,9 @@
     $.ajax({
       url: "/ListaChequeo/AgregarListaChequeo",
       type: "POST",
-      contentType: "application/json",
+      contentType: "application/json; charset=utf-8",
       data: JSON.stringify(listaData),
+      processData: false,
       success: function (response) {
         try {
           let data =
@@ -1502,9 +1544,6 @@ $(document).ready(function () {
   hospitalizarVm.consultarPacientes();
   hospitalizarVm.consultarEspecialidades();
 
-  // Ejecutar el paso de consentimiento directamente si es necesario
-  hospitalizarVm.pasoConsentimiento();
-
   $(".dpi-paciente-nuevo").hide();
 
   let fechaEntrada = moment(); // Hora actual
@@ -1586,6 +1625,42 @@ function ObtenerCliente() {
     },
     error: function (data) { },
   });
+}
+
+function parseAjaxJson(dataResult) {
+  if (dataResult == null) return null;
+  if (typeof dataResult === "object") return dataResult;
+  try {
+    return JSON.parse(dataResult);
+  } catch (e) {
+    console.error("Respuesta no JSON:", dataResult);
+    return null;
+  }
+}
+
+function obtenerContextoHospitalizar() {
+  var ctxEl = document.getElementById("hospitalizar-context");
+  var habitacionId = parseInt($("#HabitacionId").val(), 10);
+  var categoriaId = parseInt($("#HabitacionCategoriaId").val(), 10);
+  var codigoSeguro = ($("#CodigoSeguro").val() || "").trim();
+
+  if (ctxEl) {
+    if (!habitacionId || isNaN(habitacionId)) {
+      habitacionId = parseInt(ctxEl.getAttribute("data-habitacion-id"), 10);
+    }
+    if (!categoriaId || isNaN(categoriaId)) {
+      categoriaId = parseInt(ctxEl.getAttribute("data-categoria-id"), 10);
+    }
+    if (!codigoSeguro) {
+      codigoSeguro = (ctxEl.getAttribute("data-codigo-seguro") || "").trim();
+    }
+  }
+
+  return {
+    habitacionId: habitacionId && !isNaN(habitacionId) ? habitacionId : 0,
+    categoriaId: categoriaId && !isNaN(categoriaId) ? categoriaId : 0,
+    codigoSeguro: codigoSeguro,
+  };
 }
 
 function actualizarVisualizacionStepper(pasoActual) {

@@ -176,7 +176,7 @@ namespace sistema.Controllers
 
             var user = _userRepository.Get(User.Identity.Name);
 
-            var lista = _envioRepository.PaginacionMisPedidos(sortOrder, buscar, pageNumber, 10,user.Id.ToString());
+            var lista = _envioRepository.PaginacionMisPedidos(sortOrder, buscar, pageNumber, 10, user.Id);
 
             return View(lista);
         }
@@ -200,7 +200,7 @@ namespace sistema.Controllers
 
             var user = _userRepository.Get(User.Identity.Name);
 
-            var lista = _envioRepository.PaginacionMisPedidosEntregados(sortOrder, buscar, pageNumber, 10,user.Id.ToString());
+            var lista = _envioRepository.PaginacionMisPedidosEntregados(sortOrder, buscar, pageNumber, 10, user.Id);
 
             return View(lista);
         }
@@ -247,7 +247,7 @@ namespace sistema.Controllers
 
             var user = _userRepository.Get(User.Identity.Name);
 
-            var lista = _envioRepository.PaginacionEnviosEnRuta(sortOrder, buscar, pageNumber, 10,user.Id.ToString());
+            var lista = _envioRepository.PaginacionEnviosEnRuta(sortOrder, buscar, pageNumber, 10, user.Id);
 
             return View(lista);
         }

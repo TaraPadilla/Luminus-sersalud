@@ -1,4 +1,4 @@
-﻿let ParametroConfiguracion = {
+let ParametroConfiguracion = {
   ColorHabitacion: "#ffffff",
   ColorHabitacionSeleccionada: "#f5f5f5",
 };
@@ -6,19 +6,53 @@
 //Configuraciones del sistema
 let configuracionNombreEstablecimiento;
 
+function initSelect2Controls() {
+  $(".select2bs4").each(function () {
+    var $el = $(this);
+    var bindAttr = $el.attr("data-bind") || "";
+    if (bindAttr.indexOf("options:") >= 0) {
+      return;
+    }
+    if ($el.hasClass("select2-hidden-accessible")) {
+      $el.select2("destroy");
+    }
+    $el.select2({
+      theme: "bootstrap4",
+      width: "100%",
+      minimumResultsForSearch: 0,
+    });
+  });
+
+  if (window.SelectHelpers) {
+    SelectHelpers.cleanupSelectTree(document);
+  }
+}
+
 $(".enlace-redirigir").on("click", function () {
   showLoading();
-  setInterval(function () {
+  setTimeout(function () {
     hideLoading();
   }, 1500);
 });
-
-$(".select2bs4").select2({
-  theme: "bootstrap4",
-  tags: true,
-});
 function contraerMenu() {
   $("#menu-navegacion-izquierdo").addClass("closed-sidebar");
+}
+
+/** Keep SerSalud sidebar pinned and expanded on desktop; main.js collapses below 1250px. */
+function syncFixedSidebarLayout() {
+  var container = document.getElementById("menu-navegacion-izquierdo");
+  if (!container || !container.classList.contains("fixed-sidebar")) {
+    return;
+  }
+
+  if (container.classList.contains("layout-sersalud-compact") && window.innerWidth >= 992) {
+    container.classList.remove("closed-sidebar-mobile", "closed-sidebar");
+    return;
+  }
+
+  if (window.innerWidth >= 992 && container.classList.contains("closed-sidebar-mobile")) {
+    container.classList.remove("closed-sidebar-mobile", "closed-sidebar");
+  }
 }
 function mensajeEmergente(mensaje) {
   toastr.options = {
@@ -40,6 +74,10 @@ function mensajeEmergente(mensaje) {
   };
   toastr.success(mensaje);
 }
+function mensajeEmergenteExito(mensaje) {
+  mensajeEmergente(mensaje);
+}
+
 function mensajeEmergenteError(mensaje) {
   toastr.options = {
     closeButton: false,
@@ -61,7 +99,10 @@ function mensajeEmergenteError(mensaje) {
   toastr.error(mensaje);
 }
 
+var _loadingCount = 0;
+
 function showLoading() {
+  _loadingCount++;
   $("#div-loading").show();
 }
 
@@ -80,19 +121,37 @@ function showModalRespuesta(modalId) {
 }
 
 function hideLoading() {
+  _loadingCount = Math.max(0, _loadingCount - 1);
+  if (_loadingCount === 0) {
+    $("#div-loading").hide();
+  }
+}
+
+function forceHideLoading() {
+  _loadingCount = 0;
   $("#div-loading").hide();
 }
 
 function clearDataTable(tablaId) {
-  var table = $("#" + tablaId).DataTable();
-  table.clear().draw();
+  var $table = $("#" + tablaId);
+  if (!$table.length || !$.fn.DataTable.isDataTable($table)) {
+    return;
+  }
 
-  $("#" + tablaId)
-    .dataTable()
-    .fnDestroy();
+  $table.DataTable().clear().draw();
+  $table.DataTable().destroy();
 }
 function drawDataTable(tablaId) {
-  $("#" + tablaId).DataTable({
+  var $table = $("#" + tablaId);
+  if (!$table.length) {
+    return;
+  }
+
+  if ($.fn.DataTable.isDataTable($table)) {
+    $table.DataTable().destroy();
+  }
+
+  $table.DataTable({
     searching: true,
     ordering: true,
     paging: true,
@@ -113,36 +172,23 @@ function drawDataTable(tablaId) {
   });
 }
 function setConfiguracionesSistema() {
-  $("#configuracion-nombre-establecimiento").text(
-    configuracionNombreEstablecimiento + " -AVM"
-  );
+  var text = configuracionNombreEstablecimiento || "";
+  $("#configuracion-nombre-establecimiento").text(text);
+  if (window.__appConfig && window.__appConfig.pestana) {
+    document.title = window.__appConfig.pestana;
+  }
 }
 function getConfiguracionesSistema() {
-  configuracionNombreEstablecimiento = "AVM";
+  var cfg = window.__appConfig || {};
+  var cliente = cfg.cliente || "";
+  configuracionNombreEstablecimiento =
+    cfg.nombreEstablecimiento || cfg.pestana || cliente || "";
   setConfiguracionesSistema();
-  //$.ajax({
-  //    method: "POST",
-  //    url: '/Grabaciones/Modificar',
-  //    success: function (data, textStatus) {
-  //        if (data.exitoso) {
-  //            window.location.href = "/Grabaciones/Lista";
-  //        }
-  //        else {
-  //            $("#div-loading").hide();
-  //            alert(data.mensaje);
-  //        }
-  //    },
-  //    error: function (data) {
-  //        $("#div-loading").hide();
-  //        alert(data.error);
-  //    }
-  //});
 }
 
 getConfiguracionesSistema();
 
 function initMunicipios() {
-  console.log("Inicializando municipios");
   // usamos delegación para que funcione si el DOM se inyecta por AJAX
   $(document)
     .off("change", "#DepartamentoSelect")
@@ -177,33 +223,52 @@ function initMunicipios() {
 
 // Arrancamos también en el load inicial de la página
 $(function () {
+  if (window.SelectHelpers) {
+    SelectHelpers.cleanupSelectTree(document);
+  }
+  initSelect2Controls();
   initMunicipios();
-  $("#rangoFechasPicker").daterangepicker(
-    {
-      locale: { format: "YYYY-MM-DD" },
-      startDate: moment().startOf("month"),
-      endDate: moment().endOf("month"),
-      opens: "left",
-    },
-    function (start, end) {
-      // Al cambiar, formateo el valor tal como lo espera tu controlador
-      var text = start.format("YYYY-MM-DD") + "-" + end.format("YYYY-MM-DD");
-      $("#rangoFechasPicker").val(text);
-    }
-  );
-});
-$("#MunicipioSelect").change(function () {
-  // tomo su valor (el id)
-  var codigo = $(this).val() || "";
-  // y lo pongo en el input de código
-  $("#SelectedMunicipioCodigo").val(codigo);
-});
-document.getElementById("frmDescarga").addEventListener("submit", function (e) {
-  // leemos los selects
-  var depto = document.getElementById("DepartamentoSelect").value;
-  var muni = document.getElementById("MunicipioSelect").value;
-  // sobreescribimos los hidden
-  this.querySelector("input[name=departamentoId]").value = depto;
-  this.querySelector("input[name=municipioId]").value = muni;
-  // el rango de fechas ya lo tenías
+  syncFixedSidebarLayout();
+  setTimeout(syncFixedSidebarLayout, 0);
+  setTimeout(syncFixedSidebarLayout, 150);
+  $(window).on("resize", function () {
+    setTimeout(syncFixedSidebarLayout, 0);
+  });
+
+  var $rangoFechasPicker = $("#rangoFechasPicker");
+  if ($rangoFechasPicker.length && typeof $rangoFechasPicker.daterangepicker === "function") {
+    $rangoFechasPicker.daterangepicker(
+      {
+        locale: { format: "YYYY-MM-DD" },
+        startDate: moment().startOf("month"),
+        endDate: moment().endOf("month"),
+        opens: "left",
+      },
+      function (start, end) {
+        var text = start.format("YYYY-MM-DD") + "-" + end.format("YYYY-MM-DD");
+        $rangoFechasPicker.val(text);
+      }
+    );
+  }
+
+  $("#MunicipioSelect").on("change", function () {
+    var codigo = $(this).val() || "";
+    $("#SelectedMunicipioCodigo").val(codigo);
+  });
+
+  var frmDescarga = document.getElementById("frmDescarga");
+  if (frmDescarga) {
+    frmDescarga.addEventListener("submit", function () {
+      var deptoSelect = document.getElementById("DepartamentoSelect");
+      var muniSelect = document.getElementById("MunicipioSelect");
+      var deptoInput = this.querySelector("input[name=departamentoId]");
+      var muniInput = this.querySelector("input[name=municipioId]");
+      if (deptoSelect && deptoInput) {
+        deptoInput.value = deptoSelect.value;
+      }
+      if (muniSelect && muniInput) {
+        muniInput.value = muniSelect.value;
+      }
+    });
+  }
 });

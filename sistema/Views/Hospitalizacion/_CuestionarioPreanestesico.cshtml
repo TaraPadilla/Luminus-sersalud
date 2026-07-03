@@ -1,5 +1,6 @@
 @model sistema.Models.HospitalizacionDetallesViewModel
-<div class="tab-pane tabs-animation fade show" id="tab-content-preanestesico" role="tabpanel">
+<input type="hidden" id="PreanestPuedeEditar" value="@(!User.IsInRole("Medico Externo") ? "1" : "0")" />
+<div class="tab-pane tabs-animation fade" id="tab-content-preanestesico" role="tabpanel">
     <div class="form-row">
         <div class="col-md-12">
             <div class="main-card mb-3 nota-clinica-card">
@@ -18,7 +19,7 @@
                     @if(!User.IsInRole("Medico Externo")){
 
                     <div>
-                        <button class="btn btn-nota-primary btn-nota-primary-preanest" data-bind="click: verModalAgregarPreanestesico">
+                        <button type="button" class="btn btn-nota-primary btn-nota-primary-preanest" data-preanest-accion="nuevo">
                             <i class="fas fa-plus mr-1"></i> Nuevo Cuestionario
                         </button>
                     </div>
@@ -37,75 +38,13 @@
                                     <th class="text-center">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <!--ko foreach: cuestionariosPreAnest-->
-                                <tr>
-                                    <td>
-                                        <div class="nota-fecha-wrapper">
-                                            <div class="nota-fecha-icon nota-fecha-icon-preanest">
-                                                <i class="fas fa-clock"></i>
-                                            </div>
-                                            <div>
-                                                <!-- ko if: $data.FechaCuestionario -->
-                                                <div class="nota-fecha-text" data-bind="text: $data.FechaCuestionario"></div>
-                                                <!-- /ko -->
-                                                <!-- ko ifnot: $data.FechaCuestionario -->
-                                                <div class="nota-fecha-text" data-bind="text: $data.FechaRegistro"></div>
-                                                <!-- /ko -->
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="nota-contenido-cell nota-contenido-cell-preanest" data-bind="text: $data.NombreCompleto || '—'"></div>
-                                    </td>
-                                    <td>
-                                        <!-- ko if: $data.ProcedimientoProgramado -->
-                                        <div class="nota-contenido-cell nota-contenido-cell-preanest" data-bind="text: $data.ProcedimientoProgramado"></div>
-                                        <!-- /ko -->
-                                        <!-- ko ifnot: $data.ProcedimientoProgramado -->
-                                        <span class="text-muted" style="font-size:0.82rem;">—</span>
-                                        <!-- /ko -->
-                                    </td>
-                                    <td>
-                                        <!-- ko if: $data.Cirujano -->
-                                        <div class="nota-contenido-cell nota-contenido-cell-preanest" data-bind="text: $data.Cirujano"></div>
-                                        <!-- /ko -->
-                                        <!-- ko ifnot: $data.Cirujano -->
-                                        <span class="text-muted" style="font-size:0.82rem;">—</span>
-                                        <!-- /ko -->
-                                    </td>
-                                    <td class="text-center">
-                                        <div class="d-flex justify-content-center" style="gap:6px;">
-                                            
-                                            @if(!User.IsInRole("Medico Externo")){
-                                            <button class="btn btn-warning text-white btn-nota-accion" data-bind="click: function() { $root.abrirEditarCuestionarioPreAnest($data) }">
-                                                <i class="fas fa-edit mr-1"></i> Editar
-                                            </button>
-                                            }
-                                            <button class="btn btn-nota-accion btn-nota-preanest" data-bind="click: function() { $root.verDetalleCuestionarioPreAnest($data) }">
-                                                <i class="fas fa-eye mr-1"></i> Ver
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <!--/ko-->
-                                <!-- ko if: cuestionariosPreAnest().length === 0 -->
-                                <tr>
-                                    <td colspan="5">
-                                        <div class="nota-empty-state">
-                                            <i class="fas fa-notes-medical d-block"></i>
-                                            <p>No hay cuestionarios pre-anest&eacute;sicos registrados</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <!-- /ko -->
-                            </tbody>
+                            <tbody id="tbody-cuestionarios-preanest"></tbody>
                         </table>
                     </div>
                 </div>
 
                 <div class="nota-footer">
-                    <span><i class="fas fa-notes-medical mr-1" style="color:var(--preanest-color)"></i> Cuestionarios registrados: <strong data-bind="text: cuestionariosPreAnest().length"></strong></span>
+                    <span><i class="fas fa-notes-medical mr-1" style="color:var(--preanest-color)"></i> Cuestionarios registrados: <strong id="preanest-total-count">0</strong></span>
                 </div>
             </div>
         </div>

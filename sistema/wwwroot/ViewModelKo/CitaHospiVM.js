@@ -51,6 +51,42 @@ var CitaHospiVM = function () {
     $("#MunicipioId").val(newValue);
   });
 
+  self.pacientes.subscribe(function () {
+    syncSelectPacienteCitaHospi();
+  });
+
+  self.departamentosExistentes.subscribe(function () {
+    syncSelectDepartamentoCitaHospi();
+  });
+
+  self.municipiosExistentes.subscribe(function () {
+    syncSelectMunicipioCitaHospi();
+  });
+
+  self.departamentoSeleccionado.subscribe(function (val) {
+    var $sel = $("#departamentoSeleccionado");
+    if (!$sel.length) return;
+    var id = val != null && val !== "" ? String(val) : "";
+    if ($sel.val() !== id) {
+      $sel.val(id);
+      if ($sel.hasClass("select2-hidden-accessible")) {
+        $sel.trigger("change.select2");
+      }
+    }
+  });
+
+  self.municipioSeleccionado.subscribe(function (val) {
+    var $sel = $("#municipioSeleccionado");
+    if (!$sel.length) return;
+    var id = val != null && val !== "" ? String(val) : "";
+    if ($sel.val() !== id) {
+      $sel.val(id);
+      if ($sel.hasClass("select2-hidden-accessible")) {
+        $sel.trigger("change.select2");
+      }
+    }
+  });
+
   // Servicios
   // self.serviciosExistentes = ko.observableArray();
   // self.servicioAgregarSeleccionado = ko.observable();
@@ -180,15 +216,8 @@ var CitaHospiVM = function () {
 
       // Cargamos los municipios manualmente y después establecemos el municipio
       self.consultarMunicipiosExistentes(paciente.DepartamentoId, function () {
-        // Una vez cargados los municipios, establecemos el valor del municipio
         self.municipioSeleccionado(municipioIdToSet);
-        $("#municipioSeleccionado").val(municipioIdToSet).trigger("change");
       });
-
-      // Ahora lanzamos el evento change del departamento
-      $("#departamentoSeleccionado")
-        .val(paciente.DepartamentoId)
-        .trigger("change");
 
       // Responsable
       $("#ResponsableNit").val(paciente.ResponsableNit);
@@ -283,6 +312,7 @@ var CitaHospiVM = function () {
               }
             });
           }
+          syncSelectPacienteCitaHospi();
         } else {
           textoError.show();
         }
@@ -343,7 +373,15 @@ var CitaHospiVM = function () {
         try {
           var data = JSON.parse(dataResult);
           if (data.Exitoso) {
-            self.departamentosExistentes(data.Resultado);
+            var lista = (data.Resultado || []).map(function (d) {
+              return {
+                Id: d.Id,
+                NombreDepartamento: d.NombreDepartamento,
+                DepartamentoNombreMostrar: d.DepartamentoNombreMostrar
+                  || ((d.Id || "") + " - " + (d.NombreDepartamento || "")),
+              };
+            });
+            self.departamentosExistentes(lista);
           } else {
             alert(data.Mensaje);
           }
@@ -408,7 +446,16 @@ var CitaHospiVM = function () {
         try {
           var data = JSON.parse(dataResult);
           if (data.Exitoso) {
-            self.municipiosExistentes(data.Resultado);
+            var lista = (data.Resultado || []).map(function (m) {
+              return {
+                Id: m.Id,
+                NombreMunicipio: m.NombreMunicipio,
+                DepartamentoId: m.DepartamentoId,
+                MunicipioNombreMostrar: m.MunicipioNombreMostrar
+                  || ((m.Id || "") + " - " + (m.NombreMunicipio || "")),
+              };
+            });
+            self.municipiosExistentes(lista);
             if (callback && typeof callback === "function") {
               callback();
             }
@@ -812,8 +859,8 @@ var CitaHospiVM = function () {
 
       // Dirección del paciente
       Direccion: $("#Direccion").val(),
-      DepartamentoId: $("#departamentoSeleccionado").val(),
-      MunicipioId: $("#municipioSeleccionado").val(),
+      DepartamentoId: $("#departamentoSeleccionado").val() || null,
+      MunicipioId: $("#municipioSeleccionado").val() || null,
       Procedimiento: $("#Procedimiento").val(),
 
       // Campos de Sala de Operaciones — nombre para mostrar, ID para lookup posterior
@@ -1532,10 +1579,162 @@ var CitaHospiVM = function () {
   };
 };
 
+function citaHospiSelect2Options(placeholder) {
+  return {
+    theme: "bootstrap4",
+    width: "100%",
+    minimumResultsForSearch: 0,
+    allowClear: true,
+    placeholder: placeholder || "Buscar...",
+    language: {
+      noResults: function () { return "No se encontraron resultados"; },
+      searching: function () { return "Buscando..."; }
+    }
+  };
+}
+
+function syncSelectPacienteCitaHospi() {
+  if (typeof window.citaHospiVm === "undefined" || !window.citaHospiVm) return;
+  var $sel = $("#selectPaciente");
+  if (!$sel.length || !$.fn.select2) return;
+
+  var pacientes = citaHospiVm.pacientes() || [];
+  var selected = citaHospiVm.pacienteSeleccionado();
+  var selectedId = selected && selected.Id ? String(selected.Id) : "";
+
+  if ($sel.hasClass("select2-hidden-accessible")) {
+    $sel.select2("destroy");
+  }
+
+  $sel.empty();
+  $sel.append($("<option>").val("").text("Seleccionar paciente"));
+  pacientes.forEach(function (p) {
+    if (!p || p.Id == null) return;
+    var label = p.NombreConDpi || p.Nombre || String(p.Id);
+    $sel.append($("<option>").val(String(p.Id)).text(label));
+  });
+
+  if (selectedId) {
+    $sel.val(selectedId);
+  }
+
+  $sel.select2(citaHospiSelect2Options("Seleccionar paciente"));
+
+  $sel.off("change.citaHospiPaciente").on("change.citaHospiPaciente", function () {
+    var raw = $(this).val();
+    if (!raw) {
+      citaHospiVm.pacienteSeleccionado(null);
+      return;
+    }
+    var id = parseInt(raw, 10);
+    var paciente = citaHospiVm.pacientes().find(function (p) { return p.Id === id; });
+    if (paciente) {
+      citaHospiVm.pacienteSeleccionado(paciente);
+    }
+  });
+}
+
+function syncSelectDepartamentoCitaHospi() {
+  if (typeof window.citaHospiVm === "undefined" || !window.citaHospiVm) return;
+  var $sel = $("#departamentoSeleccionado");
+  if (!$sel.length || !$.fn.select2) return;
+
+  var departamentos = citaHospiVm.departamentosExistentes() || [];
+  var selected = citaHospiVm.departamentoSeleccionado();
+  var selectedId = selected != null && selected !== "" ? String(selected) : "";
+
+  if ($sel.hasClass("select2-hidden-accessible")) {
+    $sel.select2("destroy");
+  }
+
+  $sel.empty();
+  $sel.append($("<option>").val("").text("Seleccione..."));
+  departamentos.forEach(function (d) {
+    if (!d || d.Id == null) return;
+    var label = d.DepartamentoNombreMostrar
+      || ((d.Id || "") + " - " + (d.NombreDepartamento || ""));
+    $sel.append($("<option>").val(String(d.Id)).text(label));
+  });
+
+  if (selectedId) {
+    $sel.val(selectedId);
+  }
+
+  $sel.select2(citaHospiSelect2Options("Seleccione..."));
+
+  $sel.off("change.citaHospiDepto").on("change.citaHospiDepto", function () {
+    var raw = $(this).val();
+    if (!raw) {
+      citaHospiVm.departamentoSeleccionado(null);
+      return;
+    }
+    citaHospiVm.departamentoSeleccionado(parseInt(raw, 10));
+  });
+}
+
+function syncSelectMunicipioCitaHospi() {
+  if (typeof window.citaHospiVm === "undefined" || !window.citaHospiVm) return;
+  var $sel = $("#municipioSeleccionado");
+  if (!$sel.length || !$.fn.select2) return;
+
+  var municipios = citaHospiVm.municipiosExistentes() || [];
+  var selected = citaHospiVm.municipioSeleccionado();
+  var selectedId = selected != null && selected !== "" ? String(selected) : "";
+
+  if ($sel.hasClass("select2-hidden-accessible")) {
+    $sel.select2("destroy");
+  }
+
+  $sel.empty();
+  $sel.append($("<option>").val("").text("Seleccione..."));
+  municipios.forEach(function (m) {
+    if (!m || m.Id == null) return;
+    var label = m.MunicipioNombreMostrar
+      || ((m.Id || "") + " - " + (m.NombreMunicipio || ""));
+    $sel.append($("<option>").val(String(m.Id)).text(label));
+  });
+
+  if (selectedId) {
+    $sel.val(selectedId);
+  }
+
+  $sel.select2(citaHospiSelect2Options("Seleccione..."));
+
+  $sel.off("change.citaHospiMunicipio").on("change.citaHospiMunicipio", function () {
+    var raw = $(this).val();
+    if (!raw) {
+      citaHospiVm.municipioSeleccionado(null);
+      return;
+    }
+    citaHospiVm.municipioSeleccionado(parseInt(raw, 10));
+  });
+}
+
+function initCitaHospiFormSelect2Static() {
+  if (!window.jQuery || !$.fn.select2) return;
+  $("select.select2bs4").each(function () {
+    var $el = $(this);
+    var id = $el.attr("id") || "";
+    if (id === "selectPaciente" || id === "departamentoSeleccionado" || id === "municipioSeleccionado") {
+      return;
+    }
+    var bindAttr = $el.attr("data-bind") || "";
+    if (bindAttr.indexOf("options:") >= 0) return;
+    if ($el.hasClass("select2-hidden-accessible")) return;
+    var placeholder = $el.find('option[value=""]').first().text() || "Buscar...";
+    $el.select2(citaHospiSelect2Options(placeholder));
+  });
+}
+
 var citaHospiVm = new CitaHospiVM();
+window.citaHospiVm = citaHospiVm;
 ko.applyBindings(citaHospiVm);
 
 $(function () {
+  syncSelectPacienteCitaHospi();
+  syncSelectDepartamentoCitaHospi();
+  syncSelectMunicipioCitaHospi();
+
   citaHospiVm.consultarPacientes();
   citaHospiVm.consultarSeguros();
   console.log(citaHospiVm.seguroSeleccionado());
@@ -1612,6 +1811,7 @@ $(function () {
   });
 
 
+  setTimeout(initCitaHospiFormSelect2Static, 300);
 });
 
 function getEdad() {

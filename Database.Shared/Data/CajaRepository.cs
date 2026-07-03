@@ -230,7 +230,7 @@ namespace Database.Shared.Data
 
         public DetalleCaja GetDetalleCaja(int id)
         {
-            return _context.DetalleCajas.Where(a => a.VentaId == id).SingleOrDefault();
+            return _context.DetalleCajas.Where(a => a.VentaId == id).FirstOrDefault();
         }
 
         //public DetalleCaja GetDetalleCajaVentaServicio(int id)
@@ -243,9 +243,11 @@ namespace Database.Shared.Data
         {
             var set = _context.Set<DetalleCaja>();
             var entity = set.Find(id);
+            if (entity == null)
+                return;
             set.Remove(entity);
 
-            if (true)
+            if (savechanges)
             {
                 _context.SaveChanges();
             }

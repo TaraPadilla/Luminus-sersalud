@@ -91,13 +91,14 @@ namespace sistema.Areas.Identity.Pages.Account
                     return Page();
                 }
 
-                if (user.LockoutEnabled != true)
+                var lockoutEnd = await _userManager.GetLockoutEndDateAsync(user);
+                if (lockoutEnd.HasValue && lockoutEnd.Value > DateTimeOffset.UtcNow)
                 {
                     ModelState.AddModelError(string.Empty, "Usuario Inactivo.");
                     return Page();
                 }
 
-                var result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+                var result = await _signInManager.PasswordSignInAsync(user, Input.Password, Input.RememberMe, lockoutOnFailure: false);
 
                 if (result.Succeeded)
                 {

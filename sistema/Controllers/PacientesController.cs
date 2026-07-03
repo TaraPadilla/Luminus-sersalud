@@ -40,6 +40,7 @@ namespace sistema.Controllers
         private readonly IConsultas _consultasRepository = null;
         private readonly IHabitacion _habitacionRepository = null;
         private readonly ICitas _citasRepository = null;
+        private readonly Context _context;
 
 
         public PacientesController(
@@ -48,7 +49,8 @@ namespace sistema.Controllers
             IAlergiaRaraPacientes alergiasRarasRepository,
             IConsultas consultasRepository,
             IHabitacion habitacionRepository,
-            ICitas citasRepository
+            ICitas citasRepository,
+            Context context
         )
         {
             _pacientesRepository = pacientesRepository;
@@ -57,6 +59,7 @@ namespace sistema.Controllers
             _consultasRepository = consultasRepository;
             _habitacionRepository = habitacionRepository;
             _citasRepository = citasRepository;
+            _context = context;
         }
         [Authorize(Roles = "Administrador")]
         public IActionResult Lista()
@@ -1737,7 +1740,25 @@ namespace sistema.Controllers
         }
         public IActionResult Informacion(int? pacienteId)
         {
+            if (pacienteId == null || pacienteId <= 0)
+                return RedirectToAction("Lista");
+
             var paciente = _pacientesRepository.Get((int)pacienteId);
+            if (paciente == null)
+                return RedirectToAction("Lista");
+
+            var informacionExtra = _context.PacientesInformacionExtra
+                .Where(x => x.PacienteId == pacienteId)
+                .ToList();
+
+            ViewBag.AntPatologicos = informacionExtra
+                .Where(x => x.Posicion >= 13 && x.Posicion <= 26)
+                .ToList();
+
+            ViewBag.AntPersonalesNoPatologicos = informacionExtra
+                .Where(x => (x.Posicion >= 1 && x.Posicion <= 12)
+                    || (x.Posicion >= 27 && x.Posicion <= 30))
+                .ToList();
 
             return View(paciente);
         }
@@ -1769,7 +1790,30 @@ namespace sistema.Controllers
         {
             try
             {
+                if (pacienteId <= 0)
+                {
+                    return Json(new
+                    {
+                        exitoso = false,
+                        mensaje = "ID de paciente inválido."
+                    });
+                }
+
+                if (string.IsNullOrWhiteSpace(rutaFirma))
+                {
+                    return Json(new { exitoso = true });
+                }
+
                 var paciente = _pacientesRepository.Get(pacienteId, false);
+                if (paciente == null)
+                {
+                    return Json(new
+                    {
+                        exitoso = false,
+                        mensaje = $"No se encontró el paciente con ID {pacienteId}."
+                    });
+                }
+
                 paciente.UrlFirmaRegistro = rutaFirma;
                 _pacientesRepository.Update(paciente);
                 TempData["Message"] = "Se ha actualizado la firma de registro del paciente";
@@ -1792,7 +1836,17 @@ namespace sistema.Controllers
         {
             try
             {
+                if (pacienteId <= 0 || string.IsNullOrWhiteSpace(rutaFirma))
+                {
+                    return Json(new { exitoso = pacienteId > 0 });
+                }
+
                 var paciente = _pacientesRepository.Get(pacienteId, false);
+                if (paciente == null)
+                {
+                    return Json(new { exitoso = false, mensaje = "Paciente no encontrado." });
+                }
+
                 paciente.UrlFirmaPoliticas = rutaFirma;
                 _pacientesRepository.Update(paciente);
                 TempData["Message"] = "Se ha actualizado la firma de políticas de pago del paciente";
@@ -1972,13 +2026,67 @@ namespace sistema.Controllers
 
         public IActionResult CrearFormConsentimientoHospi(int HabitacionId, int PacienteId, int? ConsultaId = null, int? CitaId = null)
         {
+            if (PacienteId <= 0 || HabitacionId <= 0)
+            {
+                return Content(
+                    "<p>Paciente o habitación no válidos. Cierre esta ventana y abra el consentimiento desde el asistente de hospitalización (paso 5).</p>",
+                    "text/html; charset=utf-8");
+            }
+
             // Obtener datos
             var paciente = _pacientesRepository.Get(PacienteId);
-            var ultimaConsulta = _consultasRepository.GetUltimaConsultaPaciente(PacienteId);
+            if (paciente == null)
+            {
+                return Content(
+                    $"<p>No se encontró el paciente con ID {PacienteId}. Verifique que el paciente existe en el sistema.</p>",
+                    "text/html; charset=utf-8");
+            }
+
             var habitacion = _habitacionRepository.Get(HabitacionId);
+            if (habitacion == null)
+            {
+                return Content(
+                    $"<p>No se encontró la habitación con ID {HabitacionId}.</p>",
+                    "text/html; charset=utf-8");
+            }
+
+            var ultimaConsulta = _consultasRepository.GetUltimaConsultaPaciente(PacienteId);
             var cita = (CitaId.HasValue && CitaId.Value > 0)
                 ? _citasRepository.GetCita(CitaId.Value)
                 : null;
+
+            if (cita == null && ConsultaId.HasValue && ConsultaId.Value > 0)
+            {
+                var consultaCtx = _consultasRepository.GetConsulta(ConsultaId.Value);
+                if (consultaCtx?.CitasId != null && consultaCtx.CitasId.Value > 0)
+                    cita = _citasRepository.GetCita(consultaCtx.CitasId.Value);
+                else if (consultaCtx?.Citas != null)
+                    cita = consultaCtx.Citas;
+            }
+
+            if (cita == null)
+            {
+                cita = _context.Citass
+                    .Where(c => c.PacienteId == PacienteId
+                        && c.HabitacionId == HabitacionId
+                        && !c.Eliminado)
+                    .OrderByDescending(c => c.FechaInicio)
+                    .ThenByDescending(c => c.Id)
+                    .FirstOrDefault();
+            }
+
+            var nombreMedicoTratante = "";
+            var colegiadoMedico = "";
+            var urlFirmaMedico = "";
+            var especialidadMedico = "";
+            if (cita?.Empleado != null)
+            {
+                nombreMedicoTratante = cita.Empleado.NombreYApellidos ?? "";
+                colegiadoMedico = cita.Empleado.Colegiado ?? "";
+                urlFirmaMedico = cita.Empleado.FirmaEmpleado ?? "";
+            }
+            if (cita != null && cita.EspecialidadText != "N/A")
+                especialidadMedico = cita.EspecialidadText;
 
             var contactosEmergencia = new List<ContactoEmergenciaVM>();
 
@@ -2055,8 +2163,13 @@ namespace sistema.Controllers
                 // Información Adicional
                 HospitalProporcionoMedico = "",
                 MedicoAfiliado = "",
-                NombreMedicoTratante = "",
+                NombreMedicoTratante = nombreMedicoTratante,
                 RecetaMedica = "",
+                CitaId = cita?.Id,
+                ConsultaId = ConsultaId,
+                EspecialidadMedico = especialidadMedico,
+                ColegiadoMedico = colegiadoMedico,
+                UrlFirmaMedico = urlFirmaMedico,
 
                 // Firmas
                 URLFirmaPaciente = paciente?.UrlFirmaRegistro ?? "",
@@ -2076,6 +2189,13 @@ namespace sistema.Controllers
         {
             try
             {
+                if (pacienteId <= 0)
+                    return Json(new { success = false, message = "Paciente inválido." });
+
+                valor = (valor ?? string.Empty).Trim();
+                if (string.IsNullOrEmpty(valor))
+                    return Json(new { success = false, message = "Valor vacío." });
+
                 var paciente = _pacientesRepository.Get(pacienteId);
                 if (paciente == null)
                     return Json(new { success = false, message = "Paciente no encontrado" });

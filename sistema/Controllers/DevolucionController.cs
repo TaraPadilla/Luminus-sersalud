@@ -11,6 +11,7 @@ using Database.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using sistema.Models.DataTables;
 using System.IO;
+using sistema.Helpers;
 
 namespace sistema.Controllers
 {
@@ -44,6 +45,35 @@ namespace sistema.Controllers
             _empleadoRepository = empleadoRepository;
             _proveedorRepository = proveedorRepository;
 
+        }
+
+        private bool TryGetEmpleadoActual(out Empleado empleado, out string errorMessage)
+        {
+            empleado = null;
+            errorMessage = null;
+
+            var username = User?.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                errorMessage = "No se pudo identificar al usuario en sesi?n.";
+                return false;
+            }
+
+            var usuario = _usuarioRepository.Get(username);
+            if (usuario?.EmpleadoId == null)
+            {
+                errorMessage = "Su usuario no tiene un empleado asociado. Contacte al administrador para vincular su cuenta.";
+                return false;
+            }
+
+            empleado = _empleadoRepository.Get(usuario.EmpleadoId.Value);
+            if (empleado == null)
+            {
+                errorMessage = "No se encontr? el registro del empleado asociado a su usuario.";
+                return false;
+            }
+
+            return true;
         }
 
         [HttpGet]
@@ -154,9 +184,11 @@ namespace sistema.Controllers
                 {
                     foreach (var p in entidad.Productos)
                     {
+                        if (!p.ProductoInventarioId.HasValue || p.ProductoInventarioId <= 0 || p.CantidadTrasladada <= 0)
+                            continue;
                         modeloBD.Detalles.Add(new DevolucionNacionalDetalle
                         {
-                            ProductoInventarioId = (int)p.ProductoInventarioId,
+                            ProductoInventarioId = p.ProductoInventarioId.Value,
                             CantidadDevuelta = (int)p.CantidadTrasladada,
                         });
                     }
@@ -167,7 +199,7 @@ namespace sistema.Controllers
                 return Content(JsonSerializer.Serialize(new
                 {
                     Exitoso = true,
-                    RequisicionId = resultado.Id
+                    DevolucionId = resultado.Id
                 }), "application/json");
             }
             catch (Exception ex)
@@ -175,7 +207,7 @@ namespace sistema.Controllers
                 return Content(JsonSerializer.Serialize(new
                 {
                     Exitoso = false,
-                    Mensaje = "Error al guardar la devolución. " + ex.Message
+                    Mensaje = "Error al guardar la devoluci?n. " + ex.Message
                 }), "application/json");
             }
         }
@@ -188,7 +220,7 @@ namespace sistema.Controllers
             var devolucion = await _devolucionRepository.GetByIdAsync(id);
 
             if (devolucion == null)
-                return Content("<div class='alert alert-danger'>No se encontró la devolución</div>");
+                return Content("<div class='alert alert-danger'>No se encontr? la devoluci?n</div>");
 
             return PartialView("_DetalleDevolucionPartial", devolucion);
         }
@@ -213,28 +245,46 @@ namespace sistema.Controllers
             var draw = Request.Form["draw"].FirstOrDefault();
             var start = Request.Form["start"].FirstOrDefault();
             var length = Request.Form["length"].FirstOrDefault();
-            int pageSize = length != null ? Convert.ToInt32(length) : 0;
+            int pageSize = length != null ? Convert.ToInt32(length) : 10;
             int skip = start != null ? Convert.ToInt32(start) : 0;
 
-            var data = await _devolucionRepository.GetAllAsync();
-            int total = data.Count();
-
-            var fechaSolicitudActual = DateTime.Now;
-
-            var result = data.Skip(skip).Take(pageSize).Select(x => new
+            try
             {
-                id = x.Id,
-                numeroDevolucion = x.NumeroDevolucion,
-                departamentoNombre = x.DepartamentoNombre,
-                unidadNombre = x.UnidadNombre,
-                fechaSolicitud = x.FechaSolicitud,
-                solicitanteNombre = x.SolicitanteNombre,
-                bodegaOrigenNombre = x.BodegaOrigenNombre,
-                autorizadoPor = x.AutorizadoPor,
-                estadoNombre = DevolucionEstado.ObtenerNombre(x.Estado)
-            });
+                var data = await _devolucionRepository.GetAllAsync();
+                int total = data.Count;
 
-            return Json(new { draw = draw, recordsFiltered = total, recordsTotal = total, data = result });
+                var rows = data.Skip(skip).Take(pageSize).Select(x => new
+                {
+                    id = x.Id,
+                    numeroDevolucion = x.NumeroDevolucion,
+                    departamentoNombre = DataTablesJsonHelper.DtStr(x.DepartamentoNombre),
+                    unidadNombre = DataTablesJsonHelper.DtStr(x.UnidadNombre),
+                    fechaSolicitud = x.FechaSolicitud,
+                    solicitanteNombre = DataTablesJsonHelper.DtStr(x.SolicitanteNombre),
+                    bodegaOrigenNombre = DataTablesJsonHelper.DtStr(x.BodegaOrigenNombre),
+                    autorizadoPor = DataTablesJsonHelper.DtStr(x.AutorizadoPor),
+                    estadoNombre = DevolucionEstado.ObtenerNombre(x.Estado)
+                }).ToList();
+
+                return DataTablesJsonHelper.Ok(new
+                {
+                    draw,
+                    recordsFiltered = total,
+                    recordsTotal = total,
+                    data = rows
+                });
+            }
+            catch (Exception ex)
+            {
+                return DataTablesJsonHelper.Ok(new
+                {
+                    draw,
+                    recordsFiltered = 0,
+                    recordsTotal = 0,
+                    data = Array.Empty<object>(),
+                    error = "Error al cargar devoluciones. " + ex.Message
+                });
+            }
         }
 
         [HttpGet]
@@ -261,7 +311,7 @@ namespace sistema.Controllers
                 return JsonSerializer.Serialize(new
                 {
                     Exitoso = false,
-                    Mensaje = "Error al intentar obtener la última devolución: " + ex.Message
+                    Mensaje = "Error al intentar obtener la ?ltima devoluci?n: " + ex.Message
                 });
             }
         }
@@ -314,7 +364,7 @@ namespace sistema.Controllers
                 var empleado = _empleadoRepository.Get(usuario.EmpleadoId.Value);
 
                 if (empleado == null)
-                    return JsonSerializer.Serialize(new { Exitoso = false, Mensaje = "No se encontró la data del empleado." });
+                    return JsonSerializer.Serialize(new { Exitoso = false, Mensaje = "No se encontr? la data del empleado." });
 
                 return JsonSerializer.Serialize(new
                 {
@@ -345,14 +395,10 @@ namespace sistema.Controllers
             try
             {
                 if (string.IsNullOrWhiteSpace(firmaBase64))
-                    return Json(new { success = false, message = "No se recibió la información de la firma." });
+                    return Json(new { success = false, message = "No se recibi? la informaci?n de la firma." });
 
-                string username = User.Identity.Name;
-                var usuario = _usuarioRepository.Get(username);
-                var empleadoDb = _empleadoRepository.Get(usuario.EmpleadoId.Value);
-
-                if (empleadoDb == null)
-                    return Json(new { success = false, message = "Empleado no encontrado." });
+                if (!TryGetEmpleadoActual(out var empleadoDb, out var errorEmpleado))
+                    return Json(new { success = false, message = errorEmpleado });
 
                 var carpetaFirmas = "Firmas";
                 var pathRaiz = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", carpetaFirmas);
@@ -395,7 +441,7 @@ namespace sistema.Controllers
             var devolucion = await _devolucionRepository.GetByIdAsync(id);
 
             if (devolucion == null)
-                return Content("<div class='alert alert-danger'>No se encontró la devolución.</div>");
+                return Content("<div class='alert alert-danger'>No se encontr? la devoluci?n.</div>");
 
             ViewBag.TipoFirma = tipo;
             return PartialView("_AutorizacionDevolucionModal", devolucion);
@@ -407,12 +453,12 @@ namespace sistema.Controllers
             try
             {
                 if (string.IsNullOrWhiteSpace(firmaBase64))
-                    return Json(new { success = false, message = "No se recibió la firma." });
+                    return Json(new { success = false, message = "No se recibi? la firma." });
 
                 var devolucion = await _devolucionRepository.GetByIdAsync(id);
 
                 if (devolucion == null)
-                    return Json(new { success = false, message = "Devolución no encontrada." });
+                    return Json(new { success = false, message = "Devoluci?n no encontrada." });
 
                 if (tipoFirma.ToLower().Trim() != "autorizacion")
                     return Json(new { success = false, message = "Tipo de firma no reconocido." });
@@ -443,18 +489,17 @@ namespace sistema.Controllers
                         Convert.FromBase64String(base64Data));
                 }
 
-                string username = User.Identity?.Name;
-                var usuario = _usuarioRepository.Get(username);
-                var empleado = _empleadoRepository.Get(usuario.EmpleadoId.Value);
+                if (!TryGetEmpleadoActual(out var empleado, out var errorEmpleado))
+                    return Json(new { success = false, message = errorEmpleado });
 
                 devolucion.FirmaAutorizacion = rutaWeb;
                 devolucion.AutorizadoPor = empleado.NombreYApellidos;
                 int nuevoEstado = DevolucionEstado.Autorizado;
 
                 await _devolucionRepository.ActualizarFirmaAsync(devolucion);
-                await _devolucionRepository.CambiarEstadoAsync(id, nuevoEstado, username, null);
+                await _devolucionRepository.CambiarEstadoAsync(id, nuevoEstado, User.Identity?.Name, null);
 
-                return Json(new { success = true, message = "Devolución actualizada correctamente.", ruta = rutaWeb });
+                return Json(new { success = true, message = "Devoluci?n actualizada correctamente.", ruta = rutaWeb });
             }
             catch (Exception ex)
             {
@@ -464,27 +509,9 @@ namespace sistema.Controllers
 
 
         [HttpPost]
-        public async Task<IActionResult> GuardarDespachoMasivo([FromBody] List<RequisionDetalle> items)
+        public IActionResult GuardarDespachoMasivo([FromBody] List<RequisionDetalle> items)
         {
-            try
-            {
-                if (items == null || !items.Any())
-                    return BadRequest(new { Exitoso = false, Mensaje = "No se recibieron datos." });
-
-                if (items.Any(i => i.CantidadDespachada < 0))
-                    return BadRequest(new { Exitoso = false, Mensaje = "Las cantidades no pueden ser negativas." });
-
-                bool resultado = await _requisionRepository.ActualizarCantidadesDespachoPorProductoAsync(items);
-
-                if (resultado)
-                    return Ok(new { Exitoso = true, Mensaje = "Despacho guardado exitosamente." });
-
-                return StatusCode(500, new { Exitoso = false, Mensaje = "No se pudieron aplicar los cambios en el inventario." });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { Exitoso = false, Mensaje = "Error: " + ex.GetBaseException().Message });
-            }
+            return BadRequest(new { Exitoso = false, Mensaje = "Use el endpoint /Requisicion/GuardarDespachoMasivo para despachos de requisición." });
         }
     }
 }

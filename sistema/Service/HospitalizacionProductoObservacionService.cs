@@ -10,10 +10,14 @@ namespace farmamest.Service
     public class HospitalizacionProductoObservacionService : IHospitalizacionProductoObservacionService
     {
         private readonly IHospitalizacionProductoObservacion _repository;
+        private readonly IUser _userRepository;
 
-        public HospitalizacionProductoObservacionService(IHospitalizacionProductoObservacion repository)
+        public HospitalizacionProductoObservacionService(
+            IHospitalizacionProductoObservacion repository,
+            IUser userRepository)
         {
             _repository = repository;
+            _userRepository = userRepository;
         }
 
         // Añadir una nueva observación
@@ -45,7 +49,8 @@ namespace farmamest.Service
                 Id = o.Id,
                 Observacion = o.Observacion,
                 FechaCreacion = o.FechaCreacion.ToString("yyyy-MM-dd HH:mm:ss"),
-                UsuarioCreaId = o.UsuarioCreaId
+                UsuarioCreaId = o.UsuarioCreaId,
+                UsuarioCreaNombre = _userRepository.GetDisplayName(o.UsuarioCreaId)
             }).ToList();
         }
     }

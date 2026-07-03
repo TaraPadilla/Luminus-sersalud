@@ -3,12 +3,7 @@
 @inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 
 @{
-    // Leer el valor del appsettings.json. 
-    string sufijoLayout = Configuration["Cliente"]; 
-    
-    // Concatenar para formar el nombre del Layout (ejemplo: "_Layout" + "SS")
-    // Si la clave trae el nombre completo (ej. "_LayoutSS"), simplemente asignalo directo.
-    Layout = $"_Layout{sufijoLayout}";
+    Layout = farmamest.Utilidades.SerSaludUiHelper.ResolverLayout(Configuration);
     ViewData["Title"] = "Información del paciente";
     var fechaNacimiento = Model.FechaNacimiento == null ? ""
     : Convert.ToDateTime(Model.FechaNacimiento).ToShortDateString();
@@ -714,6 +709,8 @@
                         </div>
                     </div>
                 </div>
+                @await Html.PartialAsync("_infoAntecedentesPersonalesUrologia", Model)
+                @await Html.PartialAsync("_infoAntecedentesPatologicosAlgologia", Model)
                 <div class="main-card mb-3 card">
                     <div class="card-body">
                         <div class="form-row">

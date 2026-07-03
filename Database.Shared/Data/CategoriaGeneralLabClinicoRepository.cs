@@ -40,20 +40,7 @@ namespace Database.Shared.Data
 
         public void Update(CategoriaGeneralLabClinico categoriaGeneralLabClinico, bool saveChanges = true)
         {
-            var existingEntity = _context.CategoriaGeneralLabClinico.Find(categoriaGeneralLabClinico.Id);
-            if (existingEntity != null)
-            {
-                _context.Entry(existingEntity).CurrentValues.SetValues(categoriaGeneralLabClinico);
-            }
-            else
-            {
-                _context.Update(categoriaGeneralLabClinico);
-            }
-
-            if (saveChanges)
-            {
-                _context.SaveChanges();
-            }
+            EfUpdateHelper.UpdateEntity(_context, categoriaGeneralLabClinico, saveChanges);
         }
 
 

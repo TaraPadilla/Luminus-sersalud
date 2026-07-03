@@ -7,8 +7,8 @@ var ExamenVM = function () {
 
     self.registrosInventario = ko.observableArray();
     self.precios = ko.observableArray();
-    self.preciosInsumo = ko.observableArray();
-    self.precioInsumoSeleccionado = ko.observableArray();
+  self.preciosInsumo = ko.observableArray();
+  self.precioInsumoSeleccionado = ko.observable();
     self.insumos = ko.observableArray();
     self.productoEquivalencias = ko.observableArray();
     self.unidadesVentaInsumo = ko.observableArray();
@@ -132,23 +132,23 @@ var ExamenVM = function () {
 
 
     self.cantidadUtilizadaInsumo.subscribe(function (newCantidad) {
-        // Aseg˙rate de que tanto la cantidad como el precio de costo sean n˙meros antes de realizar la operaciÛn
+        // Asegùrate de que tanto la cantidad como el precio de costo sean nùmeros antes de realizar la operaciùn
         var cantidad = parseFloat(newCantidad);
         var precioCosto = parseFloat(self.precioCostoInsumo());
 
-        // Verifica si tanto la cantidad como el precio de costo son n˙meros v·lidos
+        // Verifica si tanto la cantidad como el precio de costo son nùmeros vùlidos
         if (!isNaN(cantidad) && !isNaN(precioCosto)) {
-            // Realiza la operaciÛn de multiplicaciÛn
+            // Realiza la operaciùn de multiplicaciùn
             var totalCosto = cantidad * precioCosto;
 
-            // Actualiza el valor de totalCostoInsumo con el resultado de la operaciÛn
+            // Actualiza el valor de totalCostoInsumo con el resultado de la operaciùn
             self.totalCostoInsumo(totalCosto);
 
             // Muestra el resultado en la consola
             //console.log(self.totalCostoInsumo());
         } else {
-            // Maneja el caso en el que la cantidad o el precio de costo no sean n˙meros v·lidos
-            //console.error("La cantidad o el precio de costo no son n˙meros v·lidos");
+            // Maneja el caso en el que la cantidad o el precio de costo no sean nùmeros vùlidos
+            //console.error("La cantidad o el precio de costo no son nùmeros vùlidos");
         }
     });
 
@@ -193,7 +193,7 @@ var ExamenVM = function () {
         };
     };
     self.registrarExamen = function () {
-        if (confirm("øDesea registrar este nuevo examen?")) {
+        if (confirm("ùDesea registrar este nuevo examen?")) {
             showLoading();
             self.getModel();
             $.ajax({
@@ -218,7 +218,7 @@ var ExamenVM = function () {
         }
     };
     self.modificarExamen = function () {
-        if (confirm("øDesea editar este examen?")) {
+        if (confirm("ùDesea editar este examen?")) {
             showLoading();
             self.getModel();
             $.ajax({
@@ -400,18 +400,23 @@ var ExamenVM = function () {
 
 
     self.insumoSeleccionado.subscribe(function (insumo) {
+        self.unidadVentaSeleccionada(null);
+        self.precioInsumoSeleccionado(null);
+        self.preciosInsumo([]);
+        self.precioCostoInsumo(null);
         self.consultarUnidadesVentaInsumo(insumo);
     });
     self.unidadVentaSeleccionada.subscribe(function (unidadSeleccionada) {
+        self.precioInsumoSeleccionado(null);
         self.consultarPreciosProducto(unidadSeleccionada);
-        //Actualizar precio de costo
-        let precioSeleccionado = self.precioInsumoSeleccionado();
-        let precioCompra = 0;
+    });
+    self.precioInsumoSeleccionado.subscribe(function (precioSeleccionado) {
+        var precioCompra = 0;
         if (precioSeleccionado != undefined
             && precioSeleccionado != null
             && precioSeleccionado.PrecioCompra != null
             && precioSeleccionado.PrecioCompra != undefined
-            && precioSeleccionado.PrecioCompra.trim() != ""
+            && String(precioSeleccionado.PrecioCompra).trim() != ""
             && !isNaN(precioSeleccionado.PrecioCompra)) {
             precioCompra = precioSeleccionado.PrecioCompra;
         }
@@ -491,7 +496,7 @@ var ExamenVM = function () {
 
     };
     //self.cancelarEdicionServicio = function () {
-    //    if (confirm("øDesea cancelar la ediciÛn del servicio?")) {
+    //    if (confirm("ùDesea cancelar la ediciùn del servicio?")) {
     //        window.location.href = "/Servicio/Lista";
     //    }
     //};
