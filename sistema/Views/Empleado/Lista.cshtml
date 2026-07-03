@@ -1,0 +1,287 @@
+@{
+    string tipoEmpleado = ViewData["TipoEmpleado"]?.ToString();
+    ViewData["Title"] = tipoEmpleado == "Medico" ? "Listado de Médicos" : "Listado de Empleados";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="m-0 font-weight-bold text-primary">
+                <i class="fas @(tipoEmpleado == "Medico" ? "fa-user-md" : "fa-users") mr-2"></i>
+                @(tipoEmpleado == "Medico" ? "Gestión de Médicos" : "Gestión de Empleados")
+            </h4>
+            <div class="text-muted small">
+                @DateTime.Now.ToString("dd/MM/yyyy")
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mb-3 d-flex justify-content-start align-items-center" style="gap: 12px;">
+    <a asp-action="Nuevo" asp-controller="Empleado" asp-route-tipoEmpleado="@tipoEmpleado" class="btn btn-primary shadow-sm px-3">
+        <i class="fa fa-plus-circle mr-1"></i> @(tipoEmpleado == "Medico" ? "Nuevo Médico" : "Nuevo Empleado")
+    </a>
+
+    @if (tipoEmpleado == "Medico")
+    {
+        <a href="@Url.Action("MedicosPdf","CrearPDF")" class="btn btn-outline-danger shadow-sm px-3">
+            <i class="fa fa-file-pdf mr-1"></i> Reporte Médicos
+        </a>
+    }
+    else
+    {
+        <a href="@Url.Action("EmpleadosPdf","CrearPDF")" class="btn btn-outline-danger shadow-sm px-3">
+            <i class="fa fa-file-pdf mr-1"></i> Reporte Empleados
+        </a>
+    }
+</div>
+
+<!-- Token antiforgery para requests AJAX (si el proyecto lo valida en POST) -->
+@Html.AntiForgeryToken()
+
+<div class="main-card mb-3 card shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            @if (tipoEmpleado == "Medico")
+            {
+                <table id="tabla-medicos" class="table table-hover table-striped table-bordered dt-responsive nowrap" style="width:100%">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Apellido</th>
+                            <th>Teléfono</th>
+                            <th>Especialidad</th>
+                            <th>DPI</th>
+                            <th>NIT</th>
+                            <th>Sucursal</th>
+                            <th>Colegiado</th>
+                            <th>Credenciales</th>
+                            <th>Dir. Clínica</th>
+                            <th>Tel. Clínica</th>
+                            <th>Régimen</th>
+                            <th>Tipo</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            }
+            else
+            {
+                <table id="tabla-empleados" class="table table-hover table-striped table-bordered dt-responsive nowrap" style="width:100%">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Apellido</th>
+                            <th>Teléfono</th>
+                            <th>Departamento</th>
+                            <th>DPI</th>
+                            <th>NIT</th>
+                            <th>Sucursal</th>
+                            <th>Salario</th>
+                            <th>Estado Civil</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            // Helpers
+            function getAntiForgeryToken() {
+                // ASP.NET Core genera: <input name="__RequestVerificationToken" ...>
+                var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+                return tokenInput ? tokenInput.value : null;
+            }
+
+            function escapeHtml(value) {
+                if (value === null || value === undefined) return '';
+                return String(value)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+
+            $(document).ready(function () {
+                var tipoEmpleado = '@(tipoEmpleado ?? "")';
+                var idTabla = (tipoEmpleado === "Medico") ? "#tabla-medicos" : "#tabla-empleados";
+
+                // URLs base para acciones (evita hardcodear rutas)
+                // Nota: los endpoints se construirán con id + tipoEmpleado
+                var urlModificarBase = '@Url.Action("Modificar", "Empleado")';
+                var urlEliminarBase = '@Url.Action("Eliminar", "Empleado")';
+
+                // Endpoint DataTables (lo implementaremos en el controller luego)
+                // Recomendado: POST para que DataTables mande payload y podamos validar antiforgery si aplica
+                var urlData = '@Url.Action("ListaDataTable", "Empleado")';
+
+                var antiForgeryToken = getAntiForgeryToken();
+
+                // Columnas por tipo
+                var columnsMedicos = [
+                    { data: "id", name: "Id" },
+                    {
+                        data: "nombre",
+                        name: "Nombre",
+                        render: function (data, type, row) {
+                            var fondo = row.colorHexadecimalFondo || "#FFFFFF";
+                            var texto = row.colorHexadecimalTexto || "#000000";
+                            return '<span style="display:inline-block;background-color:' + escapeHtml(fondo) + ';color:' + escapeHtml(texto) + ';font-weight:500;border-radius:4px;padding:8px;">'
+                                + escapeHtml(data) + '</span>';
+                        }
+                    },
+                    { data: "apellido", name: "Apellido" },
+                    { data: "telefono", name: "Telefono" },
+                    @* { data: "direccion", name: "Direccion" }, *@
+                    { data: "especialidad", name: "Especialidad" },
+                    { data: "dpi", name: "Dpi" },
+                    { data: "nit", name: "Nit" },
+                    {
+                        data: "sucursalNombre",
+                        name: "Sucursal",
+                        render: function (data) {
+                            return '<span class="text-muted">' + escapeHtml(data || "-") + '</span>';
+                        }
+                    },
+                    { data: "colegiado", name: "Colegiado" },
+                    { data: "credenciales", name: "Credenciales" },
+                    { data: "direccionClinica", name: "DireccionClinica" },
+                    { data: "telefonoClinica", name: "TelefonoClinica" },
+                    { data: "tipoRegimen", name: "TipoRegimen" },
+                    { data: "tipoEmpleado", name: "TipoEmpleado" },
+                    {
+                        data: "id",
+                        orderable: false,
+                        searchable: false,
+                        className: "text-center",
+                        render: function (data, type, row) {
+                            var id = row.id;
+                            var t = encodeURIComponent(tipoEmpleado || "");
+                            var modUrl = urlModificarBase + '?id=' + encodeURIComponent(id) + '&tipoEmpleado=' + t;
+                            var delUrl = urlEliminarBase + '?id=' + encodeURIComponent(id) + '&tipoEmpleado=' + t;
+
+                            return '' +
+                                '<div class="d-flex justify-content-center" style="gap: 8px;">' +
+                                '  <a class="btn btn-sm btn-warning px-3" title="Modificar" href="' + modUrl + '">' +
+                                '    <i class="fa fa-edit"></i>' +
+                                '  </a>' +
+                                '  <a class="btn btn-sm btn-danger px-3" title="Eliminar" href="' + delUrl + '" onclick="return confirm(\'¿Está seguro de eliminar este registro?\')">' +
+                                '    <i class="fa fa-trash"></i>' +
+                                '  </a>' +
+                                '</div>';
+                        }
+                    }
+                ];
+
+                var columnsEmpleados = [
+                    { data: "id", name: "Id" },
+                    {
+                        data: "nombre",
+                        name: "Nombre",
+                        render: function (data, type, row) {
+                            var fondo = row.colorHexadecimalFondo || "#FFFFFF";
+                            var texto = row.colorHexadecimalTexto || "#000000";
+                            return '<span style="display:inline-block;background-color:' + escapeHtml(fondo) + ';color:' + escapeHtml(texto) + ';font-weight:500;border-radius:4px;padding:8px;">'
+                                + escapeHtml(data) + '</span>';
+                        }
+                    },
+                    { data: "apellido", name: "Apellido" },
+                    { data: "telefono", name: "Telefono" },
+                    @* { data: "direccion", name: "Direccion" }, *@
+                    { data: "departamento", name: "Departamento" },
+                    { data: "dpi", name: "Dpi" },
+                    { data: "nit", name: "Nit" },
+                    {
+                        data: "sucursalNombre",
+                        name: "Sucursal",
+                        render: function (data) {
+                            return '<span class="text-muted">' + escapeHtml(data || "-") + '</span>';
+                        }
+                    },
+                    {
+                        data: "salario",
+                        name: "Salario",
+                        render: function (data, type) {
+                            // OJO: si el backend manda salario como string, DataTables ordenará texto.
+                            // En el controller/repo lo ideal es mandar un salarioNum adicional o ya normalizarlo.
+                            if (type === "display" || type === "filter") {
+                                return '<span class="font-weight-bold text-success">Q ' + escapeHtml(data) + '</span>';
+                            }
+                            return data;
+                        }
+                    },
+                    { data: "estadoCivil", name: "EstadoCivil" },
+                    {
+                        data: "id",
+                        orderable: false,
+                        searchable: false,
+                        className: "text-center",
+                        render: function (data, type, row) {
+                            var id = row.id;
+                            var t = encodeURIComponent(tipoEmpleado || "");
+                            var modUrl = urlModificarBase + '?id=' + encodeURIComponent(id) + '&tipoEmpleado=' + t;
+                            var delUrl = urlEliminarBase + '?id=' + encodeURIComponent(id) + '&tipoEmpleado=' + t;
+
+                            return '' +
+                                '<div class="d-flex justify-content-center" style="gap: 8px;">' +
+                                '  <a class="btn btn-sm btn-warning px-3" title="Modificar" href="' + modUrl + '">' +
+                                '    <i class="fa fa-edit"></i>' +
+                                '  </a>' +
+                                '  <a class="btn btn-sm btn-danger px-3" title="Eliminar" href="' + delUrl + '" onclick="return confirm(\'¿Está seguro de eliminar este registro?\')">' +
+                                '    <i class="fa fa-trash"></i>' +
+                                '  </a>' +
+                                '</div>';
+                        }
+                    }
+                ];
+
+                // Inicialización DataTables server-side
+                $(idTabla).DataTable({
+                    processing: true,
+                    serverSide: true,
+                    deferRender: true,
+                    pageLength: 10,
+                    order: [[0, "desc"]],
+                    responsive: true,
+                    ajax: {
+                        url: urlData,
+                        type: "POST",
+                        headers: antiForgeryToken ? { "RequestVerificationToken": antiForgeryToken } : {},
+                        data: function (d) {
+                            // Enviamos el tipo para que el backend filtre correctamente (médico vs empleado)
+                            d.tipoEmpleado = tipoEmpleado;
+                        }
+                    },
+                    columns: (tipoEmpleado === "Medico") ? columnsMedicos : columnsEmpleados,
+                    language: {
+                        search: "Buscar:",
+                        lengthMenu: "Mostrar _MENU_ registros",
+                        zeroRecords: "No se encontraron resultados",
+                        info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                        infoEmpty: "No hay registros disponibles",
+                        infoFiltered: "(filtrado de _MAX_ registros totales)",
+                        paginate: {
+                            first: "Primero",
+                            last: "Último",
+                            next: "Siguiente",
+                            previous: "Anterior"
+                        },
+                        processing: "Cargando..."
+                    }
+                });
+            });
+        })();
+    </script>
+}

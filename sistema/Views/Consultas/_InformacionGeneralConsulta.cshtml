@@ -1,0 +1,128 @@
+@model sistema.Models.ConsultasViewModel
+
+<br />
+
+<!-- ================= INFORMACIÓN DE CONSULTA ================= -->
+<div class="border rounded p-3 bg-white shadow-sm mb-4">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
+        <h6 class="mb-0 font-weight-bold text-primary text-uppercase">
+            <i class="fas fa-notes-medical mr-2"></i> Información de consulta
+        </h6>
+    </div>
+
+    <div class="form-row">
+
+        @* <div class="col-md-3">
+            <div class="position-relative form-group">
+                <label>Estado de pago</label>
+                <select class="form-control" asp-for="EstadoPagoId"
+                        asp-items="@Model.EstadosPagosLista">
+                </select>
+            </div>
+        </div> *@
+
+        <div class="col-md-3 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold text-dark mb-1">
+                    <i class="fas fa-calendar-alt text-primary mr-1"></i> Fecha de creación de consulta
+                </div>
+                <input class="form-control dato-consulta" asp-for="FechaYHoraInicio" readonly="readonly">
+            </div>
+        </div>
+
+        @*MANANTIALES NO utiliza este campo*@
+        @* <div class="col-md-3">
+            <div class="position-relative form-group">
+                <label>Fecha de su última radiografía/TAC/Resonancia magnética</label>
+                @Html.TextBoxFor(a => a.FechaUltimaRadiografiaDental, new { @type = "date", @class = "form-control" })
+            </div>
+        </div> *@
+
+        <div class="col-md-3 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold text-dark mb-1">
+                    <i class="fas fa-stethoscope text-primary mr-1"></i> Tipo de consulta
+                </div>
+                <select class="form-control dato-consulta" asp-for="TipoConsulta">
+                    <option disabled selected>--- SELECCIONE ---</option>
+                    <option value="Primera Consulta">Primera Consulta</option>
+                    <option value="Nueva Consulta">Nueva Consulta</option>
+                    <option value="Reconsulta">Reconsulta</option>
+                    <option value="Observacion">Observacion</option>
+                </select>
+            </div>
+        </div>
+
+        @* <div class="col-md-3">
+            <label>Tipo de referencia</label>
+            <select class="form-control" asp-for="TipoReferencia">
+                <option disabled selected>--- SELECCIONE ---</option>
+                <option value="Hospital Regional">Hospital Regional</option>
+                <option value="Medico Particular">Medico Particular</option>
+            </select>
+        </div> *@
+
+        @* <div class="col-md-3">
+            <label>Medico Referido</label>
+            <input class="form-control" asp-for="MedicoReferido">
+            @Html.ValidationMessageFor(a => a.MedicoReferido, "", new { @class = "text-danger" })
+        </div> *@
+
+        <div class="col-md-12 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold text-dark mb-1">
+                    <i class="fas fa-comment-medical text-primary mr-1"></i> Anotaciones u Observaciones
+                </div>
+                <textarea class="form-control dato-consulta"
+                          asp-for="ObservacionesAdicionales"
+                          placeholder="Anotaciones u Observaciones"></textarea>
+                @Html.ValidationMessageFor(a => a.ObservacionesAdicionales, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        @*MANANTIALES NO UTILIZA ESTE LABEL DE COSTO DE CONSULTA*@
+        @* <div class="col-md-12 badge badge-warning">
+            <h4>
+                <b>
+                    Costo total de consulta: Q <span data-bind="text:valorTotalConsulta"></span>
+                </b>
+            </h4>
+        </div> *@
+
+    </div>
+</div>
+
+<!-- ================= ÚLTIMA EVALUACIÓN ================= -->
+<div class="border rounded p-3 bg-white shadow-sm">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
+        <h6 class="mb-0 font-weight-bold text-primary text-uppercase">
+            <i class="fas fa-history mr-2"></i> Última evaluación
+        </h6>
+    </div>
+
+    <div class="form-row">
+
+        <div class="col-md-12 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold text-dark mb-1">
+                    <i class="fas fa-calendar-check text-primary mr-1"></i> Fecha de su última evaluación
+                </div>
+                <input class="form-control dato-consulta" asp-for="FechaUltimaConsulta" readonly="readonly">
+            </div>
+        </div>
+
+        <div class="col-md-12">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold text-dark mb-1">
+                    <i class="fas fa-file-medical-alt text-primary mr-1"></i> ¿Qué le hicieron en esa ocasión?
+                </div>
+                <input class="form-control dato-consulta" asp-for="MotivoUltimaConsulta" readonly="readonly">
+            </div>
+        </div>
+
+    </div>
+</div>

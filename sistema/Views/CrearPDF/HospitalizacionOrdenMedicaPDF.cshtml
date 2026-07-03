@@ -1,0 +1,163 @@
+@using farmamest.Models
+@model OrdenMedicaViewModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Hospitalización - Orden médica";
+
+    // Configuración estándar de membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+}
+
+<style>
+.notes p { margin: 0 0 4px 0; }
+.notes strong { font-weight: bold; }
+.notes em { font-style: italic; }
+.notes u { text-decoration: underline; }
+.notes s { text-decoration: line-through; }
+.notes ol { margin: 4px 0; padding-left: 20px; list-style-type: decimal; }
+.notes ul { margin: 4px 0; padding-left: 20px; list-style-type: disc; }
+.notes li { margin-bottom: 2px; }
+.notes h1 { font-size: 1.4em; font-weight: bold; margin: 6px 0; }
+.notes h2 { font-size: 1.2em; font-weight: bold; margin: 5px 0; }
+.notes h3 { font-size: 1.1em; font-weight: bold; margin: 4px 0; }
+.notes blockquote { border-left: 3px solid #ccc; margin: 4px 0 4px 10px; padding-left: 8px; color: #555; }
+</style>
+
+<div class="doc">
+
+    <!-- Título -->
+    <div class="doc-title">REPORTE - @ViewData["Title"]</div>
+    <div class="doc-underline"></div>
+
+    <!-- Fecha de emisión -->
+    <table class="table" style="border:0;">
+        <tbody>
+            <tr>
+                <td style="text-align:center; font-weight:700; border:0;">
+                    Fecha y hora de emisión: @fecha.ToString("dd/MM/yyyy hh:mm tt")
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- DATOS DEL PACIENTE -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Datos del paciente</td>
+        </tr>
+    </table>
+
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table threecol">
+                    <colgroup><col /><col /><col /></colgroup>
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Sexo</th>
+                            <th>Edad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="kv-row">
+                            <td><span class="value">@Model.PacienteNombre</span></td>
+                            <td><span class="value">@Model.PacienteSexoText</span></td>
+                            <td><span class="value">@Model.PacienteEdad</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- MÉDICO ASIGNADO -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Médico asignado</td>
+        </tr>
+    </table>
+
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table twocol">
+                    <colgroup><col /><col /></colgroup>
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Colegiatura</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="kv-row">
+                            <td><span class="value">@Model.EmpleadoText</span></td>
+                            <td><span class="value">@Model.ColegioEmpleado</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- DETALLES DE LA ORDEN MÉDICA -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Detalles de la orden médica</td>
+        </tr>
+    </table>
+
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <colgroup><col class="label-col" /><col /></colgroup>
+                    <thead>
+                        <tr>
+                            <th>Campo</th>
+                            <th>Detalle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="kv-row">
+                            <td><span class="label">Descripción</span></td>
+                            <td class="notes">
+                                @Html.Raw(Model.Descripcion)
+                            </td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">Orden realizada</span></td>
+                            <td>
+                                <span class="value">@Model.Realizada</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Pie -->
+    <table class="table" style="border:0; margin-top:12px;">
+        <tbody>
+            <tr>
+                <td style="text-align:center; font-weight:700; border:0;">
+                    Fecha y hora de registro: @Model.FechaHora
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+</div>

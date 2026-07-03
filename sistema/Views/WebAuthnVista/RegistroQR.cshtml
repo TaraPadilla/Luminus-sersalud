@@ -1,0 +1,187 @@
+@{
+    ViewData["Title"] = "Registro Biométrico";
+    Layout = null; // Quitamos el layout para que sea una pantalla limpia en el celular
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Registro Biométrico</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+            body {
+                background-color: #f8f9fa;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+            }
+
+            .card {
+                border-radius: 15px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-6">
+                <div class="card p-4 text-center">
+                    <div class="mb-4">
+                        <i class="bi bi-fingerprint text-success" style="font-size: 4rem;"></i>
+                    </div>
+                    <h3 class="mb-3">Vincular Dispositivo</h3>
+                    <p class="text-muted mb-4">
+                        Estás a punto de registrar la biometría (huella o rostro) de este dispositivo para tu cuenta.
+                    </p>
+
+                    <input type="hidden" id="token" value="@ViewBag.Token" />
+
+                    <button id="btnRegistrar" type="button" class="btn btn-success btn-lg btn-block">
+                        <i class="bi bi-shield-check mr-2"></i> Registrar Ahora
+                    </button>
+
+                    <div class="mt-4">
+                        <div id="mensaje" class="alert d-none" role="alert"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+            (function () {
+                const btn = document.getElementById("btnRegistrar");
+                const alertBox = document.getElementById("mensaje");
+                const token = document.getElementById("token").value;
+
+                function setAlert(type, text) {
+                    alertBox.className = "alert alert-" + type;
+                    alertBox.classList.remove("d-none");
+                    alertBox.innerHTML = `<div>${text}</div>`;
+                }
+
+                function setBusy(isBusy) {
+                    btn.disabled = isBusy;
+                    btn.innerHTML = isBusy
+                        ? `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...`
+                        : `<i class="bi bi-shield-check mr-2"></i> Registrar Ahora`;
+                }
+
+                // Utilidades de conversión (las mismas que ya tenías)
+                function arrayBufferToBase64(buffer) {
+                    const bytes = new Uint8Array(buffer);
+                    let binary = "";
+                    for (let i = 0; i < bytes.byteLength; i++) { binary += String.fromCharCode(bytes[i]); }
+                    return btoa(binary);
+                }
+                function normalizeBase64(base64) {
+                    if (!base64) return base64;
+                    let s = String(base64).replace(/-/g, "+").replace(/_/g, "/");
+                    const pad = s.length % 4;
+                    if (pad === 2) s += "=="; else if (pad === 3) s += "=";
+                    return s;
+                }
+                function base64ToUint8Array(base64) {
+                    const normalized = normalizeBase64(base64);
+                    return Uint8Array.from(atob(normalized), c => c.charCodeAt(0));
+                }
+
+                btn.addEventListener("click", async () => {
+                    setAlert("info", "Iniciando proceso seguro...");
+
+                    if (!window.PublicKeyCredential) {
+                        setAlert("warning", "Este navegador o dispositivo no soporta biometría.");
+                        return;
+                    }
+
+                    setBusy(true);
+
+                    try {
+                        // PASO 1: Enviar el TOKEN a la API
+                        const res1 = await fetch(`/api/WebAuthn/BeginRegisterQR?token=${token}`, {
+                            method: "POST"
+                        });
+
+                        if (!res1.ok) {
+                            const err = await res1.text();
+                            setAlert("danger", "El enlace expiró o es inválido. Genera un nuevo QR.");
+                            return;
+                        }
+
+                        const optionsFromServer = await res1.json();
+                        const authSelection = optionsFromServer.authenticatorSelection || {};
+
+                        // Formatear opciones estandarizadas (evitamos enviar nulos que rompen navegadores móviles)
+                        const publicKeyOptions = {
+                            challenge: base64ToUint8Array(optionsFromServer.challenge),
+                            rp: optionsFromServer.rp,
+                            user: {
+                                id: base64ToUint8Array(optionsFromServer.user.id),
+                                name: optionsFromServer.user.name,
+                                displayName: optionsFromServer.user.displayName
+                            },
+                            pubKeyCredParams: optionsFromServer.pubKeyCredParams,
+                            timeout: optionsFromServer.timeout,
+                            authenticatorSelection: {
+                                requireResidentKey: authSelection.requireResidentKey,
+                                userVerification: authSelection.userVerification
+                            },
+                            attestation: optionsFromServer.attestation
+                        };
+
+                        // Solo agregamos authenticatorAttachment si viene con valor (evita el error en móviles)
+                        if (authSelection.authenticatorAttachment) {
+                            publicKeyOptions.authenticatorSelection.authenticatorAttachment = authSelection.authenticatorAttachment;
+                        }
+
+                        // PASO 2: Solicitar huella al usuario
+                        const credential = await navigator.credentials.create({ publicKey: publicKeyOptions });
+
+                        const attestationResponse = {
+                            id: arrayBufferToBase64(credential.rawId),
+                            rawId: arrayBufferToBase64(credential.rawId),
+                            type: credential.type,
+                            response: {
+                                clientDataJSON: arrayBufferToBase64(credential.response.clientDataJSON),
+                                attestationObject: arrayBufferToBase64(credential.response.attestationObject)
+                            }
+                        };
+
+                        // PASO 3: Enviar la credencial creada al servidor
+                        const res2 = await fetch("/api/WebAuthn/CompleteRegisterQR", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(attestationResponse)
+                        });
+
+                        if (res2.ok) {
+                            setAlert("success", "✅ ¡Huella registrada exitosamente! Ya puedes cerrar esta ventana.");
+                            btn.style.display = 'none'; // Ocultamos el botón
+                        } else {
+                            const err2 = await res2.text();
+                            setAlert("danger", "❌ Error al guardar la huella: " + err2);
+                        }
+                    } catch (error) {
+                        console.error(error);
+
+                        // Manejo de errores específicos para darte información exacta en pantalla
+                        if (error.name === "NotAllowedError") {
+                            setAlert("warning", "Operación cancelada. No concediste permiso para usar la biometría.");
+                        } else {
+                            setAlert("danger", "Error en el dispositivo: " + (error.message || error));
+                        }
+                    } finally {
+                        setBusy(false);
+                    }
+                });
+            })();
+    </script>
+</body>
+
+</html>

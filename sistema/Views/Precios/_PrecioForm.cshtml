@@ -1,0 +1,15 @@
+@model sistema.Models.PrecioViewModel
+
+@Html.HiddenFor(m=>m.PrecioId)
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <label>Nombre</label>
+                @Html.TextBoxFor(m=>m.NombrePrecio,new{@class="form-control",
+                @placeholder="Nombre del precio"})
+            </div>
+        </div>
+    </div>
+</div>

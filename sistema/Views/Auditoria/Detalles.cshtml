@@ -1,0 +1,151 @@
+﻿@model Database.Shared.Models.Auditoria
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="form-row">
+
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="col-md-12 text-center">
+                    <h4><b>Detalle de auditoria</b></h4>
+                    <hr />
+                </div>
+                <form id="examenForm" asp-action="Detalles" method="post">
+                    <div class="col-md-12">
+                        <div class="col-md-12 form-row offset-md-3 mt-4 mb-3">
+                            <div class="col-md-2">
+                                <label>Codigo:</label>
+                                <input type="number" name="codigo" value="@ViewData["CurrentFilter"]" class="form-control" >
+                            </div>
+
+                            <div class="col-md-2">
+                                <label>Nombre:</label>
+                                <input type="text" name="nombre" value="@ViewData["CurrentFilter"]" class="form-control" >
+                            </div>
+                            <div class="col-md-2">
+                                <label>Unidad de compra:</label>
+                            @Html.DropDownList("unidadCompra",ViewBag.UnidadCompra as SelectList, "Todas", new { @class = "form-control"})
+
+                            </div>
+                            <div class="col-md-2">
+                                <label>Unidad de compra:</label>
+                                @Html.DropDownList("unidadVenta",ViewBag.UnidadVenta as SelectList, "Todas", new { @class = "form-control"})
+
+                            </div>
+                            <input type="hidden" name="auditoriaId" value="@Model.Id">
+
+                        </div>
+
+                        <div class="input-group mb-3 ml-3">
+                            <div class="input-group-prepend">
+                                <input type="submit" value="Buscar" class="btn btn-success"></input>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                <hr />
+                <div class="table-responsive">
+
+                    <table id="tabla-clinica-medicamentos">
+                        <thead>
+                            <tr>
+                                <th>
+                                    C&oacute;digo
+
+                                </th>
+                                <th>
+                                    Nombre
+
+                                </th>
+                                <th>
+
+                                    Unidad de compra
+
+                                </th>
+                                <th>
+                                    Unidad de venta
+                                </th>
+                                <th>
+                                    Stock
+                                </th>
+                                <th>
+                                    Stock auditado
+                                </th>
+
+
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Productos)
+                            {
+
+                                <tr data-id="@item.Id">
+                                    <td>
+                                        @item.Producto.CodigoReferencia
+                                    </td>
+                                    <td>
+                                        @item.Producto.NombreProducto
+                                    </td>
+                                    <td>
+                                        @{
+                                            var compra = (item.Producto.ProductosInventario.FirstOrDefault() == null) || (item.Producto.ProductosInventario.FirstOrDefault().UnidadMedidaCompra == null) ? "-" : item.Producto.ProductosInventario.FirstOrDefault().UnidadMedidaCompra.Nombre;
+                                        }
+                                        @compra
+                                    </td>
+                                    <td>
+                                        @{
+                                            var venta = (item.Producto.ProductosInventario.FirstOrDefault() == null) || (item.Producto.ProductosInventario.FirstOrDefault().UnidadMedidaVenta == null) ? "-" : item.Producto.ProductosInventario.FirstOrDefault().UnidadMedidaVenta.Nombre;
+                                        }
+                                        @venta
+                                    </td>
+                                    <td>
+                                        @{
+                                            if (Model.ActualizoStock)
+                                            {
+                                                var data = item.Stock;
+                                                @Convert.ToInt32(data)
+                                            }
+                                            else
+                                            {
+                                                var stock = item.Producto.ProductosInventario.FirstOrDefault() == null ? 0 : item.Producto.ProductosInventario.FirstOrDefault().Stock;
+
+                                                @Convert.ToInt32(stock)
+                                            }
+                                        }
+                                    </td>
+                                    <td>
+                                        
+                                        @{
+                                            if (Model.ActualizoStock)
+                                            {
+                                                var dato = "Actualizó el stock";
+                                                @dato
+                                            }
+                                            else
+                                            {
+                                                var stockAuditado = item.Stock;
+
+                                                @Convert.ToInt32(stockAuditado)
+                                            }
+                                        }
+                                    </td>
+
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="col-md-12 d-flex">
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-danger mr-3" data-bind="click: cancelarRegistroAuditoria">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts{
+    <script src="~/ViewModelKo/AuditoriaDetalles.js"></script>
+}

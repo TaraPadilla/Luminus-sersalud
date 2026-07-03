@@ -1,0 +1,312 @@
+@model Database.Shared.Models.Ambulancia
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Ambulacia";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+}
+
+<style>
+    .report-container {
+        margin-top: 10px;
+        font-size: 11px;
+    }
+
+    .report-title {
+        text-align: center;
+        font-weight: bold;
+        font-size: 16px;
+        color: #0d0e36;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+
+    .report-subtitle {
+        text-align: center;
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+
+    .report-table {
+        width: 100%;
+        margin-top: 10px;
+        border-collapse: collapse;
+    }
+
+    /* Fila de título de sección (similar a bloque SERVICIOS) */
+    .report-table-title-row th {
+        background-color: #f3f4ff;
+        border-left: 3px solid #0d0e36;
+        color: #0d0e36;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: bold;
+        font-size: 12px;
+        text-align: center;
+        padding: 6px 8px;
+    }
+
+    /* Encabezados de columnas si se necesitan */
+    .report-table-header-row th {
+        background-color: #eef2ff;
+        color: #0d0e36;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 11px;
+        text-align: left;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table tbody td {
+        font-size: 12px;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+        vertical-align: top;
+    }
+
+    .report-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .label-cell {
+        width: 30%;
+        font-weight: bold;
+        white-space: nowrap;
+    }
+
+    .checkbox-group span {
+        margin-right: 16px;
+    }
+
+    .text-pre {
+        white-space: pre-wrap;
+    }
+
+    /* Tabla de firmas */
+    .signature-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 24px;
+    }
+
+    .signature-table td {
+        border: 0;
+        text-align: center;
+        font-size: 11px;
+        padding-top: 40px;
+    }
+
+    .signature-line {
+        border-top: 1px solid #000;
+        margin-bottom: 6px;
+    }
+</style>
+
+<div class="report-container">
+    <!-- Encabezado del reporte -->
+    <div class="report-title">
+        REPORTE - @ViewData["Title"]
+    </div>
+    <div class="report-subtitle">
+        <b>Fecha y hora de emisión:</b> @fecha.ToString("dd/MM/yyyy HH:mm")
+    </div>
+
+    <!-- SERVICIO QUE SOLICITA -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="2">Servicio que solicita</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="label-cell">Servicio que solicita</td>
+                <td>@Model.ServicioSolicitado</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Fecha</td>
+                <td>@Model.FechaHoraSolicitud.ToString("dd/MM/yyyy")</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Hora</td>
+                <td>@Model.FechaHoraSolicitud.ToString("HH:mm")</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- DATOS DEL PACIENTE -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="2">Datos del paciente</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="label-cell">Nombre del paciente</td>
+                <td>@Model.NombrePaciente</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Cama</td>
+                <td>@Model.Cama</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- TIPO DE SERVICIO / VIAJE / DIRECCIÓN -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="2">Servicio y traslado</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="label-cell">Precio</td>
+                <td>__________________</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Servicio</td>
+                <td>
+                    <span class="checkbox-group">
+                        <span>@((Model.EsTraslado) ? "☑ Traslado" : "☐ Traslado")</span>
+                        <span>@((Model.EsEgreso) ? "☑ Egreso" : "☐ Egreso")</span>
+                    </span>
+                </td>
+            </tr>
+            <tr>
+                <td class="label-cell">Dirección de traslado</td>
+                <td>@Model.DireccionTraslado</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Forma en que se conduce el paciente</td>
+                <td>
+                    @{
+                        var formas = new[] { "Camilla", "Silla de ruedas", "Ambulatorio" };
+                        foreach (var f in formas)
+                        {
+                            var marcado = (Model.FormaConduccion == f) ? "☑" : "☐";
+                            @:<span class="checkbox-group">@marcado @f</span>
+                        }
+                    }
+                </td>
+            </tr>
+            <tr>
+                <td class="label-cell">Viaje</td>
+                <td>
+                    @{
+                        var viajes = new[] { "Privado", "IGSS" };
+                        foreach (var v in viajes)
+                        {
+                            var marcado = (Model.TipoViaje == v) ? "☑" : "☐";
+                            @:<span class="checkbox-group">@marcado @v</span>
+                        }
+                    }
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- TIEMPOS Y UNIDAD -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="2">Tiempos y unidad</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="label-cell">Hora de salida de ambulancia</td>
+                <td>@Model.HoraSalidaAmbulancia?.ToString("HH:mm")</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Hora de entrada de ambulancia</td>
+                <td>@Model.HoraEntradaAmbulancia?.ToString("HH:mm")</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Ambulancia</td>
+                <td>@Model.AmbulanciaUnidad</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- PERSONAL Y PROCEDIMIENTO -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="2">Personal y procedimiento</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="label-cell">Nombre del piloto</td>
+                <td>@Model.NombrePiloto</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Examen y/o consulta a realizar</td>
+                <td>@Model.ExamenConsulta</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Enfermera</td>
+                <td>
+                    <span class="checkbox-group">
+                        <span>@((Model.EnfermeraAcompania) ? "☑ SI" : "☐ SI")</span>
+                        <span>@((!Model.EnfermeraAcompania) ? "☑ NO" : "☐ NO")</span>
+                    </span>
+                </td>
+            </tr>
+            <tr>
+                <td class="label-cell">Oxígeno</td>
+                <td>
+                    <span class="checkbox-group">
+                        <span>@((Model.Oxigeno) ? "☑ SI" : "☐ SI")</span>
+                        <span>@((!Model.Oxigeno) ? "☑ NO" : "☐ NO")</span>
+                    </span>
+                    <span style="margin-left:16px;"><strong>Cantidad:</strong> @Model.CantidadOxigeno</span>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- OBSERVACIONES -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="2">Observaciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="label-cell">Observaciones</td>
+                <td class="text-pre">@Model.Observaciones</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- FIRMAS -->
+    <table class="signature-table">
+        <tbody>
+            <tr>
+                <td>
+                    <div class="signature-line"></div>
+                    Firma, nombre y sello del solicitante
+                </td>
+                <td>
+                    <div class="signature-line"></div>
+                    nombre del enfermero
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>

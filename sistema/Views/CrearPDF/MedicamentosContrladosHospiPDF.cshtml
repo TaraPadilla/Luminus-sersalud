@@ -1,0 +1,101 @@
+@model farmamest.Models.ConsentimientoHospiVM
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Config
+
+@{
+    Layout = "_HojaMembreteLayout";
+    var imagenLogoBase64 = Config["ImagenLogoBase64"];
+    ViewData["Direccion"] = Config["EstablecimientoDireccion"];
+    ViewData["Telefono"] = Config["EstablecimientoTelefono"];
+    ViewData["CorreoElectronico"] = Config["EstablecimientoCorreoElectronico"];
+    ViewData["ImagenFirma"] = Config["EstablecimientoImagenFirma"];
+    DateTime fecha = DateTime.Now;
+}
+
+<table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; font-family: sans-serif;">
+    <tr>
+        <td style="width: 50%; vertical-align: top;">
+            <strong>ANEXO 14</strong><br><br>
+        </td>
+        <td style="width: 50%; text-align: right; vertical-align: top; font-size: 11px; color: #333;">
+            <strong>SERVICIOS GLOBALES PARA LA SALUD. S.A.</strong><br>
+            Diagonal 6, 10-50 zona 10 edif. Interamericas Torre Norte Clinica 601A
+        </td>
+    </tr>
+</table>
+
+<div style="text-align: center; margin-bottom: 20px; font-family: sans-serif;">
+    <h3><strong>Medicamentos Controlados Transoperatorio</strong></h3>
+</div>
+
+<table style="width: 80%; margin-bottom: 30px; font-size: 14px; font-family: sans-serif;">
+    <tr>
+        <td style="width: 10%; padding-bottom: 10px;"><strong>Fecha:</strong></td>
+        <td style="border-bottom: 1px solid black; width: 60%; padding-bottom: 10px;">@fecha.ToString("dd/MM/yyyy")</td>
+    </tr>
+    <tr>
+        <td style="width: 10%; padding-top: 10px;"><strong>Paciente:</strong></td>
+        <td style="border-bottom: 1px solid black; padding-top: 10px;">@Model.NombrePaciente</td>
+    </tr>
+</table>
+
+<table style="width: 100%; border-collapse: collapse; text-align: center; border: 1px solid black; font-size: 11px; font-family: sans-serif;">
+    <thead>
+        <tr style="background-color: #f2f2f2;">
+            <th rowspan="2" style="border: 1px solid black; padding: 8px;">Medicamento</th>
+            <th colspan="2" style="border: 1px solid black; padding: 8px;">Unidades Entregadas (ampollas)</th>
+            <th rowspan="2" style="border: 1px solid black; padding: 8px;">Medicamento Utilizado (mg/mcg)</th>
+            <th rowspan="2" style="border: 1px solid black; padding: 8px;">Medicamento Descartado (mg/mcg)</th>
+            <th rowspan="2" style="border: 1px solid black; padding: 8px;">Unidades Retornadas (Ampollas)</th>
+        </tr>
+        <tr style="background-color: #f2f2f2;">
+            <th style="border: 1px solid black; padding: 8px; width: 10%;">Inicial</th>
+            <th style="border: 1px solid black; padding: 8px; width: 10%;">Extra</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.MedicamentosNoControlados != null && Model.MedicamentosNoControlados.Any())
+        {
+            @foreach (var med in Model.MedicamentosNoControlados)
+            {
+                <tr>
+                    <td style="border: 1px solid black; padding: 10px; text-align: left; font-weight: bold;">@med.ProductoNombre</td>
+                    <td style="border: 1px solid black; padding: 10px;">@med.UnidadesIniciales</td>
+                    <td style="border: 1px solid black; padding: 10px;">@med.UnidadesExtra</td>
+                    <td style="border: 1px solid black; padding: 10px;">@med.Utilizado</td>
+                    <td style="border: 1px solid black; padding: 10px;">@med.Descartado</td>
+                    <td style="border: 1px solid black; padding: 10px;">@med.Retornadas</td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="6" style="border: 1px solid black; padding: 10px; text-align: center; color: #999;">
+                    No hay medicamentos registrados para esta hospitalización.
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<table style="width: 100%; border-collapse: collapse; margin-top: 80px; text-align: center; font-size: 12px; font-family: sans-serif;">
+    <tr>
+        <td style="width: 50%; vertical-align: bottom;">
+            <div style="width: 250px; border-bottom: 1px solid black; margin: 0 auto; margin-bottom: 5px;"></div>
+            firma y sello Responsable de farmacia y bodega
+        </td>
+        <td style="width: 50%; vertical-align: bottom;">
+            @if (!string.IsNullOrEmpty(Model.UrlFirmaMedico))
+            {
+                <img src="@Model.UrlFirmaMedico" style="max-height: 60px; margin-bottom: 5px;" /><br />
+            }
+            else
+            {
+                <div style="width: 250px; border-bottom: 1px solid black; margin: 0 auto; margin-bottom: 5px;"></div>
+            }
+            Firma y Sello de Anestesiólogo<br />
+            <small>@Model.NombreAnestesista</small>
+        </td>
+    </tr>
+</table>

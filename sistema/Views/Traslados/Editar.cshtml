@@ -1,0 +1,92 @@
+@model sistema.Models.TrasladoViewModel
+@using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+@using Microsoft.AspNetCore.Identity;
+
+@{
+    ViewData["Title"] = "Editar Traslado";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="row">
+    <div class="col-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div>
+                    <label>Estado actual: <span class="text-danger">@Model.EstadoTraslado</span></label>
+                </div>
+                <br>
+                <div>
+                    <label>Cambiar a:</label>
+                    <a class="btn btn-danger btn-sm" asp-action="CambiarAEnTransito"
+                       asp-controller="Traslados"
+                       asp-route-trasladoId="@Model.TrasladoId">
+                        En tránsito
+                    </a>
+                    <button class="btn btn-success" data-bind="click:aceptarTraslado">
+                        Aceptar traslado
+                    </button>
+                    <a class="btn btn-danger btn-sm" asp-action="CambiarAFaltantes"
+                       asp-controller="Traslados"
+                       asp-route-trasladoId="@Model.TrasladoId">
+                        Faltantes
+                    </a>
+                    <a class="btn btn-danger btn-sm" asp-action="CambiarAConProblema"
+                       asp-controller="Traslados"
+                       asp-route-trasladoId="@Model.TrasladoId">
+                        Con problema
+                    </a>
+                    <a class="btn btn-danger btn-sm" asp-action="CambiarACancelado"
+                       asp-controller="Traslados"
+                       asp-route-trasladoId="@Model.TrasladoId">
+                        Cancelar
+                    </a>
+                </div>
+                <br>
+
+                @if (User.IsInRole("Administrador"))
+                {
+                    <div>
+                        <label>Reporte: </label>
+                        <a class="btn btn-danger btn-sm" asp-action="Reporte"
+                       asp-controller="Traslados"
+                       asp-route-trasladoId="@Model.TrasladoId">
+                            PDF &nbsp; <i class="fas fa-file-pdf"></i>
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div>
+                        <label>Reporte: </label>
+                        <a class="btn btn-danger btn-sm" asp-action="ReporteU"
+                       asp-controller="Traslados"
+                       asp-route-trasladoId="@Model.TrasladoId">
+                            PDF &nbsp; <i class="fas fa-file-pdf"></i>
+                        </a>
+                    </div>
+                }
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_TrasladoForm")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div>
+            <button class="btn btn-danger" data-bind="click: cancelarEditarTraslado">
+                Cancelar
+            </button>
+            <button class="btn btn-primary" data-bind="click: editarTraslado">
+                Editar
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+<script src="~/ViewModelKo/TrasladoVM.js"></script>
+}

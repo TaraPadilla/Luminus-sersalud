@@ -1,0 +1,2246 @@
+@model sistema.Models.HospitalizacionDetallesViewModel
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    // Leer el valor del appsettings.json. 
+    string sufijoLayout = Configuration["Cliente"]; 
+    
+    // Concatenar para formar el nombre del Layout (ejemplo: "_Layout" + "SS")
+    // Si la clave trae el nombre completo (ej. "_LayoutSS"), simplemente asignalo directo.
+    Layout = $"_Layout{sufijoLayout}"; 
+    ViewData["Title"] = "Hospitalizacion - Detalles";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+@Html.HiddenFor(m => m.HospitalizacionId)
+
+
+@Html.HiddenFor(m => m.CuentaId)
+@Html.HiddenFor(m => m.HabitacionId)
+@Html.HiddenFor(m => m.PacienteId)
+@Html.HiddenFor(m => m.FechaInicial)
+@Html.HiddenFor(m => m.FechaFinal)
+
+<style>
+    .accordion {
+        cursor: pointer;
+        background-color: #eee;
+        color: #444;
+        cursor: pointer;
+        padding: 18px;
+        width: 100%;
+        border: none;
+        text-align: left;
+        outline: none;
+        font-size: 15px;
+        transition: 0.4s;
+    }
+
+        .accordion:hover {
+            background-color: #ccc;
+        }
+
+    .panel {
+        padding: 0 18px;
+        background-color: white;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.2s ease-out;
+    }
+</style>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="col-md-12">
+            <center><h4><b>Hospitalizaci&oacute;n - Informaci&oacute;n</b></h4></center>
+            <hr />
+            @if (!Model.Pagada)
+            {
+                <button class="btn btn-success mr-2"
+                        data-bind="click:pagarCuenta">
+                    <i class="fas fa-dollar-sign"></i>&nbsp;
+                    Pagar Q <span data-bind="text:totalPagar"></span>
+                </button>
+                <button class="btn btn-primary" data-bind="click:verModalCambioHabitacion">
+                    Cambiar de habitaci&oacute;n
+                </button>
+            }
+            <button class="btn btn-danger" data-bind="click:verInformeGeneral">
+                <i class="fas fa-file-pdf"></i>&nbsp;Informe general
+            </button>
+            <button class="btn btn-danger" data-bind="click:verInformeDetallado">
+                <i class="fas fa-file-pdf"></i>&nbsp;Informe detallado
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-11">
+                <h5><b>Paciente</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-1">
+                <button class="btn btn-primary" onclick="irADetallesPaciente(@Model.PacienteId)">
+                    <i class="fas fa-external-link-alt"></i>&nbsp;
+                    Ver
+                </button>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="col-md-4">
+                <label><b>Nombre</b></label><br />
+                @Model.PacienteNombre
+            </div>
+            <div class="col-md-4">
+                <label><b>Tipo</b></label><br />
+                @Model.TipoPaciente
+            </div>
+            <div class="col-md-4">
+                <label><b>Sexo</b></label><br />
+                @Model.PacienteSexo
+            </div>
+            <div class="col-md-4">
+                <label><b>Tipo de sangre</b></label><br />
+                @Model.PacienteTipoSangre
+            </div>
+            <div class="col-md-4">
+                <label><b>Tel&eacute;fono</b></label><br />
+                @Model.PacienteTelefono
+            </div>
+            <div class="col-md-4">
+                <label><b>Celular</b></label><br />
+                @Model.PacienteCelular
+            </div>
+            <div class="col-md-4">
+                <label><b>Especialidad</b></label><br />
+                @Model.EspecialidadNombre
+            </div>
+        </div>
+    </div>
+</div>
+
+<ul class="body-tabs body-tabs-layout tabs-animated body-tabs-animated nav">
+    <li class="nav-item">
+        <a role="tab" class="nav-link active" id="tab-0" data-toggle="tab" href="#tab-content-0">
+            <span>Gabinete y Laboratorios</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a role="tab" class="nav-link" id="tab-historia-clinica" data-toggle="tab" href="#tab-content-historia-clinica">
+            <span>Historica Clinica</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a role="tab" class="nav-link" id="tab-historia-clinica-pediatria" data-toggle="tab" href="#tab-content-historia-clinica-pediatria">
+            <span>Historica Clinica Pediatria</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a role="tab" class="nav-link" id="tab-ginecologia" data-toggle="tab" href="#tab-content-ginecologia">
+            <span>Ginecologia</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a role="tab" class="nav-link" id="tab-obstetrica" data-toggle="tab" href="#tab-content-obstetrica">
+            <span>Obstetrica</span>
+        </a>
+    </li>
+
+@if (Model.AutorizacionTabSignosVitales)
+{
+    <li class="nav-item">
+        <a role="tab" class="nav-link" id="tab-evolucion" data-toggle="tab" href="#tab-content-evolucion" data-bind="click:abrirTabSignosVitales">
+            <span>Signos vitales</span>
+        </a>
+    </li>
+}
+
+    @if (Model.AutorizacionTabIncretaExcreta)
+    {
+        <li class="nav-item">
+            <a role="tab" class="nav-link" id="tab-increta-excreta" data-toggle="tab"
+               href="#tab-content-increta-excreta" data-bind="click:abrirTabIncretaExcreta">
+                <span>Ingesta / Excreta</span>
+            </a>
+        </li>
+    }
+    @if (Model.AutorizacionTabControlGlucometria)
+    {
+        <li class="nav-item">
+            <a role="tab" class="nav-link" id="tab-control-glucometria" data-toggle="tab"
+               href="#tab-content-control-glucometria" data-bind="click:abrirTabGlucometria">
+                <span>Control de glucometr&iacute;a</span>
+            </a>
+        </li>
+    }
+    <li class="nav-item">
+        <a role="tab" class="nav-link" id="tab-orden-medica" data-toggle="tab" href="#tab-content-orden-medica" >
+            <span>Orden Medica</span>
+        </a>
+    </li>
+    @if (!Model.HospitalizacionFinalizada)
+    {
+        @if (Model.AutorizacionTabActualizarEstadia)
+        {
+            <li class="nav-item">
+                <a role="tab" class="nav-link" id="tab-2" data-toggle="tab" href="#tab-content-2">
+                    <span>Actualizar estad&iacute;a</span>
+                </a>
+            </li>
+        }
+    }
+@if (!User.IsInRole("Medico Interno") && !User.IsInRole("Enfermeria") && !User.IsInRole("Jefatura Medica"))
+{
+    <li class="nav-item">
+        <a role="tab" class="nav-link" id="tab-3" data-toggle="tab" href="#tab-content-3">
+            <span>Estado de Cuenta</span>
+        </a>
+    </li>
+}
+
+    @if (Model.AutorizacionTabEnfermeria)
+    {
+        <li class="nav-item">
+            <a role="tab" class="nav-link" id="tab-enfermeria" data-toggle="tab"
+               href="#tab-content-enfermeria" data-bind="click:abrirTabEnfermeria">
+        <span>Control de administraci&oacute;n de medicamentos</span>
+            </a>
+        </li>
+    }
+
+
+    @if (Model.AutorizacionTabPagos)
+    {
+        <li class="nav-item">
+            <a role="tab" class="nav-link" id="tab-pagos" data-toggle="tab"
+               href="#tab-content-pagos" data-bind="click:abrirTabPagos">
+                <span>Pagos</span>
+            </a>
+        </li>
+    }
+    @if (Model.AutorizacionTabDietas)
+    {
+        <li class="nav-item">
+            <a role="tab" class="nav-link" id="tab-enfermeria" data-toggle="tab"
+               href="#tab-content-receta" data-bind="click:abrirTabDietas">
+                <span>Dietas</span>
+            </a>
+        </li>
+    }
+    <li class="nav-item">
+        <a role="tab" class="nav-link" id="tab-enfermeria" data-toggle="tab" href="#tab-content-cirugia">
+            <span>Cirug&iacute;a - Paquete</span>
+        </a>
+    </li>
+    @if (Model.AutorizacionTabNotaMedica)
+    {
+        <li class="nav-item">
+            <a role="tab" class="nav-link" id="tab-nota-medica" data-toggle="tab"
+               href="#tab-content-nota-medica" data-bind="click:abrirTabNotaMedica2">
+                <span>Nota m&eacute;dica</span>
+            </a>
+        </li>
+    }
+    @if (User.IsInRole("Administrador"))
+    {
+        <li class="nav-item">
+            <a role="tab" class="nav-link" id="tab-usuarios-acceso" data-toggle="tab" href="#tab-content-usuarios-acceso">
+                <span>Usuarios con acceso</span>
+            </a>
+        </li>
+    }
+
+
+    @if (Model.AutorizacionTabNotaEnfermeria)
+    {
+        <li class="nav-item">
+        <a role="tab" class="nav-link" id="tab-nota-enfermeria" data-toggle="tab" href="#tab-content-nota-enfermeria">
+            <span>Nota de enfermer&iacute;a</span>
+        </a>
+    </li>
+    }
+    <li class="nav-item">
+        <a role="tab" class="nav-link" id="tab-archivos"
+           data-toggle="tab" href="#tab-content-archivos" data-bind="click:abrirTabArchivos">
+            <span>Paciente - Archivos</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a role="tab" class="nav-link" id="tab-historial-consultas" data-bind="click:abrirTabHistorialConsultas"
+           data-toggle="tab" href="#tab-content-historial-consultas">
+            <span>Paciente - Consultas</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a role="tab" class="nav-link" id="tab-historial-hospitalizaciones" data-bind="click:abrirTabHistorialHospitalizaciones"
+           data-toggle="tab" href="#tab-content-historial-hospitalizaciones">
+            <span>Paciente - Hospitalizaciones</span>
+        </a>
+    </li>
+</ul>
+
+
+<div class="form-row">
+    <div class="col-md-12">
+        <div class="tab-content">
+            <div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card" style="border-radius: 10px">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-12">
+                                        <h6><b>Hospitalizaci&oacute;n</b></h6>
+                                        <hr />
+                                    </div>
+                                    <div class="col-md-12">
+                                        <div class="table-responsive">
+                                            <table class='table table-hover' id="tabla-producto">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Fecha y hora inicial</th>
+                                                        <th>Fecha y hora final</th>
+                                                        <th>N&uacute;mero de noches</th>
+                                                        <th>Habitacion</th>
+                                                        <th>Categoria</th>
+                                                        <th>Tarifa</th>
+                                                        <th>Valor noche</th>
+                                                        <th>N&uacute;mero de camas</th>
+                                                        <th>Observaciones</th>
+                                                        <th>Total</th>
+                                                    </tr>
+                                                </thead>
+
+                                                <tbody>
+                                                    <!--ko foreach: registrosHospitalizacion-->
+                                                    <tr>
+                                                        <td data-bind="text:FechaInicio"></td>
+                                                        <td data-bind="text:FechaFin"></td>
+                                                        <td data-bind="text:NumeroNoches"></td>
+                                                        <td data-bind="text:HabitacionNumeroNombre"></td>
+                                                        <td data-bind="text:HabitacionCategoria"></td>
+                                                        <td data-bind="text:HabitacionTarifa"></td>
+                                                        <td data-bind="text:HabitacionValorNoche"></td>
+                                                        <td data-bind="text:HabitacionNumeroCamas"></td>
+                                                        <td data-bind="text:Observaciones"></td>
+                                                        <td data-bind="text:Precio"></td>
+                                                    </tr>
+                                                    <!--/ko-->
+                                                    <tr class="fila-total">
+                                                        <td colspan="9"><b>TOTAL</b></td>
+                                                        <td><b>Q <span data-bind="text:valorTotalRegistrosHospitalizacion"></span></b></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+
+
+
+                <div class="col-md-12">
+                    <div class="main-card mb-3 card" style="border-radius: 10px">
+                        <div class="card-body">
+                            <div class="form-row">
+                                <div class="col-md-12">
+                                    <h6><b>Paquetes de hospitalizacion</b></h6>
+                                    <hr />
+                                </div>
+                                @if (!Model.HospitalizacionFinalizada)
+                                {
+                                    <div class="col-md-12 form-row">
+                                        <div class="col-md-12">
+                                            <label><b>Agregar paquete:</b></label>
+                                        </div>
+                                        <div class="col-md-12 text-danger" id="texto-error-consultar-paquetes-disponibles" style="display:none">
+                                            Error de conexion al consultar paquetes disponibles.
+                                            <a href="#" data-bind="click:consultarPaquetesExistentes">Reintentar</a>
+                                        </div>
+                                        <div class="col-md-12 text-primary" id="texto-cargando-paquetes-disponibles" style="display:none">
+                                            Cargando paquetes disponibles...
+                                        </div>
+                                        <div class="col-md-11">
+                                            <label>Seleccione el paquete:</label>
+                                            <select class="select2bs4 form-control" data-bind="options:paquetesExistentes,
+                                                                                                                            value:paqueteAgregarSeleccionado,
+                                                                                                                            optionsText:'Nombre'">
+                                            </select>
+                                        </div>
+                                        <div class="col-md-1">
+                                            <label class="text-white">Agregar</label>
+                                            <button class="btn btn-primary" data-bind="click:agregarPaquete">Agregar</button>
+                                        </div>
+                                    </div>
+                                }
+                                <div class="col-md-12">
+                                    <hr />
+                                    <div class="text-primary" style="display:none" id="texto-cargando-paquetes-hospitalizacion">
+                                        Cargando paquetes agregados...
+                                    </div>
+                                    <div class="text-danger" style="display:none" id="texto-error-carga-paquetes-hospitalizacion">
+                                        Error de conexion al consultar los paquetes agregados.
+                                        <a href="#" data-bind="click:consultarPaquetesHospitalizacion">Reintentar</a>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class='table table-hover' id="tabla-producto">
+                                            <thead>
+                                                <tr>
+                                                    <th>Fecha y hora</th>
+                                                    <th>Codigo</th>
+                                                    <th>Nombre</th>
+                                                    <th>Valor</th>
+                                                    <th></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <!--ko foreach: paquetesHospitalizacion-->
+                                                <tr>
+                                                    <td data-bind="text:FechaHora"></td>
+                                                    <td data-bind="text:Codigo"></td>
+                                                    <td data-bind="text:Nombre"></td>
+                                                    <td data-bind="text:Precio"></td>
+                                                    <td>
+                                                        <button class="btn btn-danger"
+                                                                data-bind="click:$root.eliminarPaquete">
+                                                            <i class="fa fa-trash"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                <!--/ko-->
+                                                <!--ko if:paquetesHospitalizacion().length==0-->
+                                                <tr>
+                                                    <td colspan="4">
+                                                        <i>No hay paquetes agregados</i>
+                                                    </td>
+                                                </tr>
+                                                <!--/ko-->
+                                                <tr style="background-color:lightgray">
+                                                    <td colspan="3">
+                                                        <b>TOTAL</b>
+                                                    </td>
+                                                    <td colspan="2">
+                                                        <b>Q <span data-bind="text:valorTotalPaquetes"></span></b>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                </div>
+
+                                <button class="accordion">
+                                    <b>Productos:</b>
+                                </button>
+                                <div class="col-md-12 panel">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>C&oacute;digo</th>
+                                                <th>Nombre</th>
+                                                <th>Cantidad</th>
+                                                <th>Precio</th>
+                                            </tr>
+                                        </thead>
+
+                                        <tbody>
+                                            <!--ko foreach: paquetesHospitalizacion-->
+                                            <!--ko foreach: Productos-->
+
+                                            <tr>
+                                                <td data-bind="text:Codigo"></td>
+                                                <td data-bind="text:Nombre"></td>
+                                                <td data-bind="text:Cantidad"></td>
+                                                <td data-bind="text:Precio"></td>
+                                            </tr>
+
+                                            <!--/ko-->
+                                            <!--/ko-->
+
+                                        </tbody>
+
+                                    </table>
+                                </div>
+
+                                <button class="accordion">
+                                    <b>Servicios:</b>
+                                </button>
+                                <div class="col-md-12 panel">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>C&oacute;digo</th>
+                                                <th>Nombre</th>
+                                                <th>Cantidad</th>
+                                                <th>Precio</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!--ko foreach: paquetesHospitalizacion-->
+                                            <!--ko foreach: Servicios-->
+
+                                            <tr>
+                                                <td data-bind="text:Codigo"></td>
+                                                <td data-bind="text:Nombre"></td>
+                                                <td data-bind="text:Cantidad"></td>
+                                                <td data-bind="text:Precio">Q</td>
+                                            </tr>
+
+                                            <!--/ko-->
+                                            <!--/ko-->
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <button class="accordion">
+                                    <b>Laboratorios:</b>
+                                </button>
+                                <div class="col-md-12 panel">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>C&oacute;digo</th>
+                                                <th>Nombre</th>
+                                                <th>Cantidad</th>
+                                                <th>Precio</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!--ko foreach: paquetesHospitalizacion-->
+                                            <!--ko foreach: Laboratorios-->
+
+                                            <tr>
+                                                <td data-bind="text:Codigo"></td>
+                                                <td data-bind="text:Nombre"></td>
+                                                <td data-bind="text:Cantidad"></td>
+                                                <td data-bind="text:Precio"></td>
+                                            </tr>
+
+                                            <!--/ko-->
+                                            <!--/ko-->
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DIETA -->
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card" style="border-radius: 10px">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-12">
+                                        <h6><b>Dietas</b></h6>
+                                        <hr />
+                                    </div>
+                                    @if (!Model.HospitalizacionFinalizada)
+                                    {
+                                        <div class="col-md-12 form-row">
+                                            <div class="col-md-12">
+                                                <label><b>Agregar dieta:</b></label>
+                                            </div>
+                                            <div class="col-md-12 text-primary" id="texto-cargando-dietas" style="display:none">
+                                                Cargando dietas...
+                                            </div>
+                                            <div class="col-md-12 text-danger" id="texto-error-consultar-dietas" style="display:none">
+                                                Error de conexion.
+                                                <a href="#" data-bind="click:consultarRecetasExistentes">Reintentar</a>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label>Seleccione la dieta:</label>
+                                                <select class="select2bs4 form-control" data-bind="options:recetasExistentes,
+                                                                                                                            value:recetaAgregarSeleccionada,
+                                                                                                                            optionsText:'NombreReceta'">
+                                                </select>
+                                            </div>
+
+                                            <div class="col-md-3">
+                                                <label>Ingredientes</label>
+                                                <input class="form-control" type="text" data-bind="value:ingredientesRecetaAgregar" readonly />
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label>Cantidad</label>
+                                                <input class="form-control" type="text" data-bind="value:cantidadRecetaAgregar" />
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label>Indicaciones</label>
+                                                <input class="form-control" data-bind="value:indicacionesRecetaAgregar" />
+                                            </div>
+                                            <div class="col-md-1">
+                                                <br />
+                                                <button class="btn btn-primary" data-bind="click:agregarReceta">Agregar</button>
+                                            </div>
+                                        </div>
+                                    }
+
+                                    <div class="col-md-12 text-primary" id="texto-cargando-dietas-formuladas" style="display:none">
+                                        Cargando dietas formuladas...
+                                    </div>
+                                    <div class="col-md-12 text-danger" id="texto-error-consultar-dietas-formuladas" style="display:none">
+                                        Error de conexion.
+                                        <a href="#" data-bind="click: consultarReceta">Reintentar</a>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <hr />
+                                        <div class="table-responsive">
+                                            <table class='table table-hover' id="tabla-producto">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Nombre</th>
+                                                        <th>Ingredientes</th>
+                                                        <th>Indicaciones</th>
+                                                        <th>Cantidad agregada</th>
+                                                        <th>Cantidad aplicada</th>
+                                                        <th>Valor Unitario</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <!--ko foreach: listaRecetas-->
+                                                    <tr>
+                                                        <td data-bind="text:NombreReceta"></td>
+                                                        <td data-bind="text:Ingredientes"></td>
+                                                        <td data-bind="text:Indicaciones"></td>
+                                                        <td data-bind="text:Cantidad"></td>
+                                                        <td data-bind="text:CantidadAplicada"></td>
+                                                        <td data-bind="text:PrecioVenta"></td>
+                                                        <td>
+                                                            <button class="btn btn-danger"
+                                                                    data-bind="click:$root.eliminarReceta">
+                                                                <i class="fa fa-trash"></i>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                    <!--/ko-->
+                                                    <!--ko if:listaRecetas().length==0-->
+                                                    <tr>
+                                                        <td colspan="7">
+                                                            <i>No hay dietas agregadas</i>
+                                                        </td>
+                                                    </tr>
+                                                    <!--/ko-->
+                                                    <tr style="background-color:lightgray;font-weight:bolder">
+                                                        <td colspan="5">
+                                                            TOTAL DIETAS APLICADAS
+                                                        </td>
+                                                        <td colspan="2">
+                                                            <span data-bind="text:valorTotalDietas"></span>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+
+
+
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DIETA -->
+
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card" style="border-radius: 10px">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-12">
+                                        <h6><b>Medicamentos</b></h6>
+                                        <hr />
+                                    </div>
+                                    @if (!Model.HospitalizacionFinalizada)
+                                    {
+                                        <div class="col-md-12 form-row">
+                                            <div class="col-md-12">
+                                                <b>Agregar producto:</b>
+                                                <br />
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label>Producto:</label>
+                                                <select class="select2bs4 form-control"
+                                                        data-bind="options: medicamentosExistentes,
+                                                                               optionsText: 'ProductoNombre',
+                                                                               value: medicamentoAgregarSeleccionado">
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label>Unidad:</label>
+                                                <select class="form-control"
+                                                        data-bind="options: unidadesVentaProducto,
+                                                                               optionsText: 'UnidadMedidaVentaNombre',
+                                                                               value: unidadVentaSeleccionadaProducto">
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label>Precio:</label>
+                                                <select class="form-control"
+                                                        data-bind="options: valoresMedicamentoAgregar,
+                                                                               optionsText: 'Precio',
+                                                                               value: valorMedicamentoSeleccionado">
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label>Cantidad</label>
+                                                <input class="form-control" data-bind="value:cantidadMedicamentoAgregar" />
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label>Indicaciones</label>
+                                                <input class="form-control" data-bind="value:indicacionesMedicamentoAgregar" />
+                                            </div>
+                                            <div class="col-md-1">
+                                                <label class="text-white">Agregar</label>
+                                                <button class="btn btn-primary" data-bind="click: agregarMedicamento">
+                                                    <i class="fas fa-plus"></i>
+                                                </button>
+                                            </div>
+                                            <div class="col-md-12">
+                                                <br />
+                                            </div>
+                                        </div>
+                                    }
+
+                                    <div class="col-md-12 text-primary" style="display:none" id="texto-cargando-medicamentos-agregados">
+                                        Cargando medicamentos agregados...
+                                    </div>
+                                    <div class="col-md-12 text-danger" style="display:none" id="texto-error-consultar-medicamentos-agregados">
+                                        Error de conexion.
+                                        <a href="#" data-bind="click:consultarMedicamentosHospitalizacion">Reintentar</a>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <hr />
+                                        <div class="table-responsive">
+                                            <table class='table table-hover' id="tabla-producto">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Nombre</th>
+                                                        <th>Indicaciones</th>
+                                                        <th>Cantidad formulada</th>
+                                                        <th>Cantidad aplicada</th>
+                                                        <th>Precio</th>
+                                                        <th>Subtotal aplicados</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+
+                                                <tbody>
+                                                    <!--ko foreach: medicamentosHospitalizacion-->
+                                                    <tr>
+                                                        <td data-bind="text:Nombre"></td>
+                                                        <td data-bind="text:Indicaciones"></td>
+                                                        <td data-bind="text:Cantidad"></td>
+                                                        <td data-bind="text:CantidadAplicada"></td>
+                                                        <td data-bind="text:Precio"></td>
+                                                        <td data-bind="text:Subtotal"></td>
+                                                        <td>
+                                                            <button class="btn btn-danger" data-bind="click:$root.eliminarMedicamento">
+                                                                <i class="fa fa-trash"></i>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                    <!--/ko-->
+                                                    <!--ko if:medicamentosHospitalizacion().length==0-->
+                                                    <tr>
+                                                        <td colspan="7">
+                                                            <i>No hay medicamentos agregados</i>
+                                                        </td>
+                                                    </tr>
+                                                    <!--/ko-->
+                                                    <tr class="fila-total">
+                                                        <td colspan="5"><b>TOTAL MEDICAMENTOS APLICADOS</b></td>
+                                                        <td><b>Q <span data-bind="text:valorTotalMedicamentos"></span></b></td>
+                                                        <th></th>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card" style="border-radius: 10px">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-12">
+                                        <h6><b>Servicios</b></h6>
+                                        <hr />
+                                    </div>
+                                    @if (!Model.HospitalizacionFinalizada)
+                                    {
+                                        <div class="col-md-12 form-row">
+                                            <div class="col-md-12">
+                                                <label><b>Agregar servicio:</b></label>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label>Seleccione el servicio:</label>
+                                                <select class="select2bs4 form-control" data-bind="options: serviciosExistentes,
+                                                                                                            value: servicioAgregarSeleccionado,
+                                                                                                            optionsText: 'Nombre'">
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label>Precio</label>
+                                                <select class="select2bs4 form-control" data-bind="options: valoresServicioAgregar,
+                                                                                                            value: valorServicioSeleccionado,
+                                                                                                            optionsText: 'PrecioMostrar'">
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label>Cantidad</label>
+                                                <input class="form-control" data-bind="value: cantidadServicioAgregar" />
+                                            </div>
+                                            <div class="col-md-1">
+                                                <br />
+                                                <button class="btn btn-primary" data-bind="click: agregarServicio">Agregar</button>
+                                            </div>
+                                        </div>
+                                    }
+                                    <div class="col-md-12">
+                                        <hr />
+                                        <div class="table-responsive">
+                                            <table class='table table-hover' id="tabla-producto">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Nombre</th>
+                                                        <th>Cantidad</th>
+                                                        <th>Precio</th>
+                                                        <th>Subtotal</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+
+                                                <tbody>
+                                                    <!--ko foreach: serviciosHospitalizacion-->
+                                                    <tr>
+                                                        <td data-bind="text: Nombre"></td>
+                                                        <td data-bind="text: Cantidad"></td>
+                                                        <td data-bind="text: Precio"></td>
+                                                        <td data-bind="text: Subtotal"></td>
+                                                        <td>
+                                                            <button class="btn btn-danger" data-bind="click: $root.eliminarServicio">
+                                                                <i class="fa fa-trash"></i>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                    <!--/ko-->
+                                                    <!--ko if: serviciosHospitalizacion().length == 0-->
+                                                    <tr>
+                                                        <td colspan="5">
+                                                            <i>No hay servicios agregados</i>
+                                                        </td>
+                                                    </tr>
+                                                    <!--/ko-->
+                                                    <tr class="fila-total">
+                                                        <td colspan="3"><b>TOTAL</b></td>
+                                                        <td><b>Q <span data-bind="text: valorTotalServicios"></span></b></td>
+                                                        <th></th>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card" style="border-radius: 10px">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-12">
+                                        <h6><b>Laboratorio</b></h6>
+                                        <hr />
+                                    </div>
+                                    @if (!Model.HospitalizacionFinalizada)
+                                    {
+                                        <div class="col-md-12 form-row">
+                                            <div class="col-md-12">
+                                                <label><b>Agregar examen:</b></label>
+                                            </div>
+                                            <div class="col-md-12 text-primary" style="display:none" id="texto-cargando-examenes-existentes">
+                                                Cargando examenes existentes...
+                                            </div>
+                                            <div class="col-md-12 text-danger" style="display:none" id="texto-error-consultar-examenes-existentes">
+                                                Error de conexion.
+                                                <a href="#" data-bind="click:consultarExamenesExistentes">Reintentar</a>
+                                            </div>
+                                            <div class="col-md-7">
+                                                <label>Seleccione el examen:</label>
+                                                <select class="select2bs4 form-control" data-bind="options:examenesExistentes,
+                                                                                                value:examenAgregarSeleccionado,
+                                                                                                optionsText:'Nombre'">
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label>Precio</label>
+                                                <select class="select2bs4 form-control" data-bind="options: valoresExamenAgregar,
+                                                                                                   value: valorExamenSeleccionado,
+                                                                                                   optionsText: 'PrecioMostrar'">
+                                                </select>
+                                            </div>
+                                            <div class="col-md-1">
+                                                <br />
+                                                <button class="btn btn-primary" data-bind="click: agregarExamen">Agregar</button>
+                                            </div>
+                                        </div>
+                                    }
+
+                                    <div class="col-md-12">
+                                        <hr />
+                                        <div class="text-primary" style="display:none" id="texto-cargando-examenes-hospitalizacion">
+                                            Cargando examenes agregados a hospitalizacion...
+                                        </div>
+                                        <div class="text-danger" style="display:none" id="texto-error-consultar-examenes-hospitalizacion">
+                                            Error de conexion.
+                                            <a href="#" data-bind="click:consultarExamenesHospitalizacion">Reintentar</a>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class='table table-hover' id="tabla-producto">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Fecha y hora</th>
+                                                        <th>Nombre del examen</th>
+                                                        <th>Precio</th>
+                                                        <th>Modificar resultados</th>
+                                                        <th>Descargar resultados</th>
+                                                        <th>Eliminar</th>
+                                                    </tr>
+                                                </thead>
+
+                                                <tbody>
+                                                    <!--ko foreach: examenesHospitalizacion-->
+                                                    <tr>
+                                                        <td data-bind="text:FechaHora"></td>
+                                                        <td data-bind="text:Nombre"></td>
+                                                        <td data-bind="text:Precio"></td>
+                                                        <td>
+                                                            <button class="btn btn-primary"
+                                                                    data-bind="click:$root.modificarResultadosExamen">
+                                                                <i class="fa fa-edit"></i>
+                                                            </button>
+                                                        </td>
+                                                        <td>
+                                                            <button class="btn btn-danger"
+                                                                    data-bind="click:$root.descargarResultadosExamen">
+                                                                <i class="fas fa-file-pdf"></i>
+                                                            </button>
+                                                        </td>
+                                                        <td>
+                                                            <button class="btn btn-danger"
+                                                                    data-bind="click:$root.eliminarExamen">
+                                                                <i class="fa fa-trash"></i>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                    <!--/ko-->
+                                                    <!--ko if:examenesHospitalizacion().length==0-->
+                                                    <tr>
+                                                        <td colspan="6">
+                                                            <i>No hay examenes agregados</i>
+                                                        </td>
+                                                    </tr>
+                                                    <!--/ko-->
+                                                    <tr class="fila-total">
+                                                        <td colspan="2"><b>TOTAL</b></td>
+                                                        <td><b>Q <span data-bind="text:valorTotalExamenes"></span></b></td>
+                                                        <th colspan="3"></th>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+
+
+            
+
+            <div class="tab-pane tabs-animation fade" id="tab-content-orden-medica" role="tabpanel">
+                @await Html.PartialAsync("Tabs/_OrdenMedica")
+            </div>
+            <div class="tab-pane tabs-animation fade" id="tab-content-historia-clinica" role="tabpanel">
+@* <a href="javascript:void(0);" class="btn btn-success" data-bind="click: function(){ abrirVentanaEditarConsultaHistoriaClinica(ConsultaId) }">
+    <i class="fas fa-heart"></i>
+</a> *@
+                <div class="main-card mb-3 card" style="border-radius: 10px">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Historial de consultas</b></h5>
+                            </div>
+                            <div class="col-md-12 text-primary" style="display:none" id="texto-cargando-consultas">
+                                Cargando archivos...
+                            </div>
+                            <div class="col-md-12 text-danger" style="display:none" id="texto-error-consultar-consultas">
+                                Error de conexion.
+                                <a href="#" data-bind="click: consultarHistorialConsultasPaciente">Reintentar</a>
+                            </div>
+                            <div class="col-md-12 table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Ver</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!--ko foreach: historialConsultasPaciente-->
+                                        <tr>
+                                            <td>
+                                                <a class="btn btn-primary" data-bind="click: function() { abrirVentanaEditarConsultaHistoriaClinica(ConsultaId) }"  >                                               >
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <!--/ko-->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                                         
+            </div>
+
+            <div class="tab-pane tabs-animation fade" id="tab-content-historia-clinica-pediatria" role="tabpanel">
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <h5><b>Pr&oacute;ximamente</b></h5>
+                        <p>Esta secci&oacute;n estar&aacute; disponible pr&oacute;ximamente.</p>
+                    </div>
+                </div>                                     
+            </div>
+
+            <div class="tab-pane tabs-animation fade" id="tab-content-ginecologia" role="tabpanel">
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <h5><b>Pr&oacute;ximamente</b></h5>
+                        <p>Esta secci&oacute;n estar&aacute; disponible pr&oacute;ximamente.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane tabs-animation fade" id="tab-content-obstetrica" role="tabpanel">
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <h5><b>Pr&oacute;ximamente</b></h5>
+                        <p>Esta secci&oacute;n estar&aacute; disponible pr&oacute;ximamente.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane tabs-animation fade show " id="tab-content-2" role="tabpanel">
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <!--Actualizar estadia-->
+                        <label>Periodo de hospitalizaci&oacute;n:</label>
+                        <input type="text" class="form-control" id="periodo-hospitalizacion" data-bind="value: periodo">
+                        <button class="btn btn-primary" data-bind="click:actualizarEstadia">
+                            Actualizar
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane tabs-animation fade show " id="tab-content-3" role="tabpanel">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card" style="border-radius: 10px">
+                            <div class="card-body">
+                                <button class="btn btn-primary" data-bind="click:verEstadoCuenta">
+                                    <i class="fas fa-external-link-alt"></i>&nbsp;
+                                    Ver estado de cuenta
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane tabs-animation fade show " id="tab-content-enfermeria" role="tabpanel">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card" style="border-radius: 10px">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-12">
+                                        <h6><b>Aplicaci&oacute;n de medicamentos y servicios</b></h6>
+                                        <hr />
+                                    </div>
+                                    <div class="col-md-12">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Tipo de elemento</th>
+                                                    <th>Nombre</th>
+                                                    <th>Indicaciones</th>
+                                                    <th>Cantidad</th>
+                                                    <th>Unidad de venta</th>
+                                                    <th>Asignado por</th>
+                                                    <th>Aplicado</th>
+                                                    <th>Fecha y hora de aplicaci&oacute;n</th>
+                                                    <th>Aplicado por</th>
+                                                    @if (!Model.HospitalizacionFinalizada)
+                                                    {
+                                                        <th>Aplicar</th>
+                                                    }
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <!--ko foreach: productosAplicacionHospitalizacion-->
+                                                <tr>
+                                                    <td><label class="badge badge-warning">Medicamento</label></td>
+                                                    <td data-bind="text:Nombre"></td>
+                                                    <td data-bind="text:Indicaciones"></td>
+                                                    <td data-bind="text:Cantidad"></td>
+                                                    <td data-bind="text:UnidadMedidaVentaNombre"></td>
+                                                    <td data-bind="text:PersonaCrea"></td>
+                                                    <td>
+                                                        <label class="badge badge-success" data-bind="if:Aplicado">SI</label>
+                                                        <label class="badge badge-danger" data-bind="ifnot:Aplicado">NO</label>
+                                                    </td>
+                                                    <td data-bind="text:FechaHoraAplicacion"></td>
+                                                    <td data-bind="text:PersonaAplica"></td>
+                                                    @if (!Model.HospitalizacionFinalizada)
+                                                    {
+                                                        <td>
+                                                            <!--ko ifnot:Aplicado-->
+                                                            <button class="btn btn-primary" data-bind="click:$root.aplicarProducto">
+                                                                <i class="fas fa-syringe"></i>
+                                                            </button>
+                                                            <!--/ko-->
+                                                        </td>
+                                                    }
+                                                </tr>
+                                                <!--/ko-->
+                                                <!--ko foreach: serviciosHospitalizacion-->
+                                                <tr>
+                                                    <td><label class="badge badge-warning">Servicio</label></td>
+                                                    <td data-bind="text: Nombre"></td>
+                                                    <td></td>
+                                                    <td data-bind="text: Cantidad"></td>
+                                                    <td data-bind="text:PersonaCrea"></td>
+                                                    <td>
+                                                        <label class="badge badge-success" data-bind="if:Aplicado">SI</label>
+                                                        <label class="badge badge-danger" data-bind="ifnot:Aplicado">NO</label>
+                                                    </td>
+                                                    <td data-bind="text:FechaHoraAplicacion"></td>
+                                                    <td data-bind="text:PersonaAplica"></td>
+                                                    @if (!Model.HospitalizacionFinalizada)
+                                                    {
+                                                        <td>
+                                                            <!--ko ifnot:Aplicado-->
+                                                            <button class="btn btn-primary" data-bind="click:$root.aplicarServicio">
+                                                                <i class="fas fa-syringe"></i>
+                                                            </button>
+                                                            <!--/ko-->
+                                                        </td>
+                                                    }
+                                                </tr>
+                                                <!--/ko-->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane tabs-animation fade show " id="tab-content-evolucion" role="tabpanel">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card" style="border-radius: 10px">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-11">
+                                        <h6><b>Signos vitales</b></h6>
+                                        <hr />
+                                    </div>
+                                    <div class="col-md-1">
+                                        @if (!Model.HospitalizacionFinalizada)
+                                        {
+                                            <button class="btn btn-primary"
+                                                    data-bind="click:verModalAgregarExamenFisico">
+                                                Agregar
+                                            </button>
+                                        }
+                                    </div>
+                                    <div class="col-md-12">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Fecha y hora</th>
+                                                    <th>Profesional</th>
+                                                    <th>Valores</th>
+                                                    <th>Observaciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <!--ko foreach: examenesFisicosHospitalizacion-->
+                                                <tr>
+                                                    <td data-bind="text:FechaHora"></td>
+                                                    <td data-bind="text:Persona"></td>
+                                                    <td data-bind="html:Datos"></td>
+                                                    <td data-bind="text:Observaciones"></td>
+                                                </tr>
+                                                <!--/ko-->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane tabs-animation fade show " id="tab-content-pagos" role="tabpanel">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card" style="border-radius: 10px">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-12">
+                                        <h6><b>Dep&oacute;sitos</b></h6>
+                                        <hr />
+                                    </div>
+                                    @if (!Model.HospitalizacionFinalizada)
+                                    {
+                                        <div class="col-md-12 form-row">
+                                            <div class="col-md-12 form-row">
+                                                <label><b>Agregar dep&oacute;sito:</b></label>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label>Forma de pago</label>
+                                                <select class="select2bs4 form-control"
+                                                        asp-for="@Model.FormaPagoId"
+                                                        asp-items="@Model.FormaPagoSelectListItems">
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="">Moneda</label>
+                                                <select class="select2bs4 form-control"
+                                                        asp-for="@Model.MonedaId"
+                                                        asp-items="@Model.MonedaSelectListItems">
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label>Valor</label>
+                                                <input class="form-control" data-bind="value:valorDepositoAgregar" />
+                                            </div>
+                                            <div class="col-md-1">
+                                                <br />
+                                                <button class="btn btn-primary" data-bind="click:agregarDeposito">Agregar</button>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="form-row">
+                                    <div class="col-md-12">
+                                        <div class="table-responsive">
+                                            <hr />
+                                            <table class='table table-hover'>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Ver comprobante</th>
+                                                        <th>Fecha y hora</th>
+                                                        <th>Forma de pago</th>
+                                                        <th>Moneda</th>
+                                                        <th>Monto</th>
+                                                        <th>Eliminar</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <!--ko foreach: depositosHospitalizacion-->
+                                                    <tr>
+                                                        <td>
+                                                            <a class="btn btn-danger"
+                                                               data-bind="attr:{href:'/CrearPDF/CuentasPorCobrarReciboPagoPDF?pagoParcial=true&parcialPagoId='+Id}"
+                                                               target="_blank">
+                                                                <i class="fas fa-file-pdf"></i>
+                                                            </a>
+                                                        </td>
+                                                        <td data-bind="text:FechaHora"></td>
+                                                        <td data-bind="text:FormaPago"></td>
+                                                        <td data-bind="text:Moneda"></td>
+                                                        <td data-bind="text:Monto"></td>
+                                                        <td>
+                                                            <button class="btn btn-danger"
+                                                                    data-bind="click:$root.eliminarDeposito">
+                                                                <i class="fa fa-trash"></i>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                    <!--/ko-->
+                                                    <tr class="fila-total">
+                                                        <td colspan="3"><b>TOTAL</b></td>
+                                                        <td><b>Q <span data-bind="text:valorTotalDepositosHospitalizacion"></span></b></td>
+                                                        <th></th>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane tabs-animation fade show " id="tab-content-receta" role="tabpanel">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card" style="border-radius: 10px">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-12">
+                                        <h6><b>Aplicaci&oacute;n de dietas</b></h6>
+                                        <div class="col-md-12">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Nombre</th>
+                                                        <th>Ingredientes</th>
+                                                        <th>Cantidad</th>
+                                                        <th>Indicaciones</th>
+                                                        <th>Asignado por:</th>
+                                                        <th>Aplicado</th>
+                                                        <th>Fecha y hora de aplicaci&oacute;n</th>
+                                                        <th>Aplicado por:</th>
+                                                        @if (!Model.HospitalizacionFinalizada)
+                                                        {
+                                                            <th>Aplicar</th>
+                                                        }
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <!--ko foreach: recetasAplicacion-->
+                                                    <tr>
+                                                        <td data-bind="text:NombreReceta"></td>
+                                                        <td data-bind="text:Ingredientes"></td>
+                                                        <td data-bind="text:Cantidad"></td>
+                                                        <td data-bind="text:Indicaciones"></td>
+                                                        <td data-bind="text:PersonaCrea"></td>
+                                                        <td>
+                                                            <label class="badge badge-success" data-bind="if:Aplicado">SI</label>
+                                                            <label class="badge badge-danger" data-bind="ifnot:Aplicado">NO</label>
+                                                        </td>
+                                                        <td data-bind="text:FechaHoraAplicacion"></td>
+                                                        <td data-bind="text:PersonaAplica"></td>
+                                                        @if (!Model.HospitalizacionFinalizada)
+                                                        {
+                                                            <td>
+                                                                <!--ko ifnot:Aplicado-->
+                                                                <button class="btn btn-primary" data-bind="click:$root.aplicarReceta">
+                                                                    <i class="fas fa-syringe"></i>
+                                                                </button>
+                                                                <!--/ko-->
+                                                            </td>
+                                                        }
+                                                    </tr>
+                                                    <!--/ko-->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <hr />
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane tabs-animation fade show " id="tab-content-cirugia" role="tabpanel">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card" style="border-radius: 10px">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-12">
+                                        <h6><b>Cirug&iacute;a - Paquete</b></h6>
+                                        <div class="col-md-12 text-primary" style="display:none" id="texto-cargando-paquetes-aplicados">
+                                            Cargando productos de paquete para aplicacion...
+                                        </div>
+                                        <div class="col-md-12 text-danger" style="display:none" id="texto-error-consultar-paquetes-aplicados">
+                                            Error de conexion.
+                                            <a href="#" data-bind="click:consultarPaquetesAplicados">Reintentar</a>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Tipo</th>
+                                                        <th>Codigo</th>
+                                                        <th>Nombre</th>
+                                                        <th>Descripci&oacute;n</th>
+                                                        <th>Aplicado</th>
+                                                        <th>Fecha y hora de aplicaci&oacute;n</th>
+                                                        <th>Persona</th>
+                                                        @if (!Model.HospitalizacionFinalizada)
+                                                        {
+                                                            <th>Aplicar</th>
+                                                        }
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <!--ko foreach: listaProductosAplicacion-->
+                                                    <!--ko if:Tipo!= 'Laboratorio'-->
+                                                    <tr>
+                                                        <td><span class="badge badge-danger" data-bind="text:Tipo"></span></td>
+                                                        <td data-bind="text:Codigo"></td>
+                                                        <td data-bind="text:Nombre"></td>
+                                                        <td data-bind="text:Descripcion"></td>
+                                                        <td>
+                                                            <label class="badge badge-success" data-bind="if:Aplicado">SI</label>
+                                                            <label class="badge badge-danger" data-bind="ifnot:Aplicado">NO</label>
+                                                        </td>
+                                                        <td data-bind="text:FechaHoraAplicacion"></td>
+                                                        <td data-bind="text:Persona"></td>
+                                                        @if (!Model.HospitalizacionFinalizada)
+                                                        {
+                                                            <td>
+                                                                <!--ko ifnot:Aplicado -->
+                                                                <button class="btn btn-primary" data-bind="click:$root.aplicarPaquete">
+                                                                    <i class="fas fa-syringe"></i>
+                                                                </button>
+                                                                <!--/ko-->
+                                                            </td>
+                                                        }
+                                                    </tr>
+                                                    <!--/ko-->
+                                                    <!--ko ifnot:Tipo!= 'Laboratorio'-->
+                                                    <tr>
+                                                        <td><span class="badge badge-danger" data-bind="text:Tipo"></span></td>
+                                                        <td data-bind="text:Codigo"></td>
+                                                        <td data-bind="text:Nombre"></td>
+                                                        <td data-bind="text:Descripcion"></td>
+                                                        <td colspan="2">
+                                                            <button class="btn btn-primary" data-bind="click: $root.modificarResultadosExamenPaquete">
+                                                                <i class="fas fa-edit"></i>
+                                                                Modificar resultados
+                                                            </button>
+                                                        </td>
+                                                        <td colspan="2">
+                                                            <button class="btn btn-primary" data-bind="click: $root.descargarResultadosExamenPaquete">
+                                                                Descargar resultados
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                    <!--/ko-->
+                                                    <!--/ko-->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <hr />
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @* Nota Medica *@
+            <div class="tab-pane tabs-animation fade show " id="tab-content-nota-medica" role="tabpanel">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card" style="border-radius: 10px">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-11">
+                                        <h6><b>Notas m&eacute;dicas</b></h6>
+                                        <hr />
+                                    </div>
+                                    <div class="col-md-1">
+                                        @if (!Model.HospitalizacionFinalizada)
+                                        {
+                                            <button class="btn btn-primary"
+                                                    data-bind="click: verModalAgregarNotaMedica2">
+                                                Agregar
+                                            </button>
+                                        }
+                                    </div>
+                                    <div class="col-md-12">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Fecha de registro</th>
+                                                    <th>Profesional</th>
+                                                    <th>Historia del problema</th>
+                                                    <th>Sintomas</th>
+                                                    <th>Diagnostico</th>
+                                                    <th>Imprimir</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <!--ko foreach: notasMedicas-->
+                                                <tr>
+                                                    <td data-bind="text: FechaRegistro"></td>
+                                                    <td data-bind="text: Profesional"></td>
+                                                    <td data-bind="text: HistoriaProblema"></td>
+                                                    <td data-bind="text: Sintomas"></td>
+                                                    <td data-bind="text: Diagnostico"></td>
+                                                    <td>
+                                                        <button class="btn btn-danger" data-bind="click:$root.imprimirNotaMedica2">
+                                                            <i class="fas fa-print"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                <!--/ko-->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @* USUARIO CON ACCESO *@
+            <div class="tab-pane tabs-animation fade show" id="tab-content-usuarios-acceso" role="tabpanel">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card" style="border-radius: 10px">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-11">
+                                        <h6><b>Usuarios con acceso</b></h6>
+                                        <hr />
+                                    </div>
+                                    <div class="col-md-1">
+                                        <button class="btn btn-primary" data-bind="click: verModalAgregarUsuario">
+                                            Agregar
+                                        </button>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Usuario</th>
+                                                    <th>Permisos</th>
+                                                    <th>Quitar acceso</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody data-bind="foreach: usuariosAcceso">
+                                                <tr>
+                                                    <td>
+                                                        <span data-bind="text:UserNombre"></span><br />
+                                                        <span data-bind="text:UserEmail"></span><br />
+                                                        <span class="text-primary" id="texto-actualizando-permisos" style="display:none">
+                                                            Actualizando permisos...
+                                                        </span>
+                                                        <span class="text-danger" id="texto-error-actualizar-permisos" style="display:none">
+                                                            Error de conexion.
+                                                            <a href="#" data-bind="click: $root.actualizarPermisos">Reintentar</a>
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <div class="form-row">
+                                                            <div class="col-md-4">
+                                                                <input type="checkbox" data-bind="checked:AutTabEnfermeria, event:{change:$root.actualizarPermisos}" />
+                                                                Pesta&ntilde;a Enfermeria
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <input type="checkbox" data-bind="checked:AutTabActualizarEstadia, event:{change:$root.actualizarPermisos}" />
+                                                                Pesta&ntilde;a Actualizar estadia
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <input type="checkbox" data-bind="checked:AutTabIncretaExcreta, event:{change:$root.actualizarPermisos}" />
+                                                                Pesta&ntilde;a Increta/Excreta
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <input type="checkbox" data-bind="checked:AutTabControlGlucometria, event:{change:$root.actualizarPermisos}" />
+                                                                Pesta&ntilde;a Control de glucometria
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <input type="checkbox" data-bind="checked:AutTabNotaEnfermeria, event:{change:$root.actualizarPermisos}" />
+                                                                Pesta&ntilde;a Nota de enfermeria
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <input type="checkbox" data-bind="checked:AutTabPagos, event:{change:$root.actualizarPermisos}" />
+                                                                Pesta&ntilde;a Pagos
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <input type="checkbox" data-bind="checked:AutTabDietas, event:{change:$root.actualizarPermisos}" />
+                                                                Pesta&ntilde;a Dietas
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <input type="checkbox" data-bind="checked:AutTabSignosVitales, event:{change:$root.actualizarPermisos}" />
+                                                        Pesta&ntilde;a Signos vitales
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <input type="checkbox" data-bind="checked:AutTabNotaMedica, event:{change:$root.actualizarPermisos}" />
+                                                                Pesta&ntilde;a Nota medica
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <button class="btn btn-danger" data-bind="click: $parent.eliminarUsuarioAcceso">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @*INGESTA / EXCRETA*@
+            <div class="tab-pane tabs-animation fade show " id="tab-content-increta-excreta" role="tabpanel">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card" style="border-radius: 10px">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-11">
+                                        <h6><b>Ingesta / Excreta</b></h6>
+                                    </div>
+                                    <div class="col-md-1">
+                                        @if (!Model.HospitalizacionFinalizada)
+                                        {
+                                            <button class="btn btn-primary" data-bind="click:verModalAgregarExcretaIncreta">
+                                                Agregar
+                                            </button>
+                                        }
+                                    </div>
+                                    <div class="col-md-12">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Fecha de registro</th>
+                                                    <th>Ingesta IV</th>
+                                                    <th>Ingesta PO</th>
+                                                    <th>Total Ingesta</th>
+                                                    <th>Excreta</th>
+                                                    <th>Cuantas horas</th>
+                                                    <th>Enfermer&iacute;a</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <!--ko foreach: IngestasExcretas-->
+                                                <tr>
+                                                    <td data-bind="text:FechaRegistro"></td>
+                                                    <td data-bind="text:IngestaIV"></td>
+                                                    <td data-bind="text:IngestaPO"></td>
+                                                    <td data-bind="text:TotalIngesta"></td>
+                                                    <td data-bind="text:Excreta"></td>
+                                                    <td data-bind="text:CuantasHoras"></td>
+                                                    <td data-bind="text:Enfermeria"></td>
+                                                </tr>
+                                                <!--/ko-->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane tabs-animation fade show " id="tab-content-control-glucometria" role="tabpanel">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card" style="border-radius: 10px">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-11">
+                                        <h6><b>Control de glucometria</b></h6>
+                                    </div>
+                                    <div class="col-md-1">
+                                        @if (!Model.HospitalizacionFinalizada)
+                                        {
+                                            <button class="btn btn-primary"
+                                                    data-bind="click:verModalAgregarControlGlucometria">
+                                                Agregar
+                                            </button>
+                                        }
+                                    </div>
+                                    <div class="col-md-12">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Fecha de registro</th>
+                                                    <th>GMT</th>
+                                                    <th>Insulina</th>
+                                                    <th>Unidades</th>
+                                                    <th>Medicamento</th>
+                                                    <th>Dosis</th>
+                                                    <th>Firma</th>
+                                                    <th>Aplicado</th>
+                                                    <th>Fecha y hora de aplicaci&oacute;n</th>
+                                                    <th>Persona que aplica</th>
+                                                    <th>Profesional</th>
+                                                    <th>Aplicar</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <!--ko foreach: controlesGlucometria-->
+                                                <tr>
+                                                    <td data-bind="text:FechaHora"></td>
+                                                    <td data-bind="text:GMT"></td>
+                                                    <td data-bind="text:Insulina"></td>
+                                                    <td data-bind="text:Unidades"></td>
+                                                    <td data-bind="text:Medicamento"></td>
+                                                    <td data-bind="text:Dosis"></td>
+                                                    <td data-bind="text:Firma"></td>
+
+                                                    <td>
+                                                        <label class="badge badge-success" data-bind="if:Aplicado">SI</label>
+                                                        <label class="badge badge-danger" data-bind="ifnot:Aplicado">NO</label>
+                                                    </td>
+                                                    <td data-bind="text:FechaHoraAplicacion"></td>
+                                                    <td data-bind="text:NombrePersonaAplica"></td>
+                                                    <td data-bind="text:NombreProfesional"></td>
+                                                    <td>
+                                                        <!--ko ifnot:Aplicado-->
+                                                        <button class="btn btn-primary" data-bind="click:$root.aplicarControlGlucometria">
+                                                            <i class="fas fa-syringe"></i>
+                                                        </button>
+                                                        <!--/ko-->
+                                                    </td>
+                                                </tr>
+                                                <!--/ko-->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @* NOTA ENFERMERIA *@
+            <div class="tab-pane tabs-animation fade show " id="tab-content-nota-enfermeria" role="tabpanel">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card" style="border-radius: 10px">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-11">
+                                        <h6><b>Nota de enfermer&iacute;a</b></h6>
+                                    </div>
+                                    <div class="col-md-1">
+                                        @if (!Model.HospitalizacionFinalizada)
+                                        {
+                                            <button class="btn btn-primary"
+                                                    data-bind="click:verModalAgregarNotaEnfermeria">
+                                                Agregar
+                                            </button>
+                                        }
+                                    </div>
+                                    <div class="col-md-12">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Fecha de registro</th>
+                                                    <th>Profesional</th>
+                                                    <th>Evoluci&oacute;n</th>
+                                                    <th>Sintomas</th>
+                                                    <th>Diagnostico</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <!--ko foreach: notasEnfermerias-->
+                                                <tr>
+                                                    <td data-bind="text:FechaRegistro"></td>
+                                                    <td data-bind="text:Profesional"></td>
+                                                    <td data-bind="text:Evolucion"></td>
+                                                    <td data-bind="text:Sintomas"></td>
+                                                    <td data-bind="text:Diagnostico"></td>
+                                                </tr>
+                                                <!--/ko-->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane tabs-animation fade show " id="tab-content-archivos" role="tabpanel">
+                <div class="main-card mb-3 card" style="border-radius: 10px">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Archivos de consultas</b></h5>
+                            </div>
+                            <div class="col-md-12 text-primary" style="display:none" id="texto-cargando-archivos-paciente">
+                                Cargando archivos...
+                            </div>
+                            <div class="col-md-12 text-danger" style="display:none" id="texto-error-consultar-archivos-paciente">
+                                Error de conexion.
+                                <a href="#" data-bind="click: consultarArchivosPaciente">Reintentar</a>
+                            </div>
+                            <div class="col-md-12 table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha de carga</th>
+                                            <th>Nombre</th>
+                                            <th>Ver</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!--ko foreach: archivosPaciente-->
+                                        <tr>
+                                            <td data-bind="text:ArchivoFecha"></td>
+                                            <td data-bind="text:ArchivoNombre"></td>
+                                            <td>
+                                                <a data-bind="attr:{href:ArchivoUrl}" href="#" target="_blank">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <!--/ko-->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane tabs-animation fade show " id="tab-content-historial-consultas" role="tabpanel">
+                <div class="main-card mb-3 card" style="border-radius: 10px">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Historial de consultas</b></h5>
+                            </div>
+                            <div class="col-md-12 text-primary" style="display:none" id="texto-cargando-consultas">
+                                Cargando archivos...
+                            </div>
+                            <div class="col-md-12 text-danger" style="display:none" id="texto-error-consultar-consultas">
+                                Error de conexion.
+                                <a href="#" data-bind="click: consultarHistorialConsultasPaciente">Reintentar</a>
+                            </div>
+                            <div class="col-md-12 table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Cita - Motivo</th>
+                                            <th>Servicios</th>
+                                            <th>Ver</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!--ko foreach: historialConsultasPaciente-->
+                                        <tr>
+                                            <td data-bind="text:Fecha"></td>
+                                            <td data-bind="text:CitaMotivo"></td>
+                                            <td>
+                                                <!--ko foreach:ServiciosConsulta-->
+                                                <span class="badge badge-primary" data-bind="text:NombreServicio"></span><br />
+                                                <!--/ko-->
+                                            </td>
+                                            <td>
+                                                <a class="btn btn-primary" data-bind="attr:{href:'/Consultas/Informacion?id='+ConsultaId}"
+                                                   href="#" target="_blank">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <!--/ko-->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane tabs-animation fade show " id="tab-content-historial-hospitalizaciones" role="tabpanel">
+                <div class="main-card mb-3 card" style="border-radius: 10px">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Historial de hospitalizaciones</b></h5>
+                            </div>
+                            <div class="col-md-12 text-primary" style="display:none" id="texto-cargando-historial-hospitalizaciones">
+                                Cargando historial de hospitalizaciones...
+                            </div>
+                            <div class="col-md-12 text-danger" style="display:none" id="texto-error-consultar-historial-hospitalizaciones">
+                                Error de conexion.
+                                <a href="#" data-bind="click: consultarHistorialHospitalizaciones">Reintentar</a>
+                            </div>
+                            <div class="col-md-12 table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha inicio</th>
+                                            <th>Fecha fin</th>
+                                            <th>Habitacion</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!--ko foreach: historialHospitalizacionesPaciente-->
+                                        <tr>
+                                            <td data-bind="text:HospitalizacionFechaInicio"></td>
+                                            <td data-bind="text:HospitalizacionFechaFin"></td>
+                                            <td data-bind="text:HabitacionNumeroNombre"></td>
+                                        </tr>
+                                        <!--/ko-->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Modales
+{
+    <div style="display:none" id="mdl-agregar-nota-medica" title="Agregar nota m�dica">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th colspan="2"></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><b>Historia del problema</b></td>
+                    <td>
+                        <input class="form-control" data-bind="value: notaHistoriaProblema" />
+                    </td>
+                </tr>
+                <tr>
+                    <td><b>Sintomas</b></td>
+                    <td>
+                        <input class="form-control" data-bind="value: notaSintomas" />
+                    </td>
+                </tr>
+                <tr>
+                    <td><b>Diagnostico</b></td>
+                    <td>
+                        <input class="form-control" data-bind="value: notaDiagnostico" />
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <button class="btn btn-success" data-bind="click: agregarNotaMedica2">
+            Guardar
+        </button>
+    </div>
+
+    <div style="display:none" id="mdl-agregar-examen-fisico" title="Agregar examen f&iacute;sico">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Dato</th>
+                    <th>Valor</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!--ko foreach: datosExamenFisicoAgregar-->
+                <tr>
+                    <td data-bind="text:NombreDato"></td>
+                    <td>
+                        <input class="form-control" data-bind="value:ValorDato,
+                                                                                                                                                                    attr:{placeholder:NombreDato}" />
+                    </td>
+                </tr>
+                <!--/ko-->
+            </tbody>
+        </table>
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Observaciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <textarea class="form-control"
+                                  data-bind="value:observacionesExamenFisicoAgregar"
+                                  placeholder="Observaciones"></textarea>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <button class="btn btn-success" data-bind="click:agregarExamenFisico">
+            Guardar
+        </button>
+    </div>
+
+    <div style="display:none" id="mdl-cambiar-habitacion" title="Habitaciones disponibles">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Numero o nombre</th>
+                    <th>Categor&iacute;a</th>
+                    <th>Capacidad de camas</th>
+                    <th>Capacidad de personas</th>
+                    <th>Seleccionar</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!--ko foreach: habitacionesDisponiblesCambio-->
+                <tr>
+                    <td data-bind="text:HabitacionNombre"></td>
+                    <td data-bind="text:HabitacionCategoria"></td>
+                    <td data-bind="text:HabitacionNumeroCamas"></td>
+                    <td data-bind="text:HabitacionCapacidadPersonas"></td>
+                    <td>
+                        <button class="btn btn-primary" data-bind="click:$root.cambiarHabitacion">
+                            Cambiar
+                        </button>
+                    </td>
+                </tr>
+                <!--/ko-->
+            </tbody>
+        </table>
+
+        <button class="btn btn-success" data-bind="click:cancelarCambioHabitacion">
+            Cancelar
+        </button>
+    </div>
+    @*MODAL INGESTA EXCRETA*@
+    <div style="display:none" id="mdl-agregar-increta-excreta" title="Agregar Increta / Excreta">
+        <table class="table table-hover">
+            <thead>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><b>Ingesta IV</b></td>
+                    <td>
+                        <input class="form-control" type="number" data-bind="value: ingestaIV" />
+                    </td>
+                </tr>
+                <tr>
+                    <td><b>Ingesta PO</b></td>
+                    <td>
+                        <input class="form-control" type="number" data-bind="value: ingestaPO" />
+                    </td>
+                </tr>
+                <tr>
+                    <td><b>Total ingesta</b></td>
+                    <td>
+                        <input class="form-control" type="number" data-bind="value: totalIngesta" readonly />
+                    </td>
+                </tr>
+                <tr>
+                    <td><b>Excreta</b></td>
+                    <td>
+                        <input class="form-control" data-bind="value: excreta" />
+                    </td>
+                </tr>
+                <tr>
+                    <td><b>Cuantas horas</b></td>
+                    <td>
+                        <input class="form-control" data-bind="value: cuantasHoras" />
+                    </td>
+                </tr>
+
+            </tbody>
+        </table>
+        <button class="btn btn-success" data-bind="click: agregarIngestaExcreta">
+            Guardar
+        </button>
+    </div>
+
+
+    <div style="display:none" id="mdl-agregar-nota-enfermeria" title="Agregar Nota enfermer&iacute;a">
+        <table class="table table-hover">
+            <thead>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><b>Evoluci&oacute;n</b></td>
+                    <td>
+                        <input class="form-control" data-bind="value: notaEvolucion" />
+                    </td>
+                </tr>
+                <tr>
+                    <td><b>S&iacute;ntomas</b></td>
+                    <td>
+                        <input class="form-control" data-bind="value: notaSintomas" />
+                    </td>
+                </tr>
+                <tr>
+                    <td><b>Diagnostico</b></td>
+                    <td>
+                        <input class="form-control" data-bind="value: notaDiagnostico" />
+                    </td>
+                </tr>
+
+            </tbody>
+        </table>
+        <button class="btn btn-success" data-bind="click: agregarNotaEnfermeria">
+            Guardar
+        </button>
+    </div>
+    <div style="display:none" id="mdl-agregar-usuarios-acceso" title="Agregar usuario">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <select class="select2bs4 form-control" data-bind="options: listaUsuarios, optionsText: 'Nombre', value: usuarioSeleccionado"></select>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <button class="btn btn-success" data-bind="click: agregarUsuarioAcceso">
+            Guardar
+        </button>
+    </div>
+
+
+    <div style="display:none" id="mdl-agregar-control-glucometria" title="Agregar control glucometria">
+        <table class="table table-hover">
+            <thead>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><b>GMT</b></td>
+                    <td>
+                        <input class="form-control" data-bind="value:controlGMT" />
+                    </td>
+                </tr>
+                <tr>
+                    <td><b>Insulina</b></td>
+                    <td>
+                        <input class="form-control" data-bind="value:controlInsulina" />
+                    </td>
+                </tr>
+                <tr>
+                    <td><b>Unidades</b></td>
+                    <td>
+                        <input class="form-control" data-bind="value:controlUnidad" />
+                    </td>
+                </tr>
+                <tr>
+                    <td><b>Medicamento</b></td>
+                    <td>
+                        <input class="form-control" data-bind="value:controlMedicamento" />
+                    </td>
+                </tr>
+                <tr>
+                    <td><b>Dosis</b></td>
+                    <td>
+                        <input type="number" class="form-control" data-bind="value:controlDosis" />
+                    </td>
+                </tr>
+
+            </tbody>
+        </table>
+        <button class="btn btn-success" data-bind="click:agregarControlGlucometria">
+            Guardar
+        </button>
+    </div>
+
+
+}
+
+@section css {
+    <style>
+        .fila-total {
+            background-color: #f5f5f5;
+        }
+    </style>
+}
+
+@section Scripts
+{
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<!-- CSS de daterangepicker -->
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+
+<!-- Dependencia de Moment.js -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+
+<!-- JavaScript de daterangepicker -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+
+    @* <script>
+        $(document).ready(function() {
+            window.open('/CrearPDF/HospitalizacionInformeGeneralPDF?hospitalizacionId=' + @Model.HospitalizacionId, '_blank');
+        });
+    </script> *@
+
+    <script type="text/javascript" src="~/ViewModelKo/HospitalizacionDetallesVM.js"></script>
+
+    <link href="~/css/daterangepicker.css" rel="stylesheet">
+
+    <script>
+        var acc = document.getElementsByClassName("accordion");
+        var i;
+
+        for (i = 0; i < acc.length; i++) {
+            acc[i].addEventListener("click", function () {
+                this.classList.toggle("active");
+                var panel = this.nextElementSibling;
+                if (panel.style.maxHeight) {
+                    panel.style.maxHeight = null;
+                } else {
+                    panel.style.maxHeight = panel.scrollHeight + "px";
+                }
+            });
+        }
+    </script>
+
+    <script>
+            function abrirVentanaEditarConsultaHistoriaClinica(consultaId) {
+            var url = '/Consultas/EditarConsultaHistoriaClinica/' + consultaId;
+
+            // Tamaño de la ventana emergente
+            var width = 900;
+            var height = 600;
+
+            // Cálculo de la posición centrada
+            var left = (screen.width / 2) - (width / 2);
+            var top = (screen.height / 2) - (height / 2);
+
+            // Especificaciones de la ventana, incluyendo las posiciones calculadas
+            var windowFeatures = "width=" + width + ",height=" + height + ",top=" + top + ",left=" + left + ",scrollbars=yes,resizable=yes";
+
+            // Abrir la ventana en la posición calculada
+            window.open(url, "EditarConsultaHistoriaClinica", windowFeatures);
+        }
+    </script>
+}

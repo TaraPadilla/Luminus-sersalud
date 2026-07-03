@@ -1,0 +1,45 @@
+@using sistema.Models
+@model CuentasPorCobrarModificarViewModel
+@{
+    ViewData["Title"] = "Modificar cuenta";
+}
+
+@Html.HiddenFor(c=>c.CuentaId)
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <h4><b>Modificar cuenta</b></h4>
+        </div>
+    </div>
+</div>
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <label>Valor</label>
+                @Html.TextBoxFor(c=>c.Valor, new { @class="form-control", @type="number" })
+            </div>
+            <div class="col-md-12">
+                <label>Observaciones</label>
+                @Html.TextAreaFor(c=>c.Observaciones, new { @class="form-control" })
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <a href="#" class="btn btn-primary" data-bind="click: modificarCuenta">
+            Guardar cambios
+        </a>
+        <a href="/CuentasPorCobrar/Pendientes" class="btn btn-danger">
+            Cancelar
+        </a>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://knockoutjs.com/downloads/knockout-3.5.1.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.js"></script>
+<script src="~/ViewModelKo/CuentaModificarVM.js"></script>

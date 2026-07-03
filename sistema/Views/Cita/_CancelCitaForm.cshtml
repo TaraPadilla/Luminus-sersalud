@@ -1,0 +1,135 @@
+@model sistema.Models.CitaBaseViewModel
+@Html.HiddenFor(a => a.HoraYFecha)
+@Html.HiddenFor(a => a.Cita.EstadoCita)
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <h6 style="color: red"> Fecha y hora seleccionada: @Model.HoraYFecha</h6>
+        <div class="form-row">
+            <div class="col-md-10">
+                <div class="position-relative form-group">
+                    <label> Paciente </label>
+                    <a class="btn btn-primary btn-sm text-white" onclick="abrirclientes()">
+                        <i class="fas fa-external-link-alt"></i>
+                    </a>
+                    <select class="form-control select2bs4 " style="width: 100%;" asp-for="Cita.PacienteId" asp-items="@Model.PacientesSelectListItem" id="clienteids">
+                        <option disabled selected>--- Sin Asignar ---</option>
+                    </select>
+                    <div>
+                        <label>Seguro EPS: <span id="SeguroEPS"></span></label><br>
+                        <label>Codigo EPS: <span id="CodigoEPS"></span></label>
+                    </div>
+                    @Html.ValidationMessageFor(a => a.ClienteId, "", new { @class = "text-danger"})
+                </div>
+            </div>
+
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <label>Edad</label>
+                    @Html.TextBoxFor(a => a.Cita.Edad, new{ type="number", @class="form-control", @placeholder="Edad"})
+                    @Html.ValidationMessageFor(a => a.Cita.Edad, "", new { @class = "text-danger"})
+                </div>
+            </div>
+
+            <div style="display: none;" id="datosExtras">
+                <div class="col-md-12">
+                    <div class="position-relative form-group">
+                        <label>Codigo de Cita</label>
+                        @Html.TextBoxFor(a => a.Cita.CodigoDeCita, new{@class="form-control", @placeholder="Codigo De Cita"})
+                        @Html.ValidationMessageFor(a => a.Cita.CodigoDeCita, "", new { @class = "text-danger"})
+                    </div>
+                </div>
+                <div class="col-md-12">
+                    <div class="position-relative form-group">
+                        <label>Codigo de Autorizacion</label>
+                        @Html.TextBoxFor(a => a.Cita.CodigoAutorizacion, new{@class="form-control", @placeholder="Codigo Autorizacion"})
+                        @Html.ValidationMessageFor(a => a.Cita.CodigoAutorizacion, "", new { @class = "text-danger"})
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+        <div class="form-row">
+            @* <div class="col-md-6">
+                <div class="position-relative form-group">
+                <label class="">Fecha y hora de cita</label>
+                <input type="text" class="form-control float-right" id="fechacita" asp-for="Cita.FechaInicio">
+                </div> *@
+            @* </div> *@
+
+            <div class="col-md-12">
+
+                <div class="position-relative form-group">
+                    <label>Especialidad</label>
+                    <select class="form-control select2bs4" style="width: 100%;" asp-for="Cita.EspecialidadId"
+                            asp-items="@Model.EspecialidadSelectListItem">
+                        <option disabled selected>--- SELECCIONE ---</option>
+                    </select>
+                    @Html.ValidationMessageFor(a => a.Cita.EspecialidadId, "", new { @class = "text-danger"})
+                </div>
+            </div>
+
+        </div>
+
+        <div class="form-row">
+            <div class="col-md-6">
+                <div class="position-relative form-group">
+                    <label> Servicio </label>
+                    <select class="form-control select2bs4 " style="width: 100%;" asp-for="Cita.ServicioId" asp-items="@Model.ServiciosSelectListItem">
+                        <option disabled selected>--- Sin Asignar ---</option>
+                    </select>
+                    @Html.ValidationMessageFor(a => a.Cita.ServicioId, "", new { @class = "text-danger"})
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="position-relative form-group">
+                    <label>Médico</label>
+                    <select class="form-control select2bs4 " style="width: 100%;" asp-for="Cita.EmpleadoId" asp-items="@Model.DoctoresSelectListItem">
+                        <option disabled selected>--- Sin Asignar ---</option>
+                    </select>
+                    @Html.ValidationMessageFor(a => a.Cita.EmpleadoId, "", new { @class = "text-danger"})
+                </div>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="col-md-12">
+                <div class="position-relative form-group">
+                    <label>Encargado (*solo si es menor de edad)</label>
+                    @Html.TextBoxFor(a => a.Cita.NombreEncargado, new{ type="text", @class="form-control", @placeholder="Encargado"})
+                    @Html.ValidationMessageFor(a => a.Cita.NombreEncargado, "", new { @class = "text-danger"})
+                </div>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="col-md-12">
+                <div class="position-relative form-group">
+                    <label class="">Observación</label>
+                    @Html.TextAreaFor(a => a.Cita.Motivo,5,500 ,htmlAttributes : new {
+                    @class="form-control ", @placeholder="Descripcion", @style="max-width:100% !important;"})
+                    @Html.ValidationMessageFor(a => a.Cita.Motivo, "", new { @class = "text-danger"})
+                </div>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="col-md-12">
+                <div class="position-relative form-group">
+                    <label class="">Cargo por penalización</label>
+                    @Html.TextBoxFor(c=>c.CargoPenalizacion, new {@class="form-control", @type="number"})
+                </div>
+            </div>
+        </div>
+        <br>
+        <div class="form-row">
+            <div class="col-md-12">
+                <div class="position-relative form-group">
+                    <button class="btn btn-primary">Cancelar cita</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

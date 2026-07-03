@@ -1,0 +1,69 @@
+@model sistema.Models.CategoriaRecetaCrudViewModel
+
+@{
+    ViewData["Title"] = "Nueva Categoría";
+}
+
+<div class="container-fluid animated fadeIn">
+    <div class="card shadow-sm border-0 mb-4">
+        @* Encabezado con identidad visual médica *@
+        <div class="card-header bg-white py-3">
+            <h5 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-plus-circle mr-2"></i>Registrar Nueva Categoría
+            </h5>
+            <small class="text-muted text-uppercase" style="letter-spacing: 1px;">Ingreso de nuevos Menus para las categorías de recetas</small>
+        </div>
+
+        <div class="card-body px-lg-5 py-4">
+            @* Formulario con validación y espaciado fluido *@
+            <form asp-action="Nuevo" asp-controller="CategoriaReceta" method="post" class="needs-validation">
+                @Html.AntiForgeryToken()
+                
+                <div class="row">
+                    <div class="col-12">
+                        @* Inyección del formulario parcial *@
+                        @await Html.PartialAsync("_CategoriaRecetaForm", Model)
+                    </div>
+                </div>
+
+                @* Separador estético *@
+                <hr class="my-4" style="border-top: 1px dashed #e3e6f0;">
+
+                <div class="d-flex justify-content-end align-items-center">
+                    @* Botón de cancelación / retorno *@
+                    <a asp-action="Lista" asp-controller="CategoriaReceta" class="btn btn-light border px-4 mr-2 text-secondary">
+                        <i class="fas fa-times mr-1"></i> Cancelar
+                    </a>
+                    
+                    @* Botón de acción principal con énfasis visual *@
+                    <button type="submit" class="btn btn-success px-5 shadow-sm font-weight-bold">
+                        <i class="fas fa-check-circle mr-1"></i> Crear Categoría
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Efecto de foco para mejorar la experiencia de usuario (UX)
+            // Resalta la etiqueta cuando el campo está activo
+            $('input, textarea, select').focus(function() {
+                $(this).closest('.form-group').find('label').addClass('text-primary font-weight-bold animate__animated animate__fadeInLeft animate__faster');
+            }).blur(function() {
+                $(this).closest('.form-group').find('label').removeClass('text-primary font-weight-bold animate__animated animate__fadeInLeft animate__faster');
+            });
+
+            // Opcional: Validación visual de Bootstrap 4
+            $('.needs-validation').submit(function (event) {
+                if (this.checkValidity() === false) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                $(this).addClass('was-validated');
+            });
+        });
+    </script>
+}

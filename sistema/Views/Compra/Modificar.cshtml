@@ -1,0 +1,41 @@
+@model sistema.Models.CompraBaseViewModel
+
+@{
+    var titulo = "Orden de compra - Detalles";
+    if (Model.OrdenCompraRecibida)
+    {
+        titulo = "Compra - Detalles";
+    }
+    ViewData["Title"] = titulo;
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <center><h4><b>@titulo</b></h4></center>
+        <hr />
+        @if (!Model.OrdenCompraRecibida)
+        {
+            <button type="button" class="btn btn-primary" data-bind="click:modificarOrdenCompra">Guardar cambios</button>
+            <button type="button" class="btn btn-primary" data-bind="click:cambiarAComprado">Generar compra</button>
+        }
+        @if (!Model.OrdenCompraRecibida)
+        {
+            <a href="@Url.Action("OrdenCompraPDF","CrearPDF",new{ordenCompraId=Model.CompraId})" target="_blank"
+               class="btn btn-danger text-white">Generar PDF Orden compra</a>
+        }
+        else
+        {
+            <a href="@Url.Action("Reporte","Compra",new{CompraId=Model.CompraId})" target="_blank"
+               class="btn btn-danger text-white">Generar PDF COMPRA</a>
+        }
+    </div>
+</div>
+
+@await Html.PartialAsync("_CompraFormNew")
+
+@section Scripts
+{
+    <script type="text/javascript" src="~/ViewModelKo/CompraVM.js"></script>
+}

@@ -1,0 +1,40 @@
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    // Leer el valor del appsettings.json. 
+    string sufijoLayout = Configuration["Cliente"]; 
+    
+    // Concatenar para formar el nombre del Layout (ejemplo: "_Layout" + "SS")
+    // Si la clave trae el nombre completo (ej. "_LayoutSS"), simplemente asignalo directo.
+    Layout = $"_Layout{sufijoLayout}"; 
+    ViewData["Title"] = "Nueva habitacion";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12 text-center">
+                <h4><b>Nueva habitaci&oacute;n</b></h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_HabitacionForm")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <button class="btn btn-danger" data-bind="click:cancelarRegistrarHabitacion">Cancelar</button>
+                <button class="btn btn-success" data-bind="click:registrarHabitacion">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+<script src="~/ViewModelKo/HabitacionVM.js"></script>
+}

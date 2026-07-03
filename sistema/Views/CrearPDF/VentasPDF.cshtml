@@ -1,0 +1,179 @@
+@model IEnumerable<Database.Shared.Models.Venta>
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Clínica - Ventas";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+}
+
+<style>
+    /* ===== Estilos embebidos scopeados (no tocan otros reportes) ===== */
+    .doc {
+        padding: 10px 16px 18px 16px;
+        font-size: 13px;
+    }
+
+    .doc .doc-title {
+        font-size: 18px;
+        font-weight: 800;
+        text-align: center;
+        margin: 4px 0 8px;
+    }
+
+    .doc .doc-underline {
+        height: 2px;
+        background: #0a47a3;
+        opacity: .25;
+        margin: 6px 0 14px;
+    }
+
+    /* Fecha de emisión centrada en tabla sin bordes */
+    .doc .header-line {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 6px;
+    }
+
+    .doc .header-line td {
+        border: 0;
+        text-align: center;
+        font-weight: 700;
+        padding: 6px 0 10px;
+    }
+
+    /* Tabla principal con bordes negros y mejor legibilidad */
+    .doc .sales {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .doc .sales th,
+    .doc .sales td {
+        border: 1px solid #000;
+        padding: 6px 8px;
+        vertical-align: top;
+    }
+
+    .doc .sales thead th {
+        background: #eef3ff;
+        font-weight: 800;
+        color: #0a47a3;
+    }
+
+    /* Alineaciones */
+    .doc .text-right {
+        text-align: right;
+    }
+
+    .doc .text-center {
+        text-align: center;
+    }
+
+    /* Evitar desbordes si hay textos largos en “Forma de pago” */
+    .doc .wrap {
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    /* Valores más pequeños (solo celdas, no encabezados) */
+    .doc .sales td {
+        font-size: 10px;
+        line-height: 1.35;
+    }
+
+    /* Detalle dentro de "Forma de pago" en múltiples líneas */
+    .doc .sales td div {
+        font-size: 10px;
+    }
+</style>
+
+<div class="doc">
+    <!-- Título -->
+    <div class="doc-title">Cl&iacute;nica - Ventas</div>
+    <div class="doc-underline"></div>
+
+    <!-- Fecha de emisión -->
+    <table class="header-line">
+        <tbody>
+            <tr>
+                <td>Fecha y Hora de Emisión: @fecha</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Tabla de ventas -->
+    <table class="sales">
+        <thead>
+            <tr>
+                <th class="text-center">Fecha</th>
+                <th class="text-center">Venta #</th>
+                <th class="text-center">Vendedor</th>
+                <th class="text-center">Nombre</th>
+                <th class="text-center">Nit</th>
+                <th class="text-center">Forma de pago</th>
+                <th class="text-center">Total</th>
+                <th class="text-center">Monto Pagado</th>
+                <th class="text-center">Vuelto</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                decimal totalFormaPago = 0;
+                decimal totalTotal = 0;
+                decimal totalMontoPago = 0;
+                decimal totalVuelto = 0;
+            }
+
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.FechaVenta</td>
+                    <td class="text-center">@item.Id</td>
+                    <td>@item.Empleado.Nombre</td>
+                    <td>@item.Nombres</td>
+                    <td>@item.Nit</td>
+
+                    <td class="wrap">
+                        @if (item.Pagos.Any())
+                        {
+                            foreach (var pago in item.Pagos)
+                            {
+                                <div>@pago.FormaPago.NombreFormaPago - Q @pago.Monto</div>
+                                totalFormaPago += pago.Monto;
+                            }
+                        }
+                    </td>
+
+                    <td class="text-right">Q @item.DetalleVenta.Sum(a => a.Total)</td>
+                    <td class="text-right">Q @item.MontoPago</td>
+                    <td class="text-right">Q @item.Vuelto</td>
+
+                    @{
+                        totalTotal += item.DetalleVenta.Sum(x => x.Total);
+                        totalMontoPago += item.MontoPago;
+                        totalVuelto += item.Vuelto;
+                    }
+                </tr>
+            }
+
+            <tr>
+                <td colspan="4" class="text-right"><b>TOTAL:</b></td>
+                <td></td>
+                <td class="text-right"><b>@($"Q {totalFormaPago}")</b></td>
+                <td class="text-right"><b>@($"Q {totalTotal}")</b></td>
+                <td class="text-right"><b>@($"Q {totalMontoPago}")</b></td>
+                <td class="text-right"><b>@($"Q {totalVuelto}")</b></td>
+            </tr>
+        </tbody>
+    </table>
+</div>

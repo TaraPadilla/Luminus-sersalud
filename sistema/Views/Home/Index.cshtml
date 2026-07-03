@@ -1,0 +1,1817 @@
+﻿@using DocumentFormat.OpenXml.Drawing.Charts
+@using DocumentFormat.OpenXml.EMMA
+@using DocumentFormat.OpenXml.InkML
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+
+@{
+    ViewData["Title"] = "Inicio";
+    var usuarioCoordinadorSAP = User.IsInRole("Coordinador SAP");
+    var usuarioCoordinadorRRHH = User.IsInRole("Coordinador RRHH");
+    var usuarioAdmisiones = User.IsInRole("Admisiones");
+    var usuarioRecepcion = User.IsInRole("Recepcion");
+    var usuarioCoordinadorEnfermeria = User.IsInRole("Coordinador Enfermeria");
+    var usuarioSupervisorEnfermeria = User.IsInRole("Supervisor Enfermeria");
+    var usuarioEnfermeria = User.IsInRole("Enfermeria");
+    var usuarioDireccionMedicos = User.IsInRole("Direccion Medicos");
+    var usuarioCoordinadorMedicosResidentes = User.IsInRole("Coordinador Medicos Residentes");
+    var usuarioMedicosResidentes = User.IsInRole("Medicos Residentes");
+    var usuarioMedicosExternos = User.IsInRole("Medicos Externos");
+    var usuarioCoordinadorFarmacia = User.IsInRole("Coordinador Farmacia");
+    var usuarioEncargadoBodegaFarmacia = User.IsInRole("Encargado Bodega Farmacia");
+    var usuarioAuxiliarFarmacia = User.IsInRole("Auxiliar Farmacia");
+    var usuarioCoordinadorCompras = User.IsInRole("Coordinador Compras");
+    var usuarioEncargadoBodega = User.IsInRole("Encargado Bodega");
+    var usuarioCoordinadorFinanciero = User.IsInRole("Coordinador Financiero");
+    var usuarioCoordinadorContable = User.IsInRole("Coordinador Contable");
+    var usuarioAuxiliarContable = User.IsInRole("Auxiliar Contable");
+    var usuarioCoordinadorCocina = User.IsInRole("Coordinador Cocina");
+    var usuarioAuxiliarCocina = User.IsInRole("Auxiliar Cocina");
+    var usuarioCoordinadorOperaciones = User.IsInRole("Coordinador Operaciones");
+    var usuarioAuxiliarOperaciones = User.IsInRole("Auxiliar Operaciones");
+    var usuarioVisitaMedica = User.IsInRole("Visita Medica");
+    var usuarioSeguros = User.IsInRole("Seguros");
+    var usuarioCoordinadorLaboratorios = User.IsInRole("Coordinador Laboratorio");
+    var usuarioLaboratorio = User.IsInRole("Laboratorio");
+    var usuarioRadiologia = User.IsInRole("Radiologia");
+    var usuarioAuditoria = User.IsInRole("Auditoria");
+    var usuarioAdministrador = User.IsInRole("Administrador");
+
+    var usuarioDesarrollador = User.IsInRole("Desarrollador");
+    var usuarioSupervisorLaboratorio = User.IsInRole("Supervisor Laboratorio");
+    var usuarioTecnicoLaboratorio = User.IsInRole("Tecnico laboratorio");
+    var usuarioRecepcionDiurno = User.IsInRole("Recepcion Diurno");
+    var usuarioRecepcionNocturno = User.IsInRole("Recepcion Nocturno");
+    var usuarioFarmacia = User.IsInRole("Farmacia");
+    var usuarioMedicoGeneral = User.IsInRole("Medico General");
+    var usuarioMedicoInterno = User.IsInRole("Medico Interno");
+    var usuarioMensajero = User.IsInRole("Mensajero");
+
+    var usuarioCaja = User.IsInRole("CAJA");
+    var usuarioCajero = User.IsInRole("Cajero");
+    var usuarioMonitoraSalon = User.IsInRole("MONITORA SALON");
+
+    var usuarioAdministradorRadiologia = User.IsInRole("administradorRadiologia");
+    var usuarioRecepcionRadiologia = User.IsInRole("RecepcionRadiologia");
+    var usuarioCallCenter = User.IsInRole("Call Center");
+    var usuarioTecnicoRadiologia = User.IsInRole("TecnicoRadiologia");
+
+    string cliente = Configuration["Cliente"]; 
+
+}
+@model sistema.Models.HomeCitasViewModel;
+@section css {
+    <style>
+        .app-main {
+            @* background-image: url("/assets/images/cubbas.png"); *@ background-size: cover;
+        }
+
+        .logoprincipal img {
+            width: 350px;
+            display: block;
+            margin: auto;
+        }
+
+        .logoprincipal {
+            width: 100%;
+        }
+
+        @@media screen and (max-width: 620px) {
+            .logoprincipal img {
+                width: 250px;
+                display: block;
+                margin: auto;
+            }
+        }
+
+        .ui-state-active > a {
+            font-weight: bolder;
+            transform: scale(1.1);
+            z-index: 1000;
+            /* Sombra: desplazamiento X, Y, Difuminado, Extensión, Color */
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25) !important;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        .ui-state-active {
+            background-color: #17a2b8 !important;
+        }
+
+/* --- BASE MEJORADA --- */
+#tabs > ul {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap; /* CRUCIAL: evita que se salgan del contenedor */
+    gap: 15px; /* Reducido un poco para ganar espacio */
+    border: none !important;
+    background: transparent !important;
+    margin-bottom: 32px;
+    padding: 0;
+    width: 100%; /* Asegura que respete el contenedor */
+}
+
+#tabs > ul > li {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex: 0 1 auto; /* Permite que los elementos se ajusten */
+}
+
+#tabs > ul > li > a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 160px; /* Reducido ligeramente de 180px */
+    padding: 0 15px; /* Padding interno para que el texto no toque los bordes */
+    height: 70px;
+    font-size: 1.1em;
+    font-weight: bold;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.2s ease;
+    color: #fff !important;
+    background: #3b82f6;
+    text-align: center;
+}
+
+/* --- OPTIMIZACIÓN PARA PANTALLAS GRANDES Y MEDIANAS --- */
+@@media (min-width: 1200px) {
+    #tabs > ul {
+        gap: 20px;
+    }
+    /* Si quieres que siempre queden en una línea en pantallas gigantes */
+    #tabs > ul > li > a {
+        min-width: 180px; 
+    }
+}
+
+/* --- DRILLDOWNS: AJUSTES ESPECÍFICOS --- */
+
+/* 1. Laptop Mediana / Tablet Horizontal (Evita desbordamiento) */
+@@media (max-width: 1199px) {
+    #tabs > ul > li > a {
+        min-width: 140px;
+        height: 60px;
+        font-size: 1em;
+    }
+    #tabs > ul {
+        gap: 10px;
+    }
+}
+
+/* 2. Tablets (2 o 3 columnas según ancho) */
+@@media (max-width: 768px) {
+    #tabs > ul > li {
+        flex: 1 1 calc(45% - 10px); /* Fuerza el acomodo en rejilla */
+    }
+    #tabs > ul > li > a {
+        min-width: 100%;
+        height: 55px;
+    }
+}
+
+/* 3. Móviles (1 columna completa) */
+@@media (max-width: 480px) {
+    #tabs > ul > li {
+        flex: 1 1 100%;
+    }
+    #tabs > ul > li > a {
+        height: 50px;
+        font-size: 0.95em;
+    }
+}
+
+#tabs > ul > li:nth-child(1) > a { background: #3b82f6; } /* General - azul */
+#tabs > ul > li:nth-child(2) > a { background: #fbbf24; } /* Hospital - amarillo */
+#tabs > ul > li:nth-child(3) > a { background: #ef4444; } /* Laboratorio - rojo */
+#tabs > ul > li:nth-child(4) > a { background: #22c55e; } /* Clínica - verde */
+#tabs > ul > li:nth-child(5) > a { background: #2563eb; } /* Farmacia - azul fuerte */
+#tabs > ul > li:nth-child(6) > a { background: #ef4444; } /* Compras - rojo */
+
+
+#tabs > ul {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+}
+
+#tabs > ul > li {
+    border: none !important;
+    background: transparent !important; /* Esto quita el fondo gris de jQuery UI */
+    box-shadow: none !important; /* Por si acaso tiene sombra heredada */
+    margin-bottom: 5px; /* Espacio para que el efecto scale no se corte */
+}
+
+#tabs > ul > li > a {
+    outline: none !important; /* Quita el recuadro de enfoque al hacer clic */
+    text-decoration: none !important;
+}
+    </style>
+}
+
+@await Html.PartialAsync("_MensajeExito")
+@*<div class="main-card mb-3 card">
+    <div class="card-body">
+    <div class="text-center">
+    <h4><b>Inicio</b></h4>
+    </div>
+    </div>
+    </div>*@
+
+
+<div class="main-card mb-3">
+
+    <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-xs-12">
+    <div class="card-body">
+        <div id="tabs" style="padding: 25px;">
+
+            <ul>
+                @if (usuarioAdministrador || usuarioMedicoGeneral
+                                        || usuarioRecepcionDiurno || usuarioRecepcionNocturno
+                                        || usuarioFarmacia || usuarioAdmisiones || usuarioCaja || usuarioCajero || usuarioMonitoraSalon || usuarioMedicoInterno || usuarioEnfermeria)
+                                        {
+                @if(cliente != "SS"){
+                <li><a href="#tab-general"><i class="fas fa-house-damage"></i> GENERAL</a></li>
+                }
+                <li>
+                    <a href="#tab-hospital" data-bind="click:abrirTabHospital">
+                        <i class="fas fa-hospital-symbol"></i> HOSPITAL
+                    </a>
+                </li>
+                
+                    @if(cliente != "SS"){
+
+                        <li>
+                            <a href="#tab-laboratorio" data-bind="click:abrirTabLaboratorio">
+                                <i class="fas fa-microscope"></i> LABORATORIO
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#tab-clinica" data-bind="click:abrirTabClinica">
+                                <i class="fas fa-stethoscope"></i> CLINICA
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#tab-farmacia" data-bind="click:abrirTabFarmacia">
+                                <i class="fas fa-pills"></i> FARMACIA
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#tab-radiologia" class="btn bg-warning text-white m-2" style="padding:15px">
+                                <i class="fas fa-pills"></i> RADIOLOGIA
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#tab-compras" data-bind="click:abrirTabCompras">
+                                <i class="fas fa-cash-register"></i> COMPRAS
+                            </a>
+                        </li>
+                    }
+                }
+            </ul>
+
+            <div id="tab-general">
+                @if (usuarioAdministrador || usuarioMedicoGeneral
+                                || usuarioRecepcionDiurno || usuarioRecepcionNocturno
+                                || usuarioFarmacia || usuarioAdmisiones || usuarioCaja || usuarioCajero
+                                || usuarioMonitoraSalon || usuarioMedicoInterno || usuarioAdministradorRadiologia
+                                || usuarioRecepcionRadiologia || usuarioEnfermeria)
+                {
+                    @if(cliente != "SS"){
+
+                    <div class="main-card mb-3 card">
+                        <div class="card-body">
+                            <center>
+                                <h4 style="font-weight:bolder">GENERAL</h4>
+                            </center>
+                        </div>
+                    </div>
+                    }
+                }
+                @if (usuarioTecnicoRadiologia || usuarioCallCenter)
+                {
+                    <div class="main-card mb-3 card">
+                        <div class="card-body">
+                            <center>
+                                <h4 style="font-weight:bolder">Inicio</h4>
+                            </center>
+                        </div>
+                    </div>
+                }
+
+                    @if(cliente != "SS"){
+
+                <div id="subtabs-general">
+
+                    <ul>
+                        @if (usuarioAdministrador || usuarioMedicoGeneral
+                                                || usuarioRecepcionDiurno || usuarioRecepcionNocturno
+                                                || usuarioFarmacia || usuarioAdmisiones || usuarioCaja || usuarioCajero
+                                                || usuarioMonitoraSalon || usuarioMedicoInterno || usuarioAdministradorRadiologia
+                                                || usuarioRecepcionRadiologia || usuarioEnfermeria)
+                        {
+                            <li><a href="#subtab-general-proximas-citas">Proximas citas</a></li>
+
+                            <li><a href="#subtab-general-reconsultas">Reconsultas</a></li>
+                        }
+                        @if (usuarioAdministrador || usuarioMedicoGeneral
+                                                || usuarioRecepcionDiurno || usuarioRecepcionNocturno
+                                                || usuarioFarmacia || usuarioAdmisiones || usuarioCaja || usuarioCajero
+                                                || usuarioMonitoraSalon || usuarioMedicoInterno || usuarioEnfermeria)
+                        {
+                            <li><a href="#subtab-general-alerta-vacunas">Alerta de vacunas</a></li>
+                            <li><a href="#subtab-general-proximos-cumpleannios">Proximos cumpleaños</a></li>
+                            <li><a href="#subtab-general-pacientes-membresia">Pacientes aplicables membresia</a></li>
+                            <li><a href="#subtab-general-cuentas-pendientes">Cuentas pendientes</a></li>
+                        }
+                        @if (usuarioAdministrador || usuarioMedicoGeneral
+                                                || usuarioRecepcionDiurno || usuarioRecepcionNocturno
+                                                || usuarioFarmacia || usuarioAdmisiones || usuarioCaja || usuarioCajero || usuarioMonitoraSalon
+                                                || usuarioMedicoInterno || usuarioEnfermeria)
+                        {
+                            <li><a href="#subtab-general-proximo-contacto">Proximo contacto</a></li>
+                        }
+                        @if (usuarioAdministrador || usuarioMedicoGeneral
+                                                || usuarioRecepcionDiurno || usuarioRecepcionNocturno
+                                                || usuarioFarmacia || usuarioAdmisiones || usuarioCaja || usuarioCajero || usuarioMonitoraSalon
+                                                || usuarioMedicoInterno || usuarioEnfermeria)
+                        {
+                            <li><a href="#subtab-general-proximos-aniversarios-cambio-fase">Proximos aniversarios de cambio
+                                    de fase</a></li>
+                        }
+                    </ul>
+                    @if (usuarioAdministrador || usuarioMedicoGeneral
+                                        || usuarioRecepcionDiurno || usuarioRecepcionNocturno
+                                        || usuarioFarmacia || usuarioAdmisiones || usuarioCaja || usuarioCajero || usuarioMonitoraSalon
+                                        || usuarioAdministradorRadiologia || usuarioRecepcionRadiologia || usuarioEnfermeria || usuarioMedicoInterno)
+                    {
+                        <div id="subtab-general-proximas-citas">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>GENERAL - Proximas citas</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-citas-proximas">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>
+                                                                Fecha
+                                                                Y Hora
+                                                            </th>
+
+                                                            <th>
+                                                                Especialidad /
+                                                                Doctor
+                                                            </th>
+                                                            <th>Servicios</th>
+                                                            <th>Paciente</th>
+                                                            <th>Telefono</th>
+                                                            <th>Asistencia</th>
+                                                            <th>AgendadoPor</th>
+                                                            <th>MenordeEdad</th>
+                                                            <th>Turno</th>
+                                                            <th>Acciones</th>
+                                                        </tr>
+                                                    </thead>
+
+                                                    <tbody>
+                                                        <!--ko foreach: citasProximas-->
+                                                        <tr>
+                                                            <td data-bind="text:FechaInicio+' '+ Hora"></td>
+                                                            <td data-bind="text:EspecialidadText"></td>
+                                                            <td data-bind="text:EmpleadoText"></td>
+                                                            @* <td data-bind="text:servicio"></td> *@
+                                                            <td data-bind="text:PacienteNombre"></td>
+                                                            <td data-bind="text:Telefono"></td>
+                                                            <td data-bind="text:EstadoCita"></td>
+                                                            <td data-bind="text:PersonText"></td>
+                                                            <td data-bind="text:EsMenorDeEdadText"></td>
+                                                            <td data-bind="text:NumeroTurno"></td>
+                                                            <td>
+                                                                <button class="btn btn-success btn-sm"
+                                                                    data-bind="click: enviarRecordatorioWhatsApp">
+                                                                    <i class="fab fa-whatsapp"></i>
+                                                                </button>
+                                                                <button class="btn btn-primary btn-sm"
+                                                                    data-bind="click: sendEmailReminder">
+                                                                    <i class="fas fa-envelope"></i>
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    @if (usuarioAdministrador || usuarioMedicoGeneral
+                                        || usuarioRecepcionDiurno || usuarioRecepcionNocturno
+                                        || usuarioFarmacia || usuarioAdmisiones || usuarioCaja || usuarioCajero || usuarioMonitoraSalon ||
+                                        usuarioMedicoInterno || usuarioEnfermeria)
+                    {
+                        <div id="subtab-general-reconsultas">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Reconsultas</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-reconsultas">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Fecha</th>
+                                                            <th>Paciente</th>
+                                                            <th>Especialidad</th>
+                                                            <th>Telefono</th>
+                                                            <th>Profesional</th>
+                                                            <th>Acciones</th>
+                                                        </tr>
+                                                    </thead>
+
+                                                    <tbody>
+                                                        <!--ko foreach: reconsultas-->
+                                                        <tr>
+                                                            <td data-bind="text:FechaInicio"></td>
+                                                            <td data-bind="text:Paciente"></td>
+                                                            <td data-bind="text:Especialidad"></td>
+                                                            <td data-bind="text:Telefono"></td>
+                                                            <td data-bind="text:Empleado"></td>
+                                                            <td>
+                                                                <button class="btn btn-success btn-sm"
+                                                                    data-bind="click: enviarRecordatorioWhatsApp">
+                                                                    <i class="fab fa-whatsapp"></i>
+                                                                </button>
+                                                                <button class="btn btn-primary btn-sm"
+                                                                    data-bind="click: sendEmailReminder">
+                                                                    <i class="fas fa-envelope"></i>
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    @if (usuarioAdministrador || usuarioMedicoGeneral
+                                        || usuarioRecepcionDiurno || usuarioRecepcionNocturno
+                                        || usuarioFarmacia || usuarioAdmisiones || usuarioCaja || usuarioCajero || usuarioMonitoraSalon ||
+                                        usuarioMedicoInterno || usuarioEnfermeria)
+                    {
+                        <div id="subtab-general-alerta-vacunas">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Alerta de vacunas</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-alertas-vacunas">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Vacuna</th>
+                                                            <th>Nombre Paciente</th>
+                                                            <th>Telefono</th>
+                                                            <th>Email</th>
+                                                            <th>Primera</th>
+                                                            <th>Segunda</th>
+                                                            <th>Tercera</th>
+                                                            <th>Primer refuerzo</th>
+                                                            <th>Segundo refuerzo</th>
+                                                            <th>Acciones</th>
+                                                        </tr>
+                                                    </thead>
+
+                                                    <tbody>
+                                                        <!--ko foreach: alertasVacunas-->
+                                                        <tr>
+                                                            <td data-bind="text:NombreVacuna"></td>
+                                                            <td data-bind="text:NombrePaciente"></td>
+                                                            <td data-bind="text:Telefono"></td>
+                                                            <td data-bind="text:Email"></td>
+                                                            <td data-bind="text:Primera"></td>
+                                                            <td data-bind="text:Segunda"></td>
+                                                            <td data-bind="text:Tercera"></td>
+                                                            <td data-bind="text:PrimerRefuerzo"></td>
+                                                            <td data-bind="text:SegundoRefuerzo"></td>
+                                                            <td>
+                                                                <button class="btn btn-success btn-sm"
+                                                                    data-bind="click: enviarRecordatorioWhatsApp">
+                                                                    <i class="fab fa-whatsapp"></i>
+                                                                </button>
+                                                                <button class="btn btn-primary btn-sm"
+                                                                    data-bind="click: sendEmailReminder">
+                                                                    <i class="fas fa-envelope"></i>
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    @if (usuarioAdministrador || usuarioMedicoGeneral
+                                        || usuarioRecepcionDiurno || usuarioRecepcionNocturno
+                                        || usuarioFarmacia || usuarioAdmisiones || usuarioCaja || usuarioCajero || usuarioMonitoraSalon ||
+                                        usuarioMedicoInterno || usuarioEnfermeria)
+                    {
+                        <div id="subtab-general-proximos-cumpleannios">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Próximos cumpleaños</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-pacientes-cumpleannios"
+                                                    class="table table-striped table-bordered table-hover dt-responsive nowrap">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Id</th>
+                                                            <th>Paciente</th>
+                                                            <th>Cumpleaños</th>
+                                                            <th>Acciones</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: pacientesCumpleannios-->
+                                                        <tr>
+                                                            <td data-bind="text: id"></td>
+                                                            <td data-bind="text: nombre"></td>
+                                                            <td data-bind="text: moment(fechaNacimiento).format('MMM Do')">
+                                                            </td>
+                                                            <td>
+                                                                <button class="btn btn-success btn-sm"
+                                                                    data-bind="click: enviarRecordatorioWhatsApp">
+                                                                    <i class="fab fa-whatsapp"></i>
+                                                                </button>
+                                                                <button class="btn btn-primary btn-sm"
+                                                                    data-bind="click: sendEmailReminder">
+                                                                    <i class="fas fa-envelope"></i>
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    @if (usuarioAdministrador || usuarioMedicoGeneral
+                                        || usuarioRecepcionDiurno || usuarioRecepcionNocturno
+                                        || usuarioFarmacia || usuarioAdmisiones || usuarioCaja || usuarioCajero || usuarioMonitoraSalon ||
+                                        usuarioMedicoInterno || usuarioEnfermeria)
+                    {
+                        <div id="subtab-general-pacientes-membresia">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Pacientes aplicables para membresía</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-pacientes-aplicables-membresia">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Paciente</th>
+                                                            <th>Fecha de inicio de tratamiento</th>
+                                                            <th></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: pacientesAplicablesMembresia-->
+                                                        <tr>
+                                                            <td data-bind="text:nombrePaciente"></td>
+                                                            <td data-bind="text:moment(fechaRegistro).format('ll')"></td>
+                                                            <td>
+                                                                <button data-bind="click:$root.aplicarMembresia"
+                                                                    class="btn btn-primary btn-sm">
+                                                                    Aplicar membresía
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    @if (usuarioAdministrador || usuarioMedicoGeneral
+                                        || usuarioRecepcionDiurno || usuarioRecepcionNocturno
+                                        || usuarioFarmacia || usuarioAdmisiones || usuarioCaja || usuarioCajero || usuarioMonitoraSalon ||
+                                        usuarioMedicoInterno || usuarioEnfermeria)
+                    {
+                        <div id="subtab-general-cuentas-pendientes">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Cuentas pendientes</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-cuentas-pendientes"
+                                                    class="table table-striped table-bordered table-hover dt-responsive nowrap">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Id</th>
+                                                            <th>Paciente</th>
+                                                            @* <th>Fecha límite de pago</th> *@
+                                                            <th>Valor</th>
+                                                            <th>Pagada</th>
+                                                            <th>Ver detalles</th>
+                                                            <th>Acciones</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: cuentasPendientes-->
+                                                        <tr>
+                                                            <td data-bind="text: id"></td>
+                                                            <td data-bind="text: nombrePacienteText"></td>
+                                                            @*  <td data-bind="text: moment(fechaLimitePago).format('ll')"></td> *@
+                                                            <td data-bind="text: valor"></td>
+                                                            <td data-bind="text: pagadaText"></td>
+                                                            <td>
+                                                                <button class="btn btn-primary"
+                                                                    data-bind="click:$root.verDetallesCuenta">
+                                                                    <i class="fa fa-eye"></i>
+                                                                </button>
+                                                            </td>
+                                                            <td>
+                                                                <button class="btn btn-success btn-sm"
+                                                                    data-bind="click: enviarRecordatorioWhatsApp">
+                                                                    <i class="fab fa-whatsapp"></i>
+                                                                </button>
+                                                                <button class="btn btn-primary btn-sm"
+                                                                    data-bind="click: sendEmailReminder">
+                                                                    <i class="fas fa-envelope"></i>
+                                                                </button>
+                                                            </td>
+                                                            @* <td>
+                                                            <button class="btn btn-primary" data-bind="click:$root.pagarCuenta">
+                                                            <i class="fas fa-dollar-sign"></i>
+                                                            </button>
+                                                            </td> *@
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    @if (usuarioAdministrador || usuarioMedicoGeneral
+                                        || usuarioRecepcionDiurno || usuarioRecepcionNocturno
+                                        || usuarioFarmacia || usuarioAdmisiones || usuarioCaja || usuarioCajero || usuarioMonitoraSalon ||
+                                        usuarioMedicoInterno || usuarioEnfermeria)
+                    {
+                        <div id="subtab-general-proximo-contacto">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Próximo contacto</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-pacientes-contacto">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Id</th>
+                                                            <th>Paciente</th>
+                                                            <th>Fecha de retiro</th>
+                                                            <th>Fecha de contacto</th>
+                                                            <th>Acciones</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: pacientesContacto-->
+                                                        <tr>
+                                                            <td data-bind="text: id"></td>
+                                                            <td data-bind="text: nombre"></td>
+                                                            <td @* data-bind="text: fechaRetiro" *@></td>
+                                                            <td data-bind="text:  moment(fechaContacto).format('ll')"></td>
+                                                            <td>
+                                                                <button class="btn btn-success btn-sm"
+                                                                    data-bind="click: enviarRecordatorioWhatsApp">
+                                                                    <i class="fab fa-whatsapp"></i>
+                                                                </button>
+                                                                <button class="btn btn-primary btn-sm"
+                                                                    data-bind="click: sendEmailReminder">
+                                                                    <i class="fas fa-envelope"></i>
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    @if (usuarioAdministrador || usuarioMedicoGeneral
+                                        || usuarioRecepcionDiurno || usuarioRecepcionNocturno
+                                        || usuarioFarmacia || usuarioAdmisiones || usuarioCaja || usuarioCajero || usuarioMonitoraSalon ||
+                                        usuarioMedicoInterno || usuarioEnfermeria)
+                    {
+                        <div id="subtab-general-proximos-aniversarios-cambio-fase">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Próximos aniversarios de cambio de fase</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-pacientes-aniversario">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Id</th>
+                                                            <th>Paciente</th>
+                                                            <th>Fase</th>
+                                                            <th>Fecha de inicio de fase</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: pacientesAniversario-->
+                                                        <tr>
+                                                            <td data-bind="text: id"></td>
+                                                            <td data-bind="text: pacienteNombre"></td>
+                                                            <td data-bind="text: faseTratamiento"></td>
+                                                            <td data-bind="text: moment(fechaInicioFase).format('ll')"></td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    
+                </div>
+                }
+            </div>
+            
+            @if (usuarioAdministrador || usuarioMedicoGeneral
+                        || usuarioRecepcionDiurno || usuarioRecepcionNocturno
+                        || usuarioFarmacia || usuarioAdmisiones || usuarioCaja || usuarioCajero || usuarioMonitoraSalon ||
+                        usuarioMedicoInterno || usuarioEnfermeria || usuarioAdministradorRadiologia || usuarioRecepcionRadiologia)
+            {
+                
+
+                <div id="tab-hospital">
+                    <div class="main-card mb-3 card">
+                        <div class="card-body">
+                            <center>
+                                <h4 style="font-weight:bolder">HOSPITAL</h4>
+                            </center>
+                        </div>
+                    </div>
+                    <div id="subtabs-hospital">
+                        <ul>
+                            <li><a href="#subtab-hospital-habitaciones-ocupadas">Habitaciones ocupadas</a></li>
+                            @if(cliente != "SS"){
+                            <li><a href="#subtab-hospital-inventario-stock-minimo">Inventario - Stock minimo</a></li>
+                            <li><a href="#subtab-hospital-inventario-vencidos">Inventario - Vencidos</a></li>
+                            <li><a href="#subtab-hospital-inventario-proximos-vencer">Inventario - Proximos a vencer</a>
+                            </li>
+                            }
+                        </ul>
+                        <div id="subtab-hospital-habitaciones-ocupadas">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Habitaciones ocupadas</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-habitaciones-ocupadas">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>ID</th>
+                                                            <th>Número o nombre</th>
+                                                            <th>Categoría</th>
+                                                            <th>Paciente</th>
+                                                            <th>Médico</th>
+                                                            <th>Tipo de atención</th>
+                                                            <th>Ver hospitalización</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: habitacionesOcupadas-->
+                                                        <tr>
+                                                            <td data-bind="text: HospitalizacionId"></td>
+                                                            <td data-bind="text: HabitacionNumeroNombre"></td>
+                                                            <td data-bind="text: HabitacionCategoria"></td>
+                                                            <td data-bind="text: Paciente"></td>
+                                                            <td data-bind="text: MedicoAsignado"></td>
+                                                            <td data-bind="text: CodigoCita"></td>
+                                                            <td>
+                                                                <button class="btn btn-primary"
+                                                                    data-bind="click:$root.verDetallesHospitalizacion">
+                                                                    <i class="fa fa-eye"></i>
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @if(cliente != "SS"){
+                        <div id="subtab-hospital-inventario-stock-minimo">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Inventario - Stock minimo</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-hospital-inventario-stock-minimo">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Codigo</th>
+                                                            <th>Producto</th>
+                                                            <th>Ubicacion</th>
+                                                            <th>Stock</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: hospitalInventarioStockMinimo-->
+                                                        <tr>
+                                                            <td data-bind="text:ProductoCodigo"></td>
+                                                            <td data-bind="text:ProductoNombre"></td>
+                                                            <td data-bind="text:ProductoUbicacion"></td>
+                                                            <td data-bind="text:ProductoStock"></td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        }
+                        @if(cliente != "SS"){
+                        <div id="subtab-hospital-inventario-vencidos">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Inventario - Vencidos</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-hospital-inventario-vencidos">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Codigo</th>
+                                                            <th>Producto</th>
+                                                            <th>Ubicacion</th>
+                                                            <th>Stock</th>
+                                                            <th>Fecha de vencimiento</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: hospitalInventarioVencidos-->
+                                                        <tr>
+                                                            <td data-bind="text:ProductoCodigo"></td>
+                                                            <td data-bind="text:ProductoNombre"></td>
+                                                            <td data-bind="text:ProductoUbicacion"></td>
+                                                            <td data-bind="text:ProductoStock"></td>
+                                                            <td data-bind="text:FechaVencimiento"></td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        }
+                        @if(cliente != "SS"){
+                        <div id="subtab-hospital-inventario-proximos-vencer">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Inventario - Proximos a vencer</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-hospital-inventario-proximos-vencer">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Codigo</th>
+                                                            <th>Producto</th>
+                                                            <th>Ubicacion</th>
+                                                            <th>Stock</th>
+                                                            <th>Fecha de vencimiento</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: hospitalInventarioProximosVencer-->
+                                                        <tr>
+                                                            <td data-bind="text:ProductoCodigo"></td>
+                                                            <td data-bind="text:ProductoNombre"></td>
+                                                            <td data-bind="text:ProductoUbicacion"></td>
+                                                            <td data-bind="text:ProductoStock"></td>
+                                                            <td data-bind="text:FechaVencimiento"></td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        }
+                    </div>
+                </div>
+                
+            }
+            @if (usuarioAdministrador || usuarioMedicoGeneral
+                        || usuarioRecepcionDiurno || usuarioRecepcionNocturno
+                        || usuarioFarmacia || usuarioAdmisiones || usuarioCaja || usuarioCajero || usuarioMonitoraSalon
+                        || usuarioMedicoInterno || usuarioAdministradorRadiologia || usuarioRecepcionRadiologia || usuarioEnfermeria)
+            {
+                @if(cliente != "SS"){
+                <div id="tab-laboratorio">
+                    <div class="main-card mb-3 card">
+                        <div class="card-body">
+                            <center>
+                                <h4 style="font-weight:bolder">Examenes Complentarios</h4>
+                            </center>
+                        </div>
+                    </div>
+                    <div id="subtabs-laboratorio">
+                        <ul>
+                            <li><a href="#subtab-laboratorio-examenes-solicitados">Examenes solicitados</a></li>
+                            <li><a href="#subtab-laboratorio-inventario-stock-minimo">Inventario - Stock minimo</a></li>
+                            <li><a href="#subtab-laboratorio-inventario-vencidos">Inventario - Vencidos</a></li>
+                            <li><a href="#subtab-laboratorio-inventario-proximos-vencer">Inventario - Proximos a vencer</a>
+                            </li>
+                        </ul>
+                        <div id="subtab-laboratorio-examenes-solicitados">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Examenes solicitados</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-laboratorio-examenes-solicitados">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Fecha de solicitud</th>
+                                                            <th>Paciente</th>
+                                                            <th>Medico</th>
+                                                            <th>Clinica</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: examenesSolicitados-->
+                                                        <tr>
+                                                            <td data-bind="text:FechaSolicitud"></td>
+                                                            <td data-bind="text:PacienteNombre"></td>
+                                                            <td data-bind="text:MedicoNombre"></td>
+                                                            <td data-bind="text:ClinicaNombre"></td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subtab-laboratorio-inventario-stock-minimo">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Inventario - Stock minimo</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-laboratorio-inventario-stock-minimo">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Codigo</th>
+                                                            <th>Producto</th>
+                                                            <th>Ubicacion</th>
+                                                            <th>Stock</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: laboratorioInventarioStockMinimo-->
+                                                        <tr>
+                                                            <td data-bind="text:ProductoCodigo"></td>
+                                                            <td data-bind="text:ProductoNombre"></td>
+                                                            <td data-bind="text:ProductoUbicacion"></td>
+                                                            <td data-bind="text:ProductoStock"></td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subtab-laboratorio-inventario-vencidos">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Inventario - Vencidos</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-laboratorio-inventario-vencidos">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Codigo</th>
+                                                            <th>Producto</th>
+                                                            <th>Ubicacion</th>
+                                                            <th>Stock</th>
+                                                            <th>Fecha de vencimiento</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: laboratorioInventarioVencidos-->
+                                                        <tr>
+                                                            <td data-bind="text:ProductoCodigo"></td>
+                                                            <td data-bind="text:ProductoNombre"></td>
+                                                            <td data-bind="text:ProductoUbicacion"></td>
+                                                            <td data-bind="text:ProductoStock"></td>
+                                                            <td data-bind="text:FechaVencimiento"></td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subtab-laboratorio-inventario-proximos-vencer">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Inventario - Proximos a vencer</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-laboratorio-inventario-proximos-vencer">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Codigo</th>
+                                                            <th>Producto</th>
+                                                            <th>Ubicacion</th>
+                                                            <th>Stock</th>
+                                                            <th>Fecha de vencimiento</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: laboratorioInventarioProximosVencer-->
+                                                        <tr>
+                                                            <td data-bind="text:ProductoCodigo"></td>
+                                                            <td data-bind="text:ProductoNombre"></td>
+                                                            <td data-bind="text:ProductoUbicacion"></td>
+                                                            <td data-bind="text:ProductoStock"></td>
+                                                            <td data-bind="text:FechaVencimiento"></td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                }
+            }
+            @if (usuarioAdministrador || usuarioMedicoGeneral
+                        || usuarioRecepcionDiurno || usuarioRecepcionNocturno
+                        || usuarioFarmacia || usuarioAdmisiones || usuarioCaja || usuarioCajero || usuarioMonitoraSalon
+                        || usuarioMedicoInterno || usuarioAdministradorRadiologia || usuarioRecepcionRadiologia || usuarioEnfermeria)
+            {
+                @if(cliente != "SS"){
+                <div id="tab-clinica">
+                    <div class="main-card mb-3 card">
+                        <div class="card-body">
+                            <center>
+                                <h4 style="font-weight:bolder">CLINICA</h4>
+                            </center>
+                        </div>
+                    </div>
+                    <div id="subtabs-clinica">
+                        <ul>
+                            <li><a href="#subtab-clinica-examenes-finalizados">Examenes finalizados</a></li>
+                            <li><a href="#subtab-clinica-inventario-stock-minimo">Inventario - Stock minimo</a></li>
+                            <li><a href="#subtab-clinica-inventario-vencidos">Inventario - Vencidos</a></li>
+                            <li><a href="#subtab-clinica-inventario-proximos-vencer">Inventario - Proximos a vencer</a></li>
+                        </ul>
+                        <div id="subtab-clinica-examenes-finalizados">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Examenes finalizados</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-clinica-examenes-finalizados">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Fecha de realizacion</th>
+                                                            <th>Paciente</th>
+                                                            <th>Medico</th>
+                                                            <th>Clinica</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: examenesFinalizados-->
+                                                        <tr>
+                                                            <td data-bind="text:FechaRealizacion"></td>
+                                                            <td data-bind="text:PacienteNombre"></td>
+                                                            <td data-bind="text:MedicoNombre"></td>
+                                                            <td data-bind="text:ClinicaNombre"></td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subtab-clinica-inventario-stock-minimo">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Inventario - Stock minimo</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-clinica-inventario-stock-minimo">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Codigo</th>
+                                                            <th>Producto</th>
+                                                            <th>Ubicacion</th>
+                                                            <th>Stock</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: clinicaInventarioStockMinimo-->
+                                                        <tr>
+                                                            <td data-bind="text:ProductoCodigo"></td>
+                                                            <td data-bind="text:ProductoNombre"></td>
+                                                            <td data-bind="text:ProductoUbicacion"></td>
+                                                            <td data-bind="text:ProductoStock"></td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subtab-clinica-inventario-vencidos">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Inventario - Vencidos</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-clinica-inventario-vencidos">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Codigo</th>
+                                                            <th>Producto</th>
+                                                            <th>Ubicacion</th>
+                                                            <th>Stock</th>
+                                                            <th>Fecha de vencimiento</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: clinicaInventarioVencidos-->
+                                                        <tr>
+                                                            <td data-bind="text:ProductoCodigo"></td>
+                                                            <td data-bind="text:ProductoNombre"></td>
+                                                            <td data-bind="text:ProductoUbicacion"></td>
+                                                            <td data-bind="text:ProductoStock"></td>
+                                                            <td data-bind="text:FechaVencimiento"></td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subtab-clinica-inventario-proximos-vencer">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Inventario - Proximos a vencer</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-clinica-inventario-proximos-vencer">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Codigo</th>
+                                                            <th>Producto</th>
+                                                            <th>Ubicacion</th>
+                                                            <th>Stock</th>
+                                                            <th>Fecha de vencimiento</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: clinicaInventarioProximosVencer-->
+                                                        <tr>
+                                                            <td data-bind="text:ProductoCodigo"></td>
+                                                            <td data-bind="text:ProductoNombre"></td>
+                                                            <td data-bind="text:ProductoUbicacion"></td>
+                                                            <td data-bind="text:ProductoStock"></td>
+                                                            <td data-bind="text:FechaVencimiento"></td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                }
+            }
+            @if (usuarioAdministrador || usuarioMedicoGeneral
+                        || usuarioRecepcionDiurno || usuarioRecepcionNocturno
+                        || usuarioFarmacia || usuarioAdmisiones || usuarioCaja || usuarioCajero || usuarioMonitoraSalon
+                        || usuarioMedicoInterno || usuarioAdministradorRadiologia || usuarioRecepcionRadiologia || usuarioEnfermeria)
+            {
+                @if(cliente != "SS"){
+                <div id="tab-farmacia">
+                    <div class="main-card mb-3 card">
+                        <div class="card-body">
+                            <center>
+                                <h4 style="font-weight:bolder">FARMACIA</h4>
+                            </center>
+                        </div>
+                    </div>
+                    <div id="subtabs-farmacia">
+                        <ul>
+                            <li><a href="#subtab-farmacia-inventario-stock-minimo">Inventario - Stock minimo</a></li>
+                            <li><a href="#subtab-farmacia-inventario-vencidos">Inventario - Vencidos</a></li>
+                            <li><a href="#subtab-farmacia-inventario-proximos-vencer">Inventario - Proximos a vencer</a>
+                            </li>
+                        </ul>
+                        <div id="subtab-farmacia-inventario-stock-minimo">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Inventario - Stock minimo</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-farmacia-inventario-stock-minimo">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Codigo</th>
+                                                            <th>Producto</th>
+                                                            <th>Ubicacion</th>
+                                                            <th>Stock</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: farmaciaInventarioStockMinimo-->
+                                                        <tr>
+                                                            <td data-bind="text:ProductoCodigo"></td>
+                                                            <td data-bind="text:ProductoNombre"></td>
+                                                            <td data-bind="text:ProductoUbicacion"></td>
+                                                            <td data-bind="text:ProductoStock"></td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subtab-farmacia-inventario-vencidos">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Inventario - Vencidos</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-farmacia-inventario-vencidos">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Codigo</th>
+                                                            <th>Producto</th>
+                                                            <th>Ubicacion</th>
+                                                            <th>Stock</th>
+                                                            <th>Fecha de vencimiento</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: farmaciaInventarioVencidos-->
+                                                        <tr>
+                                                            <td data-bind="text:ProductoCodigo"></td>
+                                                            <td data-bind="text:ProductoNombre"></td>
+                                                            <td data-bind="text:ProductoUbicacion"></td>
+                                                            <td data-bind="text:ProductoStock"></td>
+                                                            <td data-bind="text:FechaVencimiento"></td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subtab-farmacia-inventario-proximos-vencer">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Inventario - Proximos a vencer</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-farmacia-inventario-proximos-vencer">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Codigo</th>
+                                                            <th>Producto</th>
+                                                            <th>Ubicacion</th>
+                                                            <th>Stock</th>
+                                                            <th>Fecha de vencimiento</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: farmaciaInventarioProximosVencer-->
+                                                        <tr>
+                                                            <td data-bind="text:ProductoCodigo"></td>
+                                                            <td data-bind="text:ProductoNombre"></td>
+                                                            <td data-bind="text:ProductoUbicacion"></td>
+                                                            <td data-bind="text:ProductoStock"></td>
+                                                            <td data-bind="text:FechaVencimiento"></td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                }
+            }
+            @if (usuarioAdministrador || usuarioMedicoGeneral
+                        || usuarioRecepcionDiurno || usuarioRecepcionNocturno
+                        || usuarioFarmacia || usuarioAdmisiones || usuarioCaja || usuarioCajero || usuarioMonitoraSalon
+                        || usuarioMedicoInterno || usuarioAdministradorRadiologia || usuarioRecepcionRadiologia || usuarioEnfermeria)
+            {
+                @if(cliente != "SS"){
+                <div id="tab-radiologia">
+                    RADIOLOGIA
+                </div>
+                }
+
+                @if(cliente != "SS"){
+                <div id="tab-compras">
+                    <div class="main-card mb-3 card">
+                        <div class="card-body">
+                            <center>
+                                <h4 style="font-weight:bolder">COMPRAS</h4>
+                            </center>
+                        </div>
+                    </div>
+                    <div id="subtabs-compras">
+                        <ul>
+                            <li><a href="#subtab-compras-elementos-comprar">Productos con Stock minimo</a></li>
+                            <li><a href="#subtab-compras-cuentas-pagar-hospital">Cuentas por pagar (Hospital)</a></li>
+                            <li><a href="#subtab-compras-cuentas-pagar-laboratorio">Cuentas por pagar (Laboratorio)</a></li>
+                            <li><a href="#subtab-compras-cuentas-pagar-clinica">Cuentas por pagar (Clinica)</a></li>
+                            <li><a href="#subtab-compras-cuentas-pagar-farmacia">Cuentas por pagar (Farmacia)</a></li>
+                            <li><a href="#subtab-compras-cuentas-pagar-todos-ambientes">Cuentas por pagar (Todos los
+                                    ambientes)</a></li>
+                        </ul>
+                        <div id="subtab-compras-cuentas-pagar-hospital">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Cuentas por pagar (HOSPITAL)</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-compras-cuentas-pagar-hospital">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Fecha</th>
+                                                            <th>Proveedor</th>
+                                                            <th>Valor a pagar</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: cuentasPorPagarHospital-->
+                                                        <tr>
+                                                            <td data-bind="text:Fecha"></td>
+                                                            <td><span class="badge badge-primary"
+                                                                    data-bind="text:AmbienteNombre"></span></td>
+                                                            <td data-bind="text:Proveedor"></td>
+                                                            <td data-bind="text:Valor"></td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subtab-compras-cuentas-pagar-laboratorio">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Cuentas por pagar (LABORATORIO)</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-compras-cuentas-pagar-laboratorio">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Fecha</th>
+                                                            <th>Proveedor</th>
+                                                            <th>Valor a pagar</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: cuentasPorPagarLaboratorio-->
+                                                        <tr>
+                                                            <td data-bind="text:Fecha"></td>
+                                                            <td><span class="badge badge-primary"
+                                                                    data-bind="text:AmbienteNombre"></span></td>
+                                                            <td data-bind="text:Proveedor"></td>
+                                                            <td data-bind="text:Valor"></td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subtab-compras-cuentas-pagar-clinica">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Cuentas por pagar (CLINICA)</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-compras-cuentas-pagar-clinica">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Fecha</th>
+                                                            <th>Proveedor</th>
+                                                            <th>Valor a pagar</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: cuentasPorPagarClinica-->
+                                                        <tr>
+                                                            <td data-bind="text:Fecha"></td>
+                                                            <td><span class="badge badge-primary"
+                                                                    data-bind="text:AmbienteNombre"></span></td>
+                                                            <td data-bind="text:Proveedor"></td>
+                                                            <td data-bind="text:Valor"></td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subtab-compras-cuentas-pagar-farmacia">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Cuentas por pagar (FARMACIA)</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-compras-cuentas-pagar-farmacia">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Fecha</th>
+                                                            <th>Proveedor</th>
+                                                            <th>Valor a pagar</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: cuentasPorPagarFarmacia-->
+                                                        <tr>
+                                                            <td data-bind="text:Fecha"></td>
+                                                            <td><span class="badge badge-primary"
+                                                                    data-bind="text:AmbienteNombre"></span></td>
+                                                            <td data-bind="text:Proveedor"></td>
+                                                            <td data-bind="text:Valor"></td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subtab-compras-cuentas-pagar-todos-ambientes">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Cuentas por pagar (TODOS LOS AMBIENTES)</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-compras-cuentas-pagar-todos-ambientes">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Fecha</th>
+                                                            <th>Ambiente</th>
+                                                            <th>Proveedor</th>
+                                                            <th>Valor a pagar</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: cuentasPorPagarHospital-->
+                                                        <tr>
+                                                            <td data-bind="text:Fecha"></td>
+                                                            <td><span class="badge badge-primary"
+                                                                    data-bind="text:AmbienteNombre"></span></td>
+                                                            <td data-bind="text:Proveedor"></td>
+                                                            <td data-bind="text:Valor"></td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                        <!--ko foreach: cuentasPorPagarLaboratorio-->
+                                                        <tr>
+                                                            <td data-bind="text:Fecha"></td>
+                                                            <td><span class="badge badge-primary"
+                                                                    data-bind="text:AmbienteNombre"></span></td>
+                                                            <td data-bind="text:Proveedor"></td>
+                                                            <td data-bind="text:Valor"></td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                        <!--ko foreach: cuentasPorPagarClinica-->
+                                                        <tr>
+                                                            <td data-bind="text:Fecha"></td>
+                                                            <td><span class="badge badge-primary"
+                                                                    data-bind="text:AmbienteNombre"></span></td>
+                                                            <td data-bind="text:Proveedor"></td>
+                                                            <td data-bind="text:Valor"></td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                        <!--ko foreach: cuentasPorPagarFarmacia-->
+                                                        <tr>
+                                                            <td data-bind="text:Fecha"></td>
+                                                            <td><span class="badge badge-primary"
+                                                                    data-bind="text:AmbienteNombre"></span></td>
+                                                            <td data-bind="text:Proveedor"></td>
+                                                            <td data-bind="text:Valor"></td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subtab-compras-elementos-comprar">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="col-md-12">
+                                            <h5><b>Productos a comprar (STOCK MINIMO)</b></h5>
+                                            <hr>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="table-responsive">
+                                                <table id="tabla-compras-stock-minimo">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Ambiente</th>
+                                                            <th>Codigo</th>
+                                                            <th>Producto</th>
+                                                            <th>Ubicacion</th>
+                                                            <th>Stock</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!--ko foreach: comprasStockMinimo-->
+                                                        <tr>
+                                                            <td><span class="badge badge-primary"
+                                                                    data-bind="text:AmbienteNombre"></span></td>
+                                                            <td data-bind="text:ProductoCodigo"></td>
+                                                            <td data-bind="text:ProductoNombre"></td>
+                                                            <td data-bind="text:ProductoUbicacion"></td>
+                                                            <td data-bind="text:ProductoStock"></td>
+                                                        </tr>
+                                                        <!--/ko-->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                }
+            }
+        </div>
+
+
+        @*<a data-toggle="tab" href="#tab-general"
+            class="mr-1 ml-1 mt-1 active btn bg-primary text-white p-2" style="font-size:24px"><i class="fas fa-house-damage"></i> General</a>
+            <a data-toggle="tab" href="#tab-hospital"
+            class="mr-1 ml-1 mt-1 btn bg-primary text-white p-2" style="font-size:24px"><i class="fas fa-hospital-symbol"></i> Hospital</a>
+            <a data-toggle="tab" href="#tab-laboratorio"
+            class="mr-1 ml-1 mt-1 btn bg-primary text-white p-2" style="font-size:24px"><i class="fas fa-microscope"></i> Laboratorio</a>
+            <a data-toggle="tab" href="#tab-clinica"
+            class="mr-1 ml-1 mt-1 btn bg-primary text-white p-2" style="font-size:24px"><i class="fas fa-stethoscope"></i> Clinica</a>
+            <a data-toggle="tab" href="#tab-farmacia"
+            class="mr-1 ml-1 mt-1 btn bg-primary text-white p-2" style="font-size:24px"><i class="fas fa-pills"></i> Farmacia</a>
+            <a data-toggle="tab" href="#tab-radiologia"
+            class="mr-1 ml-1 mt-1 btn bg-primary text-white p-2" style="font-size:24px"><i class="fas fa-pills"></i> Radiologia</a>
+            <a data-toggle="tab" href="#tab-compras"
+            class="mr-1 ml-1 mt-1 btn bg-primary text-white p-2" style="font-size:24px"><i class="fas fa-cash-register"></i> Compras</a>*@
+    </div>
+        </div>
+    </div>
+
+    @*<div class="card-body">
+        <div class="tab-content">*@
+    @*<div class="tab-pane active" id="tab-general" role="tabpanel">
+
+        </div>
+        <div class="tab-pane" id="tab-hospital" role="tabpanel">
+        HOSPITAL
+        </div>
+        <div class="tab-pane" id="tab-laboratorio" role="tabpanel">
+        LABORATORIO
+        </div>
+        <div class="tab-pane" id="tab-clinica" role="tabpanel">
+        CLINICA
+        </div>
+        <div class="tab-pane" id="tab-farmacia" role="tabpanel">
+        FARMACIA
+        </div>
+        <div class="tab-pane" id="tab-radiologia" role="tabpanel">
+        RADIOLOGIA
+        </div>
+        <div class="tab-pane" id="tab-compras" role="tabpanel">
+        COMPRAS
+        </div>*@
+    @* </div>
+        </div>*@
+</div>
+
+
+
+@section Scripts {
+    @*<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>*@
+    @*<script src="https://knockoutjs.com/downloads/knockout-3.5.1.js"></script>*@
+    @*<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.js"></script>*@
+    <script src="~/ViewModelKo/HomeVM.js"></script>
+}

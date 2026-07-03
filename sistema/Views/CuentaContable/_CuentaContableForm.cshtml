@@ -1,0 +1,57 @@
+﻿@model farmamest.Models.CuentaContableViewModel;
+
+@Html.HiddenFor(m => m.CuentaId)
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <h5><b>Informaci&oacute;n de la cuenta</b></h5>
+                        <hr />
+                    </div>
+                    <div class="col-md-12">
+                        <label>Nombre de la cuenta</label>
+                        @Html.TextBoxFor(a => a.NombreCuenta, new
+                        {
+                        @class = "form-control",
+                        @placeholder = "Nombre de la cuenta"
+                        })
+                    </div>
+                    <div class="col-md-12">
+                        <label>Especificaciones</label>
+                        @Html.TextBoxFor(a => a.Especificaciones, new
+                        {
+                        @class = "form-control",
+                        @placeholder = "Especificaciones de la cuenta"
+                        })
+                    </div>
+                    <div class="col-md-12">
+                        <label>Banco</label>
+                        <select class="form-control" data-bind="options:bancos, optionsText:'Nombre', value:bancoSeleccionado">
+                        </select>
+
+                    </div>
+                    <div class="col-md-12">
+                        <label>Cuentas</label>
+                        <select class="form-control" data-bind="options:cuentasBanco, optionsText:'NumeroCuenta', value:cuentaSeleccionado">
+                        </select>
+                    </div>
+                    <div class="col-md-12">
+                        <label>Nomenclatura</label>
+                        @Html.DropDownList("NomenclaturaId",ViewBag.Nomenclatura as SelectList, "Ambas", new { @class = "form-control"})
+
+                    </div>
+
+                    <div class="col-md-12">
+                        <label>Categoria</label>
+                        @Html.DropDownList("CategoriaCuentaId",ViewBag.Categoria as SelectList, "",  new { @class = "form-control"})
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

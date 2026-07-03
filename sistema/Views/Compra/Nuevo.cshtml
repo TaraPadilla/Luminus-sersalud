@@ -1,0 +1,88 @@
+@using Database.Shared.Enumeraciones
+@model sistema.Models.CompraBaseViewModel
+
+@{
+    var titulo = "Compra - Nuevo registro";
+    switch (Model.EncabezadoTipoDocumentoId)
+    {
+        case (int)CompraTipoDocumentoEnum.Compra:
+            titulo = "Nueva compra";
+            break;
+        case (int)CompraTipoDocumentoEnum.OrdenCompra:
+            titulo = "Nueva orden de compra";
+            break;
+        default:
+            break;
+    }
+    ViewData["Title"] = titulo;
+}
+
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12 text-center">
+                <h4><b>@titulo</b></h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_CompraFormNew")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <button type="button" class="btn btn-danger" data-bind="click: cancelarRegistroCompra">
+                    Cancelar
+                </button>
+
+                @if (Model.EncabezadoTipoDocumentoId == 1)
+                {
+                    <button type="button" class="btn btn-primary" data-bind="click: guardarCompra">
+                        Guardar
+                    </button>
+                }
+                else if (Model.EncabezadoTipoDocumentoId == 2)
+                {
+                    <button type="button" class="btn btn-primary" data-bind="click: cambiarAComprado">
+                        Generar compra
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts
+{
+    <script type="text/javascript" src="~/ViewModelKo/CompraVM.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            if (!window.compraVM) {
+                window.compraVM = new CompraVM();
+                ko.applyBindings(window.compraVM);
+            }
+
+            var productosDesdeServidor = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.Productos));
+            console.log("Productos cargados desde el servidor:", productosDesdeServidor);
+
+            if (productosDesdeServidor.length > 0) {
+                productosDesdeServidor.forEach(function (producto) {
+                    window.compraVM.agregarProductoDesdeServidor(producto);
+                });
+            }
+
+            console.log("Lista final de productos en Knockout.js:", ko.toJS(window.compraVM.productosComprados));
+        });
+
+
+
+    </script>
+
+}

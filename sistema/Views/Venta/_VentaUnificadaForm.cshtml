@@ -1,0 +1,1370 @@
+@using sistema.Models
+@model VentaUnificadaViewModel
+
+@* @Html.HiddenFor(m => m.ClienteId) *@
+@Html.HiddenFor(m => m.ConsultaId)
+@Html.HiddenFor(m => m.EmergenciaId)
+@Html.HiddenFor(m => m.AmbienteId)
+@Html.HiddenFor(m => m.IsClinica)
+@Html.HiddenFor(m => m.IsFarmacia)
+@Html.HiddenFor(m => m.IsLaboratorio)
+@Html.HiddenFor(m => m.IsEmergencia)
+@Html.HiddenFor(m => m.CodigoMedico)
+@Html.HiddenFor(m => m.CitaTipoAtencion)
+@Html.HiddenFor(m => m.ResponsableNit)
+@Html.HiddenFor(m => m.ResponsableNombre)
+@Html.HiddenFor(m => m.ResponsableDireccion)
+@Html.HiddenFor(m => m.ResponsableCorreo)
+@Html.HiddenFor(m => m.Origen)
+@if (Context.Request.Query["isEmergencia"] == "true" || 
+     Context.Request.Query["isLaboratorio"] == "True" || 
+     Context.Request.Query["isClinica"] == "True")
+{
+    @Html.HiddenFor(m => m.ClienteId)
+}
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <div id="tabs-venta">
+                    <ul>
+                        <li><a href="#tab-encabezado">Encabezado</a></li>
+                        <li><a href="#tab-detalles">Detalles</a></li>
+                        <li><a href="#tab-datos-pago">Datos de pago</a></li>
+                        @*  @if (Model.IsLaboratorio)
+                        {
+                        <li><a href="#tab-preguntas-concentimiento">Preguntas Concentimiento</a></li>
+                        } *@
+                    </ul>
+                    <div id="tab-encabezado">
+                        <div class="main-card mb-3 card">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-4">
+                                        <label class="font-weight-bold">Número de comprobante</label>
+                                        @Html.TextBoxFor(m => m.NumeroComprobante, new { @class = "form-control", @placeholder = "000000" })
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="font-weight-bold">Sucursal</label>
+                                        <select class="form-control" disabled asp-for="SucursalId" asp-items="Model.ListaSucursales"></select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="font-weight-bold">Código del vendedor</label>
+                                        @Html.TextBoxFor(m => m.CodigoVendedor, new { @class = "form-control", @readonly = "readonly" })
+                                    </div>
+
+                                    <div class="col-md-4 mt-2">
+                                        <label class="font-weight-bold">Paciente</label>
+                                        <select class="form-control select2bs4" style="width: 100%;" id="select-cliente" 
+                                                @( !string.IsNullOrWhiteSpace(Model.ResponsableNombre) ? "disabled" : "" )>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-4 mt-2">
+                                        <label class="font-weight-bold">NIT</label>
+                                        @Html.TextBox(Model.ResponsableNit != null ? "ResponsableNit" : "Nit", 
+                                            Model.ResponsableNit ?? Model.Nit, 
+                                            new { @class = "form-control", id = "Nit", 
+                                                @readonly = Model.ResponsableNit != null ? "readonly" : null })
+                                    </div>
+
+                                    <div class="col-md-4 mt-2">
+                                        <label class="font-weight-bold">Nombre Responsable</label>
+                                        @Html.TextBoxFor(m => m.ResponsableNombre, new { @class = "form-control", @readonly = "readonly" })
+                                    </div>
+
+                                    <div class="col-md-4 mt-2">
+                                        <label class="font-weight-bold">Dirección</label>
+                                        @Html.TextBox("Direccion", Model.ResponsableDireccion ?? Model.Direccion, 
+                                            new { @class = "form-control", id = "Direccion", 
+                                                @readonly = Model.ResponsableDireccion != null ? "readonly" : null })
+                                    </div>
+
+                                    <div class="col-md-4 mt-2">
+                                        <label class="font-weight-bold">Email</label>
+                                        @Html.TextBox("Correo", Model.ResponsableCorreo ?? Model.Correo, 
+                                            new { @class = "form-control", id = "Correo", 
+                                                @readonly = Model.ResponsableCorreo != null ? "readonly" : null })
+                                    </div>
+
+                                    <div class="col-md-4 mt-2">
+                                        <label class="font-weight-bold">Fecha de Nacimiento</label>
+                                        @Html.TextBoxFor(m => m.PacienteFechaNacimiento, "{0:yyyy-MM-dd}", 
+                                            new { @class = "form-control", @type = "date", id = "PacienteFechaNacimiento",
+                                                @readonly = Model.PacienteFechaNacimiento != DateTime.MinValue ? "readonly" : null })
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="tab-detalles">
+                        @if (Model.IsFarmacia)
+                        {
+                            <!--Honorarios-->
+                            @* <div class="form-row">
+                                <div class="col-md-12 seccion-header" id="servicios-header">
+                                    <b>Honorarios Medicos</b>
+                                </div>
+                                <div class="seccion-body mt-2" id="servicios-body">
+                                    <div class="row">
+
+                                        <div class="col-7 col-md-5 mb-3">
+                                            <label>Seleccionar servicio:</label>
+                                            <select style="width:100%" class="form-control select2bs4" 
+                                                data-bind="options: serviciosExistentes,
+                                                           optionsText: 'ServicioNombreMostrar',
+                                                           value: servicioSeleccionado,
+                                                           event: {change: consultarPreciosServicio}">
+                                                <option disabled selected>--- Sin Asignar ---</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-7 col-md-5 mb-3">
+                                            <label >Seleccionar precio:</label>
+                                            
+                                            <select class="form-control"
+                                                data-bind="options: preciosServicio,
+                                                           optionsText: 'PrecioNombreMostrar',
+                                                           value: precioSeleccionadoServicio">
+                                            </select>
+                                        </div>
+
+                                        <div class="col-7 col-md-2 mb-3">
+                                            <label class="d-none d-md-block" style="color: transparent;">Acción</label>
+                                            <button class="btn btn-primary btn-block" data-bind="click: agregarHonorario">
+                                                <i class="fas fa-plus"></i> <span class="d-md-none">Agregar Honorarios</span>
+                                            </button>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div> *@
+                            <!--Productos-->
+                            <div class="form-row">
+                                <div class="col-md-12 seccion-header" id="productos-header">
+                                    <b>AGREGAR PRODUCTOS</b>
+                                </div>
+                                <div class="col-md-12 text-primary" id="texto-cargando-productos-existentes" style="display:none">
+                                    Cargando productos...
+                                </div>
+                                <div class="col-md-12 text-danger" id="texto-error-consultar-productos-existentes" style="display:none">
+                                    Error de conexion.
+                                    <a href="#" data-bind="click:consultarProductosExistentes">Reintentar</a>
+                                </div>
+                                <div class="col-md-12 form-row seccion-body" id="productos-body">
+                                    <div class="col-md-12 form-row">
+                                        <div class="col-md-12 form-row">
+                                            <div class="col-md-12">
+                                                <br />
+                                            </div>
+                                            <div class="col-md-1">
+                                                <label class="text-white">Refresh</label>
+                                                <button class="btn btn-primary" data-bind="click: consultarProductosExistentes">
+                                                    <i class="fas fa-redo-alt"></i>
+                                                </button>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label>Seleccionar producto:</label>
+                                                <select class="form-control select2bs4 " data-bind="options:productosExistentes,
+                                                                                                                    optionsText: 'ProductoNombreMostrar',
+                                                                                                        value: productoSeleccionado" style="width: 100%;">
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label>Seleccionar unidad:</label>
+                                                <select class="form-control"
+                                                        data-bind="options: unidadesVentaProducto,
+                                                                                        optionsText: 'UnidadMedidaVentaNombre',
+                                                                                                value: unidadVentaSeleccionadaProducto"></select>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label>Seleccionar precio:</label>
+                                                <select class="form-control"
+                                                        data-bind="options: preciosProducto,
+                                                                        optionsText: 'Precio',
+                                                                            value: precioSeleccionadoProducto"></select>
+                                            </div>
+                                            <div class="col-md-1">
+                                                <label class="text-white">Agregar</label>
+                                                <button class="btn btn-primary" data-bind="click: agregarProducto">
+                                                    <i class="fas fa-plus"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+
+
+                                        <div class="col-md-12 form-row">
+                                            <div class="col-md-12">
+                                                <br />
+                                            </div>
+                                            @* <div class="col-md-5">
+                                        <label>Seleccionar Activo o Concentrado:</label>
+                                        <select class="form-control select2bs4 " data-bind="options:activosConcentradosProductos,
+                                        optionsText: 'ProductoActivoConcentracion',value:activoConcentradoProducto,
+                                        event: {change:consultarProductosActivoConcentrado} " style="width: 100%;">
+                                        <option value="" selected>Buscar por nombre</option>
+                                        </select>
+                                        </div> *@
+                                        </div>
+                                        <div class="col-md-12">
+                                            <hr />
+                                        </div>
+                                        @*  <div class="col-md-12 form-row">
+                                    <div class="col-md-11">
+                                    <label>Buscar por nombre o codigo:</label>
+                                    <input class="form-control" data-bind="value: NombreCodigoProductoBuscar" id="codigo-nombre-producto-buscar"
+                                    placeholder="Introduzca el parametro de busqueda" />
+                                    </div>
+                                    <div class="col-md-1">
+                                    <label class="text-white">Agregar</label>
+                                    <button class="btn btn-primary" data-bind="click:buscarProductosNombre">
+                                    <i class="fa fa-search"></i>
+                                    </button>
+                                    </div>
+                                    </div> *@
+                                    </div>
+                                    <div class="col-md-12">
+                                        <br />
+                                    </div>
+                                    <div class="col-md-12 form-row">
+                                        <!--ko foreach: productosBuscadosNombre-->
+                                        <div class="main-card mb-3 card">
+                                            <div class="card-body">
+                                                <div class="col-md-12 form-row">
+                                                    <div class="col-md-3">
+                                                        <img class="gallery-thumbnail card-img-top" data-bind="attr:{src:ProductoImagen}" itemprop="thumbnail" />
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <b data-bind="text:ProductoCodigo + ' - ' + ProductoNombre"></b><br />
+                                                        <label class="col-md-12 badge badge-success" data-bind="text: 'Stock: ' + ProductoStock"></label><br />
+                                                        <label class="col-md-12 badge badge-danger" data-bind="text:'Precio: ' + PrecioNombre + ' - Q ' + PrecioValor"></label>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        Unidad: <label class="badge badge-warning"><span data-bind="text:UnidadMedidaVentaNombre"></span></label><br />
+                                                        Vía de adm.: <label class="badge badge-warning"><span data-bind="text:ProductoViaAdministracion"></span></label><br />
+                                                        Grupo t: <label class="badge badge-warning"><span data-bind="text:ProductoGrupoTerapeutico"></span></label><br />
+                                                        Laboratorio: <label class="badge badge-warning"><span data-bind="text:ProductoLaboratorio"></span></label>
+                                                    </div>
+                                                    <div class="col-md-1">
+                                                        <button class="btn btn-primary" data-bind="click:$root.agregarProductoListaBuscados">
+                                                            <i class="fa fa-plus"></i> Agregar
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!--/ko-->
+                                    </div>
+                                </div>
+                            </div>
+
+                        }
+                        @if (Model.IsClinica)
+                        {
+                            <!--Honorarios-->
+                            @* <div class="form-row">
+                                <div class="col-md-12 seccion-header" id="honorarios-header">
+                                    <b>HONORARIOS MEDICOS</b>
+                                </div>
+                                <div class="seccion-body mt-2 w-100" id="honorarios-body">
+                                    <div class="row">
+
+                                        <div class="col-12 col-md-5 mb-3">
+                                            <label>Seleccionar Medico:</label>
+                                            <select style="width:100%" class="form-control select2bs4" 
+                                                data-bind="options: medicosExistentes,
+                                                           optionsText: 'medicoNombreMostrar',
+                                                           value: medicoSeleccionado,">
+                                                <option disabled selected>--- Sin Asignar ---</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-12 col-md-5 mb-3">
+                                            <label >Precio:</label>
+                                            <input class="form-control" data-bind="value: precioHonorarioLibre" placeholder="Q 0.00" />
+                                        </div>
+
+                                        <div class="col-12 col-md-2 mb-3">
+                                            <label class="d-none d-md-block" style="color: transparent;">Acción</label>
+                                            <button class="btn btn-primary btn-block" data-bind="click: agregarHonorario">
+                                                <i class="fas fa-plus"></i> <span class="d-md-none">Agregar Honorarios</span>
+                                            </button>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div> *@
+                            <!--Servicios-->
+                            <div class="form-row">
+    <div class="col-md-12 seccion-header" id="servicios-header">
+        <b>AGREGAR SERVICIOS</b>
+    </div>
+    <div class="seccion-body mt-2 w-100" id="servicios-body">
+        <div class="row align-items-end">
+
+            <div class="col-12 col-md-4 mb-3">
+                <label>Seleccionar servicio:</label>
+                <select style="width:100%" class="form-control select2bs4" 
+                    data-bind="options: serviciosExistentes,
+                               optionsText: 'ServicioNombreMostrar',
+                               value: servicioSeleccionado,
+                               event: {change: consultarPreciosServicio}">
+                    <option disabled selected>--- Sin Asignar ---</option>
+                </select>
+            </div>
+
+            <div class="col-12 col-md-2 mb-3">
+                <div class="form-check pb-2">
+                    <input class="form-check-input" type="checkbox" id="esHonorario" data-bind="checked: esHonorario">
+                    <label class="form-check-label" for="esHonorario" style="cursor: pointer;">
+                        Es honorario
+                    </label>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4 mb-3">
+                <label>Precio:</label>
+
+                <div data-bind="visible: !esHonorario()">
+                    <select class="form-control" 
+                        data-bind="options: preciosServicio,
+                                   optionsText: 'PrecioNombreMostrar',
+                                   value: precioSeleccionadoServicio">
+                    </select>
+                </div>
+
+                <div data-bind="visible: esHonorario()">
+                    <input type="number" step="0.01" class="form-control" 
+                        data-bind="value: precioHonorarioLibre" placeholder="Ingrese monto">
+                </div>
+            </div>
+
+            <div class="col-12 col-md-2 mb-3">
+                <label class="d-none d-md-block" style="color: transparent;">Acción</label>
+                <button class="btn btn-primary btn-block" data-bind="click: agregarServicio">
+                    <i class="fas fa-plus"></i> <span class="d-md-none">Agregar Servicio</span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+                                                        
+
+                             <!--Examenes-->
+
+                             <div class="form-row">
+                                <div class="col-md-12 seccion-header" id="examenes-header">
+                                    <b>AGREGAR EXAMENES</b>
+                                </div>
+                                <div class="seccion-body mt-2 w-100" id="examenes-body">
+                                    <div class="row">
+                                        <div class="col-12 mb-2"></div>
+
+                                        <div class="col-12 col-md-5 mb-3">
+                                            <label>Seleccionar examen:</label>
+                                            <select class="form-control select2bs4" style="width:100%"
+                                                    data-bind="options: examenesExistentes,
+                                                               optionsText: 'ExamenNombreMostrar',
+                                                               value: examenSeleccionado,
+                                                               event: {change: consultarPreciosExamen}">
+                                            </select>
+                                        </div>
+
+                                        <div class="col-12 col-md-4 mb-3">
+                                            <label>Seleccionar precio:</label>
+                                            <select class="form-control"
+                                                    data-bind="options: preciosExamen,
+                                                               optionsText: 'PrecioNombreMostrar',
+                                                               value: precioSeleccionadoExamen">
+                                            </select>
+                                        </div>
+
+                                        <div class="col-12 col-md-2 mb-3">
+                                            <label class="d-none d-md-block" style="color: transparent;">Acción</label>
+                                            <button class="btn btn-primary btn-block" data-bind="click: agregarExamen">
+                                                <i class="fas fa-plus"></i> 
+                                                <span class="ml-1 d-md-none">Agregar Examen</span>
+                                            </button>
+                                        </div>
+
+                                        <div class="col-12">
+                                            <hr class="d-md-none"> </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                             <!--Productos---->
+
+                            <div class="form-row">
+                                <div class="col-md-12 seccion-header" id="productos-header">
+                                    <b>AGREGAR PRODUCTOS</b>
+                                </div>
+                                <div class="seccion-body mt-2 w-100" id="productos-body">
+                                    <div class="col-md-12 form-row">
+                                        <div class="col-md-12 form-row">
+                                            <div class="col-md-12">
+                                                <br />
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label>Seleccionar producto:</label>
+                                                <select class="form-control select2bs4 " data-bind="options:productosExistentes,
+                                                                                                                    optionsText: 'ProductoNombreMostrar',
+                                                                                                        value: productoSeleccionado" style="width: 100%;">
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label>Seleccionar unidad:</label>
+                                                <select class="form-control"
+                                                        data-bind="options: unidadesVentaProducto,
+                                                                                        optionsText: 'UnidadMedidaVentaNombre',
+                                                                                                value: unidadVentaSeleccionadaProducto"></select>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label>Seleccionar precio:</label>
+                                                <select class="form-control"
+                                                        data-bind="options: preciosProducto,
+                                                                        optionsText: 'Precio',
+                                                                            value: precioSeleccionadoProducto"></select>
+                                            </div>
+                                            <div class="col-md-1">
+                                                <label class="text-white">Agregar</label>
+                                                <button class="btn btn-primary" data-bind="click: agregarProducto">
+                                                    <i class="fas fa-plus"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+
+
+                                        <div class="col-md-12 form-row">
+                                            <div class="col-md-12">
+                                                <br />
+                                            </div>
+                                            @* <div class="col-md-5">
+                                        <label>Seleccionar Activo o Concentrado:</label>
+                                        <select class="form-control select2bs4 " data-bind="options:activosConcentradosProductos,
+                                        optionsText: 'ProductoActivoConcentracion',value:activoConcentradoProducto,
+                                        event: {change:consultarProductosActivoConcentrado} " style="width: 100%;">
+                                        <option value="" selected>Buscar por nombre</option>
+                                        </select>
+                                        </div> *@
+                                        </div>
+                                        <div class="col-md-12">
+                                            <hr />
+                                        </div>
+                                        @*  <div class="col-md-12 form-row">
+                                    <div class="col-md-11">
+                                    <label>Buscar por nombre o codigo:</label>
+                                    <input class="form-control" data-bind="value: NombreCodigoProductoBuscar" id="codigo-nombre-producto-buscar"
+                                    placeholder="Introduzca el parametro de busqueda" />
+                                    </div>
+                                    <div class="col-md-1">
+                                    <label class="text-white">Agregar</label>
+                                    <button class="btn btn-primary" data-bind="click:buscarProductosNombre">
+                                    <i class="fa fa-search"></i>
+                                    </button>
+                                    </div>
+                                    </div> *@
+                                    </div>
+                                    <div class="col-md-12">
+                                        <br />
+                                    </div>
+                                    <div class="col-md-12 form-row">
+                                        <!--ko foreach: productosBuscadosNombre-->
+                                        <div class="main-card mb-3 card">
+                                            <div class="card-body">
+                                                <div class="col-md-12 form-row">
+                                                    <div class="col-md-3">
+                                                        <img class="gallery-thumbnail card-img-top" data-bind="attr:{src:ProductoImagen}" itemprop="thumbnail" />
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <b data-bind="text:ProductoCodigo + ' - ' + ProductoNombre"></b><br />
+                                                        <label class="col-md-12 badge badge-success" data-bind="text: 'Stock: ' + ProductoStock"></label><br />
+                                                        <label class="col-md-12 badge badge-danger" data-bind="text:'Precio: ' + PrecioNombre + ' - Q ' + PrecioValor"></label>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        Unidad: <label class="badge badge-warning"><span data-bind="text:UnidadMedidaVentaNombre"></span></label><br />
+                                                        Vía de adm.: <label class="badge badge-warning"><span data-bind="text:ProductoViaAdministracion"></span></label><br />
+                                                        Grupo t: <label class="badge badge-warning"><span data-bind="text:ProductoGrupoTerapeutico"></span></label><br />
+                                                        Laboratorio: <label class="badge badge-warning"><span data-bind="text:ProductoLaboratorio"></span></label>
+                                                    </div>
+                                                    <div class="col-md-1">
+                                                        <button class="btn btn-primary" data-bind="click:$root.agregarProductoListaBuscados">
+                                                            <i class="fa fa-plus"></i> Agregar
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!--/ko-->
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        @if (Model.IsLaboratorio)
+                        {
+                            <!--Examenes-->
+                            <div class="form-row">
+                                <div class="col-md-12 seccion-header" id="examenes-header">
+                                    <b>AGREGAR EXAMENES</b>
+                                </div>
+                                <div class="col-md-12 seccion-body form-row" id="examenes-body">
+                                    <div class="col-md-12 form-row">
+                                        <div class="col-md-12">
+                                            <br />
+                                        </div>
+                                        @* <div class="col-md-3">
+                                    <label>Buscar por codigo:</label>
+                                    <input class="form-control" data-bind="value: codigoExamenBuscar"
+                                    id="codigo-examen-buscar" />
+                                    </div> *@
+                                        <div class="col-md-4">
+                                            <label>Seleccionar examen:</label><br>
+
+                                            <select class="form-control select2bs4" style="width:100%"
+                                                    data-bind="options: examenesExistentes,
+                                                                                                                ,optionsText: 'ExamenNombreMostrar',
+                                                                                                                value: examenSeleccionado,
+                                                                                                                event: {change:consultarPreciosExamen}">
+                                            </select>
+                                        </div>
+                                        <div class="col-md-1">
+                                            <label class="text-white">Ir</label><br>
+                                            <a class="btn btn-primary text-white" href="/LaboratorioClinico/ListaExamenes"
+                                               target="_blank">
+                                                <i class="fas fa-external-link-alt"></i>
+                                            </a>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label>Seleccionar precio:</label>
+                                            <select class="form-control"
+                                                    data-bind="options: preciosExamen,
+                                                                                    optionsText: 'PrecioNombreMostrar',
+                                                                                    value: precioSeleccionadoExamen"></select>
+                                        </div>
+                                        <div class="col-md-1">
+                                            <label class="text-white">Agregar</label><br>
+                                            <button class="btn btn-primary" data-bind="click: agregarExamen">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </div>
+                                        <div class="col-md-1">
+                                            <label class="text-white">Load</label><br>
+                                            <button class="btn btn-primary" data-bind="click: consultarExamenesExistentes">
+                                                Recargar
+                                            </button>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <br />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        @if (Model.IsEmergencia){
+
+                            <!--Servicios-->
+                            <div class="form-row">
+                                <div class="col-md-12 seccion-header" id="servicios-header">
+                                    <b>AGREGAR SERVICIOS</b>
+                                </div>
+                                <div class="seccion-body mt-2" id="servicios-body">
+                                    <div class="row">
+
+                                        <div class="col-7 col-md-5 mb-3">
+                                            <label>Seleccionar servicio:</label>
+                                            <select style="width:100%" class="form-control select2bs4" 
+                                                data-bind="options: serviciosExistentes,
+                                                           optionsText: 'ServicioNombreMostrar',
+                                                           value: servicioSeleccionado,
+                                                           event: {change: consultarPreciosServicio}">
+                                                <option disabled selected>--- Sin Asignar ---</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-7 col-md-5 mb-3">
+                                            <label >Seleccionar precio:</label>
+                                            <select class="form-control"
+                                                data-bind="options: preciosServicio,
+                                                           optionsText: 'PrecioNombreMostrar',
+                                                           value: precioSeleccionadoServicio">
+                                            </select>
+                                        </div>
+
+                                        <div class="col-7 col-md-2 mb-3">
+                                            <label class="d-none d-md-block" style="color: transparent;">Acción</label>
+                                            <button class="btn btn-primary btn-block" data-bind="click: agregarServicio">
+                                                <i class="fas fa-plus"></i> <span class="d-md-none">Agregar Servicio</span>
+                                            </button>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+
+                            
+                             <!--Examenes-->
+                             <div class="form-row">
+                                <div class="col-md-12 seccion-header" id="examenes-header">
+                                    <b>AGREGAR EXAMENES</b>
+                                </div>
+                                <div class="seccion-body" id="examenes-body">
+                                    <div class="row">
+                                        <div class="col-12 mb-2"></div>
+
+                                        <div class="col-7 col-md-5 mb-3">
+                                            <label>Seleccionar examen:</label>
+                                            <select class="form-control select2bs4" style="width:100%"
+                                                    data-bind="options: examenesExistentes,
+                                                               optionsText: 'ExamenNombreMostrar',
+                                                               value: examenSeleccionado,
+                                                               event: {change: consultarPreciosExamen}">
+                                            </select>
+                                        </div>
+
+                                        <div class="col-7 col-md-4 mb-3">
+                                            <label>Seleccionar precio:</label>
+                                            <select class="form-control"
+                                                    data-bind="options: preciosExamen,
+                                                               optionsText: 'PrecioNombreMostrar',
+                                                               value: precioSeleccionadoExamen">
+                                            </select>
+                                        </div>
+
+                                        <div class="col-7 col-md-2 mb-3">
+                                            <label class="d-none d-md-block" style="color: transparent;">Acción</label>
+                                            <button class="btn btn-primary btn-block" data-bind="click: agregarExamen">
+                                                <i class="fas fa-plus"></i> 
+                                                <span class="ml-1 d-md-none">Agregar Examen</span>
+                                            </button>
+                                        </div>
+
+                                        <div class="col-12">
+                                            <hr class="d-md-none"> </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <!--Productos---->
+                            <div class="form-row">
+                                <div class="col-md-12 seccion-header" id="productos-header">
+                                    <b>AGREGAR PRODUCTOS</b>
+                                </div>
+                                <div class="col-md-12 form-row seccion-body" id="productos-body">
+                                    <div class="col-md-12 form-row">
+                                        <div class="col-md-12 form-row">
+                                            <div class="col-md-12">
+                                                <br />
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label>Seleccionar producto:</label>
+                                                <select class="form-control select2bs4 " data-bind="options:productosExistentes,
+                                                                                                                    optionsText: 'ProductoNombreMostrar',
+                                                                                                        value: productoSeleccionado" style="width: 100%;">
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label>Seleccionar unidad:</label>
+                                                <select class="form-control"
+                                                        data-bind="options: unidadesVentaProducto,
+                                                                                        optionsText: 'UnidadMedidaVentaNombre',
+                                                                                                value: unidadVentaSeleccionadaProducto"></select>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label>Seleccionar precio:</label>
+                                                <select class="form-control"
+                                                        data-bind="options: preciosProducto,
+                                                                        optionsText: 'Precio',
+                                                                            value: precioSeleccionadoProducto"></select>
+                                            </div>
+                                            <div class="col-md-1">
+                                                <label class="text-white">Agregar</label>
+                                                <button class="btn btn-primary" data-bind="click: agregarProducto">
+                                                    <i class="fas fa-plus"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+
+
+                                        <div class="col-md-12 form-row">
+                                            <div class="col-md-12">
+                                                <br />
+                                            </div>
+                                            @* <div class="col-md-5">
+                                        <label>Seleccionar Activo o Concentrado:</label>
+                                        <select class="form-control select2bs4 " data-bind="options:activosConcentradosProductos,
+                                        optionsText: 'ProductoActivoConcentracion',value:activoConcentradoProducto,
+                                        event: {change:consultarProductosActivoConcentrado} " style="width: 100%;">
+                                        <option value="" selected>Buscar por nombre</option>
+                                        </select>
+                                        </div> *@
+                                        </div>
+                                        <div class="col-md-12">
+                                            <hr />
+                                        </div>
+                                        @*  <div class="col-md-12 form-row">
+                                    <div class="col-md-11">
+                                    <label>Buscar por nombre o codigo:</label>
+                                    <input class="form-control" data-bind="value: NombreCodigoProductoBuscar" id="codigo-nombre-producto-buscar"
+                                    placeholder="Introduzca el parametro de busqueda" />
+                                    </div>
+                                    <div class="col-md-1">
+                                    <label class="text-white">Agregar</label>
+                                    <button class="btn btn-primary" data-bind="click:buscarProductosNombre">
+                                    <i class="fa fa-search"></i>
+                                    </button>
+                                    </div>
+                                    </div> *@
+                                    </div>
+                                    <div class="col-md-12">
+                                        <br />
+                                    </div>
+                                    <div class="col-md-12 form-row">
+                                        <!--ko foreach: productosBuscadosNombre-->
+                                        <div class="main-card mb-3 card">
+                                            <div class="card-body">
+                                                <div class="col-md-12 form-row">
+                                                    <div class="col-md-3">
+                                                        <img class="gallery-thumbnail card-img-top" data-bind="attr:{src:ProductoImagen}" itemprop="thumbnail" />
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <b data-bind="text:ProductoCodigo + ' - ' + ProductoNombre"></b><br />
+                                                        <label class="col-md-12 badge badge-success" data-bind="text: 'Stock: ' + ProductoStock"></label><br />
+                                                        <label class="col-md-12 badge badge-danger" data-bind="text:'Precio: ' + PrecioNombre + ' - Q ' + PrecioValor"></label>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        Unidad: <label class="badge badge-warning"><span data-bind="text:UnidadMedidaVentaNombre"></span></label><br />
+                                                        Vía de adm.: <label class="badge badge-warning"><span data-bind="text:ProductoViaAdministracion"></span></label><br />
+                                                        Grupo t: <label class="badge badge-warning"><span data-bind="text:ProductoGrupoTerapeutico"></span></label><br />
+                                                        Laboratorio: <label class="badge badge-warning"><span data-bind="text:ProductoLaboratorio"></span></label>
+                                                    </div>
+                                                    <div class="col-md-1">
+                                                        <button class="btn btn-primary" data-bind="click:$root.agregarProductoListaBuscados">
+                                                            <i class="fa fa-plus"></i> Agregar
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!--/ko-->
+                                    </div>
+                                </div>
+                            </div>
+
+                        }
+                        <!--Elementos-->
+                        <div class="form-row">
+                            <div class="col-md-12 seccion-header">
+                                <b>ELEMENTOS</b>
+                            </div>
+                            <div class="col-md-12 form-row">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th>Código</th>
+                                            <th>Nombre</th>
+                                            <th>Cantidad</th>
+                                            <th>Precio</th>
+                                            <th>Valor unitario</th>
+                                            <th>Subtotal</th>
+                                            <th>Porcentaje de coaseguro</th>
+                                            <th>Valor aseguradora</th>
+                                            <th>Valor total</th>
+                                            @if (Model.CitaTipoAtencion == "SEGURO")
+                                            {
+                                                <th>Valor<br />Cubierto<br />Seguro</th>
+                                                <th>Valor<br />Copago</th>
+                                            }
+                                            <th>Usuario autoriza</th>
+                                            <th>Cargo/Descuento</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!--ko foreach: serviciosVenta-->
+                                        <tr>
+                                            <td><label class="badge badge-warning">Servicio</label></td>
+                                            <td data-bind="text:ServicioCodigo"></td>
+                                            <td data-bind="text:ServicioNombre"></td>
+                                            <td>
+                                                <input class="form-control" data-bind="value:Cantidad,
+                                                                                        event:{change:$root.actualizarTotales}" />
+                                            </td>
+                                            <td data-bind="text:PrecioNombre"></td>
+                                            <td data-bind="text:ValorUnitario"></td>
+                                            <td data-bind="text:ValorSubtotal"></td>
+                                            <td>
+                                                <input class="form-control" data-bind="value:DescuentoPorcentaje,
+                                                                                        event:{change:$root.actualizarTotales}" />
+                                            </td>
+                                            <td data-bind="text:DescuentoValor"></td>
+                                            <td data-bind="text:ValorTotal"></td>
+                                            @if (Model.CitaTipoAtencion == "SEGURO")
+                                            {
+                                                <td>
+                                                    <input class="form-control"
+                                                           data-bind="value:ValorCubiertoSeguro,event:{change:$root.actualizarTotales}" />
+                                                </td>
+                                                <td data-bind="text:ValorCopago"></td>
+                                            }
+                                            <td><input class="form-control" data-bind="value:UsuarioAutoriza" /></td>
+                                            <td class="align-middle" style="min-width: 200px;">
+                                                <div class="d-flex align-items-center justify-content-start">
+                                                    <div class="custom-control custom-switch mr-3">
+                                                        <input type="checkbox" class="custom-control-input" 
+                                                            data-bind="attr: { id: 'sw_serv_' + ($data.Item || $data.ServicioId) }, checked: esDescuento">
+                                                        <label class="custom-control-label font-weight-bold" 
+                                                            data-bind="attr: { for: 'sw_serv_' + ($data.Item || $data.ServicioId) }">
+                                                            <span data-bind="text: esDescuento() ? 'Desc' : 'Cargo'"></span>
+                                                        </label>
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <div data-bind="visible: !esDescuento()">
+                                                            <div class="input-group input-group-sm">
+                                                                <div class="input-group-prepend"><span class="input-group-text bg-danger text-white border-danger">+</span></div>
+                                                                <input type="number" min="0" onkeypress="return (event.charCode >= 48 && event.charCode <= 57) || event.charCode == 46" class="form-control border-danger" data-bind="value: Recargo, valueUpdate: 'afterkeydown', event: { change: $root.actualizarTotales }">
+                                                            </div>
+                                                        </div>
+                                                        <div data-bind="visible: esDescuento()">
+                                                            <div class="input-group input-group-sm">
+                                                                <div class="input-group-prepend"><span class="input-group-text bg-success text-white border-success">%</span></div>
+                                                                <input type="number" min="0" onkeypress="return (event.charCode >= 48 && event.charCode <= 57) || event.charCode == 46" class="form-control border-success" data-bind="value: DescuentoServicioPorcentaje, valueUpdate: 'afterkeydown', event: { change: $root.actualizarTotales }">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                                                                        <td>
+                                                <button class="btn btn-danger"
+                                                        data-bind="click:$root.quitarServicio">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </td>
+                                            
+                                            
+                                        </tr>
+                                        <!--/ko-->
+                                        <!--ko foreach: productosVenta-->
+                                        <!--ko if:!VentaPerdida-->
+                                        <tr>
+                                            <td><label class="badge badge-warning">Producto</label></td>
+                                            @* <td>
+                                                
+                                                @if(Model.IsEmergencia){
+<label class="badge" 
+       data-bind="text: (TipoProductoId() == 2) ? 'Insumo' : 'Medicamento', 
+                  css: (TipoProductoId() == 2) ? 'badge-warning' : 'badge-warning'"></label>
+                                                }
+                                                else{
+                                                    <label class="badge badge-warning">Producto</label>
+                                                }
+                                               
+                                                </td> *@
+                                            <td data-bind="text:ProductoCodigo"></td>
+                                            <td data-bind="text:ProductoNombre"></td>
+                                            <td>
+                                                <input class="form-control" data-bind="value:Cantidad,
+                                                                                        event:{change:$root.actualizarTotales}" />
+                                            </td>
+                                            <td data-bind="text:Precio"></td>
+                                            <td data-bind="text:PrecioValor"></td>
+                                            <td data-bind="text:Subtotal"></td>
+                                            <td>
+                                                <input class="form-control" data-bind="value:DescuentoPorcentaje,
+                                                                                        event:{change:$root.actualizarTotales}" />
+                                            </td>
+                                            <td data-bind="text:DescuentoValor"></td>
+                                            <td data-bind="text:ValorTotal"></td>
+                                            @if (Model.ConsultaId != null && Model.CitaTipoAtencion == "SEGURO")
+                                            {
+                                                <td>
+                                                    <input class="form-control"
+                                                           data-bind="value:ValorCubiertoSeguro,event:{change:$root.actualizarTotales}" />
+                                                </td>
+                                                <td data-bind="text:ValorCopago"></td>
+                                            }
+                                            <td><input class="form-control" data-bind="value:UsuarioAutoriza" /></td>
+                                            <td class="align-middle" style="min-width: 200px;">
+                                                <div class="d-flex align-items-center justify-content-start">
+                                                    <div class="custom-control custom-switch mr-3">
+                                                        <input type="checkbox" class="custom-control-input" 
+                                                            data-bind="attr: { id: 'sw_prod_' + ($data.Item || $data.ProductoId) }, checked: esDescuento">
+                                                        <label class="custom-control-label font-weight-bold" 
+                                                            data-bind="attr: { for: 'sw_prod_' + ($data.Item || $data.ProductoId) }">
+                                                            <span data-bind="text: esDescuento() ? 'Desc' : 'Cargo'"></span>
+                                                        </label>
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <div data-bind="visible: !esDescuento()">
+                                                            <div class="input-group input-group-sm">
+                                                                <div class="input-group-prepend"><span class="input-group-text bg-danger text-white border-danger">+</span></div>
+                                                                <input type="number" min="0" onkeypress="return (event.charCode >= 48 && event.charCode <= 57) || event.charCode == 46" class="form-control border-danger" data-bind="value: Recargo, valueUpdate: 'afterkeydown', event: { change: $root.actualizarTotales }">
+                                                            </div>
+                                                        </div>
+                                                        <div data-bind="visible: esDescuento()">
+                                                            <div class="input-group input-group-sm">
+                                                                <div class="input-group-prepend"><span class="input-group-text bg-success text-white border-success">%</span></div>
+                                                                <input type="number" min="0" onkeypress="return (event.charCode >= 48 && event.charCode <= 57) || event.charCode == 46" class="form-control border-success" data-bind="value: DescuentoProductoPorcentaje, valueUpdate: 'afterkeydown', event: { change: $root.actualizarTotales }">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-danger"
+                                                        data-bind="click:$root.quitarProducto">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <!--/ko-->
+                                        <!--/ko-->
+                                        <!--ko foreach: examenesVenta-->
+                                        <tr>
+                                            <td><label class="badge badge-warning">Examen</label></td>
+                                            <td data-bind="text:ExamenCodigo"></td>
+                                            <td data-bind="text:ExamenNombre"></td>
+                                            <td>
+                                                <input class="form-control" data-bind="value:Cantidad,
+                                                                                        event:{change:$root.actualizarTotales}" />
+                                            </td>
+                                            <td data-bind="text:PrecioNombre"></td>
+                                            <td data-bind="text:ValorUnitario"></td>
+                                            <td data-bind="text:ValorSubtotal"></td>
+                                            <td>
+                                                <input class="form-control" data-bind="value:DescuentoPorcentaje,
+                                                                                        event:{change:$root.actualizarTotales}" />
+                                            </td>
+                                            <td data-bind="text:DescuentoValor"></td>
+                                            <td data-bind="text:ValorTotal"></td>
+                                            @if (Model.ConsultaId != null && Model.CitaTipoAtencion == "SEGURO")
+                                            {
+                                                <td>
+                                                    <input class="form-control"
+                                                           data-bind="value:ValorCubiertoSeguro,event:{change:$root.actualizarTotales}" />
+                                                </td>
+                                                <td data-bind="text:ValorCopago"></td>
+                                            }
+                                            <td><input class="form-control" data-bind="value:UsuarioAutoriza" /></td>
+                                            <td class="align-middle" style="min-width: 200px;">
+                                                <div class="d-flex align-items-center justify-content-start">
+                                                    <div class="custom-control custom-switch mr-3">
+                                                        <input type="checkbox" class="custom-control-input" 
+                                                            data-bind="attr: { id: 'sw_exam_' + ($data.Item || $data.ExamenId) }, checked: esDescuento">
+                                                        <label class="custom-control-label font-weight-bold" 
+                                                            data-bind="attr: { for: 'sw_exam_' + ($data.Item || $data.ExamenId) }">
+                                                            <span data-bind="text: esDescuento() ? 'Desc' : 'Cargo'"></span>
+                                                        </label>
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <div data-bind="visible: !esDescuento()">
+                                                            <div class="input-group input-group-sm">
+                                                                <div class="input-group-prepend"><span class="input-group-text bg-danger text-white border-danger">+</span></div>
+                                                                <input type="number" min="0" onkeypress="return (event.charCode >= 48 && event.charCode <= 57) || event.charCode == 46" class="form-control border-danger" data-bind="value: Recargo, valueUpdate: 'afterkeydown', event: { change: $root.actualizarTotales }">
+                                                            </div>
+                                                        </div>
+                                                        <div data-bind="visible: esDescuento()">
+                                                            <div class="input-group input-group-sm">
+                                                                <div class="input-group-prepend"><span class="input-group-text bg-success text-white border-success">%</span></div>
+                                                                <input type="number" min="0" onkeypress="return (event.charCode >= 48 && event.charCode <= 57) || event.charCode == 46" class="form-control border-success" data-bind="value: DescuentoExamenPorcentaje, valueUpdate: 'afterkeydown', event: { change: $root.actualizarTotales }">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-danger"
+                                                        data-bind="click:$root.quitarExamen">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </td>
+                                           
+                                        </tr>
+                                        <!--/ko-->
+                                        <tr style="background-color:#f5f5f5">
+                                            <td colspan="14" style="text-align:right">
+                                                <b>Subtotal: Q <span data-bind="text: ventaSubtotal"></span></b><br />
+                                                <b>Aseguradora: Q <span data-bind="text: ventaDescuento"></span></b><br />
+                                                @if (Model.CitaTipoAtencion == "SEGURO")
+                                                {
+                                                    <b>
+                                                        Valor Cubierto Seguro: Q <span data-bind="text: ventaCubiertoSeguro"></span>
+                                                    </b>
+                                                    <br />
+                                                }
+                                                <b>Total: Q <span data-bind="text: ventaTotal"></span></b>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="tab-datos-pago">
+                        <div class="main-card mb-3 card">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-6">
+                                        <label>Forma de pago</label>
+                                        <select class="form-control" style="width:100%" asp-items="@Model.ListaFormaPagos"
+                                                asp-for="FormaPagoId"></select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label>Agregar Monto</label>
+                                        <input class="form-control" data-bind="value:agregarMonto" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label>Agregar</label> <br />
+                                        <button class="btn btn-primary" data-bind="click: agregarPago">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label>Monto Pagado</label>
+                                        <input class="form-control" data-bind="value:pagoMonto" readonly />
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label>Valor total de la venta</label><br />
+                                        <h4><b><span data-bind="text: ventaTotal"></span></b></h4>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label>Saldo</label>
+                                        <h4><b><span data-bind="text:pagoSaldo"></span><br /></b></h4>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label>Vuelto</label>
+                                        <h4><b><span data-bind="text:pagoVuelto"></span><br /></b></h4>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="col-md-12 seccion-header">
+                                        <b>Pagos</b>
+                                    </div>
+                                    <div class="col-md-12 form-row">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Forma de Pago</th>
+                                                    <th>Código</th>
+                                                    <th>Nombre</th>
+                                                    <th>Cantidad</th>
+                                                    <th></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <!--ko foreach: multipagos-->
+                                                <tr>
+
+                                                    <td data-bind="text:Item"></td>
+                                                    <td><label class="badge badge-warning" data-bind="text:PagoNombre"></label></td>
+                                                    <td data-bind="text:PagoCodigo"></td>
+                                                    <td data-bind="text:PagoNombre"></td>
+                                                    <td data-bind="text:ValorTotal"></td>
+                                                    @*<td>
+                                                    <input class="form-control" data-bind="value:Cantidad,event:{change:$root.actualizarTotales}" />
+                                                    </td>*@
+                                                    <td>
+                                                        <button class="btn btn-danger" data-bind="click:$root.quitarPago">
+                                                            <i class="fa fa-trash"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                <!--/ko-->
+
+                                                <tr style="background-color:#f5f5f5">
+                                                    <td colspan="12" style="text-align:right">
+                                                        <b>Subtotal: Q <span data-bind="text: ventaSubtotal"></span></b><br />
+                                                        @*<b>Descuento: Q <span data-bind="text: ventaDescuento"></span></b><br />*@
+                                                        <b>Total: Q <span data-bind="text: ventaTotal"></span></b>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @*  <div id="tab-preguntas-concentimiento">
+                    <div class="main-card mb-3 card">
+                    <div class="card-body">
+                    <div class="form-row">
+
+
+                    </select>
+                    </div>
+                    <div class="col-md-4">
+                    <label>Agregar Pregunta</label>
+                    <input class="form-control" data-bind="value:pregunta"/>
+                    </div>
+                    <div class="col-md-2">
+                    <label>Agregar</label> <br />
+                    <button class="btn btn-primary" data-bind="click: agregarPregunta">
+                    <i class="fas fa-plus" ></i>
+                    </button>
+                    </div>
+
+                    </div>
+                    <div class="form-row">
+                    <div class="col-md-12 seccion-header">
+                    <b>Pagos</b>
+                    </div>
+                    <div class="col-md-12 form-row">
+                    <table class="table table-hover">
+                    <thead>
+                    <tr>
+                    <th>#</th>
+                    <th>Axamen</th>
+                    <th>Pregunta</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <!--ko foreach: examenesPregunta-->
+                    <tr>
+
+                    <td data-bind="text:Item"></td>
+                    <td data-bind="text:ExamenNombre"></td>
+                    <td data-bind="text:Pregunta"></td>
+                    <td data-bind="text:ValorTotal"></td>
+
+                    </tr>
+                    <!--/ko-->
+
+                    <tr style="background-color:#f5f5f5">
+                    <td colspan="12" style="text-align:right">
+                    <b>Subtotal: Q <span data-bind="text: ventaSubtotal"></span></b><br />
+                    @*<b>Descuento: Q <span data-bind="text: ventaDescuento"></span></b><br />
+                    <b>Total: Q <span data-bind="text: ventaTotal"></span></b>
+                    </td>
+                    </tr>
+                    </tbody>
+                    </table>
+                    </div>
+                    </div>
+
+                    </div>
+                    </div>
+                    </div> *@
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div title="Confirmar" style="display:none" id="mdl-confirmacion">
+    <div class="col-md-12 form-row">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Código</th>
+                    <th>Nombre</th>
+                    <th class="d-none">Cantidad</th>
+                    <th class="d-none">Precio</th>
+                    <th class="d-none">Valor unitario</th>
+                    <th class="d-none">Subtotal</th>
+                    <th class="d-none">Porcentaje de coaseguro</th>
+                    <th class="d-none">Valor aseguradora</th>
+                    <th class="d-none">Valor total</th>
+                    <th class="d-none">Usuario autoriza</th>
+                    @*<th></th>*@
+                    <th>Indicacion</th>
+                    <th>Instrucciones</th>
+                    <th>Declaracion</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!--ko foreach: serviciosVenta-->
+                <tr>
+                    <td><label class="badge badge-warning">Servicio</label></td>
+                    <td data-bind="text:ServicioCodigo"></td>
+                    <td data-bind="text:ServicioNombre"></td>
+                    <td class="d-none">
+                        <input class="form-control" data-bind="value:Cantidad,
+                                                                                        event:{change:$root.actualizarTotales}" />
+                    </td>
+                    <td class="d-none" data-bind="text:PrecioNombre"></td>
+                    <td class="d-none" data-bind="text:ValorUnitario"></td>
+                    <td class="d-none" data-bind="text:ValorSubtotal"></td>
+                    <td class="d-none">
+                        <input class="form-control" data-bind="value:DescuentoPorcentaje,
+                                                                                        event:{change:$root.actualizarTotales}" />
+                    </td>
+                    <td class="d-none" data-bind="text:DescuentoValor"></td>
+                    <td class="d-none" data-bind="text:ValorTotal"></td>
+                    <td data-bind="text:ValorCubiertoSeguro"></td>
+                    <td data-bind="text:ValorCopago"></td>
+                    <td class="d-none"><input class="form-control" data-bind="value:UsuarioAutoriza" /></td>
+                    <td>
+                        <button class="btn btn-danger d-none"
+                        @*data-bind="click:$root.quitarServicio"*@>
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </td>
+                    <td></td>
+                    <td></td>
+
+                </tr>
+                <!--/ko-->
+                <!--ko foreach: productosVenta-->
+                <!--ko if: !VentaPerdida-->
+                <tr>
+                    <td>
+                        <label class="badge badge-warning">Producto</label>
+
+                        @* @if(Model.IsEmergencia){
+<label class="badge" 
+       data-bind="text: (TipoProductoId() == 2) ? 'Insumo' : 'Medicamento', 
+                  css: (TipoProductoId() == 2) ? 'badge-warning' : 'badge-warning'"></label>
+                                                }
+                                                else{
+                                                    <label class="badge badge-warning">Producto</label>
+                                                } *@
+                                               
+                        </td>
+                    <td data-bind="text:ProductoCodigo"></td>
+                    <td data-bind="text:ProductoNombre"></td>
+                    <td class="d-none">
+                        <input class="form-control" data-bind="value:Cantidad,
+                                                                                        event:{change:$root.actualizarTotales}" />
+                    </td>
+                    <td class="d-none" data-bind="text:Precio"></td>
+                    <td class="d-none" data-bind="text:PrecioValor"></td>
+                    <td class="d-none" data-bind="text:Subtotal"></td>
+                    <td class="d-none">
+                        <input class="form-control" data-bind="value:DescuentoPorcentaje,
+                                                                                        event:{change:$root.actualizarTotales}" />
+                    </td>
+                    <td class="d-none" data-bind="text:DescuentoValor"></td>
+                    <td class="d-none" data-bind="text:ValorTotal"></td>
+                    <td class="d-none"><input class="form-control" data-bind="value:UsuarioAutoriza" /></td>
+                    <td>
+                        <button class="btn btn-danger d-none"
+                                data-bind="click:$root.quitarProducto">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <!--/ko-->
+                <!--/ko-->
+                <!--ko foreach: examenesVenta-->
+                <tr>
+                    <td><label class="badge badge-warning">Examen</label></td>
+                    <td data-bind="text:ExamenCodigo"></td>
+                    <td data-bind="text:ExamenNombre"></td>
+                    <td class="d-none">
+                        <input class="form-control" data-bind="value:Cantidad,
+                                                                                        event:{change:$root.actualizarTotales}" />
+                    </td>
+                    <td class="d-none" data-bind="text:PrecioNombre"></td>
+                    <td class="d-none" data-bind="text:ValorUnitario"></td>
+                    <td class="d-none" data-bind="text:ValorSubtotal"></td>
+                    <td class="d-none">
+                        <input class="form-control" data-bind="value:DescuentoPorcentaje,
+                                                                                        event:{change:$root.actualizarTotales}" />
+                    </td>
+                    <td class="d-none" data-bind="text:DescuentoValor"></td>
+                    <td class="d-none" data-bind="text:ValorTotal"></td>
+                    <td class="d-none"><input class="form-control" data-bind="value:UsuarioAutoriza" /></td>
+                    <td>
+                        <button class="btn btn-danger"
+                                data-bind="click: function() { generarPdfExamenesLaboratorio(ExamenId,'indicaciones' ); }">
+                            <i class="fa fa-file-pdf"> PDF</i>
+                        </button>
+
+
+
+
+                    </td>
+                    <td>
+                        <button class="btn btn-danger" @*data-bind="click:$root.quitarExamen"*@
+                                data-bind="click: function() { generarPdfExamenesLaboratorio(ExamenId,'instrucciones' ); }">
+                            <i class="fa fa-file-pdf"> PDF</i>
+                        </button>
+                    </td>
+                    <td>
+                        <button class="btn btn-danger" @*data-bind="click:$root.quitarExamen"*@
+                                data-bind="click: function() { generarPdfExamenesLaboratorio(ExamenId,'declaraciones' ); }">
+                            <i class="fa fa-file-pdf"> PDF</i>
+                        </button>
+                    </td>
+                </tr>
+                <!--/ko-->
+                <tr style="background-color:#f5f5f5">
+                    <td colspan="12" style="text-align:right">
+                        <b>Subtotal: Q <span data-bind="text: ventaSubtotal"></span></b><br />
+                        <b>Aseguradora: Q <span data-bind="text: ventaDescuento"></span></b><br />
+                        <b>Total: Q <span data-bind="text: ventaTotal"></span></b>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <span data-bind="html:txtModalConfirmacion"></span>
+</div>
+
+<div title="Registrar nuevo paciente" style="display:none" id="mdl-nuevo-cliente">
+    <div class="form-row mt-2">
+        <div class="col-md-12 mb-2">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                El paciente ingresado no existe en el sistema. Complete los datos para registrarlo.
+            </div>
+        </div>
+        <div class="col-md-6">
+            <label><b>Nombre completo <span class="text-danger">*</span></b></label>
+            <input type="text" class="form-control" id="nuevo-cliente-nombre" placeholder="Nombre completo" />
+        </div>
+        <div class="col-md-6">
+            <label><b>NIT</b></label>
+            <input type="text" class="form-control" id="nuevo-cliente-nit" placeholder="NIT" />
+        </div>
+        <div class="col-md-6 mt-2">
+            <label><b>Dirección</b></label>
+            <input type="text" class="form-control" id="nuevo-cliente-direccion" placeholder="Dirección" />
+        </div>
+        <div class="col-md-6 mt-2">
+            <label><b>Teléfono</b></label>
+            <input type="text" class="form-control" id="nuevo-cliente-telefono" placeholder="Teléfono" />
+        </div>
+        <div class="col-md-6 mt-2">
+            <label><b>Fecha de nacimiento</b></label>
+            <input type="date" class="form-control" id="nuevo-cliente-fecha-nacimiento" />
+        </div>
+        <div class="col-md-6 mt-2">
+            <label><b>Género</b></label>
+            <select class="form-control" id="nuevo-cliente-genero">
+                <option value="">-- Seleccione --</option>
+                <option value="M">Masculino</option>
+                <option value="F">Femenino</option>
+            </select>
+        </div>
+        <div class="col-md-12 mt-2" id="mdl-nuevo-cliente-error" style="display:none">
+            <div class="alert alert-danger" id="mdl-nuevo-cliente-error-msg"></div>
+        </div>
+    </div>
+</div>
+<script>
+    $(document).ready(function() {
+        // En lugar de buscar el ID directamente, atamos el evento al 'document'
+        // y le decimos que escuche específicamente los cambios en '#esHonorario'
+        $(document).on('change', '#esHonorario', function() {
+            
+            if ($(this).is(':checked')) {
+                $('#divPrecioSelect').hide(); // Ocultamos el select
+                $('#divPrecioInput').show();  // Mostramos el campo libre
+            } else {
+                $('#divPrecioInput').hide();  // Ocultamos el campo libre
+                $('#divPrecioSelect').show(); // Mostramos el select
+            }
+            
+        });
+    });
+</script>

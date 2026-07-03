@@ -1,0 +1,68 @@
+﻿<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Datos de la marca</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-12 form-row">
+                <div class="col-md-4">
+                    <label>Fecha de registro</label>
+                    <input type="date" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label>Nombre</label>
+                    <input type="text" class="form-control" placeholder="Nombre" />
+                </div>
+                <div class="col-md-4">
+                    <label>País</label>
+                    <select class="form-control select2bs4">
+                        <option>Guatemala</option>
+                        <option>México</option>
+                        <option>Colombia</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Archivos</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-12 form-row">
+                <div class="col-md-2">
+                    Nombre
+                    <input class="form-control" placeholder="Nombre de archivo" />
+                </div>
+                <div class="col-md-8">
+                    Archivo
+                    <input class="form-control" type="file" />
+                </div>
+                <div class="col-md-2">
+                    <br />
+                    <button class="btn btn-primary">Subir archivo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <a class="btn btn-primary" href="@Url.Action("Lista","BufeteJuridicoMarca",new{guardado=true})">
+            Guardar marca
+        </a>
+    </div>
+</div>
+
+@section css{
+
+}
+@section Scripts{
+
+}

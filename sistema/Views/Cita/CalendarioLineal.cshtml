@@ -1,0 +1,1232 @@
+@using Database.Shared.Paginacion;
+@model sistema.Models.CalendarioLinealViewModel
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+
+@{
+    ViewData["Title"] = "Calendario";
+    var usuarioJose = User.Identity.Name == "jose@one.com";
+    var pacienteFiltro = (ViewData["PacienteNombre"] as string) ?? string.Empty;
+    var tieneFiltroPaciente = !string.IsNullOrWhiteSpace(pacienteFiltro);
+
+    var currentFilter  = (ViewData["CurrentFilter"]  as string) ?? string.Empty;
+    var currentFilter2 = (ViewData["CurrentFilter2"] as string) ?? string.Empty;
+
+    string clienteconf = Configuration["Cliente"];
+
+    // ← NUEVO: Detectar médico externo
+    bool esMedicoExterno = User.IsInRole("Medico Externo");
+    // ← NUEVO: Deshabilitar acciones si cliente M14 y médico externo
+    bool deshabilitarAcciones = (clienteconf == "M14" && esMedicoExterno);
+
+    // ← NUEVO: modo de calendario
+    var defaultModo = "consulta";
+    if (clienteconf == "SS")
+    {
+        defaultModo = "hospitalizacion";
+    }
+    var modoActual = (ViewData["Modo"] as string) ?? defaultModo;
+
+    // Si el cliente es Sersalud, forzamos siempre el modo hospitalización (SOP)
+    if (clienteconf == "SS")
+    {
+        modoActual = "hospitalizacion";
+    }
+    var esHospitalizacion = modoActual == "hospitalizacion";
+
+    // Helpers para construir URLs conservando todos los filtros activos
+    string UrlModo(string m) =>
+        $"/Cita/CalendarioLineal?buscar={Uri.EscapeDataString(currentFilter)}" +
+        $"&buscar2={Uri.EscapeDataString(currentFilter2)}" +
+        $"&empleadoId={ViewData["EmpleadoId"]}" +
+        $"&especialidadId={ViewData["EspecialidadId"]}" +
+        $"&servicioId={ViewData["ServicioId"]}" +
+        $"&pacienteNombre={Uri.EscapeDataString(pacienteFiltro)}" +
+        $"&modo={m}";
+
+    // Determinar si es vista de día único o de rango
+    bool esDiaUnico = !string.IsNullOrEmpty(currentFilter) && 
+                      !string.IsNullOrEmpty(currentFilter2) && 
+                      currentFilter == currentFilter2;
+
+    // Si ambas están vacías, se considera día único con la fecha actual
+    if (string.IsNullOrEmpty(currentFilter) && string.IsNullOrEmpty(currentFilter2))
+    {
+        esDiaUnico = true;
+        currentFilter = Model.Fecha;
+        currentFilter2 = Model.Fecha;
+    }
+}
+
+
+@await Html.PartialAsync("_MensajeExito")
+
+@* --- LÓGICA DE ESTADÍSTICAS --- *@
+@{
+    var citas = Model?.Citas ?? new List<Database.Shared.Models.Citas>();
+
+    bool EsFinalizada(Database.Shared.Models.Citas c)
+        => c.Finalizada || c.ContadorCitaFinalizada.HasValue;
+    bool EsEnEspera(Database.Shared.Models.Citas c)
+        => !EsFinalizada(c) && c.ContadorCitaIniciada.HasValue;
+    bool EsAgendada(Database.Shared.Models.Citas c)
+        => !EsFinalizada(c) && !c.ContadorCitaIniciada.HasValue;
+
+    var totalAgendadas   = citas.Count(c => EsAgendada(c));
+    var totalEnEspera    = citas.Count(c => EsEnEspera(c));
+    var totalFinalizadas = citas.Count(c => EsFinalizada(c));
+
+    var agPrivado = citas.Count(c => EsAgendada(c) && c.CitaTipoAtencion == "PRIVADO");
+    var agIgss    = citas.Count(c => EsAgendada(c) && c.CitaTipoAtencion == "IGSS");
+    var agSeguro  = citas.Count(c => EsAgendada(c) && c.CitaTipoAtencion == "SEGURO");
+
+    var esPrivado = citas.Count(c => EsEnEspera(c) && c.CitaTipoAtencion == "PRIVADO");
+    var esIgss    = citas.Count(c => EsEnEspera(c) && c.CitaTipoAtencion == "IGSS");
+    var esSeguro  = citas.Count(c => EsEnEspera(c) && c.CitaTipoAtencion == "SEGURO");
+
+    var fiPrivado = citas.Count(c => EsFinalizada(c) && c.CitaTipoAtencion == "PRIVADO");
+    var fiIgss    = citas.Count(c => EsFinalizada(c) && c.CitaTipoAtencion == "IGSS");
+    var fiSeguro  = citas.Count(c => EsFinalizada(c) && c.CitaTipoAtencion == "SEGURO");
+}
+
+<input type="hidden" name="modo" value="@modoActual" />
+
+
+<div class="card shadow-sm border-0 mb-4">
+
+    @* HEADER PRINCIPAL *@
+    <div class="card-header bg-white py-3 border-bottom">
+        <div class="d-flex align-items-center justify-content-between w-100">
+            <div class="d-flex align-items-center">
+                <div class="rounded bg-light d-flex align-items-center justify-content-center mr-3"
+                     style="width: 40px; height: 40px;">
+                    <i class="fas @(esHospitalizacion ? "fa-hospital" : "fa-calendar-alt") text-primary"></i>
+                </div>
+                <div>
+                    <h5 class="m-0 font-weight-bold text-dark text-uppercase" style="letter-spacing: 1px;">
+                        @(esHospitalizacion ? "Calendario de Hospitalizaciones" : "Calendario de Citas")
+                    </h5>
+                    <span class="badge @(esHospitalizacion ? "badge-danger" : "badge-primary") mt-1" style="font-size:10px;">
+                        @(esHospitalizacion ? "SALA DE OPERACIONES" : "CONSULTAS EXTERNAS")
+                    </span>
+                </div>
+            </div>
+            <div class="d-flex align-items-center" style="gap: 8px;">
+                <div class="btn-group btn-group-sm shadow-sm" role="group" aria-label="Modo de calendario">
+                    @if(clienteconf != "SS"){ 
+                    <a href="@UrlModo("consulta")"
+                       class="btn @(!esHospitalizacion ? "btn-primary" : "btn-outline-primary") font-weight-bold text-uppercase px-3">
+                        <i class="fas fa-stethoscope mr-1"></i> COEX
+                    </a>
+                    }
+                    <a href="@UrlModo("hospitalizacion")"
+                       class="btn @(esHospitalizacion ? "btn-danger" : "btn-outline-danger") font-weight-bold text-uppercase px-3">
+                        <i class="fas fa-hospital mr-1"></i> SOP
+                    </a>
+                </div>
+                @if (!usuarioJose)
+                {
+                    <a asp-action="ReporteCitasFechas" asp-controller="Cita"
+                       class="btn btn-sm btn-outline-secondary shadow-sm px-3 font-weight-bold" target="_blank"
+                       asp-route-currentFilter="@ViewData["CurrentFilter"]">
+                        <i class="fas fa-print mr-1"></i> GENERAL
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        @* --- SECCIÓN 1: CONTADORES (ESTADÍSTICAS) --- *@
+        <div class="mb-4">
+            <h6 class="text-uppercase text-muted font-weight-bold mb-3">
+                <i class="fas fa-chart-pie mr-2"></i>Resumen del Día
+            </h6>
+            <div class="row justify-content-center">
+                <div class="col-md-4 mb-3">
+                    <div class="border rounded shadow-sm p-3 bg-white"
+                         style="cursor: pointer; border-left: 4px solid #007bff !important;"
+                         onclick="toggleDetalles('agendadas')">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <h6 class="text-muted small font-weight-bold text-uppercase m-0">Agendadas</h6>
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center shadow-sm"
+                                 style="width: 35px; height: 35px;">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                        </div>
+                        <h3 class="mb-0 font-weight-bold text-primary">@totalAgendadas</h3>
+                        <div id="detalle-agendadas" class="mt-3 collapse">
+                            <div class="d-flex justify-content-between border-bottom pb-1 mb-1">
+                                <small class="font-weight-bold text-muted">Privada</small>
+                                <span class="badge badge-primary badge-pill">@agPrivado</span>
+                            </div>
+                            <div class="d-flex justify-content-between border-bottom pb-1 mb-1">
+                                <small class="font-weight-bold text-muted">IGSS</small>
+                                <span class="badge badge-primary badge-pill">@agIgss</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <small class="font-weight-bold text-muted">Seguro</small>
+                                <span class="badge badge-primary badge-pill">@agSeguro</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <div class="border rounded shadow-sm p-3 bg-white"
+                         style="cursor: pointer; border-left: 4px solid #ffc107 !important;"
+                         onclick="toggleDetalles('espera')">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <h6 class="text-muted small font-weight-bold text-uppercase m-0">En Espera</h6>
+                            <div class="rounded-circle bg-warning text-white d-flex align-items-center justify-content-center shadow-sm"
+                                 style="width: 35px; height: 35px;">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                        </div>
+                        <h3 class="mb-0 font-weight-bold text-warning">@totalEnEspera</h3>
+                        <div id="detalle-espera" class="mt-3 collapse">
+                            <div class="d-flex justify-content-between border-bottom pb-1 mb-1">
+                                <small class="font-weight-bold text-muted">Privada</small>
+                                <span class="badge badge-warning badge-pill">@esPrivado</span>
+                            </div>
+                            <div class="d-flex justify-content-between border-bottom pb-1 mb-1">
+                                <small class="font-weight-bold text-muted">IGSS</small>
+                                <span class="badge badge-warning badge-pill">@esIgss</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <small class="font-weight-bold text-muted">Seguro</small>
+                                <span class="badge badge-warning badge-pill">@esSeguro</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <div class="border rounded shadow-sm p-3 bg-white"
+                         style="cursor: pointer; border-left: 4px solid #28a745 !important;"
+                         onclick="toggleDetalles('finalizadas')">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <h6 class="text-muted small font-weight-bold text-uppercase m-0">Finalizadas</h6>
+                            <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center shadow-sm"
+                                 style="width: 35px; height: 35px;">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+                        <h3 class="mb-0 font-weight-bold text-success">@totalFinalizadas</h3>
+                        <div id="detalle-finalizadas" class="mt-3 collapse">
+                            <div class="d-flex justify-content-between border-bottom pb-1 mb-1">
+                                <small class="font-weight-bold text-muted">Privada</small>
+                                <span class="badge badge-success badge-pill">@fiPrivado</span>
+                            </div>
+                            <div class="d-flex justify-content-between border-bottom pb-1 mb-1">
+                                <small class="font-weight-bold text-muted">IGSS</small>
+                                <span class="badge badge-success badge-pill">@fiIgss</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <small class="font-weight-bold text-muted">Seguro</small>
+                                <span class="badge badge-success badge-pill">@fiSeguro</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr class="mb-4" />
+
+        @* --- SECCIÓN 2: FILTROS --- *@
+        <div class="mb-4">
+            <h6 class="text-uppercase text-muted font-weight-bold mb-3">
+                <i class="fas fa-filter mr-2"></i>Filtros de Búsqueda
+            </h6>
+            <form asp-controller="Cita" asp-action="CitasListadoFecha" method="post">
+                <div class="form-row mb-3">
+                    <div class="col-md-4 mb-2">
+                        <label class="small font-weight-bold text-muted text-uppercase">Fecha Inicial</label>
+                        <div class="input-group input-group-sm">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text bg-light"><i class="far fa-calendar"></i></span>
+                            </div>
+                            <input type="date" class="form-control shadow-none" id="fechacita" name="fecha"
+                                   value="@ViewData["CurrentFilter"]">
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 mb-2">
+                        <label class="small font-weight-bold text-muted text-uppercase">Fecha Final</label>
+                        <div class="input-group input-group-sm">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text bg-light"><i class="far fa-calendar-check"></i></span>
+                            </div>
+                            <input type="date" class="form-control shadow-none" id="fechacita2" name="fecha2"
+                                   value="@ViewData["CurrentFilter2"]">
+                        </div>
+                    </div>
+
+                    @if (User.IsInRole("Administrador") || User.IsInRole("Desarrollador"))
+                    {
+                        <div class="col-md-4 mb-2 d-flex align-items-end">
+                            @if (Model.FechaBloqueada)
+                            {
+                                <button type="button"
+                                        class="btn btn-sm btn-success btn-block shadow-sm font-weight-bold text-uppercase"
+                                        data-bind="click: function() { desbloquearDia('@Model.Fecha') }">
+                                    <i class="fas fa-lock-open mr-2"></i> Desbloquear Día
+                                </button>
+                            }
+                            else
+                            {
+                                <button type="button"
+                                        class="btn btn-sm btn-warning btn-block shadow-sm text-white font-weight-bold text-uppercase"
+                                        data-bind="click:bloquearDia">
+                                    <i class="fas fa-lock mr-2"></i> Bloquear Día
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <div class="form-row mb-3">
+                    <div class="col-md-3 mb-2">
+                        <label class="small font-weight-bold text-muted text-uppercase">Sucursal</label>
+                        <select class="form-control form-control-sm select2bs4 shadow-none" asp-for="SucursalId"
+                                asp-items="Model.SucursalesSelectList" disabled></select>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <label class="small font-weight-bold text-muted text-uppercase">Médico</label>
+                        <select class="form-control form-control-sm select2bs4 shadow-none" asp-for="EmpleadoId"
+                                asp-items="Model.EmpleadosSelectList">
+                            <option>Todos</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <label class="small font-weight-bold text-muted text-uppercase">Especialidad</label>
+                        <select class="form-control form-control-sm select2bs4 shadow-none" asp-for="EspecialidadId"
+                                asp-items="Model.EspecialidadSelectListItem">
+                            <option>Todos</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <label class="small font-weight-bold text-muted text-uppercase">Servicio</label>
+                        <select class="form-control form-control-sm select2bs4 shadow-none" asp-for="ServicioId"
+                                asp-items="Model.ServiciosSelectList">
+                            <option>Todos</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="col-md-6 mb-2">
+                        <label class="small font-weight-bold text-muted text-uppercase">Paciente</label>
+                        <div class="input-group input-group-sm">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text bg-light"><i class="fas fa-search"></i></span>
+                            </div>
+                            <input type="text" class="form-control shadow-none" id="pacienteNombre"
+                                   placeholder="Buscar por nombre..." value="@ViewData["PacienteNombre"]" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 mb-2">
+                        <label class="small font-weight-bold text-muted text-uppercase">Habitación</label>
+                        <select class="form-control form-control-sm select2bs4 shadow-none" 
+                                id="HabitacionId" 
+                                name="habitacionId" 
+                                asp-for="HabitacionId" 
+                                asp-items="Model.HabitacionesSelectList">
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row mt-3">
+                    <div class="col-md-12">
+                        <button type="button" class="btn btn-sm btn-secondary" id="btnLimpiarFiltros">
+                            <i class="fas fa-eraser mr-1"></i> Limpiar filtros
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <input type="hidden" id="modoCalendario" value="@modoActual" />
+        </div>
+
+        <hr class="mb-4" />
+
+        @* --- SECCIÓN 3: TABLAS --- *@
+        @if (Model.FechaBloqueada)
+        {
+            <div class="alert alert-danger text-center font-weight-bold mb-4" role="alert">
+                <i class="fas fa-ban mr-2"></i> Esta fecha se encuentra bloqueada. <br />
+                <small class="font-weight-normal">Motivo: @Model.Motivo</small>
+            </div>
+
+            @if (tieneFiltroPaciente)
+            {
+                <h6 class="text-uppercase text-muted font-weight-bold mb-3">
+                    <i class="fas fa-globe mr-2"></i>Citas globales del paciente:
+                    <span class="text-primary">@pacienteFiltro</span>
+                </h6>
+
+                <div class="border rounded bg-white shadow-sm" style="max-height:520px; overflow-y:auto;">
+                    <table class="table table-sm table-hover table-striped mb-0 table-bordered"
+                           style="min-width:1200px; font-size:12px;">
+                        <thead class="bg-light" style="position:sticky; top:0; z-index:5;">
+                            <tr>
+                                <th class="text-uppercase small font-weight-bold text-nowrap">Fecha</th>
+                                <th class="text-uppercase small font-weight-bold text-nowrap">Hora</th>
+                                <th class="text-uppercase small font-weight-bold">Especialidad / Doctor</th>
+                                <th class="text-uppercase small font-weight-bold">Servicios</th>
+                                <th class="text-uppercase small font-weight-bold">Paciente</th>
+                                <th class="text-uppercase small font-weight-bold text-nowrap">Telefono</th>
+                                <th class="text-uppercase small font-weight-bold text-nowrap">Asistencia</th>
+                                <th class="text-uppercase small font-weight-bold">Tipo de atencion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var c in citas.OrderBy(x => x.FechaInicio))
+                            {
+                                var cliente  = c.Paciente == null ? "" : c.Paciente.Nombre;
+                                var telefono = c.Paciente == null ? "" : c.Paciente.Telefono;
+                                <tr>
+                                    <td class="align-middle text-nowrap">@((c.FechaInicio ?? DateTime.Now).ToString("yyyy-MM-dd"))</td>
+                                    <td class="align-middle text-nowrap">@((c.FechaInicio ?? DateTime.Now).ToString("HH:mm"))</td>
+                                    <td class="align-middle">@c.EspecialidadText / @c.EmpleadoText</td>
+                                    <td class="align-middle">
+                                        <div class="d-flex flex-wrap" style="gap:6px;">
+                                            @if (c.CitasServicios != null && c.CitasServicios.Count() > 0)
+                                            {
+                                                foreach (var s in c.CitasServicios)
+                                                {
+                                                    <span class="badge badge-primary">@s.Servicio.NombreServicio</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted"><i>No hay servicios registrados</i></span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td class="align-middle">@cliente</td>
+                                    <td class="align-middle text-nowrap">@telefono</td>
+                                    <td class="align-middle text-nowrap">@c.EstadoCita</td>
+                                    <td class="align-middle text-nowrap">@c.CitaTipoAtencion</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        }
+        else
+        {
+            @if (esDiaUnico)
+            {
+                // ================= VISTA DÍA ÚNICO =================
+                <div class="d-flex align-items-center mb-3">
+                    <h6 class="text-uppercase text-muted font-weight-bold m-0">
+                        <i class="fas @(esHospitalizacion ? "fa-hospital" : "fa-calendar-day") mr-2"></i>
+                        @(esHospitalizacion ? "Hospitalizaciones del día:" : "Citas del día:")
+                        <span class="text-primary">@Model.Fecha</span>
+                    </h6>
+                </div>
+
+                <div class="border rounded bg-white shadow-sm" style="max-height:520px; overflow-y:auto;">
+                    <table class="table table-sm table-hover table-striped mb-0 table-bordered"
+                           style="min-width:1400px; font-size:12px;">
+                        <thead class="bg-light" style="position:sticky; top:0; z-index:5;">
+                            <tr>
+                                <th class="text-uppercase small font-weight-bold text-nowrap">Fecha</th>
+                                <th class="text-uppercase small font-weight-bold text-nowrap">Hora</th>
+                                <th class="text-uppercase small font-weight-bold">Especialidad / Doctor</th>
+                                <th class="text-uppercase small font-weight-bold">Servicios</th>
+                                <th class="text-uppercase small font-weight-bold">Paciente</th>
+                                <th class="text-uppercase small font-weight-bold text-nowrap">Telefono</th>
+                                <th class="text-uppercase small font-weight-bold text-nowrap">Asistencia</th>
+                                <th class="text-uppercase small font-weight-bold">Tipo de atencion</th>
+                                <th class="text-uppercase small font-weight-bold">Agendado por</th>
+                                <th class="text-uppercase small font-weight-bold text-nowrap">Menor de edad</th>
+                                @if(!esHospitalizacion){
+                                    <th class="text-uppercase small font-weight-bold text-nowrap">Turno</th>
+                                }
+                                <th class="text-uppercase small font-weight-bold text-nowrap text-center"
+                                    style="min-width:180px;">@(esHospitalizacion ? "Hospitalización / Acciones" : "Cita / Acciones")</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                DateTime NormalizarFechaCita(DateTime dt) => dt.AddHours(6);
+                                DateTime CalcularSlot(DateTime dt)
+                                {
+                                    var baseHour = new DateTime(dt.Year, dt.Month, dt.Day, dt.Hour, 0, 0);
+                                    var m = dt.Minute;
+                                    if (m <= 15) return baseHour;
+                                    if (m <= 50) return baseHour.AddMinutes(30);
+                                    return baseHour.AddHours(1);
+                                }
+
+                                var citasPorSlot = new Dictionary<string, List<Database.Shared.Models.Citas>>(StringComparer.Ordinal);
+                                var horaRealPorCita = new Dictionary<int, string>();
+                                var fechaHoraRealPorCita = new Dictionary<int, string>();
+
+                                foreach (var c in Model.Citas ?? new List<Database.Shared.Models.Citas>())
+                                {
+                                    var inicio = c.FechaInicio ?? DateTime.Now;
+                                    var inicioNorm = NormalizarFechaCita(inicio);
+
+                                    if (inicioNorm.ToString("yyyy-MM-dd") != Model.Fecha) continue;
+
+                                    var slotDt = CalcularSlot(inicioNorm);
+                                    var slotKey = slotDt.ToString("HH:mm");
+
+                                    if (!citasPorSlot.TryGetValue(slotKey, out var lista))
+                                    {
+                                        lista = new List<Database.Shared.Models.Citas>();
+                                        citasPorSlot[slotKey] = lista;
+                                    }
+                                    lista.Add(c);
+                                    horaRealPorCita[c.Id] = inicioNorm.ToString("HH:mm");
+                                    fechaHoraRealPorCita[c.Id] = inicioNorm.ToString("yyyy-MM-dd HH:mm");
+                                }
+
+                                foreach (var kv in citasPorSlot)
+                                {
+                                    kv.Value.Sort((a, b) =>
+                                    {
+                                        var ha = horaRealPorCita.TryGetValue(a.Id, out var hra) ? hra : "00:00";
+                                        var hb = horaRealPorCita.TryGetValue(b.Id, out var hrb) ? hrb : "00:00";
+                                        var cmp = string.CompareOrdinal(ha, hb);
+                                        if (cmp != 0) return cmp;
+                                        return a.Id.CompareTo(b.Id);
+                                    });
+                                }
+                            }
+
+                            @foreach (var item in Model.Horas)
+                            {
+                                var fechaYHoraSlot = $"{Model.Fecha} {item}";
+                                if (citasPorSlot.TryGetValue(item, out var citasDelSlot) && citasDelSlot != null && citasDelSlot.Count > 0)
+                                {
+                                    foreach (var cita in citasDelSlot)
+                                    {
+                                        var cliente      = cita.Paciente == null ? "" : cita.Paciente.Nombre;
+                                        var telefono     = cita.Paciente == null ? "" : cita.Paciente.Telefono;
+                                        var horaReal     = horaRealPorCita.TryGetValue(cita.Id, out var hr)  ? hr  : item;
+                                        var fechaHoraReal = fechaHoraRealPorCita.TryGetValue(cita.Id, out var fhr) ? fhr : fechaYHoraSlot;
+
+                                        var background = "";
+                                        var color = "";
+                                        @if (cita.EspecialidadText == "Medicina general")          { background = "#2fb9e7"; color = "black"; }
+                                        else if (cita.EspecialidadText == "Medicina estética")      { background = "#A02B4E"; color = "white"; }
+                                        else if (cita.EspecialidadText == "Ginecología y Obstetricia") { background = "#e660c3"; color = "white"; }
+                                        else if (cita.EspecialidadText == "Pediatría")              { background = "#ffa500"; color = "black"; }
+                                        else if (cita.EspecialidadText == "Cirugía")                { background = "#808080"; color = "white"; }
+                                        else if (cita.EspecialidadText == "Traumatología")          { background = "#000000"; color = "white"; }
+                                        else if (cita.EspecialidadText == "Cardiología")            { background = "red";     color = "white"; }
+                                        else if (cita.EspecialidadText == "Medicina interna")       { background = "#8B4513"; color = "white"; }
+                                        else if (cita.EspecialidadText == "Laboratorio clínico")    { background = "#008000"; color = "white"; }
+
+                                        string backgroundAsistencia = "";
+                                        string colorAsistencia = "";
+                                        if (cita.EstadoCita == "No asistida")       { backgroundAsistencia = "red";   colorAsistencia = "white"; }
+                                        else if (cita.EstadoCita == "asistida")     { backgroundAsistencia = "green"; colorAsistencia = "white"; }
+                                        else                                         { backgroundAsistencia = "transparent"; colorAsistencia = "black"; }
+
+                                        bool bloqueado = cita.Bloqueada == null ? false : (bool)cita.Bloqueada;
+
+                                        if (bloqueado)
+                                        {
+                                            <tr class="bg-light">
+                                                <td class="align-middle text-nowrap">@Model.Fecha</td>
+                                                <td class="align-middle text-nowrap">
+                                                    <div class="d-flex flex-column">
+                                                        <span>@item</span>
+                                                        @if (!string.Equals(horaReal, item, StringComparison.Ordinal))
+                                                        {
+                                                            <small class="text-muted font-weight-bold">Real: @horaReal</small>
+                                                        }
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle" colspan="9">
+                                                    <div class="text-center py-2">
+                                                        <div class="font-weight-bold text-muted text-uppercase">---------- Bloqueada ----------</div>
+                                                        <div class="font-weight-bold">Motivo: @cita.Motivo</div>
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle text-center text-nowrap">
+                                                    <a class="btn btn-warning btn-sm" asp-controller="Cita" asp-action="DesbloquearFecha"
+                                                       asp-route-citaId="@cita.Id" data-toggle="tooltip" data-placement="top"
+                                                       title="Desbloquear hora">
+                                                        <i class="fas fa-lock-open"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                        else
+                                        {
+                                            <tr>
+                                                <td class="align-middle text-nowrap">@Model.Fecha</td>
+                                                <td class="align-middle text-nowrap">
+                                                    <div class="d-flex flex-column">
+                                                        <span>@item</span>
+                                                        @if (!string.Equals(horaReal, item, StringComparison.Ordinal))
+                                                        {
+                                                            <small class="text-muted font-weight-bold">Real: @horaReal</small>
+                                                        }
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle">
+                                                    <div class="d-flex flex-column">
+                                                        <div class="d-flex flex-wrap mb-1" style="gap:6px;">
+                                                            <span class="badge" style="background:@background; color:@color">
+                                                                @cita.EspecialidadText
+                                                            </span>
+                                                            @if (cita.Reconsulta)
+                                                            {
+                                                                <span class="badge" style="background:@background; color:@color">Reconsulta</span>
+                                                            }
+                                                        </div>
+                                                        <span class="badge"
+                                                              style="padding:10px 12px; border-radius:6px; background-color:@(cita.Empleado != null ? cita.Empleado.ColorHexadecimalFondo : "#FFFFFF"); color:@(cita.Empleado != null ? cita.Empleado.ColorHexadecimalTexto : "#000000")">
+                                                            @cita.EmpleadoText
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle">
+                                                    <div class="d-flex flex-wrap" style="gap:6px;">
+                                                        @if (cita.CitasServicios != null && cita.CitasServicios.Count() > 0)
+                                                        {
+                                                            foreach (var servicio in cita.CitasServicios)
+                                                            {
+                                                                <span class="badge badge-primary">@servicio.Servicio.NombreServicio</span>
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted"><i>No hay servicios registrados</i></span>
+                                                        }
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle">
+                                                    <div class="d-flex flex-column">
+                                                        <span class="font-weight-bold text-truncate" style="max-width:220px;" title="@cliente">@cliente</span>
+                                                        <span class="badge badge-success align-self-start mt-1">Encargado: @cita.NombreEncargado</span>
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle text-nowrap">@telefono</td>
+                                                <td class="align-middle text-center text-nowrap"
+                                                    style="background:@backgroundAsistencia; color:@colorAsistencia;">
+                                                    <span class="font-weight-bold">@cita.EstadoCita</span>
+                                                </td>
+
+                                                @{
+                                                    var backgroundTipoAtencion = "white";
+                                                    switch (cita.CitaTipoAtencion)
+                                                    {
+                                                        case "PRIVADO": backgroundTipoAtencion = "#c962d9"; break;
+                                                        case "IGSS":    backgroundTipoAtencion = "lightcoral"; break;
+                                                        case "SEGURO":  backgroundTipoAtencion = "lightblue"; break;
+                                                        default:        backgroundTipoAtencion = "white"; break;
+                                                    }
+                                                }
+
+                                                <td class="align-middle" style="background-color:@backgroundTipoAtencion">
+                                                    <div class="d-flex flex-column">
+                                                        <span class="badge badge-primary align-self-start">@cita.CitaTipoAtencion</span>
+                                                        @switch (cita.CitaTipoAtencion)
+                                                        {
+                                                            case "IGSS":
+                                                                <small class="text-dark mt-1"><b>Numero de IGSS:</b><br />@cita.Paciente.IgssNumeroAfiliacion</small>
+                                                                break;
+                                                            case "SEGURO":
+                                                                <small class="text-dark mt-1"><b>Cod. seguro:</b><br />@cita.CodigoDeCita<br /><b>Autorizacion:</b><br />@cita.CodigoAutorizacion</small>
+                                                                break;
+                                                        }
+                                                    </div>
+                                                </td>
+                                                <td class="align-middle text-truncate" style="max-width:180px;" title="@cita.PersonText">@cita.PersonText</td>
+                                                <td class="align-middle text-center text-nowrap">@cita.EsMenorDeEdadText</td>
+                                                @if(!esHospitalizacion){
+                                                    <td class="align-middle text-center text-nowrap" style="background:#008000; color:#fff;">
+                                                        <span class="font-weight-bold">@cita.NumeroTurno</span>
+                                                    </td>
+                                                }
+
+                                                <!-- SECCIÓN 1: ACCIONES CON CITA (DÍA ÚNICO) -->
+                                                <td class="align-middle text-nowrap text-center">
+                                                    @* @if (!deshabilitarAcciones)
+                                                    { *@
+                                                        <div class="btn-group btn-group-sm" role="group" aria-label="Acciones"
+                                                             style="gap:6px; flex-wrap:wrap; justify-content:center;">
+                                                            @if (cita.Finalizada != true && cita.EstadoCita != "asistida")
+                                                            {
+                                                                <a class="btn btn-outline-secondary"
+                                                                   asp-controller="Cita" asp-action="NoAsistio"
+                                                                   asp-route-citaId="@cita.Id" asp-route-fecha="@fechaHoraReal"
+                                                                   data-toggle="tooltip" data-placement="top" title="No asistió">
+                                                                    <i class="fas fa-user-times"></i>
+                                                                </a>
+
+                                                                @if (!esHospitalizacion)
+                                                                {
+                                                                    <a class="btn btn-outline-success"
+                                                                       asp-controller="Consultas" asp-action="IniciarYPagarConsulta"
+                                                                       asp-route-citaId="@cita.Id"
+                                                                       data-toggle="tooltip" data-placement="top" title="Iniciar y pagar consulta">
+                                                                        <i class="fas fa-cash-register"></i>
+                                                                    </a>
+                                                                    <a class="btn btn-outline-success"
+                                                                       asp-controller="Consultas" asp-action="IniciarConsulta"
+                                                                       asp-route-citaId="@cita.Id"
+                                                                       data-toggle="tooltip" data-placement="top" title="Iniciar consulta">
+                                                                        <i class="fas fa-play"></i>
+                                                                    </a>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <a class="btn btn-outline-danger"
+                                                                       asp-controller="Hospitalizacion" asp-action="Hospitalizar"
+                                                                       asp-route-citaId="@cita.Id"
+                                                                       data-toggle="tooltip" data-placement="top" title="Iniciar hospitalización">
+                                                                        <i class="fas fa-hospital-user"></i>
+                                                                    </a>
+                                                                }
+
+                                                                <a class="btn btn-outline-warning"
+                                                                   href="@Url.Action("EditarCita", "Cita", new { id = cita.Id })"
+                                                                   data-toggle="tooltip" data-placement="top" title="Modificar">
+                                                                    <i class="fas fa-edit"></i>
+                                                                </a>
+                                                                <a class="btn btn-outline-warning"
+                                                                   href="@Url.Action("CancelarCita", "Cita", new { id = cita.Id })"
+                                                                   data-toggle="tooltip" data-placement="top" title="Cancelar">
+                                                                    <i class="fas fa-ban"></i>
+                                                                </a>
+
+                                                                @if (!esHospitalizacion)
+                                                                {
+                                                                    <a class="btn btn-outline-warning"
+                                                                       asp-controller="Cita" asp-action="AgendarCita"
+                                                                       asp-route-fecha="@fechaHoraReal"
+                                                                       data-toggle="tooltip" data-placement="top" title="Clonar hora">
+                                                                        <i class="fas fa-clone"></i>
+                                                                    </a>
+                                                                }
+                                                            }
+                                                            @if (cita.EstadoCita == "No asistida")
+                                                            {
+                                                                <a class="btn btn-outline-secondary"
+                                                                   asp-controller="Cita" asp-action="ReprogramarCita"
+                                                                   asp-route-citaId="@cita.Id" asp-route-fecha="@fechaHoraReal"
+                                                                   data-toggle="tooltip" data-placement="top" title="Reprogramar">
+                                                                    <i class="fas fa-redo"></i>
+                                                                </a>
+                                                            }
+                                                        </div>
+                                                    @* }
+                                                    else
+                                                    {
+                                                        <span class="badge badge-secondary p-2">Sin permisos</span>
+                                                    } *@
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td class="align-middle text-nowrap">@Model.Fecha</td>
+                                        <td class="align-middle text-nowrap">@item</td>
+                                        <td class="text-muted"></td>
+                                        <td class="text-muted"></td>
+                                        <td class="text-muted"></td>
+                                        <td class="text-muted"></td>
+                                        <td class="text-muted"></td>
+                                        <td class="text-muted"></td>
+                                        <td class="text-muted"></td>
+                                        <td class="text-muted"></td>
+                                        @if(!esHospitalizacion){
+                                            <td class="text-muted"></td>
+                                        }
+                                        <!-- SECCIÓN 2: ACCIONES CELDA VACÍA (DÍA ÚNICO) -->
+                                        <td class="align-middle text-nowrap text-center">
+                                            @* @if (!usuarioJose && !deshabilitarAcciones)
+                                            { *@
+                                                <div class="btn-group btn-group-sm" role="group"
+                                                     style="gap:6px; flex-wrap:wrap; justify-content:center;">
+                                                    @if (!esHospitalizacion)
+                                                    {
+                                                        <a class="btn btn-warning"
+                                                           asp-controller="Cita" asp-action="AgendarCita"
+                                                           asp-route-fecha="@fechaYHoraSlot"
+                                                           data-toggle="tooltip" data-placement="top" title="Agendar consulta">
+                                                            <i class="fas fa-calendar-plus"></i>
+                                                        </a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <a class="btn btn-danger text-white"
+                                                           asp-controller="Cita" asp-action="AgendarCitaHospi"
+                                                           asp-route-fecha="@fechaYHoraSlot"
+                                                           asp-route-modo="hospitalizacion"
+                                                           data-toggle="tooltip" data-placement="top" title="Agendar hospitalización">
+                                                            <i class="fas fa-hospital"></i>
+                                                        </a>
+                                                    }
+                                                    <a class="btn btn-warning" style="color:black;"
+                                                       onclick="bloquearDiaHora('@fechaYHoraSlot')"
+                                                       data-toggle="tooltip" data-placement="top" title="Bloquear hora">
+                                                        <i class="fas fa-lock"></i>
+                                                    </a>
+                                                </div>
+                                            @* }
+                                            else if (!usuarioJose && deshabilitarAcciones)
+                                            {
+                                                <span class="badge badge-secondary p-2">No disponible</span>
+                                            } *@
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                @* Tabla adicional de búsqueda global del paciente (solo en día único) *@
+                @if (tieneFiltroPaciente)
+                {
+                    <hr class="mt-4 mb-4" />
+                    <h6 class="text-uppercase text-muted font-weight-bold mb-3">
+                        <i class="fas fa-search mr-2"></i>Citas globales del paciente:
+                        <span class="text-primary">@pacienteFiltro</span>
+                    </h6>
+                    <p class="small text-muted mb-2">Resultados según filtros seleccionados (incluye rango de fecha si lo definiste).</p>
+
+                    <div class="border rounded bg-white shadow-sm" style="max-height:520px; overflow-y:auto;">
+                        <table class="table table-sm table-hover table-striped mb-0 table-bordered"
+                               style="min-width:1200px; font-size:12px;">
+                            <thead class="bg-light" style="position:sticky; top:0; z-index:5;">
+                                <tr>
+                                    <th class="text-uppercase small font-weight-bold text-nowrap">Fecha</th>
+                                    <th class="text-uppercase small font-weight-bold text-nowrap">Hora</th>
+                                    <th class="text-uppercase small font-weight-bold">Especialidad / Doctor</th>
+                                    <th class="text-uppercase small font-weight-bold">Servicios</th>
+                                    <th class="text-uppercase small font-weight-bold">Paciente</th>
+                                    <th class="text-uppercase small font-weight-bold text-nowrap">Telefono</th>
+                                    <th class="text-uppercase small font-weight-bold text-nowrap">Asistencia</th>
+                                    <th class="text-uppercase small font-weight-bold">Tipo de atencion</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var c in citas.OrderBy(x => x.FechaInicio))
+                                {
+                                    var cliente  = c.Paciente == null ? "" : c.Paciente.Nombre;
+                                    var telefono = c.Paciente == null ? "" : c.Paciente.Telefono;
+                                    <tr>
+                                        <td class="align-middle text-nowrap">@((c.FechaInicio ?? DateTime.Now).ToString("yyyy-MM-dd"))</td>
+                                        <td class="align-middle text-nowrap">@((c.FechaInicio ?? DateTime.Now).ToString("HH:mm"))</td>
+                                        <td class="align-middle">@c.EspecialidadText / @c.EmpleadoText</td>
+                                        <td class="align-middle">
+                                            <div class="d-flex flex-wrap" style="gap:6px;">
+                                                @if (c.CitasServicios != null && c.CitasServicios.Count() > 0)
+                                                {
+                                                    foreach (var s in c.CitasServicios)
+                                                    {
+                                                        <span class="badge badge-primary">@s.Servicio.NombreServicio</span>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted"><i>No hay servicios registrados</i></span>
+                                                }
+                                            </div>
+                                        </td>
+                                        <td class="align-middle">@cliente</td>
+                                        <td class="align-middle text-nowrap">@telefono</td>
+                                        <td class="align-middle text-nowrap">@c.EstadoCita</td>
+                                        <td class="align-middle text-nowrap">@c.CitaTipoAtencion</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            }
+            else
+            {
+                // ================= VISTA DE RANGO =================
+                <div class="d-flex align-items-center mb-3">
+                    <h6 class="text-uppercase text-muted font-weight-bold m-0">
+                        <i class="fas fa-calendar-week mr-2"></i>
+                        Citas en el rango:
+                        @if (!string.IsNullOrEmpty(currentFilter) && !string.IsNullOrEmpty(currentFilter2))
+                        {
+                            <span class="text-primary">@currentFilter al @currentFilter2</span>
+                        }
+                        else if (!string.IsNullOrEmpty(currentFilter))
+                        {
+                            <span class="text-primary">desde @currentFilter</span>
+                        }
+                        else if (!string.IsNullOrEmpty(currentFilter2))
+                        {
+                            <span class="text-primary">hasta @currentFilter2</span>
+                        }
+                        else
+                        {
+                            <span class="text-primary">Todas las fechas</span>
+                        }
+                    </h6>
+                </div>
+
+                <div class="border rounded bg-white shadow-sm" style="max-height:520px; overflow-y:auto;">
+                    <table class="table table-sm table-hover table-striped mb-0 table-bordered"
+                           style="min-width:1400px; font-size:12px;">
+                        <thead class="bg-light" style="position:sticky; top:0; z-index:5;">
+                            <tr>
+                                <th class="text-uppercase small font-weight-bold text-nowrap">Fecha</th>
+                                <th class="text-uppercase small font-weight-bold text-nowrap">Hora</th>
+                                <th class="text-uppercase small font-weight-bold">Especialidad / Doctor</th>
+                                <th class="text-uppercase small font-weight-bold">Servicios</th>
+                                <th class="text-uppercase small font-weight-bold">Paciente</th>
+                                <th class="text-uppercase small font-weight-bold text-nowrap">Teléfono</th>
+                                <th class="text-uppercase small font-weight-bold text-nowrap">Asistencia</th>
+                                <th class="text-uppercase small font-weight-bold">Tipo de atención</th>
+                                <th class="text-uppercase small font-weight-bold">Agendado por</th>
+                                <th class="text-uppercase small font-weight-bold text-nowrap">Menor de edad</th>
+                                @if(!esHospitalizacion){
+                                    <th class="text-uppercase small font-weight-bold text-nowrap">Turno</th>
+                                }
+                                <th class="text-uppercase small font-weight-bold text-nowrap text-center"
+                                    style="min-width:180px;">@(esHospitalizacion ? "Hospitalización / Acciones" : "Cita / Acciones")</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var c in citas.OrderBy(x => x.FechaInicio))
+                            {
+                                var cliente      = c.Paciente?.Nombre ?? "";
+                                var telefono     = c.Paciente?.Telefono ?? "";
+                                var horaReal     = (c.FechaInicio ?? DateTime.Now).ToString("HH:mm");
+                                var fechaHoraReal = (c.FechaInicio ?? DateTime.Now).ToString("yyyy-MM-dd HH:mm");
+
+                                // Estilos especialidad
+                                var background = "";
+                                var color = "";
+                                @if (c.EspecialidadText == "Medicina general")          { background = "#2fb9e7"; color = "black"; }
+                                else if (c.EspecialidadText == "Medicina estética")      { background = "#A02B4E"; color = "white"; }
+                                else if (c.EspecialidadText == "Ginecología y Obstetricia") { background = "#e660c3"; color = "white"; }
+                                else if (c.EspecialidadText == "Pediatría")              { background = "#ffa500"; color = "black"; }
+                                else if (c.EspecialidadText == "Cirugía")                { background = "#808080"; color = "white"; }
+                                else if (c.EspecialidadText == "Traumatología")          { background = "#000000"; color = "white"; }
+                                else if (c.EspecialidadText == "Cardiología")            { background = "red";     color = "white"; }
+                                else if (c.EspecialidadText == "Medicina interna")       { background = "#8B4513"; color = "white"; }
+                                else if (c.EspecialidadText == "Laboratorio clínico")    { background = "#008000"; color = "white"; }
+
+                                var backgroundAsistencia = c.EstadoCita == "No asistida" ? "red" :
+                                                           (c.EstadoCita == "asistida" ? "green" : "transparent");
+                                var colorAsistencia = c.EstadoCita == "No asistida" || c.EstadoCita == "asistida" ? "white" : "black";
+
+                                var backgroundTipoAtencion = c.CitaTipoAtencion switch
+                                {
+                                    "PRIVADO" => "#c962d9",
+                                    "IGSS"    => "lightcoral",
+                                    "SEGURO"  => "lightblue",
+                                    _         => "white"
+                                };
+
+                                <tr>
+                                    <td class="align-middle text-nowrap">@((c.FechaInicio ?? DateTime.Now).ToString("yyyy-MM-dd"))</td>
+                                    <td class="align-middle text-nowrap">@horaReal</td>
+                                    <td class="align-middle">
+                                        <div class="d-flex flex-column">
+                                            <div class="d-flex flex-wrap mb-1" style="gap:6px;">
+                                                <span class="badge" style="background:@background; color:@color">@c.EspecialidadText</span>
+                                                @if (c.Reconsulta) { <span class="badge" style="background:@background; color:@color">Reconsulta</span> }
+                                            </div>
+                                            <span class="badge" style="padding:10px 12px; border-radius:6px; background-color:@(c.Empleado != null ? c.Empleado.ColorHexadecimalFondo : "#FFFFFF"); color:@(c.Empleado != null ? c.Empleado.ColorHexadecimalTexto : "#000000")">
+                                                @c.EmpleadoText
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td class="align-middle">
+                                        <div class="d-flex flex-wrap" style="gap:6px;">
+                                            @if (c.CitasServicios != null && c.CitasServicios.Any())
+                                            {
+                                                foreach (var s in c.CitasServicios)
+                                                {
+                                                    <span class="badge badge-primary">@s.Servicio.NombreServicio</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted"><i>No hay servicios registrados</i></span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td class="align-middle">
+                                        <div class="d-flex flex-column">
+                                            <span class="font-weight-bold text-truncate" style="max-width:220px;" title="@cliente">@cliente</span>
+                                            <span class="badge badge-success align-self-start mt-1">Encargado: @c.NombreEncargado</span>
+                                        </div>
+                                    </td>
+                                    <td class="align-middle text-nowrap">@telefono</td>
+                                    <td class="align-middle text-center text-nowrap" style="background:@backgroundAsistencia; color:@colorAsistencia;">
+                                        <span class="font-weight-bold">@c.EstadoCita</span>
+                                    </td>
+                                    <td class="align-middle" style="background-color:@backgroundTipoAtencion">
+                                        <div class="d-flex flex-column">
+                                            <span class="badge badge-primary align-self-start">@c.CitaTipoAtencion</span>
+                                            @switch (c.CitaTipoAtencion)
+                                            {
+                                                case "IGSS":
+                                                    <small class="text-dark mt-1"><b>Numero de IGSS:</b><br />@c.Paciente?.IgssNumeroAfiliacion</small>
+                                                    break;
+                                                case "SEGURO":
+                                                    <small class="text-dark mt-1"><b>Cod. seguro:</b><br />@c.CodigoDeCita<br /><b>Autorizacion:</b><br />@c.CodigoAutorizacion</small>
+                                                    break;
+                                            }
+                                        </div>
+                                    </td>
+                                    <td class="align-middle text-truncate" style="max-width:180px;" title="@c.PersonText">@c.PersonText</td>
+                                    <td class="align-middle text-center text-nowrap">@c.EsMenorDeEdadText</td>
+                                    @if(!esHospitalizacion){
+                                        <td class="align-middle text-center text-nowrap" style="background:#008000; color:#fff;">
+                                            <span class="font-weight-bold">@c.NumeroTurno</span>
+                                        </td>
+                                    }
+                                    <!-- SECCIÓN 3: ACCIONES VISTA DE RANGO -->
+                                    <td class="align-middle text-nowrap text-center">
+                                        @* @if (!deshabilitarAcciones)
+                                        { *@
+                                            <div class="btn-group btn-group-sm" role="group" aria-label="Acciones"
+                                                 style="gap:6px; flex-wrap:wrap; justify-content:center;">
+                                                @if (c.Finalizada != true && c.EstadoCita != "asistida")
+                                                {
+                                                    <a class="btn btn-outline-secondary"
+                                                       asp-controller="Cita" asp-action="NoAsistio"
+                                                       asp-route-citaId="@c.Id" asp-route-fecha="@fechaHoraReal"
+                                                       data-toggle="tooltip" data-placement="top" title="No asistió">
+                                                        <i class="fas fa-user-times"></i>
+                                                    </a>
+
+                                                    @if (!esHospitalizacion)
+                                                    {
+                                                        <a class="btn btn-outline-success"
+                                                           asp-controller="Consultas" asp-action="IniciarYPagarConsulta"
+                                                           asp-route-citaId="@c.Id"
+                                                           data-toggle="tooltip" data-placement="top" title="Iniciar y pagar consulta">
+                                                            <i class="fas fa-cash-register"></i>
+                                                        </a>
+                                                        <a class="btn btn-outline-success"
+                                                           asp-controller="Consultas" asp-action="IniciarConsulta"
+                                                           asp-route-citaId="@c.Id"
+                                                           data-toggle="tooltip" data-placement="top" title="Iniciar consulta">
+                                                            <i class="fas fa-play"></i>
+                                                        </a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <a class="btn btn-outline-danger"
+                                                           asp-controller="Hospitalizacion" asp-action="Hospitalizar"
+                                                           asp-route-citaId="@c.Id"
+                                                           data-toggle="tooltip" data-placement="top" title="Iniciar hospitalización">
+                                                            <i class="fas fa-hospital-user"></i>
+                                                        </a>
+                                                    }
+
+                                                    <a class="btn btn-outline-warning"
+                                                       href="@Url.Action("EditarCita", "Cita", new { id = c.Id })"
+                                                       data-toggle="tooltip" data-placement="top" title="Modificar">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <a class="btn btn-outline-warning"
+                                                       href="@Url.Action("CancelarCita", "Cita", new { id = c.Id })"
+                                                       data-toggle="tooltip" data-placement="top" title="Cancelar">
+                                                        <i class="fas fa-ban"></i>
+                                                    </a>
+
+                                                    @if (!esHospitalizacion)
+                                                    {
+                                                        <a class="btn btn-outline-warning"
+                                                           asp-controller="Cita" asp-action="AgendarCita"
+                                                           asp-route-fecha="@fechaHoraReal"
+                                                           data-toggle="tooltip" data-placement="top" title="Clonar hora">
+                                                            <i class="fas fa-clone"></i>
+                                                        </a>
+                                                    }
+                                                }
+                                                @if (c.EstadoCita == "No asistida")
+                                                {
+                                                    <a class="btn btn-outline-secondary"
+                                                       asp-controller="Cita" asp-action="ReprogramarCita"
+                                                       asp-route-citaId="@c.Id" asp-route-fecha="@fechaHoraReal"
+                                                       data-toggle="tooltip" data-placement="top" title="Reprogramar">
+                                                        <i class="fas fa-redo"></i>
+                                                    </a>
+                                                }
+                                            </div>
+                                        @* }
+                                        else
+                                        {
+                                            <span class="badge badge-secondary p-2">Sin permisos</span>
+                                        } *@
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        }
+
+    </div>@* fin card-body *@
+</div>@* fin card *@
+
+@section Modales {
+    <form asp-controller="Cita" asp-action="BloquearFecha" method="post">
+        <div class="modal fade" id="modalMotivoBloqueo" tabindex="-1" role="dialog"
+             aria-labelledby="modalMotivoBloqueoTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable" role="document">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title font-weight-bold text-uppercase" id="modalMotivoBloqueoTitle">Bloqueo de Fecha</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-row">
+                            <div class="col-12 mb-3">
+                                <label class="small font-weight-bold text-muted text-uppercase">Fecha</label>
+                                <div class="position-relative form-group">
+                                    <input type="text" class="form-control shadow-none" asp-for="Fecha" value="">
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label class="small font-weight-bold text-muted text-uppercase">Motivo</label>
+                                <div class="position-relative form-group">
+                                    <input type="text" class="form-control shadow-none" asp-for="Motivo"
+                                           placeholder="Especifique la razón...">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-sm btn-secondary font-weight-bold"
+                                data-dismiss="modal">Cerrar</button>
+                        <button type="submit" class="btn btn-sm btn-primary font-weight-bold">Guardar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+}
+
+<div id="mdl-observaciones-cita" style="display:none" title="Observaciones de la cita">
+    Contenido observaciones
+</div>
+
+@section Scripts {
+    <script src="~/ViewModelKo/CitaCalendarioLinealVM.js"></script>
+
+    <script>
+        function toggleDetalles(id) {
+            const detalle = document.getElementById('detalle-' + id);
+            detalle.style.display = (detalle.style.display === 'none') ? 'block' : 'none';
+        }
+
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip();
+        });
+
+        // Auto-recarga: no recargar si el usuario está escribiendo
+        setTimeout(function () {
+            const active = document.activeElement;
+            const isTypingControl =
+                active &&
+                (active.tagName === "INPUT" ||
+                 active.tagName === "SELECT" ||
+                 active.tagName === "TEXTAREA") &&
+                !active.disabled &&
+                !active.readOnly;
+
+            if (!isTypingControl) {
+                window.location.reload();
+            }
+        }, 30000);
+
+
+
+        $('#btnLimpiarFiltros').click(function() {
+            $('#fechacita').val('');
+            $('#fechacita2').val('');
+            $('#EmpleadoId').val('').trigger('change');
+            $('#EspecialidadId').val('').trigger('change');
+            $('#ServicioId').val('').trigger('change');
+            $('#pacienteNombre').val('');
+            $('#HabitacionId').val('').trigger('change'); 
+            var modo = $('#modoCalendario').val();
+            window.location.href = '/Cita/CalendarioLineal?modo=' + encodeURIComponent(modo);
+        });
+
+
+        $(document).ready(function() {
+            $('#HabitacionId').on('change', function() {
+                var habitacionId = $(this).val();
+                var modo = $('#modoCalendario').val();
+
+                var buscar = $('#fechacita').val();
+                var buscar2 = $('#fechacita2').val();
+                var empleadoId = $('#EmpleadoId').val();
+                var especialidadId = $('#EspecialidadId').val();
+                var servicioId = $('#ServicioId').val();
+                var pacienteNombre = $('#pacienteNombre').val();
+
+                var url = '/Cita/CalendarioLineal?modo=' + encodeURIComponent(modo);
+                if (buscar) url += '&buscar=' + encodeURIComponent(buscar);
+                if (buscar2) url += '&buscar2=' + encodeURIComponent(buscar2);
+                if (empleadoId) url += '&empleadoId=' + encodeURIComponent(empleadoId);
+                if (especialidadId) url += '&especialidadId=' + encodeURIComponent(especialidadId);
+                if (servicioId) url += '&servicioId=' + encodeURIComponent(servicioId);
+                if (pacienteNombre) url += '&pacienteNombre=' + encodeURIComponent(pacienteNombre);
+                if (habitacionId) url += '&habitacionId=' + encodeURIComponent(habitacionId);
+
+                window.location.href = url;
+            });
+        });
+    </script>
+
+
+    <script>
+        @* (function() {
+    var urlParams = new URLSearchParams(window.location.search);
+    if (!urlParams.has('buscar')) {
+        var today = new Date().toISOString().split('T')[0];
+        var modo = urlParams.get('modo') || '@modoActual';
+        window.location.href = '/Cita/CalendarioLineal?buscar=' + today + '&buscar2=' + today + '&modo=' + modo;
+    }
+})(); *@
+(function() {
+    var urlParams = new URLSearchParams(window.location.search);
+    if (!urlParams.has('buscar')) {
+        
+        // Magia para forzar SIEMPRE la fecha en horario de Guatemala, 
+        // sin importar la zona horaria de la PC (Venezuela) o del Servidor (AWS)
+        var opciones = { timeZone: 'America/Guatemala', year: 'numeric', month: '2-digit', day: '2-digit' };
+        var partes = new Intl.DateTimeFormat('en-US', opciones).formatToParts(new Date());
+        
+        var anio = partes.find(p => p.type === 'year').value;
+        var mes = partes.find(p => p.type === 'month').value;
+        var dia = partes.find(p => p.type === 'day').value;
+        
+        var today = anio + '-' + mes + '-' + dia; // Resultado: YYYY-MM-DD
+        
+        var modo = urlParams.get('modo') || '@modoActual';
+        window.location.href = '/Cita/CalendarioLineal?buscar=' + today + '&buscar2=' + today + '&modo=' + modo;
+    }
+})();
+    </script>
+}
+
+@section css {
+    <link rel="stylesheet" href="~/css/citas-responsive.css" />
+}

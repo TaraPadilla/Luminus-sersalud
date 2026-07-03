@@ -1,0 +1,205 @@
+@{
+    var hospitalizacionId = Model.HospitalizacionId;
+}
+<script>
+    var hospitalizacionIdGlobal = '@hospitalizacionId';
+</script>
+
+<style>
+    .main-card { border-radius: 10px; }
+    .main-card .card-body { padding: 20px; }
+    .header-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .table-responsive { margin-top: 20px; }
+    #global-search { padding: 5px 10px; border: 1px solid #ccc; border-radius: 4px; margin-right: 10px; }
+</style>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link href="https://unpkg.com/tabulator-tables@5.4.4/dist/css/tabulator.min.css" rel="stylesheet">
+<script src="https://unpkg.com/tabulator-tables@5.4.4/dist/js/tabulator.min.js"></script>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="header-container">
+            <h6><b>Devolución de Medicamentos</b></h6>
+            <div>
+                <input id="global-search" type="text" placeholder="Buscar...">
+                <button class="btn btn-primary" onclick="cargarMedicamentosParaDevolucion()">
+                    Cargar Medicamentos Disponibles
+                </button>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <div id="tablaDevolucionMedicamentos"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var tabulatorTable = null;
+    var listaDevolucionesGlobal = []; 
+
+    async function cargarMedicamentosParaDevolucion() {
+        const tipoProductoMedicamento = 1;
+        showLoading();
+
+        try {
+            listaDevolucionesGlobal = await cargarDevolucionesParaHospitalizacion();
+
+            let response = await $.ajax({
+                url: "/Hospitalizacion/ConsultarProductosAplicacionHospitalizacion",
+                method: "POST",
+                dataType: "json",
+                data: {
+                    hospitalizacionId: hospitalizacionIdGlobal,
+                    tipoProductoId: tipoProductoMedicamento
+                }
+            });
+
+            hideLoading();
+
+            if (response.Exitoso) {
+                let medicamentos = (response.Resultado || []).filter(item => !item.Aplicado);
+                
+                if (medicamentos.length > 0) {
+                    renderizarTablaDevolucion(medicamentos);
+                } else {
+                    alert("No se encontraron medicamentos disponibles para devolución.");
+                    if(tabulatorTable) tabulatorTable.clearData();
+                }
+            } else {
+                mensajeEmergenteError(response.Mensaje);
+            }
+        } catch (error) {
+            hideLoading();
+            console.error("Error al obtener los datos:", error);
+        }
+    }
+
+    function renderizarTablaDevolucion(medicamentos) {
+        if (tabulatorTable) {
+            tabulatorTable.setData(medicamentos);
+        } else {
+            tabulatorTable = new Tabulator("#tablaDevolucionMedicamentos", {
+                data: medicamentos,
+                layout: "fitColumns",
+                pagination: "local",
+                paginationSize: 5,
+                columns: [
+                    {title: "ID", field: "Id", sorter: "string"},
+                    {title: "Nombre", field: "Nombre", sorter: "string"},
+                    {title: "Indicaciones", field: "Indicaciones", sorter: "string"},
+                    {title: "Cantidad", field: "Cantidad", sorter: "number"},
+                    {
+                        title: "Acciones",
+                        field: "Id",
+                        formatter: function(cell) {
+                            let hpaId = cell.getValue();
+                            let btnHtml = `<button class="btn btn-warning btn-sm">Devolver</button>`;
+                            
+                            let match = listaDevolucionesGlobal.find(d => d.hospitalizacionProductoAplicacionId === hpaId);
+                            
+                            if (match) {
+                                let colorEstado = "black";
+                                let disabledAttribute = "";
+
+                                if (match.estado === "Aprobada") { 
+                                    colorEstado = "green"; 
+                                    disabledAttribute = "disabled"; 
+                                } else if (match.estado === "En espera") { 
+                                    colorEstado = "blue"; 
+                                    disabledAttribute = "disabled"; 
+                                } else if (match.estado === "Rechazada") { 
+                                    colorEstado = "red";
+                                    disabledAttribute = "disabled"; 
+ 
+                                }
+
+                                return `<button class="btn btn-warning btn-sm" ${disabledAttribute}>Devolver</button>
+                                        <span style="margin-left: 5px;">
+                                            <small style="color: black;">Devolución</small> 
+                                            <b style="color: ${colorEstado};">${match.estado}</b>
+                                        </span>`;
+                            }
+                            return btnHtml;
+                        },
+                        cellClick: function(e, cell) {
+                            let rowData = cell.getRow().getData();
+                            let match = listaDevolucionesGlobal.find(d => d.hospitalizacionProductoAplicacionId === rowData.Id);
+                            if (!match || match.estado === "Rechazada") {
+                                devolverMedicamento(rowData);
+                            }
+                        }
+                    }
+                ],
+                locale: true,
+                langs: { "default": { "pagination": { "first": "Primero", "last": "Último", "prev": "Anterior", "next": "Siguiente" } } }
+            });
+        }
+    }
+
+    async function cargarDevolucionesParaHospitalizacion() {
+        try {
+            let response = await $.ajax({
+                url: "/DevolucionMedicamento/GetAllDevolucionesMedicamento",
+                method: "GET",
+                dataType: "json",
+                data: { hospitalizacionId: hospitalizacionIdGlobal }
+            });
+            return response || [];
+        } catch (error) {
+            console.error("Error al cargar devoluciones:", error);
+            return [];
+        }
+    }
+
+    function devolverMedicamento(rowData) {
+        if (confirm("¿Está seguro que desea devolver este medicamento?")) {
+            let devolucion = {
+                HospitalizacionId: Number(hospitalizacionIdGlobal),
+                ProductoId: parseInt(rowData.ProductoId),
+                HospitalizacionProductoAplicacionId: parseInt(rowData.Id),
+                NombreProducto: rowData.Nombre,
+                CantidadDevuelta: rowData.Cantidad,
+                MotivoDevolucion: "Devolución solicitada",
+                TipoProducto: "Medicamento"
+            };
+
+            $.ajax({
+                url: "/DevolucionMedicamento/Add",
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(devolucion),
+                success: function(response) {
+                    if (response.exitoso) {
+                        cargarMedicamentosParaDevolucion(); 
+                    } else {
+                        mensajeEmergenteError(response.mensaje);
+                    }
+                },
+                error: function() {
+                    mensajeEmergenteError("La unidad seleccionada ya tiene una solicitud de devolución.");
+                }
+            });
+        }
+    }
+
+    function showLoading() { console.log("Cargando..."); }
+    function hideLoading() { console.log("Carga completada."); }
+    function mensajeEmergenteError(mensaje) { alert("Error: " + mensaje); }
+
+    $(document).ready(function(){
+        $("#global-search").on("keyup", function(){
+            var keyword = $(this).val();
+            if(tabulatorTable){
+                tabulatorTable.setFilter(globalFilter, {keyword: keyword});
+            }
+        });
+    });
+
+    function globalFilter(data, filterParams) {
+        var keyword = filterParams.keyword.toLowerCase();
+        return (data.Nombre && data.Nombre.toLowerCase().includes(keyword)) ||
+               (data.Indicaciones && data.Indicaciones.toLowerCase().includes(keyword));
+    }
+</script>

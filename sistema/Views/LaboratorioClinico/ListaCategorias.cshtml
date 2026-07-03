@@ -1,0 +1,110 @@
+@using Database.Shared.Paginacion;
+@model PaginacionList<Database.Shared.Models.CategoriaLabClinico>
+
+@{
+    ViewData["Title"] = "Lista Categoria";
+    var todayDate = DateTime.Now;
+}
+
+
+@await Html.PartialAsync("_MensajeExito")
+
+
+<div class="col-md-12">
+    <a class="btn btn-danger btn-sm" asp-action="NuevaCategoria" asp-controller="LaboratorioClinico">
+        Nueva Categoria
+    </a>
+
+    @if (!(User.IsInRole("SecretariaCirugiaPlastica") || User.IsInRole("SecretariaAlergologia")))
+    {
+        <a class="btn btn-danger btn-sm" asp-action="CategoriasLabClinico" asp-controller="CrearPdf">
+            Generar Reporte PDF
+        </a>
+    }
+     
+</div>
+
+<br />
+
+<form asp-action="ListaCategorias" method="get">
+
+<br />
+    <div class="col-md-12">
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <input type="submit" value="Buscar" class="btn btn-success"></input>
+            </div>
+            <input type="text" name="buscar" value="@ViewData["CurrentFilter"]" class="form-control"
+                placeholder="Buscar por nombre...">
+        </div>
+    </div>
+</form>
+
+<br />
+
+<div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel">
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="mb-0 table table-hover ">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Estado</th>
+                            <th>Fecha Creacion</th>
+                            <th>Última modificación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            var estado = item.Activo == false ? "Inactivo" : "Activo";
+                            <tr>
+                                <td>@item.Nombre</td>
+                                <td>
+                                    @estado
+                                </td>
+                                <td>@item.FechaCreacion.ToString("dd/MM/yyyy")</td>
+                                <td>@item.UltimoUsuarioModificado</td>
+                                <td>
+                                    <a href="@Url.Action("DesactivarOActivarCategoriaLab","LaboratorioClinico", new {id = @item.Id})"
+                                        class="btn btn-warning btn-sm">
+                                        @(estado == "Activo" ? "Desactivar" : "Activar")
+                                    </a>
+                                    <a href="@Url.Action("ModificarCategoriaLab","LaboratorioClinico", new {id = @item.Id})"
+                                        class="btn btn-warning btn-sm">
+                                        Modificar
+                                    </a>
+                                    @* <a href="@Url.Action("EliminarCategoriaLab","LaboratorioClinico", new {id = @item.Id}, new{id = ""})"
+                                        class="btn btn-primary btn-sm">
+                                        Eliminar
+                                    </a> *@
+
+                                    <a asp-action="EliminarCategoria" asp-route-id="@item.Id" class = "btn btn-danger btn-sm"
+                                                    onclick="return confirm('¿Está seguro/a que desea eliminar este registro?');">Eliminar</a>
+                                </td>
+
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+}
+
+
+
+<a asp-action="ListaCategorias" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@(Model.PageIndex - 1)"
+    asp-route-currentFilter="@ViewData["CurrentFilter"]" class="btn btn-danger btn-sm @prevDisabled">
+    Anterior
+</a>
+<a asp-action="ListaCategorias" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@(Model.PageIndex + 1)"
+    asp-route-currentFilter="@ViewData["CurrentFilter"]" class="btn btn-danger btn-sm @nextDisabled" class="">
+    Siguiente
+</a>

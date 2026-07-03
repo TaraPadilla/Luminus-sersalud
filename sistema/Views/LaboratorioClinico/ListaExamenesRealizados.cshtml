@@ -1,0 +1,528 @@
+@using Database.Shared.Paginacion;
+@* @model PaginacionList<sistema.Models.ExamenesRealizadosViewModel> *@
+@model IEnumerable<sistema.Models.ExamenesRealizadosViewModel>
+@{
+    ViewData["Title"] = "Lista Examenes";
+    var todayDate = DateTime.Now;
+
+    //Roles y permisos
+    var usuarioAdministrador = User.IsInRole("Administrador");
+    var usuarioRadiologia = User.IsInRole("Radiologia");
+    var usuarioDesarrollador = User.IsInRole("Desarrollador");
+    var usuarioSupervisorLaboratorio = User.IsInRole("Supervisor Laboratorio");
+    var usuarioTecnicoRadiologia = User.IsInRole("TecnicoRadiologia");
+}
+@functions {
+    public string GetEstadoColor(string estado)
+    {
+        return estado switch
+        {
+            "Solicitados" => "danger",
+            "En proceso" => "warning",
+            "Revisión" => "orange",
+            "Finalizados" => "success",
+            "Cancelados" => "dark",
+            _ => "secondary"
+        };
+    }
+}
+
+<style>
+    .input-group-text {
+        border-radius: 0.5rem 0 0 0.5rem;
+    }
+
+    #busquedaTabla {
+        border-radius: 0 0.5rem 0.5rem 0;
+    }
+
+    #busquedaTabla:focus {
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        border-color: #dc3545;
+    }
+
+
+    .btn i {
+        margin-right: 3px;
+    }
+
+    .col-md-12 {
+        gap: 5px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .form-control {
+        border-radius: 0.25rem;
+    }
+
+    .container {
+        background-color: #f8f9fa;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .row .col-md-3 {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+    }
+
+    .btn-outline-success {
+        font-size: 1rem;
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+    }
+
+    .mt-4 {
+        margin-top: 1.5rem !important;
+    }
+
+
+.table-relative {
+    position: relative;
+    width: 100%;
+    min-height: 300px; 
+}
+
+#loader-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px); 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    visibility: visible;
+}
+
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 6px solid #f3f3f3;
+    border-top: 6px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <center>
+                    <h4><b>Laboratorio - Examenes realizados</b></h4>
+                </center>
+                <hr />
+                @if (!User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Radiologia"))
+                {
+                    <a class="btn btn-danger btn-sm" asp-action="NuevaVentaUnificada" asp-route-islaboratorio="true"
+                        asp-controller="Venta">
+                        <i class="fa fa-plus"></i>&nbsp;
+                        Nuevo examen
+                    </a>
+                }
+            </div>
+            @* Este es el incio del fragemento de codigo que se encarga del filtrado de datos *@
+            <div class="col-md-12">
+                    <form asp-action="ListaExamenesRealizados" method="get" id="examenForm">
+                    <div class="container mt-5 mb-4 p-4 bg-light border rounded">
+                        <div class="row justify-content-center">
+                            <!-- Fecha Inicial -->
+                            <div class="col-md-3 mb-3">
+                                <label for="fechaInicial" class="form-label font-weight-bold">Fecha Inicial:</label>
+                                <input type="date" name="fechaInicial" value="@ViewData["FechaInicial"]"
+                                    class="form-control" id="fechaInicial">
+
+                            </div>
+
+                            <!-- Fecha Final -->
+                            <div class="col-md-3 mb-3">
+                                <label for="fechaFinal" class="form-label font-weight-bold">Fecha Final:</label>
+                                <input type="date" name="fechaFinal" value="@ViewData["FechaFinal"]"
+                                    class="form-control" id="fechaFinal">
+
+                            </div>
+
+                            <!-- Medico Referido -->
+                            @* <div class="col-md-3 mb-3">
+                                <label for="medicoReferido" class="form-label font-weight-bold">Médico Referido:</label>
+                                @Html.DropDownList("medicoReferido", ViewBag.MedicoReferido as SelectList, "Todos", new { @class = "form-control", @id = "medicoReferido" })
+                            </div> *@
+
+
+
+                            <!-- Usuario que solicita -->
+                            <div class="col-md-3 mb-3">
+                                <label for="usuarioSolicitaRequest" class="form-label font-weight-bold">Usuario que
+                                    Solicita:</label>
+                                @Html.DropDownList("usuarioSolicitaRequest", ViewBag.UsuarioSolicita as SelectList,
+                                "Todos", new { @class = "form-control", @id = "usuarioSolicitaRequest" })
+                            </div>
+
+                            <!-- Usuario ingreso -->
+                            <div class="col-md-3 mb-3">
+                                <label for="usuarioIngresoRequest" class="form-label font-weight-bold">Usuario
+                                    Ingreso:</label>
+                                @Html.DropDownList("usuarioIngresoRequest", ViewBag.UsuarioIngreso as SelectList,
+                                                                "Todos", new { @class = "form-control", @id = "usuarioIngresoRequest" })
+                            </div>
+
+                            <!-- Examen -->
+                            @* <div class="col-md-3 mb-3">
+                                <label for="examen" class="form-label font-weight-bold">Examen:</label>
+                                @Html.DropDownList("usuarioSolicitaRequest", ViewBag.UsuarioSolicita as SelectList, "Todos", new { @class = "form-control", @id = "usuarioSolicitaRequest" })
+                            </div> *@
+
+                            <!-- Estado -->
+                            <div class="col-md-3 mb-3">
+                                <label for="estado" class="form-label font-weight-bold">Estado:</label>
+                                @Html.DropDownList("estado", ViewBag.Estado as SelectList, "Todos", new { @class =
+                                                                "form-control", @id = "estado" })
+                            </div>
+
+                            <!-- Categoría de Examen -->
+                            <div class="col-md-3 mb-3">
+                                <label for="categoriaLabClinico" class="form-label font-weight-bold">Categoría de
+                                    Examen:</label>
+                                @Html.DropDownList("categoriaLabClinico", ViewBag.CategoriaLabClinico as SelectList,
+                                                                "EXAMENES", new { @class = "form-control", @id = "categoriaLabClinico" })
+                            </div>
+                        </div>
+                        <!-- Botón de Buscar -->
+                        <div class="row justify-content-center mt-4">
+                            <div class="col-md-3 text-center">
+                                <input type="submit" value="Buscar" class="btn btn-outline-success w-100">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                @if (ViewBag.ErrorFiltroFechas != null)
+                {
+                    <div class="alert alert-warning alert-dismissible fade show mt-2" role="alert">
+                        @ViewBag.ErrorFiltroFechas
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                }
+            </div>
+            @* Este es el fin del fragemento de codigo que se encarga del filtrado de datos *@
+            @if (usuarioAdministrador || usuarioRadiologia || usuarioSupervisorLaboratorio)
+            {
+                <div class="col-md-12 d-flex justify-content-start align-items-center my-3">
+                    <!-- Botón para reporte PDF -->
+                    <a id="reportePDF" class="btn btn-secondary btn-sm d-flex align-items-center me-3" href="#">
+                        <i class="fas fa-file-pdf me-2"></i> <span>Reporte PDF</span>
+                    </a>
+
+                    <!-- Botón para reporte Excel -->
+                    <a class="btn btn-success btn-sm d-flex align-items-center" id="reporteExcel" href="#">
+                        <i class="fas fa-file-excel me-2"></i> <span>Reporte EXCEL</span>
+                    </a>
+                </div>
+
+            }
+        </div>
+    </div>
+</div>
+
+<br>
+
+<div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel">
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="table-responsive">
+               <div class="table-relative">
+                 <div id="loader-overlay">
+                    <div class="spinner"></div>
+                </div>
+                <table id="example" class="table table-hover  table-striped table-bordered" cellspacing="0" width="100%">
+        <thead>
+            <tr>
+                <th style="text-align: center;">Examen #</th>
+
+                    <th style="text-align: center;">Paciente</th>
+                    <th>Fecha Solicitud</th>
+                    <th>Fecha Realizacion</th>
+                    <th>Estado</th>
+                    <th>Usuario Solicita</th>
+                    <th>Usuario Ingreso</th>
+                    <th>Acciones</th>
+                </tr>
+        </thead>
+        
+        <tbody>
+             @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td style="text-align: center;">@item.ExamenNumero</td>
+                                @* <td>@item.NombreExamen</td>
+                                <td>@item.CategoriaLabClinico</td> *@
+                                <td style="text-align: center;">@item.Paciente</td>
+                                <td>@item.FechaSolicitud.ToString("dd-MM-yyyy HH:mm")</td>
+                                <td>@(item.FechaRealizacion == DateTime.MinValue ? "" :
+                                                                    item.FechaRealizacion.ToString("dd-MM-yyyy HH:mm"))</td>
+                                @* <td>@item.Duracion</td>  *@
+                                @* <td>@item.MedicoReferido</td>
+                                <td>@item.ClinicaReferida</td> *@
+                                <td>
+                                    <span class="badge badge-@GetEstadoColor(item.Estado)">
+                                        @item.Estado
+                                    </span>
+                                </td>
+                                <td>@item.UsuarioSolicita</td>
+                                <td>@item.UsuarioIngreso</td>
+                                <td>
+
+                                    
+                                    <div class="form-row">
+                                        <div class="col-md-6">
+                                            <a href="@Url.Action("EditarDetalleExamen", "LaboratorioClinico", new { id = @item.ExamenNumero })"
+                                                class="btn btn-warning">
+                                                <i class="fa fa-eye"></i>
+                                            </a>
+                                        </div>
+                                        @if (usuarioAdministrador || usuarioDesarrollador || usuarioSupervisorLaboratorio ||
+                                                                            usuarioRadiologia)
+                                        {
+                                            <div class="col-md-6">
+                                                <a asp-action="EliminarExamenRealizado" asp-route-id="@item.ExamenNumero"
+                                                    class="btn btn-danger"
+                                                    onclick="return confirm('¿Está seguro/a que desea eliminar este registro?');">
+                                                    <i class="fa fa-trash"></i>
+                                                </a>
+                                            </div>
+                                            @if (item.Estado == "Finalizados")
+                                            {
+                                                <div class="col-md-6">
+                                                    <!-- Botón para Enviar Correo -->
+                                                    <button class="btn btn-danger"
+                                                        @* onclick="enviarResultadosLaboratorioEmail('@item.ExamenNumero','@item.Paciente','@item.PacienteEmail')" *@
+                                                        onclick="enviarResultadosLaboratorioEmail('@item.ExamenNumero','@item.Paciente','yosephy23@gmail.com')"
+                                                        title="Enviar por Correo">
+                                                        <i class="fas fa-envelope"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <!-- Botón para Enviar por WhatsApp -->
+                                                    <button class="btn btn-success"
+                                                        @* onclick="enviarResultadosLaboratorioWhatsApp('@item.ExamenNumero','@item.Paciente','@item.PacienteCelular')" *@
+                                                        onclick="enviarResultadosLaboratorioWhatsApp('@item.ExamenNumero','@item.Paciente','+584120122517')"
+                                                        title="Enviar por WhatsApp">
+                                                        <i class="fab fa-whatsapp"></i>
+                                                    </button>
+                                                </div>
+                                            }
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+
+                        }
+        </tbody>
+    </table>
+               </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+@* @{
+    var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+}
+
+
+
+<a asp-action="ListaExamenesRealizados" asp-route-sortOrder="@ViewData["CurrentSort"]"
+    asp-route-pageNumber="@(Model.PageIndex - 1)" asp-route-currentFilter="@ViewData["CurrentFilter"]"
+    asp-route-fechaInicial="@ViewData["FechaInicial"]" asp-route-fechaFinal="@ViewData["FechaFinal"]"
+    asp-route-estado="@ViewData["Estadol"]" asp-route-UsuarioSolicita="@ViewData["usuarioSolicita"]"
+    asp-route-UsuarioIngreso="@ViewData["usuarioIngreso"]" class="btn btn-danger btn-sm @prevDisabled">
+    Anterior
+</a>
+<a asp-action="ListaExamenesRealizados" asp-route-sortOrder="@ViewData["CurrentSort"]"
+    asp-route-pageNumber="@(Model.PageIndex + 1)" asp-route-currentFilter="@ViewData["CurrentFilter"]"
+    asp-route-fechaInicial="@ViewData["FechaInicial"]" asp-route-fechaFinal="@ViewData["FechaFinal"]"
+    asp-route-estado="@ViewData["Estadol"]" asp-route-UsuarioSolicita="@ViewData["usuarioSolicita"]"
+    asp-route-UsuarioIngreso="@ViewData["usuarioIngreso"]" class="btn btn-danger btn-sm @nextDisabled" class="">
+    Siguiente
+</a> *@
+
+@section Scripts {
+    <script src="~/js-utilidades-wp-email/SendEmail.js"></script>
+    <script src="~/js-utilidades-wp-email/SendWhatsApp.js"></script>
+
+    <script>
+           $(document).ready(function() {
+    $('#example').DataTable({
+        "responsive": true,
+        "pageLength": 50,
+        "order": [[0, "desc"]],
+        
+        "language": {
+            "sProcessing":     "Procesando...",
+            "sLengthMenu":     "Mostrar _MENU_ registros",
+            "sZeroRecords":    "No se encontraron resultados",
+            "sEmptyTable":     "Ningún dato disponible en esta tabla",
+            "sInfo":           "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+            "sInfoEmpty":      "Mostrando registros del 0 al 0 de un total de 0 registros",
+            "sInfoFiltered":   "(filtrado de un total de _MAX_ registros)",
+            "sInfoPostFix":    "",
+            "sSearch":         "Buscar:",
+            "sUrl":            "",
+            "sInfoThousands":  ",",
+            "sLoadingRecords": "Cargando...",
+            "oPaginate": {
+                "sFirst":    "Primero",
+                "sLast":     "Último",
+                "sNext":     "Siguiente",
+                "sPrevious": "Anterior"
+            },
+            "oAria": {
+                "sSortAscending":  ": Activar para ordenar la columna de manera ascendente",
+                "sSortDescending": ": Activar para ordenar la columna de manera descendente"
+            }
+        },
+
+        "initComplete": function(settings, json) {
+            setTimeout(function() {
+                $('#loader-overlay').fadeOut('slow');
+            }, 300);
+        }
+    });
+});
+    </script>
+}
+
+
+<script>
+    document.getElementById('reportePDF').addEventListener('click', function (event) {
+        event.preventDefault(); // Previene el comportamiento predeterminado del enlace
+
+        // Función para obtener el valor de un elemento de manera segura
+        function obtenerValorElemento(nombreElemento) {
+            var elemento = document.getElementsByName(nombreElemento)[0];
+            return elemento ? elemento.value : ''; // Retorna el valor si existe, si no, una cadena vacía
+        }
+
+        // Capturar los valores del formulario usando la función de comprobación
+        var fechaInicial = obtenerValorElemento('fechaInicial');
+        var fechaFinal = obtenerValorElemento('fechaFinal');
+        var estado = obtenerValorElemento('estado');
+        var medicoReferido = obtenerValorElemento('medicoReferido');
+        var usuarioSolicitaRequest = obtenerValorElemento('usuarioSolicitaRequest');
+        var usuarioIngresoRequest = obtenerValorElemento('usuarioIngresoRequest');
+
+        // Construir la URL con los parámetros
+        var url = '@Url.Action("GenerarPdfLaboratorioClinicoExamenesClinicos", "CrearPDF")' +
+            '?fechaInicial=' + encodeURIComponent(fechaInicial) +
+            '&fechaFinal=' + encodeURIComponent(fechaFinal) +
+            '&estado=' + encodeURIComponent(estado) +
+            '&medicoReferido=' + encodeURIComponent(medicoReferido) +
+            '&usuarioSolicitaRequest=' + encodeURIComponent(usuarioSolicitaRequest) +
+            '&usuarioIngresoRequest=' + encodeURIComponent(usuarioIngresoRequest);
+
+        // Redireccionar al controlador con los parámetros del formulario
+        window.location.href = url;
+    });
+
+    document.getElementById('reporteExcel').addEventListener('click', function (event) {
+        event.preventDefault(); // Previene el comportamiento predeterminado del enlace
+
+        // Función para obtener el valor de un elemento de manera segura
+        function obtenerValorElemento(nombreElemento) {
+            var elemento = document.getElementsByName(nombreElemento)[0];
+            return elemento ? elemento.value : ''; // Retorna el valor si existe, si no, una cadena vacía
+        }
+
+        // Capturar los valores del formulario usando la función de comprobación
+        var fechaInicial = obtenerValorElemento('fechaInicial');
+        var fechaFinal = obtenerValorElemento('fechaFinal');
+        var estado = obtenerValorElemento('estado');
+        var medicoReferido = obtenerValorElemento('medicoReferido');
+        var usuarioSolicitaRequest = obtenerValorElemento('usuarioSolicitaRequest');
+        var usuarioIngresoRequest = obtenerValorElemento('usuarioIngresoRequest');
+
+        // Construir la URL con los parámetros
+        var url = '@Url.Action("CrearExcelListaExamenesRealizados", "CrearExcel")' +
+            '?fechaInicial=' + encodeURIComponent(fechaInicial) +
+            '&fechaFinal=' + encodeURIComponent(fechaFinal) +
+            '&estado=' + encodeURIComponent(estado) +
+            '&medicoReferido=' + encodeURIComponent(medicoReferido) +
+            '&usuarioSolicitaRequest=' + encodeURIComponent(usuarioSolicitaRequest) +
+            '&usuarioIngresoRequest=' + encodeURIComponent(usuarioIngresoRequest);
+
+        // Redireccionar al controlador con los parámetros del formulario
+        window.location.href = url;
+    });
+</script>
+
+<script>
+    document.getElementById("busquedaTabla").addEventListener("keyup", function () {
+        var filtro = this.value.toLowerCase();
+        var filas = document.querySelectorAll("table tbody tr");
+
+        filas.forEach(function (fila) {
+            var texto = fila.textContent.toLowerCase();
+            fila.style.display = texto.includes(filtro) ? "" : "none";
+        });
+    });
+</script>
+
+<!-- Script para detectar 'categoriaLabClinico' en la URL y modificar enlaces de EditarDetalleExamen -->
+@* <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const currentUrl = window.location.href.toLowerCase();
+        const containscategoriaLabClinico = currentUrl.includes('categorialabclinico');
+
+
+        if (containscategoriaLabClinico) {
+            // Buscar todos los enlaces que apunten a la acción EditarDetalleExamen
+            const editLinks = document.querySelectorAll('a[href*="EditarDetalleExamen"]');
+
+
+            editLinks.forEach(function (link, index) {
+                const currentHref = link.getAttribute('href');
+
+                // Verificar si ya contiene el parámetro radiologia
+                if (!currentHref.includes('radiologia=')) {
+                    // Verificar si ya tiene parámetros
+                    const separator = currentHref.includes('?') ? '&' : '?';
+
+                    // Agregar el parámetro radiologia=true
+                    const newHref = currentHref + separator + 'radiologia=true';
+
+                    // Actualizar el href del enlace
+                    link.setAttribute('href', newHref);
+
+                    console.log(`Enlace ${index + 1} modificado:`, newHref);
+                } else {
+                    console.log(`Enlace ${index + 1} ya contiene parámetro radiologia:`, currentHref);
+                }
+            });
+
+        } else {
+            console.log('ℹ️ No se detectó "categoriaLabClinico" en la URL, no se modificaron enlaces');
+        }
+    });
+</script> *@
+

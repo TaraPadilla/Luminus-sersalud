@@ -1,0 +1,277 @@
+@using sistema.Models
+@model HospitalizacionPaqueteCotizacionPdfViewModel
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Config
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Paquete - Cotizacion";
+    // Configuración estándar de membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+}
+}
+
+<style>
+    /* ===== Estilos embebidos y scopeados ===== */
+    .doc {
+        padding: 10px 16px 20px 16px;
+        font-size: 13px;
+    }
+
+    .doc .doc-title {
+        font-size: 18px;
+        font-weight: 800;
+        text-align: center;
+        margin: 4px 0 8px;
+    }
+
+    .doc .doc-underline {
+        height: 2px;
+        background: #0a47a3;
+        opacity: .25;
+        margin: 6px 0 14px;
+    }
+
+    /* Fecha y hora (tabla sin bordes, centrado) */
+    .doc .header-line {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 10px;
+    }
+
+    .doc .header-line td {
+        border: 0;
+        text-align: center;
+        font-weight: 700;
+        padding: 6px 0 8px;
+    }
+
+    /* Barra/separador de sección */
+    .doc .section-bar {
+        margin-top: 16px;
+        margin-bottom: 8px;
+        border-top: 4px solid #0a47a3;
+        background: #f7f9ff;
+        padding: 8px 10px 6px;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: .3px;
+    }
+
+    /* Tablas de contenido */
+    .doc .kv,
+    .doc .list {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .doc .kv td,
+    .doc .kv th,
+    .doc .list td,
+    .doc .list th {
+        padding: 8px 10px;
+        vertical-align: top;
+    }
+
+    .doc .kv td,
+    .doc .kv th {
+        border-bottom: 1px solid #e6e9f2;
+    }
+
+    .doc .kv tr:last-child td,
+    .doc .kv tr:last-child th {
+        border-bottom: 0;
+    }
+
+    .doc .kv th {
+        width: 33.33%;
+        font-weight: 700;
+        color: #1f2a44;
+        white-space: nowrap;
+    }
+
+    .doc .list thead th {
+        background: #eef3ff;
+        color: #0a47a3;
+        font-weight: 800;
+        border: 1px solid #e6e9f2;
+    }
+
+    .doc .list tbody td {
+        border: 1px solid #e6e9f2;
+    }
+
+    .doc .text-center {
+        text-align: center;
+    }
+
+    /* Caja de VALOR final */
+    .doc .value-box {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+    }
+
+    .doc .value-box thead td {
+        background: #f5f5f5;
+        text-align: center;
+        padding: 12px 10px;
+        border: 1px solid #e6e9f2;
+    }
+
+    .doc .value-box .value-amount {
+        font-size: 40px;
+        font-weight: 800;
+        line-height: 1.1;
+    }
+
+    /* Ajuste tipográfico suave de valores */
+    .doc .kv td,
+    .doc .list td {
+        font-size: 12px;
+        line-height: 1.35;
+    }
+</style>
+
+<div class="doc">
+    <!-- Título estandarizado (respeto el texto exacto de tu cabecera) -->
+    <div class="doc-title">PAQUETE - COTIZACION</div>
+    <div class="doc-underline"></div>
+
+    <!-- Fecha y hora de emisión (centrado, sin &nbsp;) -->
+    <table class="header-line">
+        <tbody>
+            <tr>
+                <td>Fecha y hora de emisión: @fecha</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- DATOS DE PACIENTE -->
+    <div class="section-bar">DATOS DE PACIENTE</div>
+    <table class="kv">
+        <tbody>
+            <tr>
+                <th>Nombre</th>
+                <td>@Model.PacienteNombre</td>
+            </tr>
+            <tr>
+                <th>DPI</th>
+                <td>@Model.PacienteDpi</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- PRODUCTOS -->
+    <div class="section-bar">PRODUCTOS</div>
+    <table class="list">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Unidad</th>
+                <th>Cantidad</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Productos != null && Model.Productos.Count() > 0)
+            {
+                foreach (var medicamento in Model.Productos)
+                {
+                    <tr>
+                        <td>@medicamento.ProductoNombre</td>
+                        <td>@medicamento.UnidadMedidaVentaNombre</td>
+                        <td class="text-center">@medicamento.Cantidad</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="3" class="text-center">No hay productos registrados</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- SERVICIOS -->
+    <div class="section-bar">SERVICIOS</div>
+    <table class="list">
+        <thead>
+            <tr>
+                <th>Codigo</th>
+                <th>Nombre</th>
+                <th>Cantidad</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Servicios != null && Model.Servicios.Count() > 0)
+            {
+                foreach (var servicio in Model.Servicios)
+                {
+                    <tr>
+                        <td>@servicio.ServicioCodigo</td>
+                        <td>@servicio.ServicioNombre</td>
+                        <td class="text-center">@servicio.Cantidad</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="3" class="text-center">No hay servicios registrados</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- LABORATORIOS -->
+    <div class="section-bar">LABORATORIOS</div>
+    <table class="list">
+        <thead>
+            <tr>
+                <th>Codigo</th>
+                <th>Nombre</th>
+                <th>Cantidad</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Laboratorios != null && Model.Laboratorios.Count() > 0)
+            {
+                foreach (var laboratorio in Model.Laboratorios)
+                {
+                    <tr>
+                        <td>@laboratorio.Id</td>
+                        <td>@laboratorio.NombreExamen</td>
+                        <td class="text-center">@laboratorio.Cantidad</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="3" class="text-center">No hay laboratorios registrados</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- VALOR -->
+    <table class="value-box">
+        <thead>
+            <tr>
+                <td>
+                    <b>VALOR</b><br />
+                    <span class="value-amount">@Model.PrecioPaquete.ToString("N2")</span>
+                </td>
+            </tr>
+        </thead>
+    </table>
+</div>

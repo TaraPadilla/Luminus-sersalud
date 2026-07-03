@@ -1,0 +1,76 @@
+@model sistema.Models.RecetaMenuCrudViewModel
+@{
+    ViewData["Title"] = "Modificar Menú";
+}
+
+<div class="container-fluid animated fadeIn">
+    @await Html.PartialAsync("_MensajeExito")
+
+    <div class="card shadow-sm border-0 mb-4">
+        @* Encabezado con identidad visual de edición *@
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-edit mr-2"></i>Modificar Registro de Menú
+                </h5>
+                <small class="text-muted text-uppercase" style="letter-spacing: 1px;">ID de Registro: #@Model.Id</small>
+            </div>
+            @* Badge indicador de estado opcional *@
+            <span class="badge badge-warning px-3 py-2 shadow-sm">Modo Edición</span>
+        </div>
+
+        @using (Html.BeginForm("Modificar", "RecetaMenu", FormMethod.Post, new { @class = "needs-validation" }))
+        {
+            @Html.AntiForgeryToken()
+            
+            <div class="card-body px-lg-5 py-4">
+                @* El formulario parcial ya contiene los inputs grandes y checkboxes modernos *@
+                @await Html.PartialAsync("_RecetaMenuForm", Model)
+
+                @* Separador estético sutil *@
+                <hr class="my-4" style="border-top: 1px dashed #e3e6f0;">
+
+                <div class="d-flex justify-content-end align-items-center">
+                    @* Botón Cancelar con estilo formal *@
+                    <a class="btn btn-light border px-4 mr-2 text-secondary" asp-action="Lista" asp-controller="RecetaMenu">
+                        <i class="fas fa-times mr-1"></i> Cancelar
+                    </a>
+                    
+                    @* Botón Guardar Cambios con énfasis en la acción de actualización *@
+                    <button class="btn btn-primary px-5 shadow-sm font-weight-bold" type="submit">
+                        <i class="fas fa-sync-alt mr-1"></i> Actualizar Menú
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            // Refuerzo visual de interacción en los campos
+            $('.form-control').focus(function() {
+                $(this).prev('label').addClass('text-primary font-weight-bold active-label');
+            }).blur(function() {
+                $(this).prev('label').removeClass('text-primary font-weight-bold active-label');
+            });
+
+            // Animación suave de entrada para los checkboxes al cargar
+            $('.custom-checkbox').addClass('animated fadeIn');
+        });
+    </script>
+    
+    <style>
+        /* Ajuste fino para la transición de las etiquetas */
+        .active-label {
+            transition: all 0.2s ease-in-out;
+            transform: translateX(5px);
+        }
+        /* Garantizar que el card de edición se sienta robusto */
+        .border-primary-soft {
+            border-color: #bac8f3 !important;
+        }
+    </style>
+}

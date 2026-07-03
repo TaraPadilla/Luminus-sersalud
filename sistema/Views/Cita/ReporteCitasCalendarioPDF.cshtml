@@ -1,0 +1,193 @@
+﻿@using System
+@using System.Globalization
+@model sistema.Models.ReporteCitasViewModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Citas Agendadas";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+    var fechaEmision = fecha
+        .ToString("D", CultureInfo.CreateSpecificCulture("es-GT"))
+        .ToUpperInvariant();
+}
+
+<style>
+    .report-container {
+        margin-top: 10px;
+        font-size: 11px;
+    }
+
+    .report-header {
+        text-align: center;
+        border: 1px solid #000000;
+        padding: 6px 8px;
+        margin-bottom: 10px;
+        border-radius: 3px;
+    }
+
+    .report-title {
+        font-weight: bold;
+        font-size: 16px;
+        color: #0d0e36;
+        text-transform: uppercase;
+        margin: 0;
+    }
+
+    .report-subtitle {
+        font-size: 12px;
+        margin: 0;
+    }
+
+    .report-meta {
+        font-size: 12px;
+        margin-bottom: 3px;
+    }
+
+    .report-meta b {
+        font-weight: bold;
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    .report-table-header-row th {
+        background-color: #eef2ff;
+        color: #0d0e36;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 11px;
+        text-align: left;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table tbody td {
+        font-size: 11px;
+        padding: 4px 6px;
+        border-bottom: 1px solid #e1e4ea;
+        vertical-align: top;
+    }
+
+    .report-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+</style>
+
+<div class="report-container">
+    <!-- Encabezado -->
+    <div class="report-header">
+        <p class="report-title">Reporte - @ViewData["Title"]</p>
+    </div>
+
+    <!-- Metadatos -->
+    <div class="report-meta">
+        <b>Fecha de emisión:</b> @fechaEmision
+    </div>
+    <div class="report-meta">
+        <b>Usuario que lo emite:</b> @Model.Usuario
+    </div>
+    <div class="report-meta">
+        <b>Lugar:</b> Clínica
+    </div>
+
+    <!-- Tabla de citas -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-header-row">
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Especialidad</th>
+                <th>Doctor</th>
+                <th>Servicio</th>
+                <th>Paciente</th>
+                <th>Número</th>
+                <th>Asistencia</th>
+                <th>Usuario</th>
+                <th>Menor de edad</th>
+                <th>Nombre encargado</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Citas)
+            {
+                var cliente  = item.Paciente == null ? "" : item.Paciente.Nombre;
+                var telefono = item.Paciente == null ? "" : item.Paciente.Telefono;
+                var celular  = item.Paciente == null ? "" : item.Paciente.Celular;
+                var sexo     = item.Paciente == null ? "" : item.Paciente.sexoText;
+
+                string background = "";
+                string color = "";
+
+                if (item.EspecialidadText == "Medicina general")
+                {
+                    background = "#2fb9e7";
+                    color = "black";
+                }
+                else if (item.EspecialidadText == "Medicina estética")
+                {
+                    background = "#A02B4E";
+                    color = "white";
+                }
+                else if (item.EspecialidadText == "Ginecología y Obstetricia")
+                {
+                    background = "#e660c3";
+                    color = "white";
+                }
+                else if (item.EspecialidadText == "Pediatría")
+                {
+                    background = "#ffa500";
+                    color = "black";
+                }
+                else if (item.EspecialidadText == "Cirugía")
+                {
+                    background = "#808080";
+                    color = "white";
+                }
+                else if (item.EspecialidadText == "Traumatología")
+                {
+                    background = "#000000";
+                    color = "white";
+                }
+                else if (item.EspecialidadText == "Medicina interna")
+                {
+                    background = "#8B4513";
+                    color = "white";
+                }
+                else if (item.EspecialidadText == "Laboratorio clínico")
+                {
+                    background = "#008000";
+                    color = "white";
+                }
+
+                <tr>
+                    <td>@item.FechaInicio?.ToString("dd/MM/yyyy")</td>
+                    <td>@item.FechaInicio?.ToString("HH:mm")</td>
+                    <td style="background:@background; color:@color;">
+                        @item.EspecialidadText
+                    </td>
+                    <td>@item.EmpleadoText</td>
+                    <td>@item.ServicioText</td>
+                    <td>@cliente</td>
+                    <td>@telefono</td>
+                    <td>@item.EstadoCita</td>
+                    <td>@item.PersonText</td>
+                    <td>@item.EsMenorDeEdadText</td>
+                    <td>@item.NombreEncargado</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

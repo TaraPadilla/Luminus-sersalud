@@ -1,0 +1,130 @@
+﻿@model sistema.Models.InventarioViewModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Inventario de productos";
+
+    // Configuración estándar de membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+}
+
+<div class="doc">
+
+    <!-- Título y fecha -->
+    <div class="doc-title">REPORTE - @ViewData["Title"]</div>
+    <div class="doc-underline"></div>
+
+    <table class="table" style="border:0;">
+        <tbody>
+            <tr>
+                <td style="text-align:right; border:0; font-size:12px;">
+                    <strong>Fecha y hora de emisión:</strong> @fecha.ToString("yyyy/MM/dd HH:mm")
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Sección Inventario -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Listado</td>
+        </tr>
+    </table>
+
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <colgroup>
+                        <col style="width:20%" />
+                        <col style="width:30%" />
+                        <col style="width:15%" />
+                        <col style="width:35%" />
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>Código de referencia</th>
+                            <th>Nombre</th>
+                            <th>Unidad de venta</th>
+                            <th>Precio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model?.ProductosInventario != null && Model.ProductosInventario.Any())
+                        {
+                            foreach (var prod in Model.ProductosInventario)
+                            {
+                                if (prod.ProductosInventario != null && prod.ProductosInventario.Any())
+                                {
+                                    foreach (var prodInventario in prod.ProductosInventario)
+                                    {
+                                        var unidadMedidaVenta = prodInventario.UnidadMedidaVenta == null
+                                            ? "-"
+                                            : prodInventario.UnidadMedidaVenta.Nombre;
+
+                                        <tr class="kv-row">
+                                            <td>
+                                                <span class="value">@prod.CodigoReferencia</span>
+                                            </td>
+                                            <td>
+                                                <span class="value">@prod.NombreProducto</span>
+                                            </td>
+                                            <td>
+                                                <span class="value">@unidadMedidaVenta</span>
+                                            </td>
+                                            <td style="text-align:left;">
+                                                @if (prodInventario.ProductosInventarioPrecios != null && Model.Precios != null)
+                                                {
+                                                    foreach (var p in Model.Precios)
+                                                    {
+                                                        var precio = prodInventario.ProductosInventarioPrecios
+                                                            .FirstOrDefault(x => x.PrecioId == p.Id);
+
+                                                        if (precio != null)
+                                                        {
+                                                            <div>
+                                                                <span class="value">
+                                                                    Precio @precio.Precio.NombrePrecio: @precio.Valor
+                                                                </span>
+                                                            </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div>
+                                                                <span class="value">
+                                                                    Precio @p.NombrePrecio: 0
+                                                                </span>
+                                                            </div>
+                                                        }
+                                                    }
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4">
+                                    <span class="value">No hay productos para mostrar.</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+</div>

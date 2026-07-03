@@ -1,0 +1,1322 @@
+@using Database.Shared.Models
+@using sistema.Models
+@model ExamenResultadosVM
+
+@{
+  Layout = "_HojaMembreteLayout";
+  ViewData["Title"] = "Resultados de laboratorio";
+
+  // Flags de visibilidad del membrete
+  ViewData["MostrarLogo"] = true;
+  ViewData["MostrarNombreEmpresa"] = true;
+  ViewData["MostrarDireccion"] = true;
+  ViewData["MostrarTelefono"] = true;
+  ViewData["MostrarCorreoElectronico"] = true;
+  ViewData["MostrarServicios"] = true;
+  ViewData["MostrarEmergencias"] = true;
+
+  DateTime fecha = DateTime.Now;
+
+  string no = "--";
+  int edad = 0;
+  var numeroOrden = Model.NumeroOrden ?? "-";
+  List<DetalleExamen> nuevaColeccion = new List<DetalleExamen>();
+
+  if (Model.Paciente?.FechaNacimiento != null)
+  {
+    edad = fecha.Year - Model.Paciente.FechaNacimiento.Value.Year;
+    if (fecha.Month < Model.Paciente.FechaNacimiento.Value.Month
+    || (fecha.Month == Model.Paciente.FechaNacimiento.Value.Month && fecha.Day < Model.Paciente.FechaNacimiento.Value.Day))
+    {
+      edad--;
+    }
+  }
+}
+
+<style>
+  :root {
+    --azul: #3498db;
+    --azul-osc: #2980b9;
+    --azul-claro: #f0f7ff;
+    --borde: #e6edf5;
+    --texto: #2c3e50;
+    --muted: #6b7683;
+    --gris: #f8fafc;
+  }
+
+  /* Documento base */
+  .doc {
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: #333;
+    font-size: 10pt;
+    line-height: 1.25;
+    letter-spacing: -0.15px;
+    display: block !important;
+  }
+
+  .doc-title {
+    font-size: 14pt;
+    font-weight: 800;
+    color: var(--texto);
+    text-transform: uppercase;
+    text-align: center;
+    margin: 0 0 4px 0;
+  }
+
+  .doc-underline {
+    height: 2px;
+    background: linear-gradient(90deg, transparent 0%, var(--azul) 18%, var(--azul) 82%, transparent 100%);
+    margin: 4px 0 8px 0;
+    border: 0;
+  }
+
+  /* Títulos de sección */
+  table.section-title {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0 4px 0;
+    background: var(--azul-claro);
+    border: 1px solid var(--borde);
+    border-left: 4px solid var(--azul);
+    border-radius: 8px;
+    /* CAMBIO: Evitar que el título quede solo al final de una página */
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  table.section-title td {
+    padding: 5px 10px;
+    font-weight: 800;
+    color: var(--azul-osc);
+    font-size: 9pt;
+    text-transform: uppercase;
+  }
+
+  /* TABLAS - Permitir flujo continuo */
+  table.table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid var(--borde);
+    margin-bottom: 8px;
+    background: #fff;
+    /* CAMBIO CLAVE: Permitir que la tabla se rompa entre páginas */
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+    height: auto !important;
+  }
+
+  table.table thead th {
+    text-align: left;
+    background: var(--gris);
+    color: #4f5b66;
+    font-size: 8.4pt;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--borde);
+    text-transform: uppercase;
+  }
+
+  table.table tbody td {
+    padding: 4px 8px;
+    /* Compacto pero respirable */
+    border-bottom: 1px solid #f2f4f7;
+    vertical-align: middle;
+    font-size: 9.2pt;
+    /* Texto de datos claro */
+  }
+
+  /* BLOQUES CONTENEDORES */
+  .block,
+  table.block {
+    width: 100%;
+    margin-bottom: 5px !important;
+    /* CAMBIO: Eliminamos el avoid para que los datos del paciente no empujen el resto */
+    page-break-inside: auto !important;
+    page-break-after: auto !important;
+  }
+
+.bloque-examen-urologia {
+    position: relative;
+    display: block !important;
+    margin-top: 5px !important; 
+    /* Permitir que la tabla empiece en una página y siga en otra */
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+    clear: both;
+}
+
+  table.table tr {
+    page-break-inside: avoid !important;
+  }
+
+  .value {
+    font-weight: 700;
+    color: #111;
+  }
+
+  .label {
+    color: #55616d;
+    font-size: 8.5pt;
+    font-weight: 600;
+  }
+
+  /* Filas tipo key-value */
+  tr.kv-row td {
+    padding-top: 7px;
+    padding-bottom: 7px;
+  }
+
+  /* Column layout helper (por si tu renderer respeta colgroup) */
+  table.threecol th,
+  table.threecol td {
+    width: 33.33%;
+  }
+
+  /* Emisión: tu tabla “sin borde” */
+  table.table[style*="border:0"] td {
+    color: var(--muted);
+    font-size: 9pt;
+  }
+
+  /* Página / cortes */
+  .page {
+    position: relative;
+    page-break-after: auto;
+  }
+
+  /* Footer wrapper: evita quedarlo “huérfano” lo más posible */
+  .report-footer {
+    page-break-inside: avoid;
+    margin-top: 14px;
+  }
+</style>
+
+<div class="doc">
+
+  <!-- Encabezado general -->
+  <div class="doc-title">REPORTE - @ViewData["Title"]</div>
+  <div class="doc-underline"></div>
+
+  @foreach (var detalle in Model.DetalleExamenes)
+  {
+    if (detalle.ExamenLabClinico?.NombreExamen == "Heces Completo")
+    {
+      <div class="page" style="page-break-inside: avoid; break-inside: avoid;">
+        @Html.Partial("_HeaderResultados.cshtml")
+
+        <!-- PACIENTE -->
+        <table class="section-title">
+          <tr>
+            <td class="bar"></td>
+            <td>Datos del paciente</td>
+          </tr>
+        </table>
+
+        <table class="block">
+          <tr>
+            <td style="padding:0;">
+              <table class="table threecol">
+                <colgroup>
+                  <col />
+                  <col />
+                  <col />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Sexo</th>
+                    <th>Edad</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="kv-row">
+                    <td><span class="value">@Model.Paciente?.Nombre</span></td>
+                    <td><span class="value">@Model.Paciente?.Sexo?.DescripcionSexo</span></td>
+                    <td><span class="value">@edad</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <table class="block" style="margin-top:8px;">
+          <tr>
+            <td style="padding:0;">
+              <table class="table threecol">
+                <colgroup>
+                  <col />
+                  <col />
+                  <col />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>No. Orden</th>
+                    <th>Impresión</th>
+                    <th>Clínica</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="kv-row">
+                    <td><span class="value">@numeroOrden</span></td>
+                    <td><span class="value">@fecha.ToString("dd/MM/yyyy")</span></td>
+                    <td><span class="value">@Model.Clinicas?.NombreClinica</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Título del examen -->
+        <table class="section-title">
+          <tr>
+            <td class="bar"></td>
+            <td>@detalle.ExamenLabClinico.NombreExamen</td>
+          </tr>
+        </table>
+
+        @{
+          var resultados = detalle.Resultados.OrderBy(r => r.DatosExamenesLabClinicoId);
+        }
+
+        <table class="block">
+          <tr>
+            <td style="padding:0;">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Macroscópico</th>
+                    <th>Parásitos</th>
+                    <th>Huevos</th>
+                    <th>Larvas</th>
+                    <th>Quistes</th>
+                    <th>Trofozoitos</th>
+                    <th>Microscópico</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="kv-row">
+                    <td>
+                      @foreach (var r in resultados)
+                      {
+                        if (r.DatosExamenesLabClinico.Tipo == "Macroscopico")
+                        {
+                          var texto = string.IsNullOrEmpty(r.ValorResultado) ? " --- " : r.ValorResultado;
+                          <div>
+                            <span class="label">@r.DatosExamenesLabClinico.Campos</span>
+                            <span class="value">@texto</span>
+                          </div>
+                        }
+                      }
+                    </td>
+                    <td>
+                      @foreach (var r in resultados)
+                      {
+                        if (r.DatosExamenesLabClinico.Tipo == "Parasitos")
+                        {
+                          <div><span class="label">@r.DatosExamenesLabClinico.Campos</span></div>
+                        }
+                      }
+                    </td>
+                    <td>
+                      @foreach (var r in resultados)
+                      {
+                        if (r.DatosExamenesLabClinico.Tipo == "Parasitos")
+                        {
+                          <div class="value">@(!string.IsNullOrEmpty(r.Huevos) ? r.Huevos : no)</div>
+                        }
+                      }
+                    </td>
+                    <td>
+                      @foreach (var r in resultados)
+                      {
+                        if (r.DatosExamenesLabClinico.Tipo == "Parasitos")
+                        {
+                          <div class="value">@(!string.IsNullOrEmpty(r.Larvas) ? r.Larvas : no)</div>
+                        }
+                      }
+                    </td>
+                    <td>
+                      @foreach (var r in resultados)
+                      {
+                        if (r.DatosExamenesLabClinico.Tipo == "Parasitos")
+                        {
+                          <div class="value">@(!string.IsNullOrEmpty(r.Quistes) ? r.Quistes : no)</div>
+                        }
+                      }
+                    </td>
+                    <td>
+                      @foreach (var r in resultados)
+                      {
+                        if (r.DatosExamenesLabClinico.Tipo == "Parasitos")
+                        {
+                          <div class="value">@(!string.IsNullOrEmpty(r.Trofozoitos) ? r.Trofozoitos : no)</div>
+                        }
+                      }
+                    </td>
+                    <td>
+                      @foreach (var r in resultados)
+                      {
+                        if (r.DatosExamenesLabClinico.Tipo == "Microscopico")
+                        {
+                          var texto = string.IsNullOrEmpty(r.ValorResultado) ? " --- " : r.ValorResultado;
+                          <div>
+                            <span class="label">@r.DatosExamenesLabClinico.Campos</span>
+                            <span class="value">@texto</span>
+                          </div>
+                        }
+                      }
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+
+      </div>
+    }
+    else if (detalle.ExamenLabClinico?.NombreExamen == "Orina Completa")
+    {
+      <div style="page-break-after: avoid; break-after: avoid;">
+        @Html.Partial("_HeaderResultados.cshtml")
+
+        <table class="section-title">
+          <tr>
+            <td class="bar"></td>
+            <td>Datos del paciente</td>
+          </tr>
+        </table>
+
+        <table class="block">
+          <tr>
+            <td style="padding:0;">
+              <table class="table threecol">
+                <colgroup>
+                  <col />
+                  <col />
+                  <col />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Sexo</th>
+                    <th>Edad</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="kv-row">
+                    <td><span class="value">@Model.Paciente?.Nombre</span></td>
+                    <td><span class="value">@Model.Paciente?.Sexo?.DescripcionSexo</span></td>
+                    <td><span class="value">@edad</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <table class="block" style="margin-top:8px;">
+          <tr>
+            <td style="padding:0;">
+              <table class="table threecol">
+                <colgroup>
+                  <col />
+                  <col />
+                  <col />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>No. Orden</th>
+                    <th>Impresión</th>
+                    <th>Clínica</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="kv-row">
+                    <td><span class="value">@numeroOrden</span></td>
+                    <td><span class="value">@fecha.ToString("dd/MM/yyyy")</span></td>
+                    <td><span class="value">@Model.Clinicas?.NombreClinica</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <table class="section-title">
+          <tr>
+            <td class="bar"></td>
+            <td>@detalle.ExamenLabClinico.NombreExamen</td>
+          </tr>
+        </table>
+
+        @{
+          var resultados = detalle.Resultados.OrderBy(r => r.DatosExamenesLabClinicoId);
+        }
+
+        <table class="block">
+          <tr>
+            <td style="padding:0;">
+              <table class="table threecol">
+                <colgroup>
+                  <col />
+                  <col />
+                  <col />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>Macroscópico</th>
+                    <th>Químico</th>
+                    <th>Microscópico</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="kv-row">
+                    <td>
+                      @foreach (var r in resultados)
+                      {
+                        if (r.DatosExamenesLabClinico.Tipo == "Macroscopico")
+                        {
+                          var texto = string.IsNullOrEmpty(r.ValorResultado) ? " --- " : r.ValorResultado;
+                          <div>
+                            <span class="label">@r.DatosExamenesLabClinico.Campos</span>
+                            <span class="value">@texto</span>
+                          </div>
+                        }
+                      }
+                    </td>
+                    <td>
+                      @foreach (var r in resultados)
+                      {
+                        if (r.DatosExamenesLabClinico.Tipo == "Quimico")
+                        {
+                          var texto = string.IsNullOrEmpty(r.ValorResultado) ? " --- " : r.ValorResultado;
+                          <div>
+                            <span class="label">@r.DatosExamenesLabClinico.Campos</span>
+                            <span class="value">@texto</span>
+                          </div>
+                        }
+                      }
+                    </td>
+                    <td>
+                      @foreach (var r in resultados)
+                      {
+                        if (r.DatosExamenesLabClinico.Tipo == "Microscopico")
+                        {
+                          var texto = string.IsNullOrEmpty(r.ValorResultado) ? " --- " : r.ValorResultado;
+                          <div>
+                            <span class="label">@r.DatosExamenesLabClinico.Campos</span>
+                            <span class="value">@texto</span>
+                          </div>
+                        }
+                      }
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+
+      </div>
+    }
+    else if (detalle.ExamenLabClinico?.NombreExamen == "Urocultivo")
+    {
+      <div class="page" style="page-break-inside: avoid; break-inside: avoid;">
+        @Html.Partial("_HeaderResultados.cshtml")
+
+        <table class="section-title">
+          <tr>
+            <td class="bar"></td>
+            <td>Datos del paciente</td>
+          </tr>
+        </table>
+        <table class="block">
+          <tr>
+            <td style="padding:0;">
+              <table class="table threecol">
+                <colgroup>
+                  <col />
+                  <col />
+                  <col />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Sexo</th>
+                    <th>Edad</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="kv-row">
+                    <td><span class="value">@Model.Paciente?.Nombre</span></td>
+                    <td><span class="value">@Model.Paciente?.Sexo?.DescripcionSexo</span></td>
+                    <td><span class="value">@edad</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <table class="block" style="margin-top:8px;">
+          <tr>
+            <td style="padding:0;">
+              <table class="table threecol">
+                <colgroup>
+                  <col />
+                  <col />
+                  <col />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>No. Orden</th>
+                    <th>Impresión</th>
+                    <th>Clínica</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="kv-row">
+                    <td><span class="value">@numeroOrden</span></td>
+                    <td><span class="value">@fecha.ToString("dd/MM/yyyy")</span></td>
+                    <td><span class="value">@Model.Clinicas?.NombreClinica</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <table class="section-title">
+          <tr>
+            <td class="bar"></td>
+            <td>@detalle.ExamenLabClinico.NombreExamen</td>
+          </tr>
+        </table>
+
+        @{
+          var resultados = detalle.Resultados.OrderBy(r => r.DatosExamenesLabClinicoId);
+        }
+
+        <table class="block">
+          <tr>
+            <td style="padding:0;">
+              <table class="table threecol">
+                <colgroup>
+                  <col />
+                  <col />
+                  <col />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>Sensible (MM)</th>
+                    <th>Intermedio (MM)</th>
+                    <th>Resistente</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="kv-row">
+                    <td>
+                      @foreach (var r in resultados)
+                      {
+                        if (r.DatosExamenesLabClinico.Tipo == "Sensible")
+                        {
+                          var texto = string.IsNullOrEmpty(r.ValorResultado) ? " --- " : r.ValorResultado;
+                          <div>
+                            <span class="label">@r.DatosExamenesLabClinico.Campos</span>
+                            <span class="value">@texto</span>
+                          </div>
+                        }
+                      }
+                    </td>
+                    <td>
+                      @foreach (var r in resultados)
+                      {
+                        if (r.DatosExamenesLabClinico.Tipo == "Intermedio")
+                        {
+                          var texto = string.IsNullOrEmpty(r.ValorResultado) ? " --- " : r.ValorResultado;
+                          <div>
+                            <span class="label">@r.DatosExamenesLabClinico.Campos</span>
+                            <span class="value">@texto</span>
+                          </div>
+                        }
+                      }
+                    </td>
+                    <td>
+                      @foreach (var r in resultados)
+                      {
+                        if (r.DatosExamenesLabClinico.Tipo == "Resistente")
+                        {
+                          <div><span class="label">@r.DatosExamenesLabClinico.Campos</span></div>
+                        }
+                      }
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+
+      </div>
+    }
+    else if (detalle.ExamenLabClinico?.NombreExamen == "Líquido Peritoneal")
+    {
+      <div class="page" style="page-break-inside: avoid; break-inside: avoid;">
+        @Html.Partial("_HeaderResultados.cshtml")
+
+        <table class="section-title">
+          <tr>
+            <td class="bar"></td>
+            <td>Datos del paciente</td>
+          </tr>
+        </table>
+        <table class="block">
+          <tr>
+            <td style="padding:0;">
+              <table class="table threecol">
+                <colgroup>
+                  <col />
+                  <col />
+                  <col />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Sexo</th>
+                    <th>Edad</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="kv-row">
+                    <td><span class="value">@Model.Paciente?.Nombre</span></td>
+                    <td><span class="value">@Model.Paciente?.Sexo?.DescripcionSexo</span></td>
+                    <td><span class="value">@edad</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <table class="block" style="margin-top:8px;">
+          <tr>
+            <td style="padding:0;">
+              <table class="table threecol">
+                <colgroup>
+                  <col />
+                  <col />
+                  <col />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>No. Orden</th>
+                    <th>Impresión</th>
+                    <th>Clínica</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="kv-row">
+                    <td><span class="value">@numeroOrden</span></td>
+                    <td><span class="value">@fecha.ToString("dd/MM/yyyy")</span></td>
+                    <td><span class="value">@Model.Clinicas?.NombreClinica</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <table class="section-title">
+          <tr>
+            <td class="bar"></td>
+            <td>@detalle.ExamenLabClinico.NombreExamen</td>
+          </tr>
+        </table>
+
+        @{
+          var resultados = detalle.Resultados.OrderBy(r => r.DatosExamenesLabClinicoId);
+        }
+
+        <!-- A. Macroscópico -->
+        <table class="section-title">
+          <tr>
+            <td class="bar"></td>
+            <td>A. Examen Macroscópico</td>
+          </tr>
+        </table>
+        <table class="block">
+          <tr>
+            <td style="padding:0;">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Campo</th>
+                    <th>Resultado</th>
+                    <th>Referencia</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @foreach (var r in resultados)
+                  {
+                    if (r.DatosExamenesLabClinico.Tipo == "Macroscopico")
+                    {
+                      var texto = string.IsNullOrEmpty(r.ValorResultado) ? " --- " : r.ValorResultado;
+                      <tr class="kv-row">
+                        <td>@r.DatosExamenesLabClinico.Campos</td>
+                        <td>@texto</td>
+                        <td>@r.DatosExamenesLabClinico.ValorReferencia</td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- B. Bioquímico -->
+        <table class="section-title">
+          <tr>
+            <td class="bar"></td>
+            <td>B. Examen Bioquímico</td>
+          </tr>
+        </table>
+        <table class="block">
+          <tr>
+            <td style="padding:0;">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Campo</th>
+                    <th>Resultado</th>
+                    <th>Referencia</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @foreach (var r in resultados)
+                  {
+                    if (r.DatosExamenesLabClinico.Tipo == "Bioquimico")
+                    {
+                      var texto = string.IsNullOrEmpty(r.ValorResultado) ? " --- " : r.ValorResultado;
+                      <tr class="kv-row">
+                        <td>@r.DatosExamenesLabClinico.Campos</td>
+                        <td>@texto</td>
+                        <td>@r.DatosExamenesLabClinico.ValorReferencia</td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- C. Citológico -->
+        <table class="section-title">
+          <tr>
+            <td class="bar"></td>
+            <td>C. Examen Citológico</td>
+          </tr>
+        </table>
+        <table class="block">
+          <tr>
+            <td style="padding:0;">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Campo</th>
+                    <th>Resultado</th>
+                    <th>Referencia</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @foreach (var r in resultados)
+                  {
+                    if (r.DatosExamenesLabClinico.Tipo == "Citologico")
+                    {
+                      var texto = string.IsNullOrEmpty(r.ValorResultado) ? " --- " : r.ValorResultado;
+                      <tr class="kv-row">
+                        <td>@r.DatosExamenesLabClinico.Campos</td>
+                        <td>@texto</td>
+                        <td>@r.DatosExamenesLabClinico.ValorReferencia</td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+
+      </div>
+    }
+    else if (detalle.ExamenLabClinico?.NombreExamen == "Espermograma")
+    {
+      <div class="page" style="page-break-inside: avoid; break-inside: avoid;">
+        @Html.Partial("_HeaderResultados.cshtml")
+
+        <table class="section-title">
+          <tr>
+            <td class="bar"></td>
+            <td>Datos del paciente</td>
+          </tr>
+        </table>
+        <table class="block">
+          <tr>
+            <td style="padding:0;">
+              <table class="table threecol">
+                <colgroup>
+                  <col />
+                  <col />
+                  <col />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Sexo</th>
+                    <th>Edad</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="kv-row">
+                    <td><span class="value">@Model.Paciente?.Nombre</span></td>
+                    <td><span class="value">@Model.Paciente?.Sexo?.DescripcionSexo</span></td>
+                    <td><span class="value">@edad</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <table class="block" style="margin-top:8px;">
+          <tr>
+            <td style="padding:0;">
+              <table class="table threecol">
+                <colgroup>
+                  <col />
+                  <col />
+                  <col />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>No. Orden</th>
+                    <th>Impresión</th>
+                    <th>Clínica</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="kv-row">
+                    <td><span class="value">@numeroOrden</span></td>
+                    <td><span class="value">@fecha.ToString("dd/MM/yyyy")</span></td>
+                    <td><span class="value">@Model.Clinicas?.NombreClinica</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <table class="section-title">
+          <tr>
+            <td class="bar"></td>
+            <td>@detalle.ExamenLabClinico.NombreExamen</td>
+          </tr>
+        </table>
+
+        @{
+          var resultados = detalle.Resultados.OrderBy(r => r.DatosExamenesLabClinicoId);
+        }
+
+        <!-- A. Macroscópico -->
+        <table class="section-title">
+          <tr>
+            <td class="bar"></td>
+            <td>A. Examen Macroscópico</td>
+          </tr>
+        </table>
+        <div class="block">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Campo</th>
+                <th>Resultado</th>
+                <th>Referencia</th>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach (var r in resultados)
+              {
+                if (r.DatosExamenesLabClinico.Tipo == "Macroscopico")
+                {
+                  var texto = string.IsNullOrEmpty(r.ValorResultado) ? " --- " : r.ValorResultado;
+                  <tr class="kv-row">
+                    <td>@r.DatosExamenesLabClinico.Campos</td>
+                    <td>@texto</td>
+                    <td>@r.DatosExamenesLabClinico.ValorReferencia</td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- B. Citológico -->
+        <table class="section-title">
+          <tr>
+            <td class="bar"></td>
+            <td>B. Examen Citológico</td>
+          </tr>
+        </table>
+        <table class="block">
+          <tr>
+            <td style="padding:0%;">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Campo</th>
+                    <th>Resultado</th>
+                    <th>Referencia</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @foreach (var r in resultados)
+                  {
+                    if (r.DatosExamenesLabClinico.Tipo == "Citologico")
+                    {
+                      var texto = string.IsNullOrEmpty(r.ValorResultado) ? " --- " : r.ValorResultado;
+                      <tr class="kv-row">
+                        <td>@r.DatosExamenesLabClinico.Campos</td>
+                        <td>@texto</td>
+                        <td>@r.DatosExamenesLabClinico.ValorReferencia</td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- C. Movilidad -->
+        <table class="section-title">
+          <tr>
+            <td class="bar"></td>
+            <td>C. Movilidad</td>
+          </tr>
+        </table>
+        <table class="block">
+          <tr>
+            <td style="padding:0%;">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Campo</th>
+                    <th>Resultado</th>
+                    <th>Referencia</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @foreach (var r in resultados)
+                  {
+                    if (r.DatosExamenesLabClinico.Tipo == "Movilidad")
+                    {
+                      var texto = string.IsNullOrEmpty(r.ValorResultado) ? " --- " : r.ValorResultado;
+                      <tr class="kv-row">
+                        <td>@r.DatosExamenesLabClinico.Campos</td>
+                        <td>@texto</td>
+                        <td>@r.DatosExamenesLabClinico.ValorReferencia</td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- D. Morfología -->
+        <table class="section-title">
+          <tr>
+            <td class="bar"></td>
+            <td>D. Morfología</td>
+          </tr>
+        </table>
+        <table class="block">
+          <tr>
+            <td style="padding:0%;">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Campo</th>
+                    <th>Resultado</th>
+                    <th>Referencia</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @foreach (var r in resultados)
+                  {
+                    if (r.DatosExamenesLabClinico.Tipo == "Morfologia")
+                    {
+                      var texto = string.IsNullOrEmpty(r.ValorResultado) ? " --- " : r.ValorResultado;
+                      <tr class="kv-row">
+                        <td>@r.DatosExamenesLabClinico.Campos</td>
+                        <td>@texto</td>
+                        <td>@r.DatosExamenesLabClinico.ValorReferencia</td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+
+      </div>
+    }
+    else if (
+    detalle.ExamenLabClinico?.NombreExamen == "Tórax P/A" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Codo AP/lat" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO FAST" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Torax A/P" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Torax AP/ Lateral" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Parrilla Costal Tórax" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Cráneo AP/lat" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Huesos Propios de Nariz" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Senos Paranasales" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Maxilares" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Orbitas" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Arcos Cigomático" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Abdomen Simple" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Abdomen Erecto" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Femur AP/lat" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Tibia y Peroné AP/lat" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Rodilla AP/lat" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Tobillo AP/lat" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Pie AP/lat" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Calcaneo AP/lat" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Cervical Ap/lat" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Dorsal Ap/lat" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Brazo AP/ lat" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Clavícula AP" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Hombro con y Sin Apoyo" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Hombro AP/ Oblicua" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Columna Proyección Dinámicas" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Spot de Columna" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Columna Dorso Lumbar AP" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Sacro Coxigea Lumbar AP/" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Lumbosacra AP/lat" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Lumbar AP/lat" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Pierna Ap/Lat" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Muslo Ap/Lat" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Spot de dedo" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Pélvis Posición de Rana" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Pélvis AP y LAt" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Pélvis AP" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Mano AP/ lat" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Muñeca AP/ lat" ||
+    detalle.ExamenLabClinico?.NombreExamen == "Antebrazo AP/lat" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO OBSTETRICO" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO PELVICO" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO ABDOMINAL SUPERIOR" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO ABDOMINAL INFERIOR" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO ABDOMINAL TOTAL" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO DE CUELLO" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO DE TEJIDOS BLANDOS" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO RENAL Y VIAS URINARIAS" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO HIGADO Y VIAS BILIARES" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO DE ENDOVAGINAL" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO TESTICULAR" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO PROSTATICO" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO DE PIE" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO GLANDULA PAROTIDA" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO MAMARIO" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO FOSA ILEACA IZQ-DERECHA" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO DE RODILLA" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO CONTROL PRENATAL" ||
+    detalle.ExamenLabClinico?.NombreExamen == "DOPLER ARTERIAL MIEMBRO INFERIOR" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO ABDOMEN SUPERIOR Y FOSA ILIACA DERECHA" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO ABDOMINAL COMPLETO PEDIATRICO (<2 AÑOS)" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO ABDOMINAL PEDIATRICO (<2 AÑOS)" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO PARED ABDOMINAL" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO OBSTETRICO-GEMELAR" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO DE ARTICULACIONES" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO INGUINAL" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO ENDORECTAL" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO DE TIROIDES" ||
+    detalle.ExamenLabClinico?.NombreExamen == "DOPLER ARTERIAL MIEMBRO SUPERIORES" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO PELVICO Y FOSA ILIACA DERECHA" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO DE AMBAS RODILLAS" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO PROSTATICO ENDORECTAL" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO INGUINO-ESCROTAL" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO TRANSFONTANELAR" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO DE CUELLO Y TIROIDES CON DOPPLER" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO DE TEJIDOS BLANDOS CON DOPPLER" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO TESTICULAR CON DOPPLER" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO MAMARIO CON DOPPLER" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO VENOSO MIEMBRO INFERIOR" ||
+    detalle.ExamenLabClinico?.NombreExamen == "ULTRASONIDO VENOSO MIEMBRO SUPERIOR"
+    )
+    {
+      // No imprimir nada para estos estudios de imágenes / US según implementación actual.
+    }
+    else
+    {
+      nuevaColeccion.Add(detalle);
+    }
+  }
+
+  @if (nuevaColeccion.Count() != 0)
+  {
+    <div style="display: block; page-break-inside: auto;">
+      @Html.Partial("_HeaderResultados.cshtml")
+
+      <table class="section-title">
+        <tr>
+          <td class="bar"></td>
+          <td>Datos del paciente</td>
+        </tr>
+      </table>
+      <table class="block">
+        <tr>
+          <td style="padding:0;">
+            <table class="table threecol">
+              <colgroup>
+                <col />
+                <col />
+                <col />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Sexo</th>
+                  <th>Edad</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="kv-row">
+                  <td><span class="value">@Model.Paciente?.Nombre</span></td>
+                  <td><span class="value">@Model.Paciente?.Sexo?.DescripcionSexo</span></td>
+                  <td><span class="value">@edad</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </table>
+
+      <table class="block" style="margin-top:8px;">
+        <tr>
+          <td style="padding:0;">
+            <table class="table threecol">
+              <colgroup>
+                <col />
+                <col />
+                <col />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>No. Orden</th>
+                  <th>Impresión</th>
+                  <th>Clínica</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="kv-row">
+                  <td><span class="value">@numeroOrden</span></td>
+                  <td><span class="value">@fecha.ToString("dd/MM/yyyy")</span></td>
+                  <td><span class="value">@Model.Clinicas?.NombreClinica</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </table>
+
+      @foreach (var detalle in nuevaColeccion)
+      {
+        if (detalle?.Resultados != null && detalle.Resultados.Any())
+        {
+          <div class="bloque-examen-urologia" style="display: block; page-break-inside: auto; break-inside: auto; margin-top: 10px; clear: both;">
+            <table class="section-title">
+              <tr>
+                <td class="bar"></td>
+                <td>@detalle.ExamenLabClinico.CategoriaLabClinico.Nombre - @detalle.ExamenLabClinico.NombreExamen</td>
+              </tr>
+            </table>
+
+            <table class="block" style="margin-bottom:10px;">
+              <tr>
+                <td style="padding:0;">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>Campo</th>
+                        <th>Resultado</th>
+                        <th>Intervalo de referencia</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @foreach (var r in detalle.Resultados.OrderBy(r => r.DatosExamenesLabClinicoId))
+                      {
+                        var valoresReferencia = new List<string>();
+                        if (r.DatosExamenesLabClinico.ValorReferencia != null
+                        && detalle.ExamenLabClinico.NombreExamen != "Covid-19, Influenza A+B, RSV, Adenovirus")
+                        {
+                          valoresReferencia = r.DatosExamenesLabClinico.ValorReferencia.Split(",").ToList();
+                        }
+
+                        if (!string.IsNullOrEmpty(r.ValorResultado))
+                        {
+                          var resultadoTexto = string.IsNullOrEmpty(r.ValorResultado) ? " --- " : r.ValorResultado;
+                          <tr class="kv-row">
+                            <td>@r.DatosExamenesLabClinico.Campos</td>
+                            <td>@resultadoTexto</td>
+                            @if (detalle.ExamenLabClinico.NombreExamen != "Covid-19, Influenza A+B, RSV, Adenovirus")
+                            {
+                              <td>
+                                @if (valoresReferencia != null)
+                                {
+                                  <table class="table" style="border:0;">
+                                    <tbody>
+                                      @foreach (var valor in valoresReferencia)
+                                      {
+                                        var valoresSplitDosPuntos = valor.Replace("\"", "").Split(':').ToList();
+                                        <tr>
+                                          @if (valoresSplitDosPuntos != null)
+                                          {
+                                            foreach (var valorSplit in valoresSplitDosPuntos)
+                                            {
+                                              <td style="border:0;">@valorSplit</td>
+                                            }
+                                          }
+                                        </tr>
+                                      }
+                                    </tbody>
+                                  </table>
+                                }
+                              </td>
+                            }
+                          </tr>
+                        }
+                      }
+                    </tbody>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </div>
+        }
+      }
+
+    </div>
+  }
+
+</div>

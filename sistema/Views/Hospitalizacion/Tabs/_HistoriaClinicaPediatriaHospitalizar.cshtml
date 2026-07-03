@@ -1,0 +1,401 @@
+@model sistema.Models.HospitalizacionDetallesViewModel
+@{
+    var estadoGeneral = Model.Consulta?.ExamenFisico?.EstadoGeneral ?? "-";
+    var motivoConsulta = Model.Consulta?.ConsultaMotivoPediatria ?? "-";
+    var historiaEnfermedadActual = Model.Consulta?.HistoriaPediatria?.HistoriaEnfermedadActual ?? "-";
+    var antecedentesMedicos = Model.Consulta?.Citas?.Paciente?.AntecedentesMedicos ?? "-";
+    var antecedentesQuirurgicos = Model.Consulta?.Citas?.Paciente?.AntecedentesQuirurgicos ?? "-";
+    var antecedentesAlergicos = Model.Consulta?.Citas?.Paciente?.AntecedentesAlergias ?? "-";
+    var antecedentesTraumaticos = Model.Consulta?.Citas?.Paciente?.AntecedentesTraumaticos ?? "-";
+    var antecedentesVicios = Model.Consulta?.Citas?.Paciente?.AntecedentesVicios ?? "-";
+    var antecedentesMedicamentos = Model.Consulta?.Citas?.Paciente?.AntecedentesMedicamentos ?? "-";
+    var peso = Model.Consulta?.ExamenFisico?.Peso?.ToString() ?? "-";
+    var talla = Model.Consulta?.ExamenFisico?.Talla?.ToString() ?? "-";
+    var frecuenciaCardiaca = Model.Consulta?.ExamenFisico?.FrecuenciaCardiaca?.ToString() ?? "-";
+    var frecuenciaRespiratoria = Model.Consulta?.ExamenFisico?.FrecuenciaRespiratoria?.ToString() ?? "-";
+    var presionArterial = Model.Consulta?.ExamenFisico?.PresionArterial ?? "-";
+    var temperatura = Model.Consulta?.ExamenFisico?.Temperatura?.ToString() ?? "-";
+    var saturacionOxigeno = Model.Consulta?.ExamenFisico?.SaturacionDeOxigeno?.ToString() ?? "-";
+    var glasgow = Model.Consulta?.ExamenFisico?.Glasgow?.ToString() ?? "-";
+    var comentario = Model.Consulta?.HistoriaPediatria?.Comentario ?? "-";
+    var impresionClinica = Model.Consulta?.HistoriaPediatria?.ImpresionClinica ?? "-";
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
+
+<br />
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Historia cl&iacute;nica Pedi&aacute;trica</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-4">
+                <b>Motivo de consulta</b><br />
+                <textarea class="form-control dato-consulta" readonly>
+                    @motivoConsulta
+                </textarea>
+            </div>
+            <div class="col-md-4">
+                <b>Historia de la enfermedad actual</b><br />
+                <textarea class="form-control dato-consulta" readonly>
+                    @historiaEnfermedadActual
+                </textarea>
+            </div>
+        </div>
+        @* <br />
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Historia cl&iacute;nica (historial)</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-12 text-primary texto-cargando-historial" style="display:none">
+                Cargando historial...
+            </div>
+            <div class="col-md-12 text-danger texto-error-cargando-historial" style="display:none">
+                Error de servidor y/o conexión. <a href="#" data-bind="click:consultarHistorialConsultas">Reintentar</a>
+            </div>
+            <!--ko foreach:historialConsultas-->
+            <div class="col-md-12" style="background-color:lightgray">
+                <b>Fecha: </b><span data-bind="text:Fecha"></span>
+            </div>
+            <div class="col-md-4">
+                <b>Motivo de consulta</b><br />
+                <span data-bind="text:ConsultaMotivo"></span>
+            </div>
+            <div class="col-md-4">
+                <b>Historia de la enfermedad actual</b><br />
+                <span data-bind="text:HistoriaEnfermedadActual"></span>
+            </div>
+            <!--/ko-->
+            <!--ko if:historialConsultas().length==0-->
+            <div class="col-md-12">
+                No hay registro de consultas anteriores
+            </div>
+            <!--/ko-->
+        </div> *@
+    </div>
+</div>
+
+<br />
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Solo para mujeres</b></h5>
+                <hr>
+            </div>
+          <div class="col-md-4">
+    <b>&iquest;Est&aacute; usted embarazada?</b><br>
+    <select asp-for="Consulta.EstaEmbarazada" class="form-control dato-consulta">
+        <option value="-">Seleccione...</option>
+        <option value="SI">SI</option>
+        <option value="NO">NO</option>
+        <option value="N/S">N/S</option>
+    </select>
+</div>
+<div class="col-md-4">
+    <b>Número de semanas</b><br>
+    @Html.TextBoxFor(a => a.Consulta.NumeroSemanasEmbarazo, new { type = "number", @class = "form-control dato-consulta" })
+</div>
+<div class="col-md-4">
+    <b>&iquest;Est&aacute; usted amamantando?</b><br>
+    <select asp-for="Consulta.EstaAmamantando" class="form-control dato-consulta">
+        <option value="-">Seleccione...</option>
+        <option value="SI">SI</option>
+        <option value="NO">NO</option>
+        <option value="N/S">N/S</option>
+    </select>
+</div>
+
+        </div>
+    </div>
+</div>
+
+<br />
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Antecedentes patológicos</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-4">
+                <b>Medicos:</b><br />
+                <textarea class="form-control dato-consulta" readonly>
+                    @antecedentesMedicos
+                </textarea>
+            </div>
+            <div class="col-md-4">
+                <b>Quirúrgicos:</b><br />
+                <textarea class="form-control dato-consulta" readonly>
+                    @antecedentesQuirurgicos
+                </textarea>
+            </div>
+            <div class="col-md-4">
+                <b>Alergicos:</b><br />
+                <textarea class="form-control dato-consulta" readonly>
+                    @antecedentesAlergicos
+                </textarea>
+            </div>
+            <div class="col-md-4">
+                <b>Traumáticos:</b><br />
+                <textarea class="form-control dato-consulta" readonly>
+                    @antecedentesTraumaticos
+                </textarea>
+            </div>
+            <div class="col-md-4">
+                <b>Vicios y/o manías:</b><br />
+                <textarea class="form-control dato-consulta" readonly>
+                    @antecedentesVicios
+                </textarea>
+            </div>
+            <div class="col-md-4">
+                <b>Medicamento de uso actual:</b><br />
+                <textarea class="form-control dato-consulta" readonly>
+                    @antecedentesMedicamentos
+                </textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<br />
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Examen físico</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-5">
+                <b>ESTADO GENERAL:</b><br>
+                @Html.TextBoxFor(m => estadoGeneral , new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+            <div class="col-md-4">
+                <b>PESO (KG):</b><br />
+                @Html.TextBoxFor(m => peso, new { @class = "form-control dato-consulta", @placeholder = "Peso", @onchange = "getIMC()", @readonly = "readonly" })
+            </div>
+            <div class="col-md-3">
+                TALLA (M):<br />
+                @Html.TextBoxFor(m => talla, new { @class = "form-control dato-consulta", @placeholder = "Talla", @onchange = "getIMC()", @readonly = "readonly" })
+            </div>
+            <div class="col-md-2">
+                FC:<br>
+                @Html.TextBoxFor(m => frecuenciaCardiaca, new { @class = "form-control dato-consulta", @placeholder = "Frecuencia cardiaca", @readonly = "readonly" })
+            </div>
+            <div class="col-md-2">
+                FR:<br>
+                @Html.TextBoxFor(m => frecuenciaRespiratoria, new { @class = "form-control dato-consulta", @placeholder = "Frecuencia respiratoria", @readonly = "readonly" })
+            </div>
+            <div class="col-md-2">
+                P/A:<br>
+                @Html.TextBoxFor(m => presionArterial, new { @class = "form-control dato-consulta", @placeholder = "P/A", @readonly = "readonly" })
+            </div>
+            <div class="col-md-2">
+                TEMP:<br>
+                @Html.TextBoxFor(m => temperatura, new { @class = "form-control dato-consulta", @placeholder = "Temperatura", @readonly = "readonly" })
+            </div>
+            <div class="col-md-2">
+                SpO2:<br>
+                @Html.TextBoxFor(m => saturacionOxigeno, new { @class = "form-control dato-consulta", @placeholder = "Saturación de oxígeno", @readonly = "readonly" })
+            </div>
+            <div class="col-md-2">
+                GLASGOW:<br>
+                @Html.TextBoxFor(m => glasgow, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+        </div>
+        @* <br />
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Examen f&iacute;sico (historial)</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-12 text-primary texto-cargando-historial" style="display:none">
+                Cargando historial...
+            </div>
+            <div class="col-md-12 text-danger texto-error-cargando-historial" style="display:none">
+                Error de servidor y/o conexion. <a href="#" data-bind="click:consultarHistorialConsultas">Reintentar</a>
+            </div>
+            <!--ko foreach:historialConsultas-->
+            <div class="col-md-12" style="background-color:lightgray">
+                <b>Fecha: </b><span data-bind="text:Fecha"></span>
+            </div>
+            <div class="col-md-2"><b>ESTADO GENERAL:</b><br /><span data-bind="text:ExamenFisicoEstadoGeneral"></span></div>
+            <div class="col-md-2"><b>PESO:</b><br /><span data-bind="text:ExamenFisicoPeso"></span></div>
+            <div class="col-md-2"><b>TALLA:</b><br /><span data-bind="text:ExamenFisicoTalla"></span></div>
+            <div class="col-md-2"><b>FC:</b><br /><span data-bind="text:ExamenFisicoFrecuenciaCardiaca"></span></div>
+            <div class="col-md-2"><b>FR:</b><br /><span data-bind="text:ExamenFisicoFrecuenciaRespiratoria"></span></div>
+            <div class="col-md-2"><b>P/A:</b><br /><span data-bind="text:ExamenFisicoPresionArterial"></span></div>
+            <div class="col-md-2"><b>TEMP:</b><br /><span data-bind="text:ExamenFisicoTemperatura"></span></div>
+            <div class="col-md-2"><b>SpO2:</b><br /><span data-bind="text:ExamenFisicoSaturacionOxigeno"></span></div>
+            <div class="col-md-2"><b>GLASGOW:</b><br /><span data-bind="text:ExamenFisicoGlasgow"></span></div>
+            <!--/ko-->
+            <!--ko if:historialConsultas().length==0-->
+            <div class="col-md-12">
+                No hay registro de consultas anteriores
+            </div>
+            <!--/ko-->
+        </div> *@
+    </div>
+</div>
+
+<br />
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-12">
+                <h5><b>Revisión por sistemas</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-6">
+                <b>APARIENCIA GENERAL Y NEUROLOGICO:</b><br>
+                @Html.TextAreaFor(m => m.Consulta.ConsultaRevisionSistemas.AparienciaGeneral, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+            <div class="col-md-6">
+                <b>CABEZA:</b><br>
+                @Html.TextAreaFor(m => m.Consulta.ConsultaRevisionSistemas.Cabeza, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+            <div class="col-md-6">
+                <b>OIDOS Y BOCA:</b><br>
+                @Html.TextAreaFor(m => m.Consulta.ConsultaRevisionSistemas.OidosBoca, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+            <div class="col-md-6">
+                <b>CUELLO:</b><br>
+                @Html.TextAreaFor(m => m.Consulta.ConsultaRevisionSistemas.Cuello, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+            <div class="col-md-6">
+                <b>TORAX:</b><br>
+                @Html.TextAreaFor(m => m.Consulta.ConsultaRevisionSistemas.Torax, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+            <div class="col-md-6">
+                <b>ABDOMEN:</b><br>
+                @Html.TextAreaFor(m => m.Consulta.ConsultaRevisionSistemas.Abdomen, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+            <div class="col-md-6">
+                <b>DORSO Y EXTREMIDADES:</b><br>
+                @Html.TextAreaFor(m => m.Consulta.ConsultaRevisionSistemas.DorsoYExtremidades, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+            <div class="col-md-6">
+                <b>GENITALES:</b><br>
+                @Html.TextAreaFor(m => m.Consulta.ConsultaRevisionSistemas.Genitales, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+        </div>
+        @* <br />
+        <div class="form-row">
+            <div class="col-12">
+                <h5><b>Revisión por sistemas (historial)</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-12 text-primary texto-cargando-historial" style="display:none">
+                Cargando historial...
+            </div>
+            <div class="col-md-12 text-danger texto-error-cargando-historial" style="display:none">
+                Error de servidor y/o conexión. <a href="#" data-bind="click:consultarHistorialConsultas">Reintentar</a>
+            </div>
+            <!--ko foreach:historialConsultas-->
+            <div class="col-md-12" style="background-color:lightgray">
+                <b>Fecha: </b><span data-bind="text:Fecha"></span>
+            </div>
+            <div class="col-md-2"><b>APARIENCIA GENERAL Y NEUROLOGICO:</b><br /><span data-bind="text:RevisionSistemasAparienciaGeneral"></span></div>
+            <div class="col-md-2"><b>CABEZA:</b><br /><span data-bind="text:RevisionSistemasCabeza"></span></div>
+            <div class="col-md-2"><b>OIDOS Y BOCA:</b><br /><span data-bind="text:RevisionSistemasOidosBoca"></span></div>
+            <div class="col-md-2"><b>CUELLO:</b><br /><span data-bind="text:RevisionSistemasCuello"></span></div>
+            <div class="col-md-2"><b>TORAX:</b><br /><span data-bind="text:RevisionSistemasTorax"></span></div>
+            <div class="col-md-2"><b>ABDOMEN:</b><br /><span data-bind="text:RevisionSistemasAbdomen"></span></div>
+            <!--/ko-->
+            <!--ko if:historialConsultas().length==0-->
+            <div class="col-md-12">
+                No hay registro de consultas anteriores
+            </div>
+            <!--/ko-->
+        </div> *@
+    </div>
+</div>
+
+<br />
+<div class="card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Comentario</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-12">
+                <b>Comentario</b><br>
+                @Html.TextAreaFor(a => a.Consulta.Historia.Comentario, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+        </div>
+        @* <br />
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Comentario (historial)</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-12 text-primary texto-cargando-historial" style="display:none">
+                Cargando historial...
+            </div>
+            <div class="col-md-12 text-danger texto-error-cargando-historial" style="display:none">
+                Error de servidor y/o conexión. <a href="#" data-bind="click:consultarHistorialConsultas">Reintentar</a>
+            </div>
+            <!--ko foreach:historialConsultas-->
+            <div class="col-md-12" style="background-color:lightgray">
+                <b>Fecha: </b><span data-bind="text:Fecha"></span>
+            </div>
+            <div class="col-md-12">
+                <b>Comentario:</b><br><span data-bind="text:HistoriaClinicaComentario"></span>
+            </div>
+            <!--/ko-->
+            <!--ko if:historialConsultas().length==0-->
+            <div class="col-md-12">
+                No hay registro de consultas anteriores
+            </div>
+            <!--/ko-->
+        </div> *@
+    </div>
+</div>
+
+<br />
+<div class="card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Impresión clínica</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-12">
+                <b>Impresión clínica</b><br>
+                @Html.TextAreaFor(a => a.Consulta.Historia.ImpresionClinica, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+        </div>
+        @* <br />
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Impresión clínica (historial)</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-12 text-primary texto-cargando-historial" style="display:none">
+                Cargando historial...
+            </div>
+            <div class="col-md-12 text-danger texto-error-cargando-historial" style="display:none">
+                Error de servidor y/o conexión. <a href="#" data-bind="click:consultarHistorialConsultas">Reintentar</a>
+            </div>
+            <!--ko foreach:historialConsultas-->
+            <div class="col-md-12" style="background-color:lightgray">
+                <b>Fecha: </b><span data-bind="text:Fecha"></span>
+            </div>
+            <div class="col-md-12">
+                <b>Impresión clínica:</b><br><span data-bind="text:HistoriaClinicaImpresionClinica"></span>
+            </div>
+            <!--/ko-->
+            <!--ko if:historialConsultas().length==0-->
+            <div class="col-md-12">
+                No hay registro de consultas anteriores
+            </div>
+            <!--/ko-->
+        </div> *@
+    </div>
+</div>

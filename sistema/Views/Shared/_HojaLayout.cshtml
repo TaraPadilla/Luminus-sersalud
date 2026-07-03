@@ -1,0 +1,66 @@
+@using Microsoft.Extensions.Configuration
+@using Microsoft.AspNetCore.Hosting
+@inject IConfiguration Config
+@inject IWebHostEnvironment HostingEnv
+
+@{
+    // 1. Lógica para el Título de la página (aprovechamos la configuración si existe)
+    var tituloPestanaDefault = Config["EstablecimientoPestana"];
+    var tituloPagina = (ViewData["Title"] as string) ?? tituloPestanaDefault ?? "AVM";
+
+    // 2. Lógica para leer y convertir la imagen a Base64
+    var logoRelativo = (ViewData["ImagenLogo"] as string) ?? Config["ImagenLogoBase64"];
+    var rutaFisicaLogo = System.IO.Path.Combine(HostingEnv.WebRootPath, logoRelativo?.TrimStart('/') ?? "");
+    
+    string base64Logo = "";
+    bool hayLogo = false;
+    string extension = "png"; // Valor por defecto
+
+    if (!string.IsNullOrWhiteSpace(logoRelativo) && System.IO.File.Exists(rutaFisicaLogo))
+    {
+        try
+        {
+            // Extraer la extensión dinámicamente
+            extension = System.IO.Path.GetExtension(rutaFisicaLogo).TrimStart('.').ToLower();
+            if (extension == "jpg") extension = "jpeg"; // Ajuste para el formato MIME
+
+            byte[] imageBytes = System.IO.File.ReadAllBytes(rutaFisicaLogo);
+            base64Logo = Convert.ToBase64String(imageBytes);
+            hayLogo = true;
+        }
+        catch (Exception) { hayLogo = false; }
+    }
+}
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    @RenderSection("css", required: false)
+    
+    <title>@tituloPagina</title>
+</head>
+<body>
+
+    @* Movimos el logo aquí, dentro del body *@
+    @if (hayLogo)
+    {
+        <div style="width:20%; float:left; margin-bottom: 15px;">
+            <img src="data:image/@extension;base64,@base64Logo" style="width:100%" alt="Logo" />
+        </div>
+        <div style="clear: both;"></div> @* Esto evita que el @RenderBody() se suba al lado del logo si no es lo que deseas *@
+    }
+
+    @RenderBody()
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <script src="~/js/site.js"></script>
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

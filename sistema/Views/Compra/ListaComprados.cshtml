@@ -1,0 +1,220 @@
+@using Database.Shared.Paginacion;
+@using System.Web
+@model PaginacionList<Database.Shared.Models.Compra>
+
+@{
+    ViewData["Title"] = "Compras";
+}
+@section Scripts {
+    <script src="~/js-utilidades-wp-email/SendEmail.js"></script>
+    <script src="~/js-utilidades-wp-email/SendWhatsApp.js"></script>
+    <script src="~/js-utilidades-wp-email/WhatsappCompraClinica.js"></script>
+}
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <center>
+            <h4><b>Compras</b></h4>
+        </center>
+    </div>
+    <div class="col-md-12">
+        <form id="examenForm" asp-action="ListaComprados" method="post">
+
+            <div class="col-md-12 form-row offset-md-3 mt-4 mb-3">
+                <div class="col-md-2">
+                    <label>Fecha Inicial:</label>
+                    <input type="date" name="fechaInicial" value="@ViewData["CurrentFilter"]" class="form-control">
+                </div>
+
+                <div class="col-md-2">
+                    <label>Fecha Final:</label>
+                    <input type="date" name="fechaFinal" value="@ViewData["CurrentFilter"]" class="form-control">
+                </div>
+
+                <div class="col-md-2">
+                    <label>Numero de Compra:</label>
+                    <input type="number" name="numeroCompra" value="@ViewData["CurrentFilter"]" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <label>Proveedor</label>
+                    @Html.DropDownList("proveedor", ViewBag.Proveedor as SelectList, "Todas", new
+                        {
+                            @class =
+                             "form-control"
+                        })
+
+                </div>
+                <div class="col-md-2">
+                    <label>No Comprobante:</label>
+                    <input type="text" name="comprobante" value="@ViewData["CurrentFilter"]" class="form-control">
+
+                </div>
+                <div class="col-md-2">
+                    <label>Vendedor:</label>
+                    @Html.DropDownList("vendedor", ViewBag.Vendedor as SelectList, "Todas", new
+                        {
+                            @class =
+                             "form-control"
+                        })
+
+                </div>
+            </div>
+
+
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <input type="submit" value="Buscar" class="btn btn-success"></input>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+    <div class="col-md-12">
+
+        <a id="reportePDF" class="btn btn-secondary btn-sm mb-3" href="#">
+            Reporte PDF
+        </a>
+
+        <a class="btn btn-secondary btn-sm mb-3" id="reporteExcel" href="#">
+            Reporte EXCEL
+        </a>
+    </div>
+</div>
+
+
+<br />
+
+<div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel">
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="mb-0 table table-hover ">
+                    <thead>
+                        <tr>
+
+                            <th>Compra #</th>
+                            <th>Fecha Compra</th>
+                            <th>Proveedor</th>
+                            <th>NoComprobante</th>
+                            <th>Nombre Vendedor</th>
+                            <th>Fecha Recepcion</th>
+                            <th>Fecha Limite</th>
+                            <th>Gasto</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <input type="hidden" id="celularProveedor-@item.Id" value="@item.Proveedor.Celular_1" />
+
+                            <tr>
+                                <td>@item.Id</td>
+                                <td>@item.FechaCompra</td>
+                                <td>@item.Proveedor.Nombre</td>
+                                <td>@item.NoComprobante</td>
+                                <td>
+                                    @(item.Empleado != null
+                                        ? item.Empleado.Nombre
+                                        : "Admin")
+                                </td>
+                                <td>@item.FechaCompra</td>
+                                <td>@item.FechaLimite</td>
+                                <td>Q @item.DetalleCompras.Sum(a => a.PrecioTotal)</td>
+                                <td>
+                                    <a href="@Url.Action("Modificar","Compra", new {compraId = @item.Id})"
+                                        class="btn btn-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="@Url.Action("OrdenCompraPDF","CrearPDF", new {ordenCompraId = @item.Id})"
+                                        class="btn btn-danger" target="_blank">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+
+                                    <button class="btn btn-danger"
+                                        onclick="enviarReporteCompraEmail('@item.Id', '@Html.Raw(HttpUtility.JavaScriptStringEncode(item.Proveedor.Correo))')"
+                                        title="Enviar por Correo">
+                                        <i class="fas fa-envelope"></i>
+                                    </button>
+                                    <button class="btn btn-success"
+                                        onclick="enviarReporteCompraWhatsapp('@item.Id','@item.NombreVendedor','@item.Proveedor.Celular_1')"
+                                        title="Enviar por WhatsApp">
+                                        <i class="fab fa-whatsapp"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@{
+    var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+}
+
+<a asp-action="ListaComprados" asp-route-sortOrder="@ViewData["CurrentSort"]"
+    asp-route-pageNumber="@(Model.PageIndex - 1)" asp-route-currentFilter="@ViewData["CurrentFilter"]"
+    class="btn btn-danger btn-sm @prevDisabled">
+    Anterior
+</a>
+<a asp-action="ListaComprados" asp-route-sortOrder="@ViewData["CurrentSort"]"
+    asp-route-pageNumber="@(Model.PageIndex + 1)" asp-route-currentFilter="@ViewData["CurrentFilter"]"
+    class="btn btn-danger btn-sm @nextDisabled" class="">
+    Siguiente
+</a>
+
+
+<script>
+    document.getElementById('reportePDF').addEventListener('click', function (event) {
+        event.preventDefault(); // Previene el comportamiento predeterminado del enlace
+
+        // Capturar los valores del formulario
+        var fechaInicial = document.getElementsByName('fechaInicial')[0].value;
+        var fechaFinal = document.getElementsByName('fechaFinal')[0].value;
+        var comprobante = document.getElementsByName('comprobante')[0].value;
+        var proveedor = document.getElementsByName('proveedor')[0].value;
+        var vendedor = document.getElementsByName('vendedor')[0].value;
+        var numeroCompra = document.getElementsByName('numeroCompra')[0].value;
+        // Construir la URL con los par�metros
+        var url = '@Url.Action("GenerarPdfCompraCompras", "CrearPDF")' +
+            '?fechaInicial=' + encodeURIComponent(fechaInicial) +
+            '&fechaFinal=' + encodeURIComponent(fechaFinal) +
+            '&comprobante=' + encodeURIComponent(comprobante) +
+            '&proveedor=' + encodeURIComponent(proveedor) +
+            '&vendedor=' + encodeURIComponent(vendedor) +
+            '&numeroCompra=' + encodeURIComponent(proveedor);
+
+        // Redireccionar al controlador con los par�metros del formulario
+        window.location.href = url;
+    });
+    document.getElementById('reporteExcel').addEventListener('click', function (event) {
+        event.preventDefault(); // Previene el comportamiento predeterminado del enlace
+
+        // Capturar los valores del formulario
+        var fechaInicial = document.getElementsByName('fechaInicial')[0].value;
+        var fechaFinal = document.getElementsByName('fechaFinal')[0].value;
+        var comprobante = document.getElementsByName('comprobante')[0].value;
+        var proveedor = document.getElementsByName('proveedor')[0].value;
+        var vendedor = document.getElementsByName('vendedor')[0].value;
+        var numeroCompra = document.getElementsByName('numeroCompra')[0].value;
+
+        // Construir la URL con los par�metros
+        var url = '@Url.Action("CrearExcelCompraCompras", "CrearExcel")' +
+            '?fechaInicial=' + encodeURIComponent(fechaInicial) +
+            '&fechaFinal=' + encodeURIComponent(fechaFinal) +
+            '&comprobante=' + encodeURIComponent(comprobante) +
+            '&proveedor=' + encodeURIComponent(proveedor) +
+            '&vendedor=' + encodeURIComponent(vendedor) +
+            '&numeroCompra=' + encodeURIComponent(proveedor);
+
+        // Redireccionar al controlador con los par�metros del formulario
+        window.location.href = url;
+    });
+</script>

@@ -1,0 +1,189 @@
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Config
+@model Database.Shared.Models.Venta
+
+@{
+    ViewData["Title"] = "Recibo de venta";
+    Layout = "_HojaMembreteLayoutRecibo";
+    ViewData["NombreEmpresa"] = Config["EstablecimientoNombreEmpresa"];
+    ViewData["Direccion"] = Config["EstablecimientoDireccion"];
+    ViewData["Telefono"] = Config["EstablecimientoTelefono"];
+    ViewData["CorreoElectronico"] = Config["EstablecimientoCorreoElectronico"];
+    ViewData["ImagenFirma"] = Config["EstablecimientoImagenFirma"];
+
+    decimal total = 0.00m;
+    string codigo = Guid.NewGuid().ToString();
+}
+
+<div class="dyn">
+    <div class="meta">
+        <div>Fecha: @Model.FechaVenta.ToString("d/M/yyyy h:mm tt")</div>
+        <div>Le atendió: @(Model.Empleado != null ? Model.Empleado.Nombre : "Admin")</div>
+        <div class="sp"></div>
+        <div><b>Cliente:</b> @(Model.Clientes?.Nombre   ?? Model.Nombres)</div>
+        <div><b>NIT:</b>     @(Model.Clientes?.Nit       ?? Model.Nit)</div>
+        <div><b>Dirección:</b> @(Model.Clientes?.Direccion ?? Model.Direccion)</div>
+    </div>
+
+    <hr class="divider" />
+
+    <table class="items">
+        <thead>
+            <tr>
+                <th class="col-cant">CANT</th>
+                <th class="col-desc">DESCR</th>
+                <th class="col-monto">MONTO</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model.DetalleVenta)
+        {
+            var nombre = item.Producto?.NombreProducto
+                         ?? item.Servicio?.NombreServicio
+                         ?? item.ExamenLabClinico?.NombreExamen
+                         ?? "Artículo sin nombre";
+
+            <tr>
+                <td class="t-cant">@item.Cantidad</td>
+                <td class="t-desc">@nombre</td>
+                <td class="t-monto">@item.Total.ToString("N2")</td>
+            </tr>
+
+            total += item.Total;
+        }
+        </tbody>
+    </table>
+
+    <div class="row total">
+        <span>TOTAL</span>
+        <span>Q @total.ToString("N2")</span>
+    </div>
+
+    @foreach (var p in Model.Pagos)
+    {
+        <div class="row pay">
+            <span>@p.FormaPago.NombreFormaPago</span>
+            <span>Q @p.Monto.ToString("N2")</span>
+        </div>
+    }
+
+    <div class="row change">
+        <span>VUELTO</span>
+        <span>Q @Model.Vuelto.ToString("N2")</span>
+    </div>
+
+    <div class="receiptBarcode">
+        <div class="barcode">Hotel_Tzalamha</div>
+        <div class="barcodeID">@codigo</div>
+    </div>
+
+    <div class="thanks">
+        <div>GRACIAS POR SU COMPRA</div>
+        <div>***********************</div>
+        <div style="margin-top:6px;">Gracias por su preferencia</div>
+    </div>
+</div>
+
+@section css{
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css?family=Libre+Barcode+128" rel="stylesheet">
+
+<style>
+/* wkhtmltopdf: quita márgenes globales */
+html, body{
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+}
+
+/* En Razor debe ir @@page */
+@@page{
+    margin: 0;
+}
+
+/* ✅ CLAVE: fuerza el ancho del recibo y evita centrado */
+.dyn{
+    width: 58mm;              /* igual que PageWidth */
+    margin: 0 !important;     /* no center */
+    padding: 0 !important;
+
+    display: block !important;
+    float: left !important;   /* evita que algún wrapper lo centre */
+    box-sizing: border-box;
+
+    text-align: left;
+    font-size: 12px;
+    line-height: 1.35;
+    color: #1f1f1f;
+
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+}
+.dyn *{ font-family: Arial, sans-serif; box-sizing: border-box; }
+
+/* Bloque de datos */
+.dyn .meta{ display:block; }
+.dyn .meta .sp{ height:4px; }
+
+/* Separador */
+.divider{
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 6px 0;
+}
+
+/* Tabla */
+.dyn table.items{
+    width:100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 12px;
+}
+.dyn table.items thead th{
+    border-bottom: 1px solid #ccc;
+    padding: 2px 0 3px;
+    text-transform: uppercase;
+}
+.dyn .col-cant{ width: 14%; text-align:center; }
+.dyn .col-desc{ width: 56%; }
+.dyn .col-monto{ width: 30%; text-align:right; }
+
+.dyn table.items tbody tr{ border-top: 1px dashed #e5e5e5; }
+.dyn table.items td{ padding: 2px 0; vertical-align: top; }
+.dyn .t-cant{ text-align:center; }
+.dyn .t-desc{ word-break: break-word; }
+.dyn .t-monto{ text-align:right; }
+
+/* Filas */
+.dyn .row{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-top: 6px;
+}
+.dyn .total{ border-top:2px solid #0d0e36; padding-top:6px; font-weight:700; }
+.dyn .pay{ font-weight:600; }
+.dyn .change{ font-weight:700; }
+
+/* Barcode */
+.receiptBarcode{ text-align:center; margin-top:8px; }
+.receiptBarcode .barcode{
+    font-family: "Libre Barcode 128", cursive;
+    font-size: 48px;
+    line-height: 1;
+}
+.barcodeID{
+    text-align:center;
+    font-size: 11px;
+    margin-top: 2px;
+    letter-spacing: 1px;
+}
+
+/* Mensaje final */
+.dyn .thanks{ text-align:center; margin-top:6px; font-weight:600; }
+
+/* Evitar cortes feos */
+table, tr, td, th { page-break-inside: avoid; }
+.dyn, .meta, .receiptBarcode, .thanks { page-break-inside: avoid; }
+</style>
+
+}

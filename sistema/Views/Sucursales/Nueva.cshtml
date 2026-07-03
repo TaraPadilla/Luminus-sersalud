@@ -1,0 +1,30 @@
+@{
+    ViewData["Title"] = "Nueva sucursal";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <h4><b>Nueva sucursal</b></h4>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_SucursalForm")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <button class="btn btn-danger" data-bind="click:cancelarRegistrarSucursal">Cancelar</button>
+                <button class="btn btn-primary" data-bind="click:registrarSucursal">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+<script src="~/ViewModelKo/SucursalVM.js"></script>
+}

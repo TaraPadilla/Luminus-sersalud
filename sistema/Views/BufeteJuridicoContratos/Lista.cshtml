@@ -1,0 +1,70 @@
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    // Leer el valor del appsettings.json. 
+    // Cambia "Cliente" por la clave exacta que decidas usar para identificar la abreviatura.
+    string sufijoLayout = Configuration["Cliente"]; 
+    
+    // Concatenar para formar el nombre del Layout (ejemplo: "_Layout" + "SS")
+    // Si la clave trae el nombre completo (ej. "_LayoutSS"), simplemente asignalo directo.
+    Layout = $"_Layout{sufijoLayout}"; 
+    
+    ViewData["Title"] = "Contratos";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12 text-center">
+                <h4><b>Contratos</b></h4>
+                <hr />
+            </div>
+            <div class="col-md-12">
+                <a class="btn btn-primary text-white"
+                   href="@Url.Action("Nuevo","BufeteJuridicoContratos")">Nuevo contrato</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="tabla-contratos">
+                <thead>
+                    <tr class="text-center">
+                        <th>Nombre de contrato</th>
+                        <th>Fecha</th>
+                        <th>Pais</th>
+                        <th>Ver</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Contrato 001</td>
+                        <td>2023/04/04</td>
+                        <td>Guatemala</td>
+                        <td><button class="btn btn-primary">Ver</button></td>
+                    </tr>
+                    <tr>
+                        <td>Contrato 001</td>
+                        <td>2023/04/04</td>
+                        <td>Mexico</td>
+                        <td><button class="btn btn-primary">Ver</button></td>
+                    </tr>
+                    <tr>
+                        <td>Contrato 001</td>
+                        <td>2023/04/04</td>
+                        <td>Colombia</td>
+                        <td><button class="btn btn-primary">Ver</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+<script type="text/javascript" src="~/ViewModelKo/BufeteJuridicoContratosListaVM.js"></script>
+}

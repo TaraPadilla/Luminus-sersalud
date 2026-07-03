@@ -1,0 +1,135 @@
+@using System
+@using Database.Shared.Enumeraciones
+@using Database.Shared.Models
+@model List<Paciente>
+
+@{
+    ViewData["Title"] = "Lista pacientes";
+    var todayDate = DateTime.Now;
+
+    //Usuarios roles
+    var usuarioAdministrador = User.IsInRole("Administrador");
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        @if (User.IsInRole("CirugiaPlastica"))
+        {
+            <div class="text-center">
+                <h4><b> Archivos Pacientes</b></h4>
+            </div>
+
+        }
+        else
+        {
+            <div class="text-center">
+                <h4><b>Pacientes</b></h4>
+            </div>
+        }
+
+    </div>
+</div>
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <a class="btn btn-primary enlace-redirigir" asp-action="Nuevo" asp-controller="Pacientes">
+                    Nuevo paciente
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="tabla-pacientes">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Paciente</th>
+                        <th>Estado</th>
+                        @*<th>Número de afiliación</th>*@
+                        <th>Sexo</th>
+                        @*<th>Fecha de nacimiento</th>*@
+                        <th>Edad</th>
+                        <th>Teléfono</th>
+                        @*<th>Retomante</th>*@
+                        <th>Modalidad de atención</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        var sexo = item.Sexo == null ? "" : item.Sexo.DescripcionSexo;
+                        var fechaNacimiento = item.FechaNacimiento == null ? "" : Convert.ToDateTime(item.FechaNacimiento).ToShortDateString();
+                        var edad = "";
+                        var retomaServicio = item.TipoPacienteId == (int)TipoPacienteEnum.Retomante ? "Sí" : "No";
+                        var modalidadAtencion = item.ModalidadAtencion == "presencial" ? "Presencial" : "Virtual";
+
+                        if (item.FechaNacimiento != null)
+                        {
+                            edad = (todayDate.Year - item.FechaNacimiento.Value.Year).ToString();
+                            if (todayDate.Month < item.FechaNacimiento.Value.Month
+                            || (todayDate.Month == item.FechaNacimiento.Value.Month && todayDate.Day < item.FechaNacimiento.Value.Day))
+                            {
+
+                                edad = (Convert.ToInt32(edad) - 1).ToString();
+                            }
+                        }
+
+                        <tr>
+                            <td>@item.Id</td>
+                            <td>@item.Nombre</td>
+                            <td>
+                                @if (item.EstadoPacienteId == (int)EstadoPacienteEnum.Inactivo)
+                                {
+                                    <span class="text-danger alert-danger p-1 rounded"><b>Inactivo</b></span>
+                                }
+                                else
+                                {
+                                    <span class="text-success alert-success p-1 rounded"><b>Activo</b></span>
+                                }
+                            </td>
+                            @*<td>@item.no_IGGS</td>*@
+                            <td>@sexo</td>
+                            @*<td>@fechaNacimiento</td>*@
+                            <td>@edad</td>
+                            <td>@item.Celular</td>
+                            @*<td>@retomaServicio</td>*@
+                            <td>@modalidadAtencion</td>
+                            <td>
+                                <a href="@Url.Action("Informacion","Pacientes",
+                                new {pacienteId = @item.Id})"
+                                   class="btn btn-primary enlace-redirigir">
+                                    <i class="fa fa-eye"></i>
+                                </a>
+                                <a href="@Url.Action("Modificar","Pacientes",
+                                new {id = @item.Id})"
+                                   class="btn btn-warning enlace-redirigir">
+                                    <i class="fa fa-edit"></i>
+                                </a>
+                                @if (usuarioAdministrador)
+                                {
+                                    <a href="@Url.Action("Eliminar","Pacientes",
+                                new {id = @item.Id})"
+                                       class="btn btn-danger enlace-redirigir">
+                                        <i class="fa fa-trash"></i>
+                                    </a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script type="text/javascript" src="~/ViewModelKo/PacientesListaVM.js"></script>
+}

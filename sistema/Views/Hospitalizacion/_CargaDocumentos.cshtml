@@ -1,0 +1,138 @@
+@model sistema.Models.HospitalizacionDetallesViewModel
+<div class="tab-pane tabs-animation fade" id="tab-content-carga-documentos" role="tabpanel">
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <h5 class="card-title">Carga de Documentos</h5>
+
+            <div class="row">
+                <div class="col-12">
+                    <div class="form-group">
+                        <label for="archivosDocumento" class="btn btn-outline-primary">
+                            <i class="fas fa-folder-open"></i> Seleccionar archivos
+                        </label>
+                        <input type="file" id="archivosDocumento" style="display:none;" multiple
+                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.txt">
+                        <span id="archivosSeleccionados" class="ml-2">Ningún archivo seleccionado</span>
+                        <small class="form-text text-muted">Tamaño máximo por archivo: 10 MB</small>
+                    </div>
+                    <button type="button" class="btn btn-primary mb-3" id="btnSubirDocumentos">
+                        <i class="fas fa-upload"></i> Subir documentos
+                    </button>
+
+                    <!-- Barra de progreso -->
+                    <div id="progressContainer" style="display:none;" class="mb-3">
+                        <div class="progress">
+                            <div id="uploadProgress" class="progress-bar progress-bar-striped progress-bar-animated"
+                                 role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <small class="text-muted" id="progressText">Subiendo archivos...</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Fecha subida</th>
+                            <th>Tamaño</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody data-bind="foreach: documentos">
+                        <tr>
+                            <td data-bind="text: NombreArchivo"></td>
+                            <td data-bind="text: new Date(FechaSubida).toLocaleString()"></td>
+                            <td data-bind="text: TamanoFormateado"></td>
+                            <td class="text-center">
+                                <!-- ko if: Autorizado -->
+                                <span class="badge badge-success">Autorizado</span>
+                                <!-- /ko -->
+                                <!-- ko ifnot: Autorizado -->
+                                <span class="badge badge-warning">Pendiente</span>
+                                <!-- /ko -->
+                            </td>
+                            <td>
+                                <a data-bind="attr: { href: UrlDescarga }" target="_blank" class="btn btn-sm btn-info">
+                                    <i class="fas fa-eye"></i> Ver
+                                </a>
+                                @if(!User.IsInRole("Medico Externo")){
+                                <button class="btn btn-sm btn-danger" data-bind="click: $root.eliminarDocumento">
+                                    <i class="fas fa-trash-alt"></i> Eliminar
+                                </button>
+                                
+
+
+                                <!-- ko ifnot: Autorizado -->
+                                <button class="btn btn-sm btn-warning" data-bind="click: $root.autorizarDocumento">
+                                    <i class="fas fa-fingerprint"></i> Autorizar
+                                </button>
+                                <!-- /ko -->
+
+                                }
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('archivosDocumento');
+        const selectedSpan = document.getElementById('archivosSeleccionados');
+        const uploadBtn = document.getElementById('btnSubirDocumentos');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('uploadProgress');
+        const progressText = document.getElementById('progressText');
+
+        // Mostrar nombres de archivos seleccionados
+        if (fileInput) {
+            fileInput.addEventListener('change', function() {
+                const files = this.files;
+                if (files.length === 0) {
+                    selectedSpan.textContent = 'Ningún archivo seleccionado';
+                } else {
+                    const names = Array.from(files).map(f => f.name).join(', ');
+                    selectedSpan.textContent = names;
+                }
+            });
+        }
+
+        // Evento de subida (llama al método del ViewModel)
+        if (uploadBtn) {
+            uploadBtn.addEventListener('click', function() {
+                const files = fileInput.files;
+                if (files.length === 0) {
+                    alert('Seleccione al menos un archivo.');
+                    return;
+                }
+
+                // Validar tamaño (10 MB por archivo)
+                for (let i = 0; i < files.length; i++) {
+                    if (files[i].size > 10 * 1024 * 1024) {
+                        alert(`El archivo "${files[i].name}" excede 10 MB.`);
+                        return;
+                    }
+                }
+
+                // Mostrar barra de progreso
+                progressContainer.style.display = 'block';
+                progressBar.style.width = '0%';
+                progressText.textContent = 'Subiendo archivos...';
+
+                // Llamar al método del ViewModel
+                if (window.detallesVm && typeof window.detallesVm.subirDocumentos === 'function') {
+                    window.detallesVm.subirDocumentos(files, progressBar, progressText, progressContainer);
+                } else {
+                    alert('Error: La función de subida no está disponible.');
+                    progressContainer.style.display = 'none';
+                }
+            });
+        }
+    });
+</script>

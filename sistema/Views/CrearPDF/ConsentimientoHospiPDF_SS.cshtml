@@ -1,0 +1,215 @@
+@model farmamest.Models.ConsentimientoHospiVM
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Config
+
+@{
+    Layout = "_HojaMembreteLayout";
+    var imagenLogoBase64 = Config["ImagenLogoBase64"];
+    ViewData["Direccion"] = Config["EstablecimientoDireccion"];
+    ViewData["Telefono"] = Config["EstablecimientoTelefono"];
+    ViewData["CorreoElectronico"] = Config["EstablecimientoCorreoElectronico"];
+    ViewData["ImagenFirma"] = Config["EstablecimientoImagenFirma"];
+    DateTime fecha = DateTime.Now;
+}
+
+<div style="text-align: center; margin-bottom: 20px;">
+    <h3><strong>CONSENTIMIENTO DE LIBERACIÓN DE RESPONSABILIDAD</strong></h3>
+</div>
+
+<p style="text-align: justify; line-height: 1.5;">
+    En el municipio de Guatemala, del departamento de Guatemala, el día @fecha.ToString("dd") del mes de
+    @fecha.ToString("MM") del año @fecha.ToString("yyyy"). <strong>NOSOTROS:</strong> Erwin Alexander Aragón Morales de
+    _______ años de edad,
+    casado, guatemalteco, ejecutivo, de este domicilio, me identifico con Documento Personal de Identificación, Código
+    Único de Identificación número 1578 38102 0101, extendido por el Registro Nacional de las Personas de la República
+    de Guatemala,
+    actúo en mi calidad de Administrador Único y Representante Legal de la entidad Servicios Globales para la Salud,
+    Sociedad Anónima sociedad mercantil inscrita en la República de Guatemala ante el Registro Mercantil General de la
+    República al número ciento cincuenta
+    y seis mil ciento sesenta y nueve (156169), folio novecientos uno (901) del Libro cuatrocientos ochenta y dos (482)
+    de Sociedades Mercantiles, que podrá referirse en adelante como "SERSALUD", la cual maneja el Hospital de Día
+    (diario), ubicado en la Diagonal seis (6) diez guion cincuenta y cinco (10-55) Zona diez (10) Edificio Interaméricas
+    oficina seiscientos uno (601) A de este municipio. Y por la otra parte:
+</p>
+
+<div style="text-align: center; margin: 15px 0;">
+    <p><strong><u>(DATOS DEL PACIENTE)</u></strong></p>
+</div>
+
+@{
+    DateTime fechaNacimientoReal;
+    DateTime.TryParse(Model.FechaNacimiento, out fechaNacimientoReal);
+    string dia = fechaNacimientoReal.ToString("dd");
+    string mes = fechaNacimientoReal.ToString("MMMM");
+    string anio = fechaNacimientoReal.ToString("yyyy");
+}
+
+<p style="text-align: justify; line-height: 1.5;">
+    @(Model.NombreCompleto ?? "No disponible"), @dia de @mes de @anio, de estado civil @Model.EstadoCivil, de
+    nacionalidad
+    @Model.Nacionalidad, de
+    profesión @Model.Ocupacion, me identifico con: @Model.DPI con residencia en @Model.Direccion,
+    número de teléfono - y celular @Model.Celular , declaro que la información personal
+    proporcionada, es de carácter confidencial.
+    Los comparecientes aseguramos ser de los datos de identificación anotados, estar en el libre ejercicio de nuestros
+    derechos civiles y la calidad que se ejercita es amplia y suficiente para la celebración del
+    <strong>CONSENTIMIENTO DE LIBERACIÓN DE RESPONSABILIDAD</strong>, de conformidad con las siguientes cláusulas:
+</p>
+<p style="text-align: justify; line-height: 1.5;">
+    <strong>I. INFORMACIÓN GENERAL</strong><br>
+    Servicios Globales para la Salud, Sociedad Anónima, es una sociedad mercantil inscrita en la República de Guatemala
+    ante el Registro Mercantil General de la República al número ciento cincuenta y seis mil ciento sesenta y nueve
+    (156169),
+    folio novecientos uno (901) del Libro cuatrocientos ochenta y dos (482) de Sociedades Mercantiles, que podrá
+    referirse en adelante como “SERSALUD”, la cual maneja el Hospital de Día (diario) ubicado en Diagonal seis (6) diez
+    guion cincuenta y cinco (10-55)
+    Zona diez(10) Edificio Interaméricas oficina seiscientos uno (601) A. SERSALUD es una empresa mercantil que se
+    dedica a Administrar procedimientos quirúrgicos y arrendar instalaciones y equipos para los mismos a los médicos que
+    le requieran, en los términos y
+    condiciones preestablecidas, siempre imperando el valor de la profesionalidad.
+</p>
+<ol type="I" start="2" style="text-align: justify; padding-left: 20px;">
+    <li style="margin-bottom: 20px; line-height: 1.5;">
+        <strong>EN QUE CONSISTE LA LIBERACIÓN DE RESPONSABILIDAD</strong><br>
+        SERSALUD, es una empresa mercantil contratada por el médico para prestar los siguientes servicios:
+
+        <ol type="1" style="margin-top: 10px; margin-bottom: 10px; padding-left: 20px;">
+            <li style="margin-bottom: 5px; line-height: 1.5;">Administrar la cuenta de los pacientes que serán sometidos
+                a procedimientos
+                quirúrgicos, revisiones médicas, chequeos y cualquier otro procedimiento de índole médica o quirúrgica
+                que se lleve a cabo en sus instalaciones; y</li>
+                <li style="line-height: 1.5;">Proveer al médico de las instalaciones, equipos y apoyo de personal de
+                    enfermería necesario para los
+                    procedimientos que lleven a cabo, los cuales han sido previamente revisados y aceptados para su uso por
+                    él mismo.</li>
+                </ol>
+
+                Por lo que, <strong>SERSALUD</strong>, tiene una relación contractual exclusiva con el médico y no con el
+                paciente. Es por ello que, SERSALUD no puede ser objeto de responsabilidad sea esta civil o penal de cualquier
+                proceso que se tenga por cualquier motivo, de cualquier procedimiento que se realice dentro de las
+                instalaciones, y por cualquier médico y/o equipo de profesionales que arrendan el equipo y las demás
+                instalaciones a Sersalud. Por ende el individuo y/o paciente que se somete a cualquier procedimiento sea
+                quirúrgico, exámenes y demás de índole médica, en el establecimiento anteriormente mencionado, renuncia
+                expresamente a entablar cualquier tipo de acción judicial o extrajudicial contra SERSALUD.
+            </li>
+
+            <li style="line-height: 1.5;">
+                <strong>RIESGOS DEL PROCEDIMIENTO QUIRÚRGICO QUE SE LLEVE A CABO</strong><br>
+                A pesar del cauto y adecuado manejo de las instalaciones, equipos y equipo de profesionales en el
+                establecimiento, pueden presentarse posteriormente efectos indeseables, tanto los comunes derivados de toda
+                intervención y que pueden afectar a todos los órganos y sistemas, como los debidos a la situación vital del
+                paciente (como lo es la diabetes, cardiopatía, hipertensión, edad avanzada, anemia, obesidad, entre otros) y los
+                específicos de los procedimientos a los que se sujeten en las instalaciones.
+            </li>
+        </ol>
+        <div style="text-align: center; margin-bottom: 20px; margin-top: 200px">
+            <h3><strong>ACEPTACIÓN DEL CONSENTIMIENTO DEL PACIENTE Y DOCTOR QUE AUTORIZA EL PROCEDIMIENTO</strong></h3>
+        </div>
+
+        <p style="text-align: justify; line-height: 1.5;">
+            Yo, @(Model.NombreCompleto ?? "No disponible"), @dia de @mes de @anio, (el "Paciente") doy mi consentimiento para
+            que me sea realizado un procedimiento
+            consistente en: @(!string.IsNullOrWhiteSpace(Model.ProcedimientoProgramado) ? Model.ProcedimientoProgramado : "________________________________"),
+            procedimiento autorizado por el Médico
+            @(Model.NombreMedicoTratante ?? "No disponible"), especialista en @Model.EspecialidadMedico, con
+            número de Colegiado @(Model.ColegiadoMedico).
+        </p>
+
+        <p style="text-align: justify; line-height: 1.5;">
+            Yo, el Paciente declaro haber comprendido el significado del procedimiento a efectuarse y los riesgos inherentes al
+            mismo, y declaro estar debidamente informado(a) según lo establecido en el artículo seis (6), del Código de Salud de
+            Guatemala, Decreto noventa guion noventa y siete (90-97) del Congreso de la República, y el artículo treinta (30)
+            del Código Médico Deontológico, que reglamenta los derechos y obligaciones en materia de información y documentación
+            clínica. Declaro que tuve la oportunidad de aclarar mis dudas en entrevista con el Dr. Renato López. Así mismo
+            declaro que he recibido respuesta a todas mis preguntas, habiendo tomado la decisión de manera libre y voluntaria,
+            consiento, ratifico y firmo.
+        </p>
+
+
+        <p style="text-align: justify; line-height: 1.5;">
+            Se me ha explicado que se me realizará un estudio de <strong>Rayos X / Fluoroscopía</strong> de
+           @(!string.IsNullOrWhiteSpace(Model.ProcedimientoProgramado) ? Model.ProcedimientoProgramado : "________________________________").
+            Este procedimiento utiliza radiación ionizante para obtener imágenes con fines diagnósticos.
+        </p>
+
+        <p style="text-align: justify; line-height: 1.5;">
+            Entiendo que, aunque las dosis de radiación en diagnósticos médicos son bajas, existe un riesgo potencial de daño al ser el paciente una persona con antecedentes familiares de cáncer y que se aplicarán los principios de <strong>ALARA</strong> (<em>tan bajo como sea razonablemente posible</em>) para reducir la exposición a la radiación.
+        </p>
+
+        <p style="text-align: justify; line-height: 1.5;">
+            De acuerdo con el Reglamento de Seguridad y Protección Radiológica, es mi responsabilidad informar al paciente sobre los riesgos asociados a esta actividad.
+        </p>
+
+        <ul style="text-align: justify; line-height: 1.5; list-style: none; padding-left: 20px;">
+            <li><strong>☢ ¿Existe posibilidad de que usted esté embarazada?</strong>
+                SÍ [ &nbsp;&nbsp; ] &nbsp;&nbsp; NO [ &nbsp;&nbsp; ]
+            </li>
+            <li><strong>☢ Fecha de última menstruación (FUM):</strong>
+                _________________________
+            </li>
+            <li><strong>☢ ¿Está usted amamantando? (Relevante si se usa medio de contraste)</strong>
+                SÍ [ &nbsp;&nbsp; ] &nbsp;&nbsp; NO [ &nbsp;&nbsp; ]
+            </li>
+        </ul>
+
+        <p style="text-align: justify; line-height: 1.5;">
+            <strong>Advertencia:</strong> La exposición a radiación ionizante durante el embarazo, especialmente en el primer trimestre, puede tener consecuencias negativas para el desarrollo del feto. Si tienes dudas sobre tu elección, comuníquese con tu médico.
+        </p>
+
+        <p style="text-align: justify; line-height: 1.5;">
+            He leído (o se me ha leído) y comprendo la información anterior. Se me ha dado la oportunidad de hacer preguntas y todas han sido resueltas.
+            Acepto que se me realice el estudio, consciente de los beneficios diagnósticos y los riesgos de la radiación. Certifico que la información
+            proporcionada sobre mi estado de posible embarazo es verídica.
+        </p>
+
+        <p style="text-align: justify; line-height: 1.5;">
+            Adicionalmente, mediante mi firma en el presente documento (junto con la del acompañante, doctor y representante de SERSALUD) otorgo mi
+            consentimiento tanto para el procedimiento quirúrgico o médico descrito en la sección anterior como para los estudios de radiodiagnóstico
+            aquí especificados.
+        </p>
+
+
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+            <tr>
+                <td style="width: 50%; padding-bottom: 50px; vertical-align: top;">
+                    Por el Paciente<br><br><br><br>
+                    @if (!string.IsNullOrWhiteSpace(Model.URLFirmaPaciente))
+                    {
+                        <img width="180" height="80" src="@Model.URLFirmaPaciente" alt="Firma del Paciente" />
+                        <br>
+                    }
+                    else
+                    {
+                        @:f.___________________________________<br><br>
+                    }
+                    DPI: @(!string.IsNullOrWhiteSpace(Model.DPI) ? Model.DPI : "_________________________________")
+                </td>
+                <td style="width: 50%; padding-bottom: 50px; vertical-align: top;">
+                    Por el Acompañante<br>
+                    (En caso el Paciente es menor de edad)<br><br><br>
+                    @if (!string.IsNullOrWhiteSpace(Model.URLFirmaResponsable))
+                    {
+                        <img width="180" height="80" src="@Model.URLFirmaResponsable" alt="Firma del Responsable" />
+                        <br>
+                    }
+                    else
+                    {
+                        @:f.___________________________________<br><br>
+                    }
+                    DPI: @(!string.IsNullOrWhiteSpace(Model.DPIResponsable) ? Model.DPIResponsable : "_________________________________")
+                </td>
+            </tr>
+            <tr>
+                <td style="width: 50%; vertical-align: top;">
+                    Por el Doctor que autoriza<br><br><br><br>
+                    <img src="@Model.UrlFirmaMedico" alt="Firma del Médico"><br><br>
+                    No. de Colegiado: @(Model.ColegiadoMedico)
+                </td>
+                <td style="width: 50%; vertical-align: top;">
+                    Por Sersalud<br><br><br><br>
+                    f.___________________________________<br><br>
+                    Erwin A. Aragón M.<br>
+                    Administrador Único
+                </td>
+            </table>
+        </table>

@@ -1,0 +1,1408 @@
+@model farmamest.Models.ConsentimientoHospiVM
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Config
+
+@{
+  Layout = "_HojaMembreteLayout";
+  ViewData["Title"] = "Consentimiento de Hospitalización";
+  ViewData["ImagenLogo"] = Config["ImagenLogoBase64"];
+  ViewData["Direccion"] = Config["EstablecimientoDireccion"];
+  ViewData["Telefono"] = Config["EstablecimientoTelefono"];
+  ViewData["CorreoElectronico"] = Config["EstablecimientoCorreoElectronico"];
+  ViewData["ImagenFirma"] = Config["EstablecimientoImagenFirma"];
+  DateTime fecha = DateTime.Now;
+
+  string ValorOuNoEspecificado(string valor) =>
+  string.IsNullOrWhiteSpace(valor) ? "No especificado" : valor;
+}
+
+<style>
+  /* =========================
+     IMPRESIÓN / PDF (CARTA)
+     ========================= */
+  @@page {
+    size: Letter;
+    /* 8.5in x 11in */
+    margin: 18mm 14mm;
+    /* tu margen, se respeta */
+  }
+
+  /* Evita escalados raros en algunos engines */
+  html,
+  body {
+    height: auto;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Contenedor general */
+  .doc {
+    font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    color: #111827;
+    font-size: 11.5px;
+    line-height: 1.5;
+  }
+
+  /* =========================
+     PÁGINA (una hoja carta)
+     =========================
+     Nota: 11in total alto carta.
+     Como el margen lo define @@page, aquí solo controlamos el flujo
+     y evitamos cortes raros dentro de una página.
+  */
+  .page {
+    page-break-after: always;
+    break-after: page;
+    /* Mantén una "caja página" consistente */
+    min-height: 11in;
+    /* ayuda a que cada page sea una carta visualmente */
+    box-sizing: border-box;
+    padding: 0;
+    /* no agregamos padding extra, el margen lo maneja @@page */
+  }
+
+  .page:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+
+  .page-inner {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* =========================
+     TIPOGRAFÍA / TÍTULOS
+     ========================= */
+  .heading-main {
+    text-align: center;
+    text-transform: uppercase;
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: 0.10em;
+    margin: 0 0 12px 0;
+    padding: 6px 0 4px 0;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  /* =========================
+     META (arriba)
+     ========================= */
+  .meta-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 16px 0;
+  }
+
+  .meta-table td {
+    text-align: left;
+    padding: 4px 2px;
+    border: 0;
+    font-weight: 500;
+  }
+
+  .meta-label {
+    display: inline-block;
+    font-weight: 700;
+    min-width: 170px;
+    color: #111827;
+  }
+
+  /* =========================
+     TÍTULOS DE SECCIÓN
+     ========================= */
+  .section-title {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 10px 0;
+  }
+
+  .section-title td {
+    vertical-align: middle;
+    padding: 0;
+    border: 0;
+  }
+
+  .section-bar {
+    width: 4px;
+    height: 100%;
+    border-radius: 999px;
+  }
+
+  .section-bar.blue {
+    background: #2563eb;
+  }
+
+  .section-bar.red {
+    background: #b91c1c;
+  }
+
+  .section-title-text {
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 11.5px;
+    padding: 7px 10px;
+    margin-left: 8px;
+    color: #111827;
+    background: #f3f4f6;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+  }
+
+  .section-title-text span.subtle {
+    font-weight: 400;
+    text-transform: none;
+    font-size: 11px;
+    color: #4b5563;
+  }
+
+  /* =========================
+     BLOQUES (cards)
+     ========================= */
+  .block {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+
+  /* Evita cortes dentro de bloques importantes */
+  .block.keep {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .block-header {
+    background: #eef2ff;
+    font-weight: 800;
+    text-align: left;
+  }
+
+  .block-header th {
+    padding: 8px 12px;
+    font-size: 11.5px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  /* =========================
+     TABLAS GENERALES
+     ========================= */
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .table th,
+  .table td {
+    border: 1px solid #e5e7eb;
+    padding: 5px 8px;
+    vertical-align: top;
+  }
+
+  .table th {
+    background: #f9fafb;
+    font-weight: 800;
+    font-size: 11px;
+    color: #111827;
+  }
+
+  /* =========================
+     KV TABLE (campo/valor)
+     ========================= */
+  .kv-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .kv-table thead th {
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+    padding: 7px 10px;
+    font-weight: 800;
+    color: #111827;
+  }
+
+  .kv-table th,
+  .kv-table td {
+    border: 0;
+    padding: 6px 10px;
+  }
+
+  .kv-table th {
+    width: 32%;
+    white-space: nowrap;
+    text-align: left;
+    font-weight: 700;
+    color: #374151;
+    border-right: 1px solid #eef2f7;
+  }
+
+  .kv-table td {
+    width: 68%;
+    text-align: left;
+  }
+
+  /* Rayado suave consistente */
+  .kv-row:nth-child(odd) td,
+  .kv-row:nth-child(odd) th {
+    background: #fafafa;
+  }
+
+  .kv-row:nth-child(even) td,
+  .kv-row:nth-child(even) th {
+    background: #ffffff;
+  }
+
+  .label {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 2px;
+    color: #111827;
+  }
+
+  .value {
+    display: block;
+    font-weight: 400;
+    color: #111827;
+  }
+
+  .muted {
+    color: #6b7280;
+  }
+
+  /* =========================
+     NOTAS / PÁRRAFOS
+     ========================= */
+  .notes {
+    padding: 10px 12px;
+    font-size: 11.5px;
+  }
+
+  .notes p {
+    margin: 0 0 7px 0;
+  }
+
+  .notes p:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Utilidades */
+  .mt-2 {
+    margin-top: 8px;
+  }
+
+  .mt-3 {
+    margin-top: 12px;
+  }
+
+  .mb-2 {
+    margin-bottom: 8px;
+  }
+
+  .mb-3 {
+    margin-bottom: 12px;
+  }
+
+  .text-center {
+    text-align: center;
+  }
+
+  .text-right {
+    text-align: right;
+  }
+
+  .text-justify {
+    text-align: justify;
+  }
+
+  .fw-bold {
+    font-weight: 800;
+  }
+
+  /* =========================
+     REGLAMENTO
+     ========================= */
+  .reglamento-list {
+    margin: 6px 0 0 0;
+    padding-left: 20px;
+  }
+
+  .reglamento-list li {
+    margin-bottom: 7px;
+  }
+
+  .reglamento-list li::marker {
+    font-weight: 800;
+  }
+
+  /* =========================
+     FIRMAS
+     ========================= */
+  .signature-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .signature-table th,
+  .signature-table td {
+    text-align: center;
+    border: 0;
+    padding: 6px 8px;
+  }
+
+  .signature-name {
+    font-weight: 800;
+    margin-top: 4px;
+  }
+
+  .signature-role {
+    font-size: 10px;
+    color: #4b5563;
+  }
+
+  .signature-space {
+    height: 44px;
+  }
+
+  /* Para imágenes de firma: mejor render en PDF */
+  img {
+    image-rendering: auto;
+  }
+
+  /* Espaciador opcional */
+  .page-separator {
+    height: 12px;
+  }
+</style>
+
+<div class="doc">
+  <!-- ===========================
+       PÁGINA 1
+       =========================== -->
+  <div class="page">
+    <div class="page-inner">
+      <!-- Encabezado principal -->
+      <div class="heading-main">
+        CONSENTIMIENTO DE HOSPITALIZACIÓN
+      </div>
+
+      <table class="meta-table">
+        <tbody>
+          <tr>
+            <td>
+              <span class="meta-label">Fecha y hora de emisión:</span>
+              @fecha
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <span class="meta-label">Paciente número:</span>
+              @ValorOuNoEspecificado(Model.NumeroPaciente)
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Resumen superior: Datos rápidos del paciente -->
+      <table class="block keep">
+        <tbody>
+          <tr class="block-header">
+            <th colspan="2">DATOS DEL PACIENTE</th>
+          </tr>
+          <tr class="kv-row">
+            <td style="width: 50%; padding: 8px 12px;">
+              <span class="label">Nombre:</span>
+              <span class="value">
+                @ValorOuNoEspecificado(Model.NombreCompleto)
+              </span>
+            </td>
+            <td style="width: 50%; padding: 8px 12px;">
+              <span class="label">Número de habitación:</span>
+              <span class="value">
+                @ValorOuNoEspecificado(Model.NumeroHabitacion)
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Registro de admisión -->
+      <table class="section-title" style="margin-top: 50px;">
+        <tr>
+          <td class="section-bar blue"></td>
+          <td class="section-title-text">
+            REGISTRO DE ADMISIÓN A HOSPITALIZACIÓN
+          </td>
+        </tr>
+      </table>
+
+      <table class="block keep">
+        <tbody>
+          <tr class="kv-row">
+            <td class="notes">
+              <span class="value">
+                <strong>Hora de ingreso:</strong>
+                @ValorOuNoEspecificado(Model.HoraIngreso)<br />
+                <strong># de Paciente:</strong>
+                @ValorOuNoEspecificado(Model.NumeroPaciente)<br />
+                <strong># de Habitación:</strong>
+                @ValorOuNoEspecificado(Model.NumeroHabitacion)
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- I. DATOS DEL PACIENTE -->
+      <table class="section-title" style="margin-top: 50px;">
+        <tr>
+          <td class="section-bar blue"></td>
+          <td class="section-title-text">
+            I. DATOS DEL PACIENTE
+            <span class="subtle">
+              : favor proporcionar el Documento Personal de Identificación
+              para su registro (instrucción en el sistema: tener el espacio
+              para digitalizar el documento de identificación y agregarlo al sistema)
+            </span>
+          </td>
+        </tr>
+      </table>
+
+      <table class="block keep kv-table">
+        <thead>
+          <tr class="block-header">
+            <th>Campo</th>
+            <th>Información</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="kv-row">
+            <th>Nombre</th>
+            <td>
+              <span class="value">
+                @ValorOuNoEspecificado(Model.NombreCompleto)
+              </span>
+            </td>
+          </tr>
+          <tr class="kv-row">
+            <th>Estado Civil</th>
+            <td>
+              <span class="value">
+                @ValorOuNoEspecificado(Model.EstadoCivil)
+              </span>
+            </td>
+          </tr>
+          <tr class="kv-row">
+            <th>Fecha de Nacimiento</th>
+            <td>
+              <span class="value">
+                @ValorOuNoEspecificado(Model.FechaNacimiento)
+              </span>
+            </td>
+          </tr>
+          <tr class="kv-row">
+            <th>Nacionalidad</th>
+            <td>
+              <span class="value">
+                @ValorOuNoEspecificado(Model.Nacionalidad)
+              </span>
+            </td>
+          </tr>
+          <tr class="kv-row">
+            <th>Profesión u oficio</th>
+            <td>
+              <span class="value">
+                @ValorOuNoEspecificado(Model.Ocupacion)
+              </span>
+            </td>
+          </tr>
+          <tr class="kv-row">
+            <th>Celular / Teléfono</th>
+            <td>
+              <span class="value">
+                @ValorOuNoEspecificado(Model.Celular)
+              </span>
+            </td>
+          </tr>
+          <tr class="kv-row">
+            <th>Tratamiento Médico</th>
+            <td>
+              <span class="value">
+                @ValorOuNoEspecificado(Model.TratamientoMedico)
+              </span>
+            </td>
+          </tr>
+          <tr class="kv-row">
+            <th>Tipo de Sangre</th>
+            <td>
+              <span class="value">
+                @ValorOuNoEspecificado(Model.TipoSangre)
+              </span>
+            </td>
+          </tr>
+          <tr class="kv-row">
+            <th>DPI / Pasaporte</th>
+            <td>
+              <span class="value">
+                @ValorOuNoEspecificado(Model.DPI)
+              </span>
+            </td>
+          </tr>
+          <tr class="kv-row">
+            <th>
+              Dirección (indicar calle/avenida número de casa, zona,
+              municipio y departamento)
+            </th>
+            <td>
+              <span class="value">
+                @ValorOuNoEspecificado(Model.Direccion)
+              </span>
+            </td>
+          </tr>
+          <tr class="kv-row">
+            <th>Correo Electrónico</th>
+            <td>
+              <span class="value">
+                @ValorOuNoEspecificado(Model.Email)
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- III. RESPONSABLE DE LA CUENTA -->
+      <table class="section-title" style="margin-top:300px">
+        <tr>
+          <td class="section-bar blue"></td>
+          <td class="section-title-text">
+            III. RESPONSABLE DE LA CUENTA
+            <span class="subtle">
+              &nbsp;(favor proporcionar el Documento Personal de Identificación
+              para su registro)
+            </span>
+          </td>
+        </tr>
+      </table>
+
+      <table class="block keep kv-table">
+        <thead>
+          <tr class="block-header">
+            <th>Campo</th>
+            <th>Información</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="kv-row">
+            <th>Nombre</th>
+            <td>
+              <span class="value">
+                @ValorOuNoEspecificado(Model.NombreResponsable)
+              </span>
+            </td>
+          </tr>
+          <tr class="kv-row">
+            <th>Edad</th>
+            <td>
+              <span class="value">
+                @ValorOuNoEspecificado(Model.EdadResponsable)
+              </span>
+            </td>
+          </tr>
+          <tr class="kv-row">
+            <th>Nacionalidad</th>
+            <td>
+              <span class="value">
+                @ValorOuNoEspecificado(Model.NacionalidadResponsable)
+              </span>
+            </td>
+          </tr>
+          <tr class="kv-row">
+            <th>Profesión u oficio</th>
+            <td>
+              <span class="value">
+                @ValorOuNoEspecificado(Model.OcupacionResponsable)
+              </span>
+            </td>
+          </tr>
+          <tr class="kv-row">
+            <th>Celular / Teléfono</th>
+            <td>
+              <span class="value">
+                @ValorOuNoEspecificado(Model.CelularResponsable)
+              </span>
+            </td>
+          </tr>
+          <tr class="kv-row">
+            <th>DPI / Pasaporte</th>
+            <td>
+              <span class="value">
+                @ValorOuNoEspecificado(Model.DPIResponsable)
+              </span>
+            </td>
+          </tr>
+          <tr class="kv-row">
+            <th>
+              Dirección (indicar calle/avenida número de casa, zona,
+              municipio y departamento)
+            </th>
+            <td>
+              <span class="value">
+                @ValorOuNoEspecificado(Model.DireccionResponsable)
+              </span>
+            </td>
+          </tr>
+          <tr class="kv-row">
+            <th>Correo Electrónico</th>
+            <td>
+              <span class="value">
+                @ValorOuNoEspecificado(Model.EmailResponsable)
+              </span>
+            </td>
+          </tr>
+          <tr class="kv-row">
+            <th>Nit para facturación</th>
+            <td>
+              <span class="value">
+                @ValorOuNoEspecificado(Model.NITResponsable)
+              </span>
+            </td>
+          </tr>
+          <tr class="kv-row">
+            <th>Nombre para facturación</th>
+            <td>
+              <span class="value">
+                @ValorOuNoEspecificado(Model.NombreFacturacion)
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- IV. CONTACTO DE EMERGENCIA -->
+      <table class="section-title">
+        <tr>
+          <td class="section-bar blue"></td>
+          <td class="section-title-text">
+            IV. CONTACTO DE EMERGENCIA
+          </td>
+        </tr>
+      </table>
+
+      <!-- SECCIÓN CONTACTOS DE EMERGENCIA (MÚLTIPLES) -->
+      @if (Model.ContactosEmergencia != null && Model.ContactosEmergencia.Any())
+      {
+        for (int i = 0; i < Model.ContactosEmergencia.Count; i++)
+        {
+          var contacto = Model.ContactosEmergencia[i];
+          <div style="margin-bottom: 20px;">
+            <div class="block-header"
+                 style="background-color: #f2f2f2; padding: 8px; font-weight: bold; text-align: center;">
+              Contacto de Emergencia @(i + 1)
+            </div>
+            <table class="block keep kv-table" style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+              <tbody>
+                <tr class="kv-row">
+                  <th style="border: 1px solid #ddd; padding: 8px;">Nombre</th>
+                  <td style="border: 1px solid #ddd; padding: 8px;">
+                    <span class="value">
+                      @ValorOuNoEspecificado(contacto.Nombre)
+                    </span>
+                  </td>
+                </tr>
+                <tr class="kv-row">
+                  <th style="border: 1px solid #ddd; padding: 8px;">Parentesco</th>
+                  <td style="border: 1px solid #ddd; padding: 8px;">
+                    <span class="value">
+                      @ValorOuNoEspecificado(contacto.Parentesco)
+                    </span>
+                  </td>
+                </tr>
+                <tr class="kv-row">
+                  <th style="border: 1px solid #ddd; padding: 8px;">Teléfono / Celular</th>
+                  <td style="border: 1px solid #ddd; padding: 8px;">
+                    <span class="value">
+                      @ValorOuNoEspecificado(contacto.Telefono)
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+      else
+      {
+        <div class="block keep kv-table" style="margin-bottom: 20px;">
+          <div class="block-header"
+               style="background-color: #f2f2f2; padding: 8px; font-weight: bold; text-align: center;">
+            Contacto de Emergencia
+          </div>
+          <table class="kv-table" style="width: 100%; border-collapse: collapse;">
+            <tbody>
+              <tr class="kv-row">
+                <th style="border: 1px solid #ddd; padding: 8px;">Nombre</th>
+                <td style="border: 1px solid #ddd; padding: 8px;">
+                  <span class="value">@ValorOuNoEspecificado(null)</span>
+                </td>
+              </tr>
+              <tr class="kv-row">
+                <th style="border: 1px solid #ddd; padding: 8px;">Parentesco</th>
+                <td style="border: 1px solid #ddd; padding: 8px;">
+                  <span class="value">@ValorOuNoEspecificado(null)</span>
+                </td>
+              </tr>
+              <tr class="kv-row">
+                <th style="border: 1px solid #ddd; padding: 8px;">Teléfono / Celular</th>
+                <td style="border: 1px solid #ddd; padding: 8px;">
+                  <span class="value">@ValorOuNoEspecificado(null)</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <!-- Nota y Política de depósito -->
+      <table class="block keep">
+        <tbody>
+          <tr class="block-header">
+            <th><strong>NOTA</strong></th>
+          </tr>
+          <tr>
+            <td class="notes">
+              <p>
+                Al ingreso presentar el DPI o pasaporte del paciente y del
+                responsable de la cuenta.
+              </p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table class="block keep">
+        <tbody>
+          <tr class="block-header">
+            <th><strong>POLÍTICA DE DEPÓSITO</strong></th>
+          </tr>
+          <tr>
+            <td class="notes">
+              <p>
+                Hospital San Cristóbal solicitará un depósito inicial al momento
+                del ingreso, cuyo monto dependerá del tipo de tratamiento y
+                estimación de gastos médicos.
+              </p>
+              <p>
+                En caso de hospitalizaciones prolongadas, se realizarán revisiones
+                periódicas de la cuenta para actualizar los saldos y garantizar
+                la continuidad de la atención.
+              </p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- ===========================
+       PÁGINA 2: REGLAMENTO
+       =========================== -->
+
+      <!-- Reglamento de ingreso -->
+      <table class="section-title">
+        <tr>
+          <td class="section-bar blue"></td>
+          <td class="section-title-text">
+            REGLAMENTO DE INGRESO
+          </td>
+        </tr>
+      </table>
+
+      <table class="block keep">
+        <tbody>
+          <tr>
+            <td class="notes">
+              <p class="text-justify">
+                Para que su estancia en nuestras instalaciones sea lo más cómoda
+                y segura posible, ponemos a su disposición nuestro equipo de
+                profesionales, personas comprometidas con su salud y bienestar.
+                A continuación, le presentamos las normas generales establecidas
+                con el único objetivo de apoyar su proceso de recuperación.
+              </p>
+
+              <ul class="reglamento-list">
+                <li class="text-justify">
+                  <strong>Prohibición de ingreso y portación de armas:</strong>
+                  El Hospital, en resguardo de la seguridad y bienestar de todos
+                  los pacientes, visitantes y colaboradores, prohíbe estrictamente
+                  el ingreso y/o portación de armas de fuego, armas blancas,
+                  municiones o instrumentos que puedan representar un riesgo
+                  físico o psicológico. En caso de detectarse la presencia de tales
+                  objetos, el personal de seguridad estará facultado para denegar
+                  el ingreso, solicitar el retiro inmediato o notificar a las
+                  autoridades correspondientes.
+                </li>
+                <li class="text-justify">
+                  Se permite el ingreso de un (1) acompañante mayor de edad por
+                  paciente en el área de encamamiento.
+                </li>
+                <li class="text-justify">
+                  El horario de visita es de 10:00 a 16:00 horas de lunes a domingo.
+                </li>
+                <li class="text-justify">
+                  Está prohibido el ingreso de alimentos y bebidas al área de
+                  encamamiento.
+                </li>
+                <li class="text-justify">
+                  Está prohibido el ingreso de material de curación, equipo médico
+                  y/o medicamentos.
+                </li>
+                <li class="text-justify">
+                  Está prohibido fumar dentro de nuestras instalaciones.
+                </li>
+                <li class="text-justify">
+                  Está prohibido el ingreso de mascotas.
+                </li>
+                <li class="text-justify">
+                  Es obligatorio el uso de mascarilla.
+                </li>
+                <li class="text-justify">
+                  Por protección de los niños y tranquilidad de nuestros pacientes,
+                  está prohibida la entrada a menores de 12 años en áreas de
+                  encamamiento.
+                </li>
+                <li class="text-justify">
+                  Es responsabilidad del paciente y familiares el resguardo y
+                  vigilancia de objetos de valor tales como joyas, dinero o
+                  artículos electrónicos, eximiendo de responsabilidad a Hospital
+                  San Cristóbal.
+                </li>
+                <li class="text-justify">
+                  Todo menor de edad que se encuentre hospitalizado deberá estar
+                  acompañado de un familiar mayor de edad de forma permanente.
+                </li>
+                <li class="text-justify">
+                  Todo paciente mayor de sesenta y cinco (65) años de edad que se
+                  encuentre hospitalizado y/o requiera asistencia especial deberá
+                  contar con la compañía permanente de un familiar y/o responsable.
+                  En caso de no ser posible, se asignará personal de enfermería
+                  para atención continua, lo cual generará un recargo adicional en
+                  la cuenta del paciente.
+                </li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+
+
+  <!-- ===========================
+       PÁGINA 3: CONTRATO
+       =========================== -->
+  <div class="page">
+    <div class="page-inner">
+      <table class="block keep">
+        <tbody>
+          <tr>
+            <td class="notes">
+              <ul class="reglamento-list">
+                <li class="text-justify">
+                  <strong>Derecho de Admisión:</strong>
+                  El hospital se reserva el derecho de admisión y permanencia
+                  dentro de sus instalaciones. Dicho derecho podrá ejercerse cuando
+                  la conducta, estado o condición del paciente, familiar o
+                  visitante ponga en riesgo la seguridad, el orden, la tranquilidad
+                  o la salud de otros pacientes, del personal o del propio entorno
+                  hospitalario.
+                </li>
+                <li class="text-justify">
+                  Asimismo, el hospital podrá negar o suspender la atención en casos
+                  de incumplimiento de las normas internas, falta de pago,
+                  comportamiento inadecuado o situaciones que impidan garantizar un
+                  ambiente seguro y profesional de atención médica.
+                </li>
+                <li class="text-justify">
+                  <strong>Normas en cuanto al parqueo:</strong>
+                  <ul style="margin-top: 4px; padding-left: 18px;">
+                    <li class="text-justify">
+                      El Hospital se reserva el derecho de regular el acceso, limitar
+                      espacios y realizar los controles de seguridad que considere
+                      necesarios.
+                    </li>
+                    <li class="text-justify">
+                      El Hospital no se hace responsable por pérdida, robo total o
+                      parcial, daños, colisiones, golpes, rayones o cualquier otro
+                      perjuicio que sufran los vehículos dentro de las instalaciones
+                      del parqueo, ya sea en áreas techadas, al aire libre o en
+                      cualquier zona designada para estacionamiento.
+                    </li>
+                    <li class="text-justify">
+                      Se agradece mantener un ambiente de respeto, silencio y
+                      colaboración para garantizar el descanso y la recuperación de
+                      todos los pacientes, por lo tanto los visitantes o pacientes
+                      deben de cumplir con las indicaciones que la administración
+                      indique.
+                    </li>
+                  </ul>
+                </li>
+                <li class="text-justify">
+                  Se agradece mantener un ambiente de respeto, silencio y
+                  colaboración para garantizar el descanso y la recuperación de
+                  todos los pacientes, por lo tanto los visitantes o pacientes
+                  deben de cumplir con las indicaciones que la administración
+                  indique.
+                </li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <table class="section-title">
+        <tr>
+          <td class="section-bar blue"></td>
+          <td class="section-title-text">
+            CONTRATO DE SERVICIOS MÉDICOS Y HOSPITALARIOS
+          </td>
+        </tr>
+      </table>
+
+      <table class="block keep">
+        <tbody>
+          <tr>
+            <td class="notes text-justify">
+              En el municipio de Mixco,
+              @ValorOuNoEspecificado(!string.IsNullOrEmpty(Model.HoraIngreso) ? Model.HoraIngreso : "fecha de ingreso no            especificada"),
+              yo,
+              @ValorOuNoEspecificado(string.IsNullOrEmpty(Model.NombreResponsable) ? Model.NombreCompleto :
+              Model.NombreResponsable),
+              de nacionalidad
+              @(string.IsNullOrEmpty(Model.NacionalidadResponsable) ? Model.Nacionalidad :
+                            Model.NacionalidadResponsable),
+              identificado(a) con documento de identificación
+              @ValorOuNoEspecificado(string.IsNullOrEmpty(Model.DPIResponsable) ? Model.DPI : Model.DPIResponsable),
+              “El paciente o deudor”:
+            </td>
+          </tr>
+          <tr>
+            <td class="notes text-justify">
+              Y @ValorOuNoEspecificado(string.IsNullOrEmpty(Model.NombreResponsable) ? Model.NombreCompleto :
+                                          Model.NombreResponsable),
+              denominado como “el acompañante o deudor”.
+            </td>
+          </tr>
+          <tr>
+            <td class="notes text-justify">
+              <strong>DECLARO:</strong> Que he solicitado por mi voluntad los servicios
+              hospitalarios del Hospital San Cristóbal y encontrándome en el
+              pleno uso de mis facultades mentales y con plena capacidad legal
+              de autorización por medio del presente documento AUTORIZO:
+            </td>
+          </tr>
+          <tr>
+            <td class="notes text-justify">
+              <strong>A)</strong> al Dr./ a la Dra. @ValorOuNoEspecificado(Model.NombreMedicoTratante),
+              para que sean practicadas, las consultas médicas, exámenes
+              médicos, hospitalización, intervención quirúrgicas, pruebas de
+              laboratorio, patológicas de imágenes e inclusive fotográficas y
+              cualquier servicio auxiliar que fuere necesario para fines de
+              diagnóstico y para la recuperación de la salud del paciente antes
+              en mención, así mismo autorizo que en caso de necesidad me remita
+              con el médico especialista que considere oportuno; acatando desde
+              ya las disposiciones que el Doctor pudiera tomar así como lo que
+              establecen los reglamentos y disposiciones internas del Hospital
+              San Cristóbal;
+            </td>
+          </tr>
+          <tr>
+            <td class="notes text-justify">
+              <strong>B)</strong> Entiendo que en caso de cirugía, ésta precisa de anestesia,
+              la que será valorada por el servicio de anestesia. Proceso que
+              tiene riesgos los cuales acepto.
+            </td>
+          </tr>
+          <tr>
+            <td class="notes text-justify">
+              <strong>C)</strong> Entiendo que en caso de cirugía o enfermedades de cuidados
+              críticos el médico puede encontrar elementos o situaciones no
+              posibles de determinar con anticipación y que pueden ocasionar
+              riesgos o complicaciones adicionales los cuales no están
+              relacionados con el actuar del Médico o el Hospital;
+            </td>
+          </tr>
+          <tr>
+            <td class="notes text-justify">
+              <strong>D)</strong> Si en el momento del acto quirúrgico surgiera algún imprevisto,
+              el Médico podrá variar la técnica quirúrgica programada de acuerdo
+              a los conocimientos y criterios de los profesionales;
+            </td>
+          </tr>
+          <tr>
+            <td class="notes text-justify">
+              <strong>E)</strong> Manifiesto de forma expresa que renuncio a cualquier tipo de
+              acción civil, penal administrativa o de cualquier otra índole o
+              naturaleza que del tratamiento médico que pudiera surgir en el
+              futuro, eximiendo desde ya de cualquier responsabilidad al medico
+              y cirujano @ValorOuNoEspecificado(Model.NombreMedicoTratante), y así mismo al
+              Hospital San Cristóbal, su personal Médico, Para -Médico y
+              Administrativo.
+            </td>
+          </tr>
+          <tr>
+            <td class="notes text-justify">
+              <strong>F)</strong> En lo referente al pago de los servicios médicos en general
+              necesarios para la atención médica (consultas médicas, exámenes
+              médicos, hospitalización, intervención quirúrgicas, pruebas de
+              laboratorio, patológicas, de imágenes e inclusive fotográficas y
+              cualquier servicio auxiliar que fuere necesario para fines de
+              diagnóstico y para la recuperación de la salud del paciente antes
+              en mención) reconozco (o reconocemos) en forma mancomunada y
+              solidaria como buenas y exactas las cuentas que para el efecto se
+              me presentan (o se nos presenten) y como
+              <strong>LÍQUIDO Y EXIGIBLE EL SALDO</strong> que se me (o que se nos) requiera
+              de pago. Asimismo reconozco (o reconocemos) que en caso existan
+              riesgos y complicaciones que puedan surgir durante el diagnóstico y
+              tratamiento, <strong>ACEPTO (ACEPTAMOS) DE FORMA EXPRESA</strong> pagar los
+              gastos derivados para tratar estas complicaciones.
+            </td>
+          </tr>
+          <tr>
+            <td class="notes text-justify">
+              <strong>G)</strong> Acepto (aceptamos) incondicionalmente a pagar EN EL PLAZO DE
+              TRES HORAS, contadas a partir del momento en que el paciente
+              reciba el alta médica o sea dado de alta del hospital, por la
+              cantidad de dinero líquida, exigible y de plazo vencido, que en
+              dicho momento la administración hospitalaria le presente como
+              cuenta final pendiente de conformidad con los registros de lo que
+              constituye la cuenta de consumo del paciente en el hospital, por
+              el presente acto reconociendo todas y cada una de las sumas que
+              resulten debidas y pendientes de pago en favor del hospital
+              derivado de las cuentas antes mencionadas, como saldo deudor, las
+              cuales por el presente acto aceptamos incondicionalmente pagar.
+            </td>
+          </tr>
+          <tr>
+            <td class="notes text-justify">
+              <strong>H)</strong> Para los efectos legales correspondientes, las partes reconocen
+              expresamente que el presente contrato constituye
+              <strong>TÍTULO EJECUTIVO SUFICIENTE</strong>, conforme lo establecido en la
+              legislación de la República de Guatemala, pudiendo la entidad
+              Prestación de Servicios Médicos Limitada exigir judicialmente el
+              pago inmediato de la obligación aquí reconocida, incluyendo los
+              intereses, gastos y costas procesales que se generen por su
+              incumplimiento.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Firmas contrato -->
+      <table class="block keep signature-table mt-3">
+        <thead>
+          <tr class="block-header">
+            <th>Firma del Paciente</th>
+            <th>Firma del Responsable de la Cuenta</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="signature-space">
+             @if (!string.IsNullOrWhiteSpace(Model.URLFirmaResponsable))
+                    {
+                        <img width="180" height="80" src="@Model.URLFirmaResponsable" alt="Firma del Responsable" />
+                        <br>
+                    }
+                    else{
+                        <span style="color:#888; font-style:italic;">No se proporcionó firma del representante del paciente.</span>
+                    }</div>
+            </td>
+            <td class="signature-space">
+             @if (!string.IsNullOrWhiteSpace(Model.URLFirmaResponsable))
+                    {
+                        <img width="180" height="80" src="@Model.URLFirmaResponsable" alt="Firma del Responsable" />
+                        <br>
+                    }
+                    else{
+                        <span style="color:#888; font-style:italic;">No se proporcionó firma del representante del paciente.</span>
+                    }</div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="signature-name">
+                @ValorOuNoEspecificado(Model.NombreCompleto)
+              </div>
+              <div class="signature-role">Paciente</div>
+            </td>
+            <td>
+              <div class="signature-name">
+                @ValorOuNoEspecificado(Model.NombreResponsable)
+              </div>
+              <div class="signature-role">Responsable de la Cuenta</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Acta de legalización de firmas (Contrato) -->
+      <table class="block keep mt-3">
+        <thead>
+          <tr class="block-header">
+            <th>ACTA DE LEGALIZACIÓN DE FIRMAS (CONTRATO)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="notes text-justify">
+              En el municipio de Mixco, el @ValorOuNoEspecificado(!string.IsNullOrEmpty(Model.HoraIngreso) ?
+                                          Model.HoraIngreso : "fecha de ingreso no especificada"), el Infrascrito Notario, doy fe: que las firmas
+              que anteceden son auténticas por haber sido puestas el día de hoy
+              en mi presencia por
+              ________________________________________________________________,
+              quien se identifica con
+              _________________________________________________________________
+              ____________________________ (_________________) Extendido por
+              ________________________________________________________________;
+              y, b)
+              ________________________________________________________________,
+              quien se identifica con
+              _________________________________________________________________
+              ___________________ (____________________) Extendido por
+              ________________________________________________________________;
+              quienes vuelven a firmar nuevamente la presente acta de
+              legalización de firmas, juntamente con el Infrascrito Notario.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Firmas Representante y Notaria -->
+      <table class="block keep signature-table mt-3">
+        <thead>
+          <tr class="block-header">
+            <th>Firma del Representante</th>
+            <th>Firma de la Notaria</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="signature-space">
+              @if (!string.IsNullOrWhiteSpace(Model.URLFirmaRepresentanteNaranjo))
+              {
+                <img width="180" height="80" src="data:image/png;base64,@Model.URLFirmaRepresentanteNaranjo"
+                     alt="Firma del Representante" />
+              }
+            </td>
+            <td class="signature-space">
+              @if (!string.IsNullOrWhiteSpace(Model.URLFirmaNotaria))
+              {
+                <img width="180" height="80" src="data:image/png;base64,@Model.URLFirmaNotaria"
+                     alt="Firma de la Notaria" />
+              }
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="signature-name">
+                @(Model.NombreRepresentanteNarajo ?? "Nombre del Representante del Hospital")
+              </div>
+              <div class="signature-role">Representante del Hospital</div>
+            </td>
+            <td>
+              <div class="signature-name">
+                @(Model.NombreNotaria ?? "Nombre de la Notaria")
+              </div>
+              <div class="signature-role">Notaria</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- ===========================
+       PÁGINA 4: REVOCACIÓN
+       =========================== -->
+
+      <table class="section-title">
+        <tr>
+          <td class="section-bar red"></td>
+          <td class="section-title-text">
+            REVOCACIÓN
+          </td>
+        </tr>
+      </table>
+
+      <table class="block keep">
+        <tbody>
+          <tr>
+            <td class="notes text-justify">
+              En el municipio de Mixco el @ValorOuNoEspecificado(!string.IsNullOrEmpty(Model.HoraIngreso) ?
+                                          Model.HoraIngreso : "fecha de ingreso no especificada"), YO,
+              @ValorOuNoEspecificado(Model.NombreCompleto)),
+              Nombre completo del acompañante según quien firme el documento y
+              según los datos que obran en el formulario inicial.
+            </td>
+          </tr>
+          <tr>
+            <td class="notes">
+              <span class="fw-bold">DECLARO:</span>
+            </td>
+          </tr>
+          <tr>
+            <td class="notes text-justify">
+              a) haber recibido explicación satisfactoria sobre mi cuadro
+              clínico de la naturaleza del procedimiento diagnóstico y/o
+              tratamiento. Se me ha informado de los riesgos y complicaciones
+              posibles.
+            </td>
+          </tr>
+          <tr>
+            <td class="notes text-justify">
+              b) Que teniendo presente lo expuesto, revoco de
+              <strong>FORMA LIBRE Y CONSIENTE</strong> continuar con el tratamiento previsto
+              por el médico tratante.
+            </td>
+          </tr>
+          <tr>
+            <td class="notes text-justify">
+              c) Y reconozco el derecho que tiene el médico y el Hospital San
+              Cristóbal de renunciar a la relación médico - paciente sin
+              responsabilidad para ellos por lo que expresamente asumo las
+              responsabilidades que puedan derivarse de esta decisión.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Firmas Revocación -->
+      <table class="block keep signature-table mt-3">
+        <thead>
+          <tr class="block-header">
+            <th>Firma del Paciente</th>
+            <th>Firma del Representante del Paciente</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="signature-space"></td>
+            <td class="signature-space"></td>
+          </tr>
+          <tr>
+            <td>
+              <div class="signature-name">@ValorOuNoEspecificado(Model.NombreCompleto)  @if (!string.IsNullOrWhiteSpace(Model.URLFirmaPaciente))
+                    {
+                        <img width="180" height="80" src="@Model.URLFirmaPaciente" alt="Firma del Paciente" />
+                        <br>
+                    } 
+                    else{
+                        <span style="color:#888; font-style:italic;">No se proporcionó firma del paciente.</span>
+                    }</div>
+              <div class="signature-role">Nombre y firma Paciente</div>
+            </td>
+            <td>
+              <div class="signature-name">@ValorOuNoEspecificado(Model.NombreResponsable) @if (!string.IsNullOrWhiteSpace(Model.URLFirmaResponsable))
+                    {
+                        <img width="180" height="80" src="@Model.URLFirmaResponsable" alt="Firma del Responsable" />
+                        <br>
+                    }
+                    else{
+                        <span style="color:#888; font-style:italic;">No se proporcionó firma del representante del paciente.</span>
+                    }</div>
+              <div class="signature-role">
+                Nombre y firma Representante del Paciente
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Acta de legalización de firmas (Revocación) -->
+      <table class="block keep mt-3">
+        <thead>
+          <tr class="block-header">
+            <th>ACTA DE LEGALIZACIÓN DE FIRMAS (REVOCACIÓN)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="notes text-justify">
+              En el municipio de Mixco el @ValorOuNoEspecificado(!string.IsNullOrEmpty(Model.HoraIngreso) ?
+                                          Model.HoraIngreso : "fecha de ingreso no especificada"), YO,@ValorOuNoEspecificado(Model.NombreCompleto),
+            </td>
+          </tr>
+          <tr>
+            <td class="notes text-justify">
+              Nombre completo del acompañante según quien firme el documento y
+              según los datos que obran en el formulario inicial.
+            </td>
+          </tr>
+          <tr>
+            <td class="notes text-justify">
+              <strong>DECLARO:</strong><br />
+              a) haber recibido explicación satisfactoria sobre mi cuadro
+              clínico de la naturaleza del procedimiento diagnóstico y/o
+              tratamiento. Se me ha informado de los riesgos y complicaciones
+              posibles.<br />
+              b) Que teniendo presente lo expuesto, revoco de
+              <strong>FORMA LIBRE Y CONSIENTE</strong> continuar con el tratamiento
+              previsto por el médico tratante.<br />
+              c) Y reconozco el derecho que tiene el médico y el Hospital San
+              Cristóbal de renunciar a la relación médico - paciente sin
+              responsabilidad para ellos por lo que expresamente asumo las
+              responsabilidades que puedan derivarse de esta decisión.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Firmas finales Revocación (según PDF, espacio para Paciente y Representante) -->
+      <table class="block keep signature-table mt-3">
+        <tbody>
+          <tr>
+            <td class="signature-space"></td>
+            <td class="signature-space"></td>
+          </tr>
+          <tr>
+            <td>
+              <div class="signature-name">@ValorOuNoEspecificado(Model.NombreCompleto),  @if (!string.IsNullOrWhiteSpace(Model.URLFirmaPaciente))
+                    {
+                        <img width="180" height="80" src="@Model.URLFirmaPaciente" alt="Firma del Paciente" />
+                        <br>
+                    } 
+                    else{
+                        <span style="color:#888; font-style:italic;">No se proporcionó firma del paciente.</span>
+                    }</div>
+              <div class="signature-role">Nombre y firma Paciente</div>
+            </td>
+            <td>
+              <div class="signature-name">@ValorOuNoEspecificado(Model.NombreResponsable) @if (!string.IsNullOrWhiteSpace(Model.URLFirmaResponsable))
+                    {
+                        <img width="180" height="80" src="@Model.URLFirmaResponsable" alt="Firma del Responsable" />
+                        <br>
+                    }
+                    else{
+                        <span style="color:#888; font-style:italic;">No se proporcionó firma del representante del paciente.</span>
+                    }</div>
+              <div class="signature-role">
+                Nombre y firma Representante del Paciente
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2" class="text-center mt-2">
+              Dejar espacio para firma de Notario
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+</div>

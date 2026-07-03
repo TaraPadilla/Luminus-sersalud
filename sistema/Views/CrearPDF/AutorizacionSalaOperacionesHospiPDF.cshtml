@@ -1,0 +1,55 @@
+@model farmamest.Models.ConsentimientoHospiVM
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Config
+
+@{
+    Layout = "_HojaMembreteLayout"; // Usamos un layout específico para documentos PDF con membrete
+    var imagenLogoBase64 = Config["ImagenLogoBase64"];
+    ViewData["Direccion"] = Config["EstablecimientoDireccion"];
+    ViewData["Telefono"] = Config["EstablecimientoTelefono"];
+    ViewData["CorreoElectronico"] = Config["EstablecimientoCorreoElectronico"];
+    ViewData["ImagenFirma"] = Config["EstablecimientoImagenFirma"];
+    DateTime fecha = DateTime.Now;
+    var empresa = Config["EstablecimientoNombreEmpresa"] ?? "Nombre de la Empresa";
+}
+
+<div style="text-align: center; margin-bottom: 50px; margin-top: 30px;">
+    <h2><strong>Autorizacion para ingreso a sala de operaciones</strong></h2>
+</div>
+
+<div style="font-size: 16px; margin-left: 20px; margin-right: 20px;">
+
+    <p style="margin-bottom: 30px;">
+        Yo, @(Model.NombreMedicoTratante ?? "Nombre del Médico"), Colegiado No. @(Model.ColegiadoMedico ?? "Número de Colegiado"),
+
+    <p style="margin-bottom: 30px;">
+        He asignado a:<br><br>
+        @(Model.NombreAnestesista ?? "Nombre del Primer Ayudante"), Colegiado No, @(Model.ColegiadoPrimerAyudante ?? "Número de Colegiado"),
+    </p>
+
+    <p style="margin-bottom: 30px;">
+        En su calidad de :
+        &nbsp;&nbsp;&nbsp;&nbsp;Primer Ayudante.<br><br>
+    </p>
+
+    <p style="margin-bottom: 30px; line-height: 1.8;">
+        Para ingresar a sala de operaciones durante la intervención quirurgica que se llevara a cabo<br><br>
+        en @empresa en la fecha siguiente:
+        &nbsp;&nbsp;&nbsp;@Model.FechaAdmision<br><br>
+        Para el paciente:
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;@(Model.NombreCompleto ?? "Nombre del Paciente")
+    </p>
+
+    <p style="margin-top: 40px; margin-bottom: 60px;">
+        Entiendo y acepto que dicha autorizacion se otorga bajo mi total responsabilidad.
+    </p>
+
+    <div style="margin-top: 40px;">
+        <p>Firma y Sello:</p>
+        <div style="text-align: center; margin-top: 80px;">
+             <img src="@Model.UrlFirmaMedico" alt="Firma del Médico">
+            <div style="width: 350px; border-bottom: 2px solid black; margin: 0 auto;"></div>
+        </div>
+    </div>
+
+</div>

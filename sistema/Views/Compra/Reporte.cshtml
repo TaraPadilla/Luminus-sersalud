@@ -1,0 +1,161 @@
+@using System
+@using System.Globalization
+@model Database.Shared.Models.Compra
+
+@{
+  Layout = "_HojaMembreteLayout";
+  ViewData["Title"] = "Reporte de compra";
+
+  // Flags de visibilidad del membrete
+  ViewData["MostrarLogo"] = true;
+  ViewData["MostrarNombreEmpresa"] = true;
+  ViewData["MostrarDireccion"] = true;
+  ViewData["MostrarTelefono"] = true;
+  ViewData["MostrarCorreoElectronico"] = true;
+  ViewData["MostrarServicios"] = true;
+  ViewData["MostrarEmergencias"] = true;
+
+  DateTime fecha = DateTime.Now; // fecha y hora de emisión del reporte
+  var CostoTotal = 0.0m;
+}
+
+<div class="doc">
+
+  <!-- Título -->
+  <div class="doc-title">@ViewData["Title"]</div>
+  <div class="doc-underline"></div>
+
+  <!-- Fecha de emisión -->
+  <table class="table" style="border:0;">
+    <tbody>
+      <tr>
+        <td style="text-align:center; font-weight:700; border:0;">
+          Fecha y hora de emisión:
+          @fecha.ToString("dd/MM/yyyy hh:mm tt", CultureInfo.CreateSpecificCulture("es-GT"))
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- DATOS GENERALES -->
+  <table class="section-title">
+    <tr>
+      <td class="bar"></td>
+      <td>DATOS GENERALES</td>
+    </tr>
+  </table>
+
+  <table class="block">
+    <tr>
+      <td style="padding:0;">
+        <table class="table">
+          <colgroup>
+            <col class="label-col" />
+            <col />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Campo</th>
+              <th>Detalle</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="kv-row">
+              <td><span class="label">Proveedor</span></td>
+              <td><span class="value">@Model.Proveedor?.Nombre</span></td>
+            </tr>
+            <tr class="kv-row">
+              <td><span class="label">Fecha de compra</span></td>
+              <td>
+                <span class="value">
+                  @Model.FechaCompra.ToString("D", CultureInfo.CreateSpecificCulture("es-GT")).ToUpperInvariant()
+                  @Model.FechaCompra.ToString("HH:mm")
+                </span>
+              </td>
+            </tr>
+            <tr class="kv-row">
+              <td><span class="label">Tipo</span></td>
+              <td><span class="value">@Model.TipoCompra?.Tipo</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <!-- DETALLE DE PRODUCTOS -->
+  <table class="section-title">
+    <tr>
+      <td class="bar"></td>
+      <td>DETALLE DE PRODUCTOS</td>
+    </tr>
+  </table>
+
+  <table class="block">
+    <tr>
+      <td style="padding:0%;">
+        <table class="table">
+          <colgroup>
+            <col style="width:18%" />
+            <col />
+            <col style="width:15%" />
+            <col style="width:12%" />
+            <col style="width:15%" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Ref.</th>
+              <th>Nombre</th>
+              <th>Precio</th>
+              <th>Cantidad</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            @foreach (var producto in Model.DetalleCompras)
+            {
+              var cost = producto.Precio * producto.Cantidad;
+              CostoTotal += cost;
+
+              <tr class="kv-row">
+                <td><span class="value">@producto.Producto?.CodigoReferencia</span></td>
+                <td><span class="value">@producto.Producto?.NombreProducto</span></td>
+                <td><span class="value">@producto.Precio.ToString("0")</span></td>
+                <td><span class="value">@producto.Cantidad</span></td>
+                <td><span class="value">@producto.PrecioTotal.ToString("0")</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <!-- RESUMEN -->
+  <table class="section-title">
+    <tr>
+      <td class="bar"></td>
+      <td>RESUMEN</td>
+    </tr>
+  </table>
+
+  <table class="block">
+    <tr>
+      <td style="padding:0%;">
+        <table class="table twocol">
+          <colgroup>
+            <col class="label-col" />
+            <col />
+          </colgroup>
+          <tbody>
+            <tr class="kv-row">
+              <td><span class="label">Costo total</span></td>
+              <td><span class="value">Q @CostoTotal.ToString("0")</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+</div>

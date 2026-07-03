@@ -1,0 +1,1635 @@
+@{
+    var usuarioAdmisiones = User.IsInRole("Admisiones");
+    var hospitalizacionId = Model.HospitalizacionId;
+    var correoUsuario = User.Identity.Name;
+    var codigoSeguroHospi = Model.CodigoSeguro;
+
+}
+<script>
+    var hospitalizacionIdGlobal = '@hospitalizacionId';
+    var correoUsuario = '@correoUsuario';
+    var codigoSeguro = '@codigoSeguroHospi';
+    var TipoBodega = 'Area';
+</script>
+
+
+
+<div class="col-md-12">
+
+    <!-- Botón para abrir el modal -->
+    @if (!usuarioAdmisiones)
+    {
+        @if (!User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
+        {
+            @if (!User.IsInRole("Enfermeria"))
+            {
+                <button class="btn btn-primary" onclick="verModalOrdenMedica()">
+                    <i class="fa fa-plus"></i> Agregar Orden Médica
+                </button>
+            }
+            <button class="btn btn-success" onclick="abrirModalAgregarMedicamentos()"><i class="fa fa-plus"></i> Agregar
+                solicitud de de medicamentos</button>
+            <button class="btn btn-info" onclick="abrirSolicitudMedicamentos(hospitalizacionIdGlobal)"><i
+                    class="fa fa-external-link-alt"></i> Solicitudes de Medicamentos</button>
+            @* <button class="btn btn-danger" onclick="aprobarTodasLasSolicitudes(hospitalizacionIdGlobal)"><i class="fa fa-external-link-alt"></i> Aprobar todas las Solicitudes</button> *@
+            <button class="btn btn-warning" onclick="abrirModalControlAplicaciones(1)">
+                <i class="fa fa-syringe"></i> Control de Medicamentos
+            </button>
+
+            <button class="btn btn-warning" onclick="abrirModalControlAplicaciones(2)">
+                <i class="fa fa-syringe"></i> Control de Insumos
+            </button>
+            <button class="btn btn-warning" onclick="abrirModalControlServicios()"><i class="fa fa-syringe"></i> Control de
+                Servicios</button>
+            <button class="btn btn-success" onclick="abrirModalAgregarMedicamentosArea()"><i class="fa fa-plus"></i> Agregar
+                medicamentos / Insumos</button>
+        }
+    }
+
+    <!-- Modal -->
+    <div id="mdl-agregar-orden-medica" title="Agregar Orden Médica" style="display:none;">
+        <div class="card shadow-sm border-0 rounded-lg">
+            <div class="card-body">
+                <div class="form-row">
+                    @if (!Model.HospitalizacionFinalizada)
+                    {
+                        <!-- Descripción Orden Médica -->
+                        <div class="form-group col-md-12">
+                            <label for="descripcion">Descripción</label>
+                            <textarea id="descripcion" name="DescripcionOrdenMedica" class="form-control" rows="4"
+                            placeholder="Ingrese la descripción..."></textarea>
+                        </div>
+
+                        <!-- Selector de Exámenes -->
+                        <div class="form-group col-md-12">
+                            <label for="examenSelect">Exámenes:</label>
+                            <select id="examenSelect" class="form-control "
+                                data-bind="options: examenesExistentes, 
+                                                                                                                                                                                                optionsText: 'Nombre', 
+                                                                                                                                                                                                optionsValue: 'ExamenLabClinicoId', 
+                                                                                                                                                                                                value: examenAgregarSeleccionado">
+                                <option value="">Seleccione un examen</option>
+                            </select>
+
+
+
+                            <button class="btn btn-sm btn-info mt-2" onclick="agregarExamenALaLista()">Agregar
+                                Examen</button>
+                        </div>
+
+                        <!-- Lista de Exámenes Agregados -->
+                        <div class="form-group col-md-12">
+                            <h6>Exámenes Agregados:</h6>
+                            <ul id="listaExamenesAgregados" class="list-group"></ul>
+                        </div>
+
+
+
+
+                        <!-- Botón para agregar la orden médica -->
+                        <div class="form-group col-md-12 text-center">
+                            <button class="btn btn-success" onclick="agregarOrdenMedica()">Guardar Orden Médica</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning col-md-12">
+                            La hospitalización está finalizada. No se pueden agregar nuevas órdenes médicas.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="main-card mb-3 card" style="border-radius: 10px">
+        <div class="card-body">
+            <h6><b>Órdenes Médicas</b></h6>
+            <hr />
+            <div class="table-responsive">
+                <table class='table table-hover' id="tabla-ordenes-medicas">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            @* <th>ID</th> *@
+                            <th>Usuario</th>
+                            <th>Descripción</th>
+                            <th>Exámenes</th>
+                            <th>Observaciones</th>
+                            <th>Fecha Aplicación</th>
+                            <th>Usuario que aplicó</th>
+                            <th>Acciones</th>
+
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Las órdenes médicas se cargarán aquí dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="pagination-controls-ordenes" class="text-center mt-3">
+        <button onclick="previousPageOrdenes()" class="btn btn-secondary">Anterior</button>
+        <span id="page-info-ordenes"></span>
+        <button onclick="nextPageOrdenes()" class="btn btn-secondary">Siguiente</button>
+    </div>
+</div>
+
+<script>
+    let currentPageOrdenes = 1;
+    const rowsPerPageOrdenes = 4;
+
+    function paginateTableOrdenes() {
+        let table = document.getElementById("tabla-ordenes-medicas").getElementsByTagName("tbody")[0];
+        let rows = Array.from(table.getElementsByTagName("tr"));
+        let totalPages = Math.max(1, Math.ceil(rows.length / rowsPerPageOrdenes));
+
+        rows.forEach((row, index) => {
+            row.style.display = (index >= (currentPageOrdenes - 1) * rowsPerPageOrdenes && index < currentPageOrdenes * rowsPerPageOrdenes)
+                ? "table-row" : "none";
+        });
+
+        document.getElementById("page-info-ordenes").innerText = `Página ${currentPageOrdenes} de ${totalPages}`;
+
+        // Deshabilitar botones si es necesario
+        document.querySelector("button[onclick='previousPageOrdenes()']").disabled = (currentPageOrdenes === 1);
+        document.querySelector("button[onclick='nextPageOrdenes()']").disabled = (currentPageOrdenes >= totalPages);
+    }
+
+    function nextPageOrdenes() {
+        let table = document.getElementById("tabla-ordenes-medicas").getElementsByTagName("tbody")[0];
+        let totalPages = Math.ceil(table.getElementsByTagName("tr").length / rowsPerPageOrdenes);
+        if (currentPageOrdenes < totalPages) {
+            currentPageOrdenes++;
+            paginateTableOrdenes();
+        }
+    }
+
+    function previousPageOrdenes() {
+        if (currentPageOrdenes > 1) {
+            currentPageOrdenes--;
+            paginateTableOrdenes();
+        }
+    }
+
+    // Detectar cambios en la tabla de órdenes médicas
+    function waitForTableUpdateOrdenes() {
+        let observer = new MutationObserver(() => {
+            paginateTableOrdenes();
+        });
+
+        let tableBody = document.getElementById("tabla-ordenes-medicas").getElementsByTagName("tbody")[0];
+        if (tableBody) {
+            observer.observe(tableBody, { childList: true, subtree: true });
+        }
+    }
+
+    // Ejecutar paginación al cargar la página y cuando la tabla se actualice
+    document.addEventListener("DOMContentLoaded", () => {
+        paginateTableOrdenes();
+        waitForTableUpdateOrdenes();
+    });
+</script>
+
+<div id="modalAgregarMedicamentos" title="Agregar Productos" style="display:none;">
+    <div class="card shadow-sm border-0 rounded-lg">
+        <div class="card-body">
+            <div class="form-row">
+                @if (!Model.HospitalizacionFinalizada)
+                {
+
+                    <div class="form-group col-md-6">
+                        <label for="productoSelect">Productos:</label>
+                        <select class="form-control" id="productoSelect">
+                            <option value="">Seleccione un producto</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="precioSelect">Precio:</label>
+                        <select class="form-control" id="precioSelect">
+                            <option value="">Seleccione un precio</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="cantidadInput">Cantidad:</label>
+                        <input type="number" class="form-control" id="cantidadInput">
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="frecuenciaAdministracionSelect">Frecuencia de Administración:</label>
+                        <select class="form-control" id="frecuenciaAdministracionSelect">
+                            <option value="STAT">STAT</option>
+                            <option value="Cada 1 Hora">Cada 1 Hora</option>
+                            <option value="Cada 2 Horas">Cada 2 Horas</option>
+                            <option value="Cada 3 Horas">Cada 3 Horas</option>
+                            <option value="Cada 4 Horas">Cada 4 Horas</option>
+                            <option value="Cada 5 Horas">Cada 5 Horas</option>
+                            <option value="Cada 6 Horas">Cada 6 Horas</option>
+                            <option value="Cada 7 Horas">Cada 7 Horas</option>
+                            <option value="Cada 8 Horas">Cada 8 Horas</option>
+                            <option value="Cada 9 Horas">Cada 9 Horas</option>
+                            <option value="Cada 10 Horas">Cada 10 Horas</option>
+                            <option value="Cada 11 Horas">Cada 11 Horas</option>
+                            <option value="Cada 12 Horas">Cada 12 Horas</option>
+                            <option value="Cada 13 Horas">Cada 13 Horas</option>
+                            <option value="Cada 14 Horas">Cada 14 Horas</option>
+                            <option value="Cada 15 Horas">Cada 15 Horas</option>
+                            <option value="Cada 16 Horas">Cada 16 Horas</option>
+                            <option value="Cada 17 Horas">Cada 17 Horas</option>
+                            <option value="Cada 18 Horas">Cada 18 Horas</option>
+                            <option value="Cada 19 Horas">Cada 19 Horas</option>
+                            <option value="Cada 20 Horas">Cada 20 Horas</option>
+                            <option value="Cada 21 Horas">Cada 21 Horas</option>
+                            <option value="Cada 22 Horas">Cada 22 Horas</option>
+                            <option value="Cada 23 Horas">Cada 23 Horas</option>
+                            <option value="Cada 24 Horas">Cada 24 Horas</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group col-md-12">
+                        <label for="FechaHoraManualInput">Fecha y hora de aplicación</label>
+                        <input type="datetime-local" class="form-control" id="FechaHoraManualInput">
+                    </div>
+
+                    <div class="form-group col-md-12">
+                        <label for="indicacionesInput">Indicaciones:</label>
+                        <input type="text" class="form-control" id="indicacionesInput"
+                            name="IndicacionesOrdenMedicaMedicamentos">
+                    </div>
+
+
+                    <div class="form-group col-md-12 text-center">
+                        <button class="btn btn-primary" onclick="agregarMedicamentoALaLista()">
+                            <i class="fas fa-plus"></i> Añadir a la Lista
+                        </button>
+                    </div>
+
+                    <!-- Lista de productos añadidos -->
+                    <div class="form-group col-md-12">
+                        <h6>Productos Agregados:</h6>
+                        <ul id="listaProductosAgregados" class="list-group"></ul>
+                    </div>
+
+                    <div class="form-group col-md-12 text-center">
+                        <button class="btn btn-success" onclick="enviarListaProductos()">
+                            <i class="fas fa-paper-plane"></i> Enviar Solicitud
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- jQuery UI CSS -->
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+<!-- jQuery UI JS -->
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script>
+    let examenesSeleccionados = [];
+
+    function verModalOrdenMedica() {
+        $("#mdl-agregar-orden-medica").dialog({
+            width: 1000,
+            modal: true,
+            buttons: {
+                "Cerrar": function () {
+                    $(this).dialog("close");
+                    limpiarFormulario();
+                }
+            }
+        });
+    }
+
+
+    function agregarExamenALaLista() {
+        const examenNombre = $('#examenSelect option:selected').text();
+        const examenIdRaw = $('#examenSelect').val();
+
+        // Convertir a número (puente crítico: el backend espera int)
+        const examenId = parseInt(examenIdRaw, 10);
+
+        if (!examenNombre || examenNombre === "Seleccione un examen") {
+            alert('Debes seleccionar un examen válido.');
+            return;
+        }
+
+        if (!Number.isInteger(examenId) || examenId <= 0) {
+            alert('El examen seleccionado no tiene un ID válido.');
+            return;
+        }
+
+        // Unicidad por ID numérico
+        if (examenesSeleccionados.some(e => e.id === examenId)) {
+            alert('Este examen ya ha sido agregado.');
+            return;
+        }
+
+        examenesSeleccionados.push({ id: examenId, nombre: examenNombre });
+
+        $('#listaExamenesAgregados').append(`
+        <li class="list-group-item d-flex justify-content-between align-items-center" data-id="${examenId}">
+            <span>${examenNombre}</span>
+            <input type="text" class="form-control ml-2 mr-2" placeholder="Observaciones"
+                   style="width: 200px;" data-observacion-id="${examenId}">
+            <button class="btn btn-danger btn-sm" onclick="eliminarExamenDeLaLista(${examenId})">Eliminar</button>
+        </li>
+    `);
+    }
+
+
+    function eliminarExamenDeLaLista(examenId) {
+        examenesSeleccionados = examenesSeleccionados.filter(e => e.id !== examenId);
+        $(`#listaExamenesAgregados li[data-id='${examenId}']`).remove();
+    }
+
+
+    function agregarOrdenMedica() {
+        const descripcion = $('#descripcion').val().trim();
+
+        if (!descripcion) {
+            alert('Debes ingresar una descripción para la orden médica.');
+            return;
+        }
+
+        const observaciones = examenesSeleccionados.map(examen => {
+            return $(`input[data-observacion-id='${examen.id}']`).val() || '';
+        });
+
+        const examenes = examenesSeleccionados.map(e => e.nombre);
+
+        const nuevaOrden = {
+            Profesional: correoUsuario,
+            Descripcion: descripcion,
+            HospitalizacionId: hospitalizacionIdGlobal,
+            Examenes: examenes.length > 0 ? examenes : null,
+            Observaciones: observaciones.length > 0 ? observaciones : null
+        };
+
+        $.ajax({
+            url: '/api/OrdenesMedicas/AgregarOrdenMedica',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(nuevaOrden),
+            success: function () {
+                if (examenesSeleccionados.length > 0) {
+                    agregarExamenAHospitalizacion(codigoSeguro);
+                }
+                $("#mdl-agregar-orden-medica").dialog("close");
+                limpiarFormulario();
+                cargarOrdenesMedicas();
+            },
+            error: function (xhr) {
+                alert('Error al agregar la orden médica: ' + xhr.responseText);
+            }
+        });
+    }
+
+
+    function agregarExamenAHospitalizacion(codigoSeguro) {
+        // Convertir IDs principales a número (puente crítico)
+        const hospitalizacionId = parseInt(hospitalizacionIdGlobal, 10);
+        const pacienteId = parseInt($("#PacienteId").val(), 10);
+        const cuentaId = parseInt($("#CuentaId").val(), 10);
+
+        if (!Number.isInteger(hospitalizacionId) || hospitalizacionId <= 0) {
+            mensajeEmergenteError("⚠ HospitalizacionId inválido. No se puede registrar el examen.");
+            console.error("HospitalizacionId inválido:", hospitalizacionIdGlobal);
+            return;
+        }
+
+        if (!Number.isInteger(pacienteId) || pacienteId <= 0) {
+            mensajeEmergenteError("⚠ PacienteId inválido. No se puede registrar el examen.");
+            console.error("PacienteId inválido:", $("#PacienteId").val());
+            return;
+        }
+
+        if (!Number.isInteger(cuentaId) || cuentaId <= 0) {
+            mensajeEmergenteError("⚠ CuentaId inválido. No se puede registrar el examen.");
+            console.error("CuentaId inválido:", $("#CuentaId").val());
+            return;
+        }
+
+        if (!codigoSeguro) {
+            // No rompo el flujo, pero dejo traza porque afecta selección de precio
+            console.warn("⚠ CodigoSeguro viene vacío. Se usará fallback de precios en backend.");
+        }
+
+        if (!examenesSeleccionados || examenesSeleccionados.length === 0) {
+            alert('Debe agregar al menos un examen.');
+            return;
+        }
+
+        // Asegurar ExamenLabClinicoId numérico
+        let examenesPayload = examenesSeleccionados.map(examen => ({
+            ExamenLabClinicoId: parseInt(examen.id, 10),
+            Observacion: $(`input[data-observacion-id='${examen.id}']`).val() || ''
+        })).filter(x => Number.isInteger(x.ExamenLabClinicoId) && x.ExamenLabClinicoId > 0);
+
+        if (examenesPayload.length === 0) {
+            mensajeEmergenteError("⚠ No hay exámenes con ID válido para registrar.");
+            console.error("Exámenes seleccionados inválidos:", examenesSeleccionados);
+            return;
+        }
+
+        let payload = {
+            HospitalizacionId: hospitalizacionId,
+            PacienteId: pacienteId,
+            CuentaId: cuentaId,
+            CodigoSeguro: codigoSeguro,
+            Examenes: examenesPayload
+        };
+
+        // Trazabilidad mínima (para ver exactamente qué se envía)
+        console.log("📌 Payload /Hospitalizacion/AgregarExamen:", payload);
+
+        $.ajax({
+            url: "/Hospitalizacion/AgregarExamen",
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify(payload),
+            success: function (dataResult) {
+                // El controller devuelve string (JsonSerializer.Serialize), por eso parseamos string.
+                // Si algún middleware cambia el content-type a JSON, soportamos objeto también.
+                let data;
+                try {
+                    data = (typeof dataResult === "string") ? JSON.parse(dataResult) : dataResult;
+                } catch (e) {
+                    console.error("❌ Respuesta no parseable de /Hospitalizacion/AgregarExamen:", dataResult, e);
+                    mensajeEmergenteError("⚠ Error interpretando respuesta al registrar exámenes.");
+                    return;
+                }
+
+                console.log("✅ Respuesta /Hospitalizacion/AgregarExamen:", data);
+
+                if (data && data.Exitoso) {
+                    // Limpiar lista local
+                    examenesSeleccionados = [];
+                    $("#listaExamenesAgregados").empty();
+
+                    // ✅ Refrescar tab Exámenes Complementarios (KO global en Detalles)
+                    if (typeof detallesVm !== "undefined" && detallesVm) {
+                        if (typeof detallesVm.consultarExamenesHospitalizacion === "function") {
+                            detallesVm.consultarExamenesHospitalizacion();
+                        }
+                        if (typeof detallesVm.actualizarTotales === "function") {
+                            detallesVm.actualizarTotales();
+                        }
+                    }
+                } else {
+                    console.error("❌ Backend respondió Exitoso=false:", data);
+                    mensajeEmergenteError("❌ " + (data && data.Mensaje ? data.Mensaje : "Error al registrar exámenes."));
+                }
+            },
+            error: function (xhr) {
+                console.error("❌ Error AJAX /Hospitalizacion/AgregarExamen:", xhr);
+                mensajeEmergenteError("⚠ Error al agregar los exámenes.");
+            }
+        });
+    }
+
+
+
+
+
+    function limpiarFormulario() {
+        $('#descripcion').val('');
+        $('#examenSelect').val('');
+        $('#listaExamenesAgregados').empty();
+        examenesSeleccionados = [];
+    }
+
+    function eliminarOrdenMedica(ordenId) {
+        if (confirm('¿Estás seguro de que deseas eliminar esta orden médica?')) {
+            $.ajax({
+                url: `/api/OrdenesMedicas/EliminarOrdenMedica/${ordenId}`,
+                type: 'DELETE',
+                success: function (response) {
+                    @* alert('Orden médica eliminada exitosamente'); *@
+                        cargarOrdenesMedicas(); // Recargar la tabla de órdenes médicas
+                },
+                error: function (xhr) {
+                    console.error(xhr);
+                    alert('Error al eliminar la orden médica: ' + xhr.responseText);
+                }
+            });
+        }
+    }
+
+</script>
+<script>
+    function aplicarOrdenMedica(ordenId) {
+
+        if (confirm('¿Deseas marcar esta orden médica como realizada?')) {
+            $.ajax({
+                url: `/api/OrdenesMedicas/AplicarOrdenMedica/${ordenId}`,
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    Realizada: true,
+                    ProfesionalRealiza: correoUsuario
+                }),
+                success: function (response) {
+                    alert('Orden médica marcada como realizada.');
+                    cargarOrdenesMedicas(); // Recargar la tabla para reflejar los cambios
+                },
+                error: function (xhr) {
+                    console.error(xhr);
+                    alert('Error al aplicar la orden médica: ' + xhr.responseText);
+                }
+            });
+        }
+    }
+
+
+    function abrirModalAgregarMedicamentos() {
+        TipoBodega = "Global";
+        $("#modalAgregarMedicamentos").data("directa", false);
+        consultarMedicamentosExistentes();
+        $("#modalAgregarMedicamentos").dialog({
+            modal: true,
+            width: 1000,
+            buttons: {
+                "Cerrar": function () {
+                    $(this).dialog("close");
+                }
+            }
+        });
+    }
+
+    function abrirModalAgregarMedicamentosArea() {
+        TipoBodega = "Area";
+        $("#modalAgregarMedicamentos").data("directa", true);
+        consultarMedicamentosExistentes();
+        $("#modalAgregarMedicamentos").dialog({
+            modal: true,
+            width: 1000,
+            buttons: {
+                "Cerrar": function () {
+                    $(this).dialog("close");
+                }
+            }
+        });
+    }
+
+
+
+    let productosExistentes = [];
+
+    function consultarMedicamentosExistentes() {
+        let bodegaUsar = (TipoBodega === "Global") ? 14 : $("#BodegaId").val();
+
+        $.ajax({
+            method: "POST",
+            url: '/HospitalizacionPaquetes/ConsultarProductosExistentes',
+            data: { BodegaId: bodegaUsar },
+            success: function (dataResult) {
+                let data = JSON.parse(dataResult);
+                if (data.Exitoso) {
+                    let agrupados = {};
+                    let codigoSeguro = '@codigoSeguroHospi';
+                    @* console.log(codigoSeguro) *@
+                        // Recorrer los productos para agruparlos por ProductoId
+                        data.Resultado.forEach(producto => {
+                            if (!agrupados[producto.ProductoId]) {
+                                agrupados[producto.ProductoId] = {
+                                    ProductoId: producto.ProductoId,
+                                    ProductoNombre: producto.ProductoNombre,
+                                    Precios: [] // Inicializar array de precios
+                                };
+                            }
+
+                            // Filtrar los precios por el código de seguro
+                            // Normalización segura
+                            const codigoSeguroNorm = (codigoSeguro ?? "").toString().trim().toUpperCase();
+                            const precioNombreNorm = (producto.PrecioNombre ?? "").toString().trim().toUpperCase();
+
+                            // Si codigoSeguro viene vacío, mostrar ambos precios permitidos
+                            const allowedWhenNoSeguro = new Set(["NORMAL", "SIN SEGURO"]);
+
+                            // Regla de inclusión
+                            const incluirPrecio = codigoSeguroNorm
+                                ? (precioNombreNorm === codigoSeguroNorm)
+                                : allowedWhenNoSeguro.has(precioNombreNorm);
+
+                            // Agregar precio si aplica y evitar duplicados por PrecioId
+                            if (incluirPrecio) {
+                                const precios = agrupados[producto.ProductoId].Precios;
+
+                                if (!precios.some(p => p.PrecioId === producto.PrecioId)) {
+                                    precios.push({
+                                        PrecioId: producto.PrecioId,
+                                        PrecioValor: producto.PrecioValor,
+                                        PrecioNombre: producto.PrecioNombre
+                                    });
+                                }
+                            }
+                        });
+
+                    // Convertir a array para usar en los selects
+                    productosExistentes = Object.values(agrupados);
+
+                    // Llenar el select de productos (solo los que tienen precio válido)
+                    let productoSelect = $('#productoSelect');
+                    productoSelect.empty().append('<option value="">Seleccione un producto</option>');
+
+                    productosExistentes.forEach(producto => {
+                        if (producto.Precios.length > 0) { // Solo agregar productos con precios válidos
+                            productoSelect.append(`<option value="${producto.ProductoId}">${producto.ProductoNombre}</option>`);
+                        }
+                    });
+                }
+            },
+            error: function () {
+                alert('Error al consultar medicamentos existentes.');
+            }
+        });
+    }
+
+    // Evento para manejar la selección de productos y asignar automáticamente su precio
+    $('#productoSelect').on('change', function () {
+        const productoId = $(this).val();
+        const productoSeleccionado = productosExistentes.find(p => p.ProductoId == productoId);
+
+        let precioSelect = $('#precioSelect');
+        precioSelect.empty();
+
+        if (productoSeleccionado && productoSeleccionado.Precios.length > 0) {
+            let precio = productoSeleccionado.Precios[0]; // Solo hay una opción
+            precioSelect.append(`<option value="${precio.PrecioId}" selected>${precio.PrecioNombre} - Q${precio.PrecioValor}</option>`);
+        }
+    });
+
+
+    function consultarMedicamentoPrecio(productoId) {
+        $.ajax({
+            method: "POST",
+            url: '/HospitalizacionPaquetes/ConsultarPrecioProducto',
+            data: { ProductoId: productoId },
+            success: function (dataResult) {
+                let data = JSON.parse(dataResult);
+                if (data.Exitoso) {
+                    $('#precioSelect').empty();
+                    data.Resultado.forEach(precio => {
+                        $('#precioSelect').append(`<option value="${precio.PrecioValor}">${precio.Precio}</option>`);
+                    });
+                }
+            },
+            error: function () {
+                alert('Error al consultar precios del medicamento.');
+            }
+        });
+    }
+
+    function imprimirOrdenMedica(ordenId) {
+        window.open(`/CrearPDF/HospitalizacionOrdenMedicaPDF?ordenMedicaId=${ordenId}`, '_blank');
+    }
+
+
+    function cargarOrdenesMedicas() {
+        $.ajax({
+            url: `/api/OrdenesMedicas/ObtenerOrdenesPorHospitalizacion/${hospitalizacionIdGlobal}`,
+            type: 'GET',
+            success: function (ordenes) {
+                const tbody = $('#tabla-ordenes-medicas tbody');
+                tbody.empty();
+
+                ordenes.forEach(orden => {
+                    const filaClase = orden.realizada ? 'orden-realizada' : '';
+
+                    const examenes = (Array.isArray(orden.examenes) ? orden.examenes : []).map((examen, index) => {
+                        const observacion = (Array.isArray(orden.observaciones) && orden.observaciones[index]) ? orden.observaciones[index] : '';
+                        return `<strong>${examen}</strong><br><small>Obs: ${observacion}</small>`;
+                    }).join('<hr>');
+
+
+                    tbody.append(`
+                    <tr class="${filaClase}">
+                        <td>${new Date(orden.fechaHora).toLocaleString('es-ES')}</td>
+                        @* <td>${orden.id}</td> *@
+                        <td>${orden.profesional}</td>
+                        <td style="white-space: pre-wrap;">${orden.descripcion}</td>
+                        <td>${(Array.isArray(orden.examenes) ? orden.examenes.join('<br>') : '')}</td>
+                        <td>${(Array.isArray(orden.observaciones) ? orden.observaciones.join('<br>') : '')}</td>
+                        <td>${orden.fechaRealizacion && new Date(orden.fechaRealizacion).getTime() > 0 ? new Date(orden.fechaRealizacion).toLocaleString('es-ES') : ''}</td>
+                        <td>${orden.profesionalRealiza || ''}</td>
+                        <td>
+                            ${!orden.realizada ? `
+                                <button class="btn btn-success" onclick="aplicarOrdenMedica(${orden.id})">
+                                    <i class="fa fa-syringe"></i> 
+                                </button>
+                            ` : ''}
+                            <button class="btn btn-primary" onclick="imprimirOrdenMedica(${orden.id})">
+                                <i class="fa fa-print"></i>
+                            </button>
+                        </td>
+
+                    </tr>
+                `);
+                });
+            },
+            error: function () {
+                alert('Error al obtener las órdenes médicas.');
+            }
+        });
+    }
+
+    function toggleFormularioMedicamento() {
+        const formulario = document.getElementById('formularioAgregarMedicamento');
+
+        if (formulario.style.display === 'none') {
+            formulario.style.display = 'block';
+        } else {
+            formulario.style.display = 'none';
+        }
+    }
+
+
+
+    $(document).ready(function () {
+        cargarOrdenesMedicas();
+        cargarDataTables();
+    });
+
+
+
+
+    function agregarMedicamento() {
+        let hospitalizacionId = $("#HospitalizacionId").val();
+        let productoId = $("#productoSelect").val();
+        let precioId = $("#precioSelect").val();
+        let cantidad = $("#cantidadInput").val();
+        let indicaciones = $("#indicacionesInput").val();
+        let viaAdministracion = $("#viaAdministracion").val();
+        let frecuenciaAdministracion = $("#frecuenciaAdministracionSelect").val();
+
+        let fechaHoraAplicacionManual = document.getElementById("fechaHoraManualInput").value;
+
+        if (fechaHoraAplicacionManual) {
+            let fechaLocal = new Date(fechaHoraAplicacionManual);
+            let fechaGuatemala = new Date(fechaLocal.getTime() - (fechaLocal.getTimezoneOffset() * 60000) - (6 * 60 * 60000));
+
+            // Formatear fecha en "dd/MM/yyyy h:mm:ss a"
+            let opcionesFormato = {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            };
+
+            fechaHoraAplicacionManual = new Intl.DateTimeFormat('es-ES', opcionesFormato).format(fechaGuatemala).replace(',', '');
+        }
+
+
+
+        if (!cantidad || isNaN(cantidad) || cantidad <= 0) {
+            alert("Proporcione una cantidad válida para el medicamento");
+            return;
+        }
+
+        if (!productoId) {
+            alert("Seleccione un producto válido");
+            return;
+        }
+
+        if (!precioId) {
+            alert("Seleccione un precio válido");
+            return;
+        }
+
+        let productoSeleccionado = productosExistentes.find(p => p.ProductoId == productoId);
+        if (!productoSeleccionado) {
+            alert("El producto seleccionado no es válido");
+            return;
+        }
+
+        let precioSeleccionado = productoSeleccionado.Precios.find(p => p.PrecioId == precioId);
+        if (!precioSeleccionado) {
+            alert("El precio seleccionado no es válido");
+            return;
+        }
+
+        let confirmAgregar = "¿Desea solicitar este medicamento?";
+        if (!confirm(confirmAgregar)) {
+            return;
+        }
+
+        // ✅ Construcción de la solicitud
+        let solicitud = {
+            HospitalizacionId: hospitalizacionId,
+            ProductoId: productoId,
+            UnidadMedidaVentaId: 1, // Si tienes una selección de unidad, cámbiala
+            Cantidad: cantidad,
+            Precio: precioSeleccionado.PrecioValor,
+            Indicaciones: indicaciones,
+            ViaAdministracion: viaAdministracion,
+            FrecuenciaAdministracion: frecuenciaAdministracion,
+            PrecioId: precioSeleccionado.PrecioId,
+            FechaHoraAplicacionManual: fechaHoraAplicacionManual
+
+        };
+
+        // ✅ Llamar a la API para crear la solicitud
+        crearSolicitudMedicamento(solicitud);
+    }
+
+    function crearSolicitudMedicamento(solicitud) {
+        let tipoProductoId;
+
+        productosExistentes.forEach(e => {
+            if (e.ProductoId === solicitud.ProductoId) {
+                tipoProductoId = e.TipoProductoId;
+            }
+        });
+
+        var solicitudCompleta = {
+            HospitalizacionId: solicitud.HospitalizacionId || 0,
+            ProductoId: solicitud.ProductoId || 0,
+            UnidadMedidaVentaId: solicitud.UnidadMedidaVentaId || 0,
+            Cantidad: solicitud.Cantidad || 0,
+            Precio: solicitud.Precio || 0.00,
+            Indicaciones: solicitud.Indicaciones || "",
+            ViaAdministracion: solicitud.ViaAdministracion || "",
+            FrecuenciaAdministracion: solicitud.FrecuenciaAdministracion || "",
+            IdProductoPrecioInventario: solicitud.IdProductoPrecioInventario || 0,
+            PrecioId: solicitud.PrecioId || 0,
+            TipoProducto: tipoProductoId ? tipoProductoId.toString() : "1",
+            FechaHoraAplicacionManual: solicitud.FechaHoraAplicacionManual || "-"
+        };
+
+        @* console.log("Solicitud Enviada:", solicitudCompleta); *@
+
+            $.ajax({
+                url: '/SolicitudMedicamento/Add',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(solicitudCompleta),
+                success: function (response) {
+                    if (response.exitoso) {
+                        alert(`✅ ${response.mensaje}\n📅 Fecha de solicitud: ${response.fechaSolicitud}`);
+                    } else {
+                        alert(`❌ Error: ${response.mensaje}`);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    alert(`⚠ Error inesperado: ${xhr.responseJSON ? xhr.responseJSON.Mensaje : error}`);
+                }
+            });
+    }
+
+</script>
+<script>
+    function abrirSolicitudMedicamentos(hospitalizacionId) {
+        window.open(`/SolicitudMedicamento/SolicitudesMedicamentosView?hospitalizacionId=${hospitalizacionId}`, '_blank');
+    }
+</script>
+<style>
+    .ui-widget-overlay {
+        backdrop-filter: blur(5px);
+        background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .ui-dialog {
+        border: 2px solid #007bff !important;
+        border-radius: 10px !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        padding: 15px;
+        transition: all 0.3s ease;
+    }
+
+    #mdl-agregar-orden-medica .form-control {
+        margin-bottom: 10px;
+    }
+
+    #mdl-agregar-orden-medica label {
+        font-weight: bold;
+    }
+
+    @@media(max - width: 768px) {
+        .ui-dialog {
+            width: 90% !important;
+        }
+    }
+
+    .orden-realizada {
+        background-color: #5ed379 !important;
+        /* Verde suave */
+        transition: background-color 0.3s ease;
+    }
+</style>
+<script type="text/javascript" src="~/js/select2.full.min.js"></script>
+<link href="~/css/select2.min.css" rel="stylesheet">
+<link href="~/css/select2-bootstrap4.min.css" rel="stylesheet">
+<script>
+    $('#examenSelect').select2({
+        theme: 'bootstrap4',
+        dropdownParent: $('#mdl-agregar-orden-medica')
+    });
+    $('#frecuenciaAdministracionSelect').select2({
+        theme: 'bootstrap4',
+        dropdownParent: $('#modalAgregarMedicamentos')
+    });
+
+    $('#productoSelect').select2({
+        theme: 'bootstrap4',
+        dropdownParent: $('#modalAgregarMedicamentos')
+    });
+
+    function aprobarTodasLasSolicitudes(hospitalizacionId) {
+        @* console.log('ID de hospitalización:', hospitalizacionId); *@
+
+                            if (confirm('¿Estás seguro de que deseas aprobar todas las solicitudes de esta hospitalización?')) {
+            $.ajax({
+                url: `/SolicitudMedicamento/AprobarTodasSolicitudesPorHospitalizacion?hospitalizacionId=${encodeURIComponent(hospitalizacionId)}`,
+                type: 'PUT',
+                success: function (response) {
+                    alert("Todas las solicitudes han sido aprobadas exitosamente.");
+                },
+                error: function (xhr) {
+                    console.error(xhr);
+                    alert('Error al aprobar solicitudes: ' + xhr.responseText);
+                }
+            });
+        }
+    }
+
+
+</script>
+<div id="modalControlAplicaciones" title="Control de Aplicaciones" style="display:none;">
+    <div class="form-row">
+        <div class="col-md-12">
+            <div class="main-card mb-3 card" style="border-radius: 10px">
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="col-md-12">
+                            <h6><b>Aplicación de Medicamentos y Servicios</b></h6>
+                            <hr />
+                        </div>
+                        <div class="col-md-12">
+                            <table id="tablaControlAplicaciones" class="table table-striped table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Tipo de elemento</th>
+                                        <th>Nombre</th>
+                                        <th>Indicaciones</th>
+                                        <th>Cantidad</th>
+                                        <th>Unidad de venta</th>
+                                        <th>Asignado por</th>
+                                        <th>Aplicado</th>
+                                        <th>Fecha y hora de aplicación (sistema)</th>
+                                        <th>Fecha y hora de aplicación (manual)</th>
+                                        <th>Frecuencia</th>
+                                        <th>Aplicado por</th>
+                                        <th>Aplicar</th>
+                                        @* <th>Observaciones</th> *@
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaControlAplicacionesBody">
+                                    <!-- Aquí se llenarán los datos dinámicamente con jQuery -->
+                                </tbody>
+
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button id="btnAplicarTodosInsumos" class="btn btn-danger mt-3">
+        <i class="fas fa-check-double"></i> Aplicar Todos
+    </button>
+
+</div>
+
+
+<div id="modalControlServicios" title="Control de Servicios" style="display:none;">
+    <div class="form-row">
+        <div class="col-md-12">
+            <div class="main-card mb-3 card" style="border-radius: 10px">
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="col-md-12">
+                            <h6><b>Aplicación de Servicios</b></h6>
+                            <hr />
+                        </div>
+                        <div class="col-md-12">
+                            <table id="tablaControlServicios" class="table table-striped table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre del Servicio</th>
+                                        <th>Indicaciones</th>
+                                        <th>Asignado por</th>
+                                        <th>Aplicado</th>
+                                        <th>Fecha de Aplicación</th>
+                                        <th>Aplicado por</th>
+                                        <th>Aplicar</th>
+                                        @* <th>Observaciones</th> *@
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaControlServiciosBody">
+                                    <!-- Se llenará dinámicamente con jQuery -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<style>
+    #modalControlAplicaciones .table th,
+    #modalControlAplicaciones .table td {
+        vertical-align: middle;
+        text-align: center;
+    }
+
+    #modalControlAplicaciones .badge-warning {
+        background-color: #f0ad4e;
+        color: white;
+    }
+
+    #modalControlAplicaciones .badge-success {
+        background-color: #5cb85c;
+    }
+
+    #modalControlAplicaciones .badge-danger {
+        background-color: #d9534f;
+    }
+</style>
+<script>
+    let productosSeleccionados = [];
+    function agregarMedicamentoALaLista() {
+        let hospitalizacionId = $("#HospitalizacionId").val();
+        let productoId = $("#productoSelect").val();
+        let precioId = $("#precioSelect").val();
+        let cantidad = $("#cantidadInput").val();
+        let indicaciones = $("#indicacionesInput").val();
+        let viaAdministracion = $("#viaAdministracion").val();
+        let frecuenciaAdministracion = $("#frecuenciaAdministracionSelect").val();
+        let directa = $("#modalAgregarMedicamentos").data("directa");
+
+        let fechaHoraAplicacionManualInput = document.getElementById("FechaHoraManualInput");
+        let fechaHoraAplicacionManual = null;
+
+        if (fechaHoraAplicacionManualInput) {
+            fechaHoraAplicacionManual = fechaHoraAplicacionManualInput.value;
+
+            if (fechaHoraAplicacionManual) {
+                let fechaLocal = new Date(fechaHoraAplicacionManual);
+                let fechaGuatemala = new Date(fechaLocal.getTime() - (fechaLocal.getTimezoneOffset() * 60000) - (6 * 60 * 60000));
+                fechaHoraAplicacionManual = fechaGuatemala.toISOString().slice(0, 19);
+            }
+        }
+
+        if (!cantidad || isNaN(cantidad) || cantidad <= 0) {
+            alert("Proporcione una cantidad válida para el medicamento");
+            return;
+        }
+
+        if (!productoId) {
+            alert("Seleccione un producto válido");
+            return;
+        }
+
+        let productoSeleccionado = productosExistentes.find(p => p.ProductoId == productoId);
+        if (!productoSeleccionado) {
+            alert("El producto seleccionado no es válido");
+            return;
+        }
+
+        let precioSeleccionado = productoSeleccionado.Precios.find(p => p.PrecioId == precioId);
+        if (!precioSeleccionado) {
+            alert("El precio seleccionado no es válido");
+            return;
+        }
+
+        let producto = {
+            HospitalizacionId: hospitalizacionId,
+            ProductoId: productoId,
+            Nombre: productoSeleccionado.ProductoNombre,
+            UnidadMedidaVentaId: 1,
+            Cantidad: cantidad,
+            Precio: precioSeleccionado.PrecioValor,
+            Indicaciones: indicaciones,
+            ViaAdministracion: viaAdministracion,
+            FrecuenciaAdministracion: frecuenciaAdministracion,
+            PrecioId: precioSeleccionado.PrecioId,
+            Directa: directa,
+            FechaHoraAplicacionManual: fechaHoraAplicacionManual
+        };
+
+        console.log("✅ Producto agregado:", producto);
+
+        productosSeleccionados.push(producto);
+        actualizarListaProductos();
+    }
+
+    function actualizarListaProductos() {
+        let lista = $("#listaProductosAgregados");
+        lista.empty();
+
+        productosSeleccionados.forEach((producto, index) => {
+            lista.append(`
+                                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                            <span><strong>${producto.Nombre}</strong> - Cantidad: ${producto.Cantidad}</span>
+                                                            <button class="btn btn-danger btn-sm" onclick="eliminarProductoDeLista(${index})">Eliminar</button>
+                                                        </li>
+                                                    `);
+        });
+    }
+
+    function eliminarProductoDeLista(index) {
+        productosSeleccionados.splice(index, 1);
+        actualizarListaProductos();
+    }
+
+    function enviarListaProductos() {
+        if (productosSeleccionados.length === 0) {
+            alert("No hay productos en la lista.");
+            return;
+        }
+
+        productosSeleccionados.forEach(producto => {
+            $.ajax({
+                url: '/SolicitudMedicamento/Add',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(producto),
+                success: function (response) {
+                    if (response.exitoso) {
+                        @* console.log(`✅ ${response.mensaje}`); *@
+                                        } else {
+                        console.error(`❌ Error: ${response.mensaje}`);
+                    }
+                },
+                error: function (xhr) {
+                    console.error(`⚠ Error inesperado: ${xhr.responseJSON ? xhr.responseJSON.Mensaje : xhr.responseText}`);
+                }
+            });
+        });
+
+        productosSeleccionados = [];
+        actualizarListaProductos();
+        $("#modalAgregarMedicamentos").dialog("close");
+
+        // ✅ Si hay productos directos, registrar solicitudes despachadas
+        @* if (productosSeleccionados.some(p => p.Directa)) { *@
+            registrarSolicitudesDespachadas();
+        @* } *@
+                        }
+
+
+    function registrarSolicitudesDespachadas() {
+        let hospitalizacionId = $("#HospitalizacionId").val();
+
+        @* console.log(`📌 Buscando solicitudes para la hospitalización: ${hospitalizacionId}`); *@
+
+            $.ajax({
+                url: `/SolicitudMedicamento/GetByHospitalizacion?hospitalizacionId=${hospitalizacionId}`,
+                method: "GET",
+                success: function (solicitudes) {
+                    @* console.log("📌 TODAS las solicitudes obtenidas:", solicitudes); *@
+
+                        let solicitudesPendientes = solicitudes.filter(s => s.estado === "Despachado" && !s.esRegistroHospitalizacion);
+
+                    @* console.log("📌 SOLICITUDES FILTRADAS con estado 'Despachado':", solicitudesPendientes); *@
+
+                        @* if (solicitudesPendientes.length === 0) {
+                alert("⚠ No hay solicitudes pendientes de registro.");
+                return;
+            } *@
+
+                        procesarSolicitud(0, solicitudesPendientes);
+                },
+                error: function () {
+                    alert("❌ Error al obtener solicitudes de medicamentos.");
+                }
+            });
+    }
+</script>
+<script>
+    async function consultarProductosAplicacionHospitalizacion(tipoProductoId) {
+        showLoading();
+        try {
+            @* console.log("📌 Consultando productos para tipoProductoId:", tipoProductoId); *@
+                let response = await $.ajax({
+                    url: "/Hospitalizacion/ConsultarProductosAplicacionHospitalizacion",
+                    method: "POST",
+                    contentType: "application/x-www-form-urlencoded",
+                    data: {
+                        hospitalizacionId: $("#HospitalizacionId").val(),
+                        tipoProductoId: tipoProductoId
+                    }
+                });
+
+            hideLoading();
+
+            let data = JSON.parse(response);
+            @* console.log("📌 Datos de la API:", data); *@
+
+                                                                if (data.Exitoso) {
+                if (data.Resultado && data.Resultado.length > 0) {
+                    renderizarTablaControlAplicaciones(data.Resultado, tipoProductoId);
+                    return true;
+                } else {
+                    alert("No se encontró ningún producto aplicable.");
+                    return false;
+                }
+            } else {
+                mensajeEmergenteError(data.Mensaje);
+                return false;
+            }
+        } catch (error) {
+            hideLoading();
+            console.error("❌ Error en la solicitud:", error);
+            mensajeEmergenteError("Error al obtener los datos.");
+            return false;
+        }
+    }
+
+
+
+
+    function renderizarTablaControlAplicaciones(productos, tipoProductoId) {
+        let tbody = $("#tablaControlAplicacionesBody");
+        let tabla = $("#tablaControlAplicaciones");
+
+        if ($.fn.DataTable.isDataTable(tabla)) {
+            tabla.DataTable().destroy();
+        }
+
+        tbody.empty();
+
+        if (!productos || productos.length === 0) {
+            tbody.append(`<tr><td colspan="10" class="text-center">No hay productos en la hospitalización.</td></tr>`);
+            return;
+        }
+
+        productos.forEach((producto) => {
+            let aplicado = producto.Aplicado
+                ? '<span class="badge badge-success">SI</span>'
+                : '<span class="badge badge-danger">NO</span>';
+
+            let aplicarBtn = !producto.Aplicado
+                ? `<button class="btn btn-primary aplicarProductoBtn" data-id="${producto.Id}">
+                                                                        <i class="fas fa-syringe"></i>
+                                                                   </button>`
+                : '';
+
+            let tipoElemento = tipoProductoId === 1 ? "Medicamento" : "Insumo";
+
+            tbody.append(`
+                                                                <tr>
+                                                                    <td><label class="badge badge-warning">${tipoElemento}</label></td>
+                                                                    <td>${producto.Nombre}</td>
+                                                                    <td>${producto.Indicaciones || '-'}</td>
+                                                                    <td>${producto.Cantidad}</td>
+                                                                    <td>${producto.UnidadMedidaVentaNombre || '-'}</td>
+                                                                    <td>${producto.PersonaCrea || '-'}</td>
+                                                                    <td>${aplicado}</td>
+                                                                    <td>${producto.FechaHoraAplicacion || '-'}</td>
+                                                                    <td>${producto.FechaHoraAplicacionManual || '-'}</td>
+                                                                    <td>${producto.FrecuenciaAdministracion || '-'}</td>
+                                                                    <td>${producto.PersonaAplica || '-'}</td>
+                                                                    <td>${aplicarBtn}</td>
+                                                                </tr>
+                                                            `);
+        });
+        setTimeout(initializeDataTable, 100);
+    }
+
+
+
+    function initializeDataTable() {
+
+
+        // Eliminar instancia previa si ya existe
+        if ($.fn.DataTable.isDataTable("#tablaControlAplicaciones")) {
+            $("#tablaControlAplicaciones").DataTable().destroy();
+        }
+
+        $("#tablaControlAplicaciones").DataTable({
+            paging: true,
+            pageLength: 5,
+            lengthMenu: [5, 8, 15, 25],
+            searching: true,
+            ordering: true,
+            autoWidth: false,
+            responsive: true,
+            deferRender: true,
+            processing: true,
+            language: {
+                lengthMenu: "Mostrar _MENU_ registros por página",
+                zeroRecords: "No se encontraron registros",
+                info: "Página _PAGE_ de _PAGES_",
+                infoEmpty: "No hay registros disponibles",
+                search: "Buscar:",
+                paginate: {
+                    first: "Primero",
+                    last: "Último",
+                    next: "Siguiente",
+                    previous: "Anterior"
+                }
+            }
+        });
+    }
+
+
+    function cargarDataTables() {
+        let cssLink = document.createElement('link');
+        cssLink.rel = 'stylesheet';
+        cssLink.href = 'https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css';
+        document.head.appendChild(cssLink);
+
+        let scriptTag = document.createElement('script');
+        scriptTag.src = 'https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js';
+        scriptTag.onload = function () {
+            @* console.log('✅ DataTables cargado correctamente'); *@
+                initializeDataTable();
+        };
+        document.body.appendChild(scriptTag);
+    }
+
+
+    async function abrirModalControlAplicaciones(tipoProductoId) {
+        $("#tablaControlAplicacionesBody").empty();
+
+        let hayProductos = await consultarProductosAplicacionHospitalizacion(tipoProductoId);
+
+        if (!hayProductos) return;
+
+        $("#modalControlAplicaciones").dialog({
+            modal: true,
+            width: 1400,
+            maxWidth: 1800,
+            buttons: {
+                "Cerrar": function () {
+                    $(this).dialog("close");
+                }
+            }
+        });
+
+    }
+
+
+
+
+
+    $(document).on("click", ".aplicarProductoBtn", function () {
+        let productoId = $(this).data("id");
+        aplicarProducto(productoId);
+    });
+
+    function aplicarProducto(productoId) {
+        @* console.log(`Aplicando producto ID: ${productoId}`); *@
+            $.ajax({
+                url: `/Hospitalizacion/AplicarProducto`,
+                method: "POST",
+                data: {
+                    hospitalizacionProductoAplicacionId: productoId,
+                    cuentaId: $("#CuentaId").val()
+                },
+                success: function (response) {
+                    let data = JSON.parse(response);
+                    if (data.Exitoso) {
+                        actualizarFilaProducto(data.ProductoAplicado);
+                    } else {
+                        alert("Error: " + data.Mensaje);
+                    }
+                },
+                error: function (xhr) {
+                    console.error("❌ Error al aplicar producto:", xhr);
+                    alert("No se pudo aplicar el producto.");
+                }
+            });
+    }
+
+
+    function actualizarFilaProducto(producto) {
+        let fila = $(`#tablaControlAplicacionesBody tr button[data-id='${producto.hospitalizacionProductoAplicacionId}']`).closest("tr");
+
+        if (fila.length) {
+            // Formatear la fecha en el formato "13/02/2025 5:08:41 p. m."
+            let fechaAplicacion = new Date(producto.FechaHoraAplicacion).toLocaleString('es-ES', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit', second: '2-digit',
+                hour12: true
+            });
+
+            fila.find("td:nth-child(7)").html('<span class="badge badge-success">SI</span>');
+            fila.find("td:nth-child(8)").text(fechaAplicacion.replace(',', ''));
+            fila.find("td:nth-child(11)").text(producto.UsuarioAplica);
+            fila.find("td:nth-child(12)").empty();
+        }
+    }
+
+
+</script>
+<script>
+    async function consultarServiciosHospitalizacion() {
+        showLoading();
+        try {
+            let response = await $.ajax({
+                url: "/Hospitalizacion/ConsultarServiciosHospitalizacion",
+                method: "POST",
+                data: { hospitalizacionId: $("#HospitalizacionId").val() }
+            });
+
+            hideLoading();
+
+            let data = JSON.parse(response);
+            if (data.Exitoso) {
+                if (data.Resultado && data.Resultado.length > 0) {
+                    renderizarTablaControlServicios(data.Resultado);
+                    return true;
+                } else {
+                    alert("No hay servicios aplicables.");
+                    return false;
+                }
+            } else {
+                mensajeEmergenteError(data.Mensaje);
+                return false;
+            }
+        } catch (error) {
+            hideLoading();
+            console.error("❌ Error en la solicitud:", error);
+            mensajeEmergenteError("Error al obtener los datos.");
+            return false;
+        }
+    }
+
+    function renderizarTablaControlServicios(servicios) {
+        let tbody = $("#tablaControlServiciosBody");
+        tbody.empty(); // Limpiar tabla
+
+        if (servicios.length === 0) {
+            tbody.append(`<tr><td colspan="8" class="text-center">No hay servicios asignados.</td></tr>`);
+        } else {
+            servicios.forEach((servicio) => {
+                let aplicado = servicio.Aplicado
+                    ? '<span class="badge badge-success">SI</span>'
+                    : '<span class="badge badge-danger">NO</span>';
+                let aplicarBtn = !servicio.Aplicado
+                    ? `<button class="btn btn-primary aplicarServicioBtn" data-id="${servicio.Id}"><i class="fas fa-check-circle"></i></button>`
+                    : '';
+
+                tbody.append(`
+                                                                                                                                <tr>
+                                                                                                                                    <td>${servicio.Nombre}</td>
+                                                                                                                                    <td>${servicio.Indicaciones || '-'}</td>
+                                                                                                                                    <td>${servicio.PersonaCrea || '-'}</td>
+                                                                                                                                    <td>${aplicado}</td>
+                                                                                                                                    <td>${servicio.FechaHoraAplicacion || '-'}</td>
+                                                                                                                                    <td>${servicio.PersonaAplica || '-'}</td>
+                                                                                                                                    <td>${aplicarBtn}</td>
+                                                                                                                                    @* <td>
+                                        <button class="btn btn-primary btn-sm verObservacionBtn" data-id="${servicio.Id}">
+                                            <i class="bi bi-eye"></i> Ver
+                                        </button>
+                                    </td> *@
+                                                                                                                                </tr>
+                                                                                                                            `);
+            });
+        }
+
+        // Inicializar DataTable después de cargar los datos
+        setTimeout(() => {
+            if (!$.fn.DataTable.isDataTable("#tablaControlServicios")) {
+                $("#tablaControlServicios").DataTable({
+                    paging: true,
+                    pageLength: 5,
+                    searching: true,
+                    ordering: true,
+                    autoWidth: false,
+                    responsive: true,
+                    language: {
+                        lengthMenu: "Mostrar _MENU_ registros por página",
+                        zeroRecords: "No se encontraron registros",
+                        info: "Página _PAGE_ de _PAGES_",
+                        infoEmpty: "No hay registros disponibles",
+                        search: "Buscar:",
+                        paginate: {
+                            first: "Primero",
+                            last: "Último",
+                            next: "Siguiente",
+                            previous: "Anterior"
+                        }
+                    }
+                });
+            }
+        }, 100);
+    }
+
+    // Abrir Modal de Servicios
+    async function abrirModalControlServicios() {
+        let hayServicios = await consultarServiciosHospitalizacion();
+        if (!hayServicios) return;
+
+        $("#modalControlServicios").dialog({
+            modal: true,
+            width: 1200,
+            buttons: {
+                "Cerrar": function () {
+                    $(this).dialog("close");
+                }
+            }
+        });
+    }
+
+    // Aplicar un servicio
+    $(document).on("click", ".aplicarServicioBtn", function () {
+        let servicioId = $(this).data("id");
+        aplicarServicio(servicioId);
+    });
+
+    function aplicarServicio(servicioId) {
+        $.ajax({
+            url: `/Hospitalizacion/AplicarServicio`,
+            method: "POST",
+            data: {
+                hospitalizacionServicioId: servicioId,
+                cuentaId: $("#CuentaId").val()
+            },
+            success: function (response) {
+                let data = JSON.parse(response);
+                if (data.Exitoso) {
+                    actualizarFilaServicio(data.ServicioAplicado);
+                } else {
+                    alert("Error: " + data.Mensaje);
+                }
+            },
+            error: function (xhr) {
+                console.error("❌ Error al aplicar servicio:", xhr);
+                alert("No se pudo aplicar el servicio.");
+            }
+        });
+    }
+
+
+    // Actualizar fila cuando un servicio es aplicado
+    function actualizarFilaServicio(servicio) {
+        let fila = $(`#tablaControlServiciosBody tr button[data-id='${servicio.servicioId}']`).closest("tr");
+
+        if (fila.length) {
+            let fechaAplicacion = new Date(servicio.FechaHoraAplicacion).toLocaleString('es-ES', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit', second: '2-digit',
+                hour12: true
+            });
+
+            fila.find("td:nth-child(4)").html('<span class="badge badge-success">SI</span>'); // Aplicado
+            fila.find("td:nth-child(5)").text(fechaAplicacion.replace(',', '')); // Fecha de aplicación con espacio limpio
+            fila.find("td:nth-child(6)").text(servicio.UsuarioAplica); // Usuario que aplicó
+            fila.find("td:nth-child(7)").empty(); // Eliminar botón de aplicar
+        }
+    }
+
+
+    $(document).on("click", "#btnAplicarTodosInsumos", function () {
+        let dataTable = $("#tablaControlAplicaciones").DataTable();
+        let insumosNoAplicados = dataTable.rows().nodes(); // Obtener todas las filas sin importar la paginación
+        let elementosPendientes = $(insumosNoAplicados).find("button.aplicarProductoBtn");
+
+        if (elementosPendientes.length === 0) {
+            alert("No hay items pendientes de aplicar.");
+            return;
+        }
+
+        if (!confirm("¿Estás seguro de que deseas hacer una aplicación en masa?")) {
+            return;
+        }
+
+        setTimeout(() => {
+            if (!confirm("Esta acción no se puede deshacer. ¿Deseas continuar?")) {
+                alert("Operación cancelada.");
+                return;
+            }
+
+            elementosPendientes.each(function () {
+                let productoId = $(this).data("id");
+                aplicarProducto(productoId);
+            });
+
+            @* alert("Aplicación en masa completada."); *@
+                    }, 100);
+
+    });
+</script>

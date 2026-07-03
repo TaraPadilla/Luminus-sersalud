@@ -1,0 +1,610 @@
+@model sistema.Models.HospitalizacionDetallesViewModel
+
+<div style="display:none;" id="mdl-registro-anestesia">
+    <div style="padding:16px 20px 20px; background:#f8fafc;">
+        <form id="formAnestesia">
+            
+            <div id="anestesia-step-1">
+                <div class="main-card mb-3 card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-end mb-2">
+                            <span class="text-muted small font-weight-bold">Paso 1 de 6</span>
+                            <span class="text-primary small">Datos Generales</span>
+                        </div>
+                        <div class="progress mb-4" style="height: 6px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: 16%;" aria-valuenow="16" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+
+                        <h5 class="card-title text-primary">Primera Sección</h5>
+                        <div class="form-row mt-3">
+                            <div class="form-group col-md-3"><label class="text-muted">Fecha</label><input type="date" class="form-control"></div>
+                            <div class="form-group col-md-3"><label class="text-muted">Qx</label><input type="text" class="form-control"></div>
+                            <div class="form-group col-md-6"><label class="text-muted">Paciente</label><input type="text" class="form-control bg-light" value="@Model.PacienteNombre" readonly></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-3"><label class="text-muted">Sexo</label><input type="text" class="form-control bg-light" value="@Model.PacienteSexo" readonly></div>
+                            <div class="form-group col-md-3"><label class="text-muted">Edad</label><input type="text" class="form-control bg-light" value="@Model.EdadPaciente" readonly></div>
+                            <div class="form-group col-md-3"><label class="text-muted">Peso</label><input type="text" class="form-control bg-light" value="@Model.PacientePeso" readonly></div>
+                            <div class="form-group col-md-3"><label class="text-muted">Talla</label><input type="text" class="form-control bg-light" value="@Model.PacienteTalla" readonly></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-3"><label class="text-muted">ASA</label><input type="text" class="form-control"></div>
+                            <div class="form-group col-md-3"><label class="text-muted">Técnica Anestésica</label><input type="text" class="form-control"></div>
+                            <div class="form-group col-md-3"><label class="text-muted">Chequeo de máquina</label><input type="number" class="form-control"></div>
+                            <div class="form-group col-md-3"><label class="text-muted">Índice de masa corporal</label><input type="number" class="form-control"></div>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-end mt-3">
+                            <button type="button" class="btn btn-primary px-4" onclick="showAnestesiaStep(2)">Siguiente</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="anestesia-step-2" style="display: none;">
+                <div class="main-card mb-3 card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-end mb-2">
+                            <span class="text-muted small font-weight-bold">Paso 2 de 6</span>
+                            <span class="text-primary small">Evaluación Clínica</span>
+                        </div>
+                        <div class="progress mb-4" style="height: 6px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: 33%;" aria-valuenow="33" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+
+                        <h5 class="card-title text-primary mb-4">Segunda Sección</h5>
+                        
+                        <fieldset class="border p-3 mb-4 rounded bg-white">
+                            <legend class="w-auto px-2 text-info" style="font-size: 1.05rem; font-weight: bold;">Preparación</legend>
+                            <div class="form-row">
+                                <div class="form-group col-md-3"><label class="text-muted d-block mb-1">Identificación</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_prep_identificacion" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_prep_identificacion" value="NO" class="mr-1"> NO</label></div></div>
+                                <div class="form-group col-md-3"><label class="text-muted d-block mb-1">Revisión de expediente</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_prep_expediente" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_prep_expediente" value="NO" class="mr-1"> NO</label></div></div>
+                                <div class="form-group col-md-3"><label class="text-muted d-block mb-1">Consentimiento</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_prep_consentimiento" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_prep_consentimiento" value="NO" class="mr-1"> NO</label></div></div>
+                                <div class="form-group col-md-3"><label class="text-muted d-block mb-1">Miembro marcado</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_prep_miembro" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_prep_miembro" value="NO" class="mr-1"> NO</label></div></div>
+                            </div>
+                            <div class="form-row mt-2">
+                                <div class="form-group col-md-12 mb-0"><label class="text-muted">Ayuno</label><input type="text" class="form-control"></div>
+                            </div>
+                        </fieldset>
+
+                        <fieldset class="border p-3 mb-4 rounded bg-white">
+                            <legend class="w-auto px-2 text-info" style="font-size: 1.05rem; font-weight: bold;">Seguridad</legend>
+                            <div class="form-row">
+                                <div class="form-group col-md-3"><label class="text-muted d-block mb-1">Revisión de equipo</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_seg_equipo" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_seg_equipo" value="NO" class="mr-1"> NO</label></div></div>
+                                <div class="form-group col-md-3"><label class="text-muted d-block mb-1">Plancha de cauterio</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_seg_cauterio" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_seg_cauterio" value="NO" class="mr-1"> NO</label></div></div>
+                                <div class="form-group col-md-3"><label class="text-muted d-block mb-1">Puntos de presión</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_seg_presion" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_seg_presion" value="NO" class="mr-1"> NO</label></div></div>
+                                <div class="form-group col-md-3"><label class="text-muted d-block mb-1">Protección ocular</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_seg_ocular" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_seg_ocular" value="NO" class="mr-1"> NO</label></div></div>
+                            </div>
+                        </fieldset>
+
+                        <fieldset class="border p-3 mb-4 rounded bg-white">
+                            <legend class="w-auto px-2 text-info" style="font-size: 1.05rem; font-weight: bold;">Monitores</legend>
+                             <div class="form-row">
+                                <div class="form-group col-md-3"><label class="text-muted d-block mb-1">Esfigmomanómetro</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_mon_esfigmo" value="Derecho" class="mr-1"> Der.</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_mon_esfigmo" value="Izquierdo" class="mr-1"> Izq.</label></div></div>
+                                <div class="form-group col-md-2"><label class="text-muted d-block mb-1">EKG</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_mon_ekg" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_mon_ekg" value="NO" class="mr-1"> NO</label></div></div>
+                                <div class="form-group col-md-3"><label class="text-muted d-block mb-1">Oxímetro</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_mon_oximetro" value="Derecho" class="mr-1"> Der.</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_mon_oximetro" value="Izquierdo" class="mr-1"> Izq.</label></div></div>
+                                <div class="form-group col-md-2"><label class="text-muted d-block mb-1">BIS</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_mon_bis" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_mon_bis" value="NO" class="mr-1"> NO</label></div></div>
+                                <div class="form-group col-md-2"><label class="text-muted d-block mb-1">Capno</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_mon_capno" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_mon_capno" value="NO" class="mr-1"> NO</label></div></div>
+                            </div>
+                            <div class="form-row mt-2">
+                                <div class="form-group col-md-3 mb-0"><label class="text-muted">Foley</label><input type="number" class="form-control"></div>
+                                <div class="form-group col-md-3 mb-0"><label class="text-muted d-block mb-1">Monitor</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_mon_monitor" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_mon_monitor" value="NO" class="mr-1"> NO</label></div></div>
+                            </div>
+                        </fieldset>
+
+                        <fieldset class="border p-3 mb-4 rounded bg-white">
+                            <legend class="w-auto px-2 text-info" style="font-size: 1.05rem; font-weight: bold;">Posición</legend>
+                            <div class="form-row">
+                                <div class="form-group col-md-2"><label class="text-muted d-block mb-1">D. supino</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-2 mb-0"><input type="radio" name="an_pos_supino" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_pos_supino" value="NO" class="mr-1"> NO</label></div></div>
+                                <div class="form-group col-md-2"><label class="text-muted d-block mb-1">D. prono</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-2 mb-0"><input type="radio" name="an_pos_prono" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_pos_prono" value="NO" class="mr-1"> NO</label></div></div>
+                                <div class="form-group col-md-2"><label class="text-muted d-block mb-1">D. lateral</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-2 mb-0"><input type="radio" name="an_pos_lateral" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_pos_lateral" value="NO" class="mr-1"> NO</label></div></div>
+                                <div class="form-group col-md-2"><label class="text-muted d-block mb-1">Litotomía</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-2 mb-0"><input type="radio" name="an_pos_lito" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_pos_lito" value="NO" class="mr-1"> NO</label></div></div>
+                                <div class="form-group col-md-2"><label class="text-muted d-block mb-1">N. sevillana</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-2 mb-0"><input type="radio" name="an_pos_navaja" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_pos_navaja" value="NO" class="mr-1"> NO</label></div></div>
+                                <div class="form-group col-md-2"><label class="text-muted">Otro</label><input type="text" class="form-control"></div>
+                            </div>
+                        </fieldset>
+
+                        <fieldset class="border p-3 mb-4 rounded bg-white">
+                            <legend class="w-auto px-2 text-info" style="font-size: 1.05rem; font-weight: bold;">Procedimientos de Vía y Canalización</legend>
+                            <h6 class="text-secondary mt-2 mb-3 border-bottom pb-1">Canalización</h6>
+                            <div class="form-row">
+                                <div class="form-group col-md-1"><label class="text-muted">Cat</label><input type="number" class="form-control"></div>
+                                <div class="form-group col-md-2"><label class="text-muted">Mano</label><select class="form-control"><option>Derecho</option><option>Izquierdo</option></select></div>
+                                <div class="form-group col-md-2"><label class="text-muted">Antebrazo</label><select class="form-control"><option>Derecho</option><option>Izquierdo</option></select></div>
+                                <div class="form-group col-md-2"><label class="text-muted">P. cubital</label><select class="form-control"><option>Derecho</option><option>Izquierdo</option></select></div>
+                                <div class="form-group col-md-2"><label class="text-muted">Brazo</label><select class="form-control"><option>Derecho</option><option>Izquierdo</option></select></div>
+                                <div class="form-group col-md-2"><label class="text-muted">Otro</label><input type="text" class="form-control"></div>
+                                <div class="form-group col-md-1"><label class="text-muted">Intentos</label><input type="number" class="form-control"></div>
+                            </div>
+                            
+                            <h6 class="text-secondary mt-3 mb-3 border-bottom pb-1">Inducción</h6>
+                            <div class="form-row">
+                                <div class="form-group col-md-4">
+                                    <label class="text-muted">Tipo de Inducción</label>
+                                    <select class="form-control" id="induccionTipo"><option value="">Seleccione</option><option value="inhalada">Inhalada</option><option value="iv">IV</option></select>
+                                </div>
+                            </div>
+                            <div id="induccionInhalada" style="display: none;">
+                                <div class="form-row">
+                                    <div class="form-group col-md-4"><label class="text-muted">Opción Inhalada</label><select class="form-control"><option>Sevoflurano</option><option>Desflurano</option><option>Vaporizador</option></select></div>
+                                    <div class="form-group col-md-3"><label class="text-muted d-block mb-1">Confirmar</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_ind_inh" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_ind_inh" value="NO" class="mr-1"> NO</label></div></div>
+                                </div>
+                            </div>
+                            <div id="induccionIV" style="display: none;">
+                                <div class="form-row">
+                                    <div class="form-group col-md-4">
+                                        <label class="text-muted">Opción IV</label>
+                                        <select class="form-control" id="induccionIVSelect"><option>Propofol</option><option>Midazolam</option><option>Fentanyl</option><option>Lidocaína</option><option value="otros">Otros</option></select>
+                                    </div>
+                                    <div class="form-group col-md-3"><label class="text-muted d-block mb-1">Confirmar</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_ind_iv" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_ind_iv" value="NO" class="mr-1"> NO</label></div></div>
+                                    <div class="form-group col-md-5" id="induccionIVOtro" style="display: none;"><label class="text-muted">Especifique otros</label><input type="text" class="form-control"></div>
+                                </div>
+                            </div>
+
+                            <h6 class="text-secondary mt-3 mb-3 border-bottom pb-1">Vía Aérea e Intubación</h6>
+                            <div class="form-row">
+                                <div class="form-group col-md-3"><label class="text-muted d-block mb-1">Cánula binasal</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_via_binasal" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_via_binasal" value="NO" class="mr-1"> NO</label></div></div>
+                                <div class="form-group col-md-3"><label class="text-muted d-block mb-1">Mascarilla c/ reserv.</label><div class="chequeo-si-no d-flex"><label class="chequeo-radio-label mr-3 mb-0"><input type="radio" name="an_via_mascarilla" value="SI" class="mr-1"> SÍ</label><label class="chequeo-radio-label mb-0"><input type="radio" name="an_via_mascarilla" value="NO" class="mr-1"> NO</label></div></div>
+                                <div class="form-group col-md-2"><label class="text-muted">OT</label><input type="number" class="form-control"></div>
+                                <div class="form-group col-md-2"><label class="text-muted">NT</label><input type="number" class="form-control"></div>
+                                <div class="form-group col-md-2"><label class="text-muted">Fijado en</label><input type="number" class="form-control"></div>
+                            </div>
+                            <div class="form-row mt-2">
+                                <div class="form-group col-md-4"><label class="text-muted">Método</label><select class="form-control"><option>Macintosh</option><option>Miller</option><option>Fibroscopia</option><option>Glidescope</option></select></div>
+                                <div class="form-group col-md-4"><label class="text-muted">Estado</label><input type="text" class="form-control" placeholder="Corroborado"></div>
+                                <div class="form-group col-md-4"><label class="text-muted">Intentos</label><input type="number" class="form-control" placeholder="Intentos"></div>
+                            </div>
+
+                            <h6 class="text-secondary mt-3 mb-3 border-bottom pb-1">Regional</h6>
+                            <div class="form-row">
+                                <div class="form-group col-md-2"><label class="text-muted">Epidural Nivel</label><input type="text" class="form-control"></div>
+                                <div class="form-group col-md-2"><label class="text-muted">Raquídeo Nivel</label><input type="text" class="form-control"></div>
+                                <div class="form-group col-md-2"><label class="text-muted">Bloq. Nerv.</label><input type="text" class="form-control"></div>
+                                <div class="form-group col-md-2"><label class="text-muted">+Est. Nerv.</label><input type="text" class="form-control"></div>
+                                <div class="form-group col-md-4"><label class="text-muted">Otros</label><input type="text" class="form-control"></div>
+                            </div>
+                        </fieldset>
+
+                        <hr>
+                        <div class="d-flex justify-content-between mt-3">
+                            <button type="button" class="btn btn-outline-secondary px-4" onclick="showAnestesiaStep(1)">Anterior</button>
+                            <button type="button" class="btn btn-primary px-4" onclick="showAnestesiaStep(3)">Siguiente</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="anestesia-step-3" style="display: none;">
+                <div class="main-card mb-3 card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-end mb-2">
+                            <span class="text-muted small font-weight-bold">Paso 3 de 6</span>
+                            <span class="text-primary small">Cuadrícula de Medicamentos</span>
+                        </div>
+                        <div class="progress mb-4" style="height: 6px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: 50%;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+
+                        <h5 class="card-title text-primary mb-4">Tercera Sección</h5>
+                        <div class="table-responsive shadow-sm rounded">
+                            <table class="table table-bordered table-hover table-sm mb-0" style="font-size: 0.85rem;">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th style="width: 150px; vertical-align: middle;">Item</th>
+                                        <th class="text-center">1</th><th class="text-center">2</th><th class="text-center">3</th><th class="text-center">4</th><th class="text-center">5</th><th class="text-center">6</th><th class="text-center">7</th><th class="text-center">8</th><th class="text-center">9</th>
+                                        <th class="text-center" style="width: 200px;">Notas</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="bg-light">
+                                        <td class="font-weight-bold text-muted">Hora</td>
+                                        @for (int i = 0; i < 9; i++) { <td><input type="time" class="form-control form-control-sm border-0 bg-transparent text-center"></td> }
+                                        <td><input type="text" class="form-control form-control-sm border-0 bg-transparent" placeholder="Nota general de hora"></td>
+                                    </tr>
+                                    @{
+                                        var items = new[] { "Sevoflurano", "Desflurano", "Propofol", "Midazolam", "Fentanyl", "Atracurio", "Vecuronio", "Succinilcolina", "Agente inhalado", "Relajante N.M.", "Ketamina", "Dexmedetomidina", "Antibióticos", "Analgésico", "Anestésico local", "Otros" };
+                                        foreach (var item in items)
+                                        {
+                                            <tr>
+                                                <td class="text-secondary">@item</td>
+                                                @for (int i = 0; i < 9; i++) { <td><input type="text" class="form-control form-control-sm border-0 text-center"></td> }
+                                                <td class="col-3"><input type="text" class="form-control form-control-sm border-0" placeholder="Añadir nota..."></td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        <hr class="mt-4">
+                        <div class="d-flex justify-content-between mt-3">
+                            <button type="button" class="btn btn-outline-secondary px-4" onclick="showAnestesiaStep(2)">Anterior</button>
+                            <button type="button" class="btn btn-primary px-4" onclick="showAnestesiaStep(4)">Siguiente</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="anestesia-step-4" style="display: none;">
+                <div class="main-card mb-3 card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-end mb-2">
+                            <span class="text-muted small font-weight-bold">Paso 4 de 6</span>
+                            <span class="text-primary small">Ingesta y Pérdidas</span>
+                        </div>
+                        <div class="progress mb-4" style="height: 6px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: 66%;" aria-valuenow="66" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+
+                        <h5 class="card-title text-primary mb-4">Cuarta Sección: Balance de Líquidos</h5>
+                        
+                        <div class="row mt-4">
+                            <div class="col-md-6 mb-3">
+                                <div class="bg-white p-3 border rounded shadow-sm">
+                                    <h6 class="text-success font-weight-bold border-bottom pb-2 mb-3">Ingesta</h6>
+                                    <div class="form-group row align-items-center mb-2">
+                                        <label class="col-sm-2 col-form-label text-muted mb-0">Cristaloides:</label>
+                                        <div class="col-sm-10"><input type="text" class="form-control form-control-sm"></div>
+                                    </div>
+                                    <div class="form-group row align-items-center mb-2">
+                                        <label class="col-sm-2 col-form-label text-muted mb-0">Coloides:</label>
+                                        <div class="col-sm-10"><input type="text" class="form-control form-control-sm"></div>
+                                    </div>
+                                    <div class="form-group row align-items-center mb-2">
+                                        <label class="col-sm-2 col-form-label text-muted mb-0">Sangre:</label>
+                                        <div class="col-sm-10"><input type="text" class="form-control form-control-sm"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <div class="bg-white p-3 border rounded shadow-sm">
+                                    <h6 class="text-danger font-weight-bold border-bottom pb-2 mb-3">Pérdidas</h6>
+                                    <div class="form-group row align-items-center mb-2">
+                                        <label class="col-sm-2 col-form-label text-muted mb-0">Requerimientos basales:</label>
+                                        <div class="col-sm-10"><input type="text" class="form-control form-control-sm"></div>
+                                    </div>
+                                    <div class="form-group row align-items-center mb-2">
+                                        <label class="col-sm-2 col-form-label text-muted mb-0">Tipo de cirujia:</label>
+                                        <div class="col-sm-10"><input type="text" class="form-control form-control-sm"></div>
+                                    </div>
+                                    <div class="form-group row align-items-center mb-2">
+                                        <label class="col-sm-2 col-form-label text-muted mb-0">Orina:</label>
+                                        <div class="col-sm-10"><input type="text" class="form-control form-control-sm"></div>
+                                    </div>
+                                    <div class="form-group row align-items-center mb-2">
+                                        <label class="col-sm-2 col-form-label text-muted mb-0">Sangrado:</label>
+                                        <div class="col-sm-10"><input type="text" class="form-control form-control-sm"></div>
+                                    </div>
+                                    <div class="form-group row align-items-center mb-2">
+                                        <label class="col-sm-2 col-form-label text-muted mb-0">Insensibles:</label>
+                                        <div class="col-sm-10"><input type="text" class="form-control form-control-sm"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group mb-3 col-6">
+                                <label class="text-muted font-weight-bold">Soluciones</label>
+                                <textarea class="form-control" rows="2" placeholder="Detalles de soluciones..."></textarea>
+                            </div>
+                            <div class="form-group mb-3 col-6">
+                                <label class="text-muted font-weight-bold">Balance Total</label>
+                                <textarea class="form-control" rows="2" placeholder="Balance total..."></textarea>
+                            </div>
+                        </div>
+
+                        <hr class="mt-4">
+                        <div class="d-flex justify-content-between mt-3">
+                            <button type="button" class="btn btn-outline-secondary px-4" onclick="showAnestesiaStep(3)">Anterior</button>
+                            <button type="button" class="btn btn-primary px-4" onclick="showAnestesiaStep(5)">Siguiente</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="anestesia-step-5" style="display: none;">
+                <div class="main-card mb-3 card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-end mb-2">
+                            <span class="text-muted small font-weight-bold">Paso 5 de 6</span>
+                            <span class="text-primary small">Gráfica Transoperatoria</span>
+                        </div>
+                        <div class="progress mb-4" style="height: 6px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: 83%;" aria-valuenow="83" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+
+                        <h5 class="card-title text-primary mb-4">Quinta Sección: Signos Vitales</h5>
+
+                        <fieldset class="border p-3 mb-4 rounded bg-white shadow-sm">
+                            <div class="row text-center">
+                                <div class="col-md-3">
+                                    <label class="text-muted font-weight-bold mb-1">Inicio Anestesia</label>
+                                    <input type="time" class="form-control text-center mx-auto" style="max-width: 150px;">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="text-muted font-weight-bold mb-1">Inicio Cirugía</label>
+                                    <input type="time" class="form-control text-center mx-auto" style="max-width: 150px;">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="text-muted font-weight-bold mb-1">Fin Cirugía</label>
+                                    <input type="time" class="form-control text-center mx-auto" style="max-width: 150px;">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="text-muted font-weight-bold mb-1">Fin Anestesia</label>
+                                    <input type="time" class="form-control text-center mx-auto" style="max-width: 150px;">
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <div class="bg-light p-3 border rounded mb-3">
+                            <h6 class="text-info font-weight-bold mb-3">Añadir Registro a Gráfica</h6>
+                            <div class="form-row align-items-end">
+                                <div class="form-group col-md-2 mb-0">
+                                    <label class="text-muted small mb-1">Hora</label>
+                                    <input type="time" id="graf_hora" class="form-control form-control-sm">
+                                </div>
+                                <div class="form-group col-md-1 mb-0">
+                                    <label class="text-muted small mb-1">PA Sist.</label>
+                                    <input type="number" id="graf_pas" class="form-control form-control-sm" placeholder="mmHg">
+                                </div>
+                                <div class="form-group col-md-1 mb-0">
+                                    <label class="text-muted small mb-1">PA Diast.</label>
+                                    <input type="number" id="graf_pad" class="form-control form-control-sm" placeholder="mmHg">
+                                </div>
+                                <div class="form-group col-md-2 mb-0">
+                                    <label class="text-muted small mb-1">Frec. Cardíaca</label>
+                                    <input type="number" id="graf_fc" class="form-control form-control-sm" placeholder="lpm">
+                                </div>
+                                <div class="form-group col-md-2 mb-0">
+                                    <label class="text-muted small mb-1">Frec. Resp.</label>
+                                    <input type="number" id="graf_fr" class="form-control form-control-sm" placeholder="rpm">
+                                </div>
+                                <div class="form-group col-md-2 mb-0">
+                                    <label class="text-muted small mb-1">Sat O2 / BIS</label>
+                                    <input type="text" id="graf_otros" class="form-control form-control-sm" placeholder="Ej: 98% / 45">
+                                </div>
+                                <div class="form-group col-md-2 mb-0">
+                                    <button type="button" class="btn btn-success btn-sm w-100" onclick="agregarPuntoChartJS()">
+                                        <i class="fas fa-plus"></i> Añadir Punto
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border rounded shadow-sm mb-4 bg-white p-2" style="position: relative; height: 450px; width: 100%;">
+                            <canvas id="canvas-anestesia"></canvas>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-md-6 mb-3">
+                                <fieldset class="border p-3 rounded bg-white shadow-sm">
+                                    <legend class="w-auto px-2 text-info" style="font-size: 1rem; font-weight: bold;">Respiración</legend>
+                                    <div class="form-group">
+                                        <div class="custom-control custom-radio mb-2">
+                                            <input type="radio" id="resp_espontanea" name="an_respiracion" value="Espontanea" class="custom-control-input">
+                                            <label class="custom-control-label text-muted" for="resp_espontanea">Espontánea</label>
+                                        </div>
+                                        <div class="custom-control custom-radio mb-2">
+                                            <input type="radio" id="resp_asistida" name="an_respiracion" value="Asistida" class="custom-control-input">
+                                            <label class="custom-control-label text-muted" for="resp_asistida">Asistida</label>
+                                        </div>
+                                        <div class="custom-control custom-radio mb-2">
+                                            <input type="radio" id="resp_controlada" name="an_respiracion" value="Controlada" class="custom-control-input">
+                                            <label class="custom-control-label text-muted" for="resp_controlada">Controlada</label>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <fieldset class="border p-3 rounded bg-white shadow-sm">
+                                    <legend class="w-auto px-2 text-info" style="font-size: 1rem; font-weight: bold;">Torniquete</legend>
+                                    <div class="form-group row align-items-center mb-2">
+                                        <label class="col-sm-4 col-form-label text-muted mb-0">Presión:</label>
+                                        <div class="col-sm-8">
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" class="form-control">
+                                                <div class="input-group-append"><span class="input-group-text">mmHg</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row align-items-center mb-2">
+                                        <label class="col-sm-4 col-form-label text-muted mb-0">Inicio:</label>
+                                        <div class="col-sm-8"><input type="time" class="form-control form-control-sm"></div>
+                                    </div>
+                                    <div class="form-group row align-items-center mb-0">
+                                        <label class="col-sm-4 col-form-label text-muted mb-0">Fin:</label>
+                                        <div class="col-sm-8"><input type="time" class="form-control form-control-sm"></div>
+                                    </div>
+                                </fieldset>
+                            </div>
+                        </div>
+
+                        <hr class="mt-4">
+                        <div class="d-flex justify-content-between mt-3">
+                            <button type="button" class="btn btn-outline-secondary px-4" onclick="showAnestesiaStep(4)">Anterior</button> 
+                            <button type="button" class="btn btn-primary px-4" onclick="showAnestesiaStep(6)">Siguiente</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="anestesia-step-6" style="display: none;">
+                <div class="main-card mb-3 card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-end mb-2">
+                            <span class="text-muted small font-weight-bold">Paso 6 de 6</span>
+                            <span class="text-primary small">Finalización</span>
+                        </div>
+                        <div class="progress mb-4" style="height: 6px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+
+                        <h5 class="card-title text-primary mb-4">Sexta Sección</h5>
+
+                        <div class="alert alert-light text-center py-5 border">
+                            <i class="fas fa-check-circle text-success mb-2" style="font-size: 2rem;"></i>
+                            <p class="mb-0 text-muted">Ha completado todos los pasos. Revise la información antes de guardar.</p>
+                        </div>
+
+                        <hr class="mt-4">
+                        <div class="d-flex justify-content-between mt-3">
+                            <button type="button" class="btn btn-outline-secondary px-4" onclick="showAnestesiaStep(5)">Anterior</button> 
+                            <div>
+                                <button type="button" class="btn btn-danger px-4" onclick='$("#mdl-registro-anestesia").dialog("close")'>Cancelar</button> 
+                                <button type="button" class="btn btn-success px-4 ml-2">Guardar Registro</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script type="text/javascript">
+    var chartJSAnestesia = null;
+
+    function initChartJS() {
+        var ctx = document.getElementById('canvas-anestesia');
+        if (!ctx) return;
+        
+        if (chartJSAnestesia !== null) return;
+
+        chartJSAnestesia = new Chart(ctx, {
+            type: 'line', 
+            data: {
+                labels: [], 
+                datasets: [
+                    {
+                        label: 'PA Sistólica',
+                        data: [],
+                        backgroundColor: 'black',
+                        borderColor: 'black',
+                        pointStyle: 'triangle', 
+                        pointRadius: 8,
+                        showLine: false 
+                    },
+                    {
+                        label: 'PA Diastólica',
+                        data: [],
+                        backgroundColor: 'black',
+                        borderColor: 'black',
+                        pointStyle: 'triangle', 
+                        rotation: 180, 
+                        pointRadius: 8,
+                        showLine: false
+                    },
+                    {
+                        label: 'Frec. Cardíaca',
+                        data: [],
+                        backgroundColor: '#007bff',
+                        borderColor: '#007bff',
+                        pointStyle: 'circle',
+                        pointRadius: 6,
+                        showLine: false
+                    },
+                    {
+                        label: 'Frec. Respiratoria',
+                        data: [],
+                        backgroundColor: 'transparent', 
+                        borderColor: '#28a745',       
+                        borderWidth: 2,
+                        pointStyle: 'circle',
+                        pointRadius: 6,
+                        showLine: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Hora' }
+                    },
+                    y: {
+                        title: { display: true, text: 'Valores' },
+                        min: 0,
+                        max: 200,
+                        ticks: {
+                            stepSize: 10 
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                }
+            }
+        });
+    }
+
+    function agregarPuntoChartJS() {
+        // Inicializar la gráfica a la fuerza si por algún motivo no se cargó al abrir el tab
+        if (!chartJSAnestesia) {
+            initChartJS();
+        }
+
+        if (!chartJSAnestesia) {
+            alert("La gráfica no pudo inicializarse correctamente.");
+            return;
+        }
+
+        var hora = document.getElementById('graf_hora').value;
+        var pas = document.getElementById('graf_pas').value;
+        var pad = document.getElementById('graf_pad').value;
+        var fc = document.getElementById('graf_fc').value;
+        var fr = document.getElementById('graf_fr').value;
+
+        if (!hora) {
+            alert("Por favor ingrese al menos la hora para añadir el punto.");
+            return;
+        }
+
+        // Leer datos directos desde la configuración de Chart.js
+        var labels = chartJSAnestesia.data.labels;
+        var index = labels.indexOf(hora);
+        
+        if (index === -1) {
+            labels.push(hora);
+            index = labels.length - 1; 
+        }
+
+        // Asignación directa a los datasets de ChartJS
+        chartJSAnestesia.data.datasets[0].data[index] = pas ? parseInt(pas) : null;
+        chartJSAnestesia.data.datasets[1].data[index] = pad ? parseInt(pad) : null;
+        chartJSAnestesia.data.datasets[2].data[index] = fc ? parseInt(fc) : null;
+        chartJSAnestesia.data.datasets[3].data[index] = fr ? parseInt(fr) : null;
+
+        // Comando crítico para refrescar la vista
+        chartJSAnestesia.update();
+
+        // Limpiar campos
+        document.getElementById('graf_pas').value = '';
+        document.getElementById('graf_pad').value = '';
+        document.getElementById('graf_fc').value = '';
+        document.getElementById('graf_fr').value = '';
+        document.getElementById('graf_otros').value = '';
+    }
+
+    // Lógica de navegación reescrita de manera segura
+    var oldShowStep = window.showAnestesiaStep;
+    window.showAnestesiaStep = function(step) {
+        if (typeof oldShowStep === 'function') {
+            oldShowStep(step);
+        } else {
+            $('[id^=anestesia-step-]').hide();
+            $('#anestesia-step-' + step).show();
+        }
+        
+        if (step === 5) {
+            setTimeout(function() {
+                initChartJS();
+            }, 200); 
+        }
+    };
+</script>

@@ -1,0 +1,69 @@
+@using Database.Shared.Models
+@model IEnumerable<Database.Shared.Models.Producto>
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Reporte de productos";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"]              = true;
+    ViewData["MostrarNombreEmpresa"]     = true;
+    ViewData["MostrarDireccion"]         = true;
+    ViewData["MostrarTelefono"]          = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"]         = true;
+    ViewData["MostrarEmergencias"]       = true;
+
+    DateTime fecha = DateTime.Now;
+}
+
+<div class="form-row">
+    <div class="col-md-12 text-right" style="font-size: 12px;">
+        <label><strong>Fecha y hora de emisión:</strong> @fecha.ToString("dd/MM/yyyy HH:mm")</label>
+        <br />
+    </div>
+</div>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Nombre Producto</th>
+            <th>Código Referencia</th>
+            <th style="width: 20px !important">Grupo</th>
+            <th>Laboratorio</th>
+            <th>Stock</th>
+            <th>Precio Público</th>
+            <th>Precio VIP</th>
+            <th>Fecha Vencimiento</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            var grupo = item.GrupoTProducto == null ? "" : item.GrupoTProducto.NombreGrupoT;
+            var laboratorio = item.LaboratorioProducto == null ? "" : item.LaboratorioProducto.NombreLaboratorioProducto;
+            var fechaVenc = item.FechaVencimiento == null
+                ? ""
+                : item.FechaVencimiento.Value.ToString("dd/MM/yyyy");
+
+            <tr>
+                <td class="font-weight-bold">@item.NombreProducto</td>
+                <td>@item.CodigoReferencia</td>
+                <td>@grupo</td>
+                <td>@laboratorio</td>
+                <td class="text-primary font-weight-bold">
+                    <h6>@item.Stock</h6>
+                </td>
+                <td>
+                    <span>pub. Q @item.Precio_5</span>
+                </td>
+                <td>
+                    <span>vip. Q @item.Precio_6</span>
+                </td>
+                <td>
+                    <span>@fechaVenc</span>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

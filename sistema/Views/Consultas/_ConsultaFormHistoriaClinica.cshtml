@@ -1,0 +1,307 @@
+@model sistema.Models.HistoriaClinicaViewModel
+@{
+    ViewData["Title"] = "Editar Consulta";
+}
+
+@Html.HiddenFor(m => m.ConsultaId)
+@Html.HiddenFor(m => m.PacienteId)
+
+<script src="~/js/voicetotext/voicetotext.js"></script>
+<script>
+    window.voiceToTextFields = ['ConsultaMotivo'
+    ,'HistoriaEnfermedadActual'
+    ,'HistoriaClinicaAntecedentesMedicos'
+    ,'HistoriaClinicaAntecedentesQuirurgicos'
+    ,'HistoriaClinicaAntecedentesTraumaticos'
+    ,'HistoriaClinicaAntecedentesAlergicos'
+    ,'HistoriaClinicaAntecedentesVicios'
+    ,'HistoriaClinicaAntecedentesUsoActualMedicamentos'
+    ,'RevisionApariencia'
+    ,'RevisionCabeza'
+    ,'RevisionOidos'
+    ,'RevisionCuello'
+    ,'RevisionTorax'
+    ,'RevisionAbdomen'
+    ,'RevisionDorso'
+    ,'RevisionGenitales',];
+</script>
+<br />
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Historia cl&iacute;nica</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-4">
+                <b>Motivo de consulta</b><br />
+                @Html.TextAreaFor(m => m.ConsultaMotivo, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-4">
+                <b>Historia de la enfermedad actual</b><br />
+                @Html.TextAreaFor(m => m.HistoriaEnfermedadActual, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+
+    </div>
+</div>
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Solo para mujeres</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-4">
+                <b>&iquest;Est&aacute; usted embarazada?</b>
+                <br>
+                <select asp-for="EstaEmbarazada" class="form-control dato-consulta">
+                    <option value="-">Seleccione...</option>
+                    <option value="SI">SI</option>
+                    <option value="NO">NO</option>
+                    <option value="N/S">N/S</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <b>Numero de semanas</b><br>
+                @Html.TextBoxFor(a => a.NumeroSemanasEmbarazo, new
+                    {
+                        type = "number",
+                        @class = "form-control dato-consulta"
+                    })
+            </div>
+            @*MANANTIALES no esta usando este campo*@
+            @* <div class="col-md-4">
+            �Est� usted tomando p�ldoras anticonceptivas o de sustituci�n hormonal?<br>
+            @Html.RadioButtonFor(m => m.TomaPildorasAnticonceptivas, "si") S�<br>
+            @Html.RadioButtonFor(m => m.TomaPildorasAnticonceptivas, "no") No<br>
+            @Html.RadioButtonFor(m => m.TomaPildorasAnticonceptivas, "ns") N/S
+            </div> *@
+            <div class="col-md-4">
+                <b>&iquest;Est&aacute; usted amamantando?</b><br>
+                <select class="form-control dato-consulta" asp-for="EstaAmamantando">
+                    <option value="-">Seleccione...</option>
+                    <option value="SI">SI</option>
+                    <option value="NO">NO</option>
+                    <option value="N/S">N/S</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Antecedentes patologicos</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-4">
+                <b>Medicos:</b><br />
+                @Html.TextAreaFor(a => a.PacienteMedicos, new { @class = "form-control dato-consulta", @id = "HistoriaClinicaAntecedentesMedicos" })
+            </div>
+            <div class="col-md-4">
+                <b>Quirurgicos:</b><br />
+                @Html.TextAreaFor(a => a.PacienteQuirurgicos, new { @class = "form-control dato-consulta", @id = "HistoriaClinicaAntecedentesQuirurgicos" })
+            </div>
+            <div class="col-md-4">
+                <b>Alergicos:</b><br />
+                @Html.TextAreaFor(a => a.PacienteAlergias, new { @class = "form-control dato-consulta", @id = "HistoriaClinicaAntecedentesAlergicos" })
+            </div>
+            <div class="col-md-4">
+                <b>Traumaticos:</b><br />
+                @Html.TextAreaFor(a => a.PacienteTraumaticos, new { @class = "form-control dato-consulta", @id = "HistoriaClinicaAntecedentesTraumaticos" })
+            </div>
+            <div class="col-md-4">
+                <b>Vicios y/o man&iacute;as:</b><br />
+                @Html.TextAreaFor(a => a.PacienteVicios, new { @class = "form-control dato-consulta", @id = "HistoriaClinicaAntecedentesVicios" })
+            </div>
+            <div class="col-md-4">
+                <b>Medicamento de uso actual:</b><br />
+                @Html.TextAreaFor(a => a.PacienteMedicamentos, new { @class = "form-control dato-consulta", @id = "HistoriaClinicaAntecedentesUsoActualMedicamentos" })
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-12">
+                <h5><b>Examen físico</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-5">
+                <b>ESTADO GENERAL:</b><br>
+                @Html.TextBoxFor(m => m.ExamenFisicoEstadoGeneral, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-4">
+                <b>PESO (KG):</b><br />
+                @Html.TextBoxFor(m => m.ExamenFisicoPeso,
+                         new
+                         {
+                             @class = "form-control dato-consulta",
+                             @placeholder = "Peso",
+                             @onchange = "getIMC()"
+                         })
+            </div>
+            <div class="col-md-3">
+                TALLA (M):<br />
+                @Html.TextBoxFor(m => m.ExamenFisicoTalla,
+                         new
+                         {
+                             @class = "form-control dato-consulta",
+                             @placeholder = "Talla",
+                             @onchange = "getIMC()"
+                         })
+            </div>
+            <div class="col-md-2">
+                FC:<br>
+                @Html.TextBoxFor(m => m.ExamenFisicoFrecuenciaCardiaca,
+                         new
+                         {
+                             @class = "form-control dato-consulta",
+                             @placeholder = "Frecuencia cardiaca"
+                         })
+            </div>
+            <div class="col-md-2">
+                FR:<br>
+                @Html.TextBoxFor(m => m.ExamenFisicoFrecuenciaRespiratoria,
+                         new
+                         {
+                             @class = "form-control dato-consulta",
+                             @placeholder = "Frecuencia respiratoria"
+                         })
+            </div>
+            <div class="col-md-2">
+                P/A:<br>
+                @Html.TextBoxFor(m => m.ExamenFisicoPresionArterial,
+                         new
+                         {
+                             @class = "form-control dato-consulta",
+                             @placeholder = "P/A", id = "ExamenFisicoPresionArterial"
+                         })
+            </div>
+            <div class="col-md-2">
+                TEMP:<br>
+                @Html.TextBoxFor(m => m.ExamenFisicoTemperatura,
+                         new
+                         {
+                             @class = "form-control dato-consulta",
+                             @placeholder = "Temperatura"
+                         })
+            </div>
+            <div class="col-md-2">
+                SpO2:<br>
+                @Html.TextBoxFor(m => m.ExamenFisicoSaturacionOxigeno,
+                         new
+                         {
+                             @class = "form-control dato-consulta",
+                             @placeholder = "Saturación de oxígeno"
+                         })
+            </div>
+            <div class="col-md-2">
+                GLASGOW<br>
+                @Html.TextBoxFor(m => m.ExamenFisicoGlasgow, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-12">
+                <h5><b>Revision por sistemas</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-6">
+                <b>APARIENCIA GENERAL Y NEUROLOGICO:</b><br>
+                @Html.TextAreaFor(m => m.RevisionSistemasAparienciaGeneral, new { @class = "form-control dato-consulta", @id = "RevisionApariencia" })
+            </div>
+            <div class="col-md-6">
+                <b>CABEZA:</b><br>
+                @Html.TextAreaFor(m => m.RevisionSistemasCabeza, new { @class = "form-control dato-consulta", @id = "RevisionCabeza" })
+            </div>
+            <div class="col-md-6">
+                <b>OIDOS Y BOCA:</b><br>
+                @Html.TextAreaFor(m => m.RevisionSistemasOidosBoca, new { @class = "form-control dato-consulta", @id = "RevisionOidos" })
+            </div>
+            <div class="col-md-6">
+                <b>CUELLO:</b><br>
+                @Html.TextAreaFor(m => m.RevisionSistemasCuello, new { @class = "form-control dato-consulta", @id = "RevisionCuello" })
+            </div>
+            <div class="col-md-6">
+                <b>TORAX:</b><br>
+                @Html.TextAreaFor(m => m.RevisionSistemasTorax, new { @class = "form-control dato-consulta", @id = "RevisionTorax" })
+            </div>
+            <div class="col-md-6">
+                <b>ABDOMEN:</b><br>
+                @Html.TextAreaFor(m => m.RevisionSistemasAbdomen, new { @class = "form-control dato-consulta", @id = "RevisionAbdomen" })
+            </div>
+            <div class="col-md-6">
+                <b>DORSO Y EXTREMIDADES:</b><br>
+                @Html.TextAreaFor(m => m.RevisionSistemasDorsoYExtremidades, new
+                    {
+                        @class = "form-control dato-consulta",
+                        @id = "RevisionDorso"
+                    })
+            </div>
+            <div class="col-md-6">
+                <b>GENITALES:</b><br>
+                @Html.TextAreaFor(m => m.RevisionSistemasGenitales, new { @class = "form-control dato-consulta", @id = "RevisionGenitales" })
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Comentario</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-12">
+                <b>Comentario</b><br>
+                @Html.TextAreaFor(a => a.HistoriaClinicaComentario, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Impresi&oacute;n clinica</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-12">
+                <b>Impresi&oacute;n clinica</b><br>
+                @Html.TextAreaFor(a => a.HistoriaClinicaImpresionClinica, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div>
+            <a href="#" class="btn btn-primary" data-bind="click: editarConsultaHistoriaClinica">
+                Guardar consulta
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script type="text/javascript" src="~/js/moment.min.js"></script>
+    <script type="text/javascript" src="~/ViewModelKo/ConsultaVM.js"></script>
+}

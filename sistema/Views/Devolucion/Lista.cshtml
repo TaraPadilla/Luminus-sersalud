@@ -1,0 +1,548 @@
+@{
+    ViewData["Title"] = "Devoluciones";
+    var nombreRol = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+}
+
+<style>
+    #modalDetalleDevolucion.modal.show,
+    #modalAutorizacionDevolucion.modal.show {
+        z-index: 20050 !important;
+        pointer-events: auto !important;
+    }
+
+    .modal-backdrop.show {
+        z-index: 20000 !important;
+        opacity: 0.5 !important;
+    }
+
+    #modalAutorizacionDevolucion .modal-dialog {
+        max-width: 900px;
+        margin: 1.75rem auto;
+        box-shadow: none !important;
+    }
+
+    #modalDetalleDevolucion .modal-dialog {
+        max-width: 1200px;
+        height: 85vh;
+        margin: 1.75rem auto;
+    }
+
+    #modalDetalleDevolucion .modal-content {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #modalDetalleDevolucion .modal-body {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        padding: 1rem;
+    }
+
+    /* ── Page header ── */
+    .dv-page-header {
+        background: linear-gradient(135deg, #0f2944 0%, #1a4a7a 60%, #1e6091 100%);
+        border-radius: 10px;
+        padding: 1.1rem 1.5rem;
+        margin-bottom: 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: .75rem;
+        box-shadow: 0 4px 20px rgba(15,41,68,.22);
+    }
+
+    .dv-page-header-left { display: flex; align-items: center; gap: .85rem; }
+
+    .dv-page-icon {
+        width: 38px;
+        height: 38px;
+        background: rgba(255,255,255,.15);
+        border: 1px solid rgba(255,255,255,.25);
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: .9rem;
+        flex-shrink: 0;
+    }
+
+    .dv-page-title {
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 700;
+        margin: 0;
+        letter-spacing: -.01em;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    .dv-page-subtitle {
+        color: rgba(255,255,255,.6);
+        font-size: .75rem;
+        margin: 0;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    .dv-btn-nueva {
+        background: rgba(255,255,255,.15);
+        border: 1.5px solid rgba(255,255,255,.35);
+        color: #fff !important;
+        font-size: .78rem;
+        font-weight: 700;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+        padding: .45rem 1.1rem;
+        border-radius: 7px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        transition: background .18s, border-color .18s;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    .dv-btn-nueva:hover {
+        background: rgba(255,255,255,.25);
+        border-color: rgba(255,255,255,.55);
+        text-decoration: none;
+        color: #fff !important;
+    }
+
+    /* ── Table card ── */
+    .dv-table-card {
+        background: #fff;
+        border: 1px solid #e8edf3;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 1px 6px rgba(0,0,0,.05);
+        padding: 1.5rem; 
+    }
+
+    /* ── DataTable overrides ── */
+    #tabla-devoluciones_wrapper .dataTables_filter input,
+    #tabla-devoluciones_wrapper .dataTables_length select {
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: .3rem .6rem;
+        font-size: .82rem;
+        color: #334155;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    #tabla-devoluciones_wrapper .dataTables_filter label,
+    #tabla-devoluciones_wrapper .dataTables_length label,
+    #tabla-devoluciones_wrapper .dataTables_info {
+        font-size: .8rem;
+        color: #64748b;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    #tabla-devoluciones_wrapper .dataTables_paginate .paginate_button {
+        font-size: .8rem !important;
+        border-radius: 6px !important;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    #tabla-devoluciones_wrapper .dataTables_paginate .paginate_button.current {
+        background: #1a4a7a !important;
+        border-color: #1a4a7a !important;
+        color: #fff !important;
+    }
+
+    /* ── Main table ── */
+    table#tabla-devoluciones {
+        width: 100% !important;
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        font-size: .83rem;
+    }
+
+    table#tabla-devoluciones thead tr th {
+        background: #f1f5f9 !important;
+        color: #475569 !important;
+        font-size: .68rem !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: .07em !important;
+        padding: .7rem .9rem !important;
+        border-bottom: 2px solid #e2e8f0 !important;
+        border-top: none !important;
+        white-space: nowrap;
+    }
+
+    table#tabla-devoluciones tbody tr td {
+        padding: .6rem .9rem !important;
+        color: #334155 !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+        vertical-align: middle !important;
+        border-top: none !important;
+    }
+
+    table#tabla-devoluciones tbody tr:last-child td { border-bottom: none !important; }
+
+    table#tabla-devoluciones tbody tr:hover td {
+        background: #f8fafc !important;
+    }
+
+    /* ── N° badge ── */
+    .dv-num-badge {
+        display: inline-flex;
+        align-items: center;
+        background: #dbeafe;
+        color: #1d4ed8;
+        font-size: .72rem;
+        font-weight: 700;
+        padding: .22rem .65rem;
+        border-radius: 50px;
+        letter-spacing: .03em;
+        white-space: nowrap;
+    }
+
+    /* ── Estado pills homologados ── */
+    .dv-estado {
+        display: inline-flex;
+        align-items: center;
+        font-size: .68rem;
+        font-weight: 700;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        padding: .3rem .75rem;
+        border-radius: 50px;
+        white-space: nowrap;
+    }
+
+    .dv-estado.est-borrador  { background: #f1f5f9; color: #475569;  border: 1px solid #e2e8f0; }
+    .dv-estado.est-autorizado   { background: #dbeafe; color: #1d4ed8;  border: 1px solid #bfdbfe; }
+    .dv-estado.est-proceso   { background: #e0f2fe; color: #0369a1;  border: 1px solid #bae6fd; }
+    .dv-estado.est-aprobado  { background: #dcfce7; color: #15803d;  border: 1px solid #bbf7d0; }
+    .dv-estado.est-rechazado { background: #fee2e2; color: #b91c1c;  border: 1px solid #fecaca; }
+    .dv-estado.est-anulado   { background: #f3f4f6; color: #6b7280;  border: 1px solid #e5e7eb; }
+
+    /* ── Action buttons ── */
+    .dv-btn-action {
+        width: 30px;
+        height: 30px;
+        border-radius: 7px;
+        border: 1px solid;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .75rem;
+        cursor: pointer;
+        transition: all .16s;
+        background: transparent;
+        text-decoration: none;
+    }
+
+    .dv-btn-action.btn-ver     { border-color: #bfdbfe; color: #1d4ed8; }
+    .dv-btn-action.btn-ver:hover { background: #dbeafe; border-color: #93c5fd; }
+
+    .dv-btn-action.btn-pdf     { border-color: #fecaca; color: #b91c1c; }
+    .dv-btn-action.btn-pdf:hover { background: #fee2e2; border-color: #fca5a5; }
+
+    .dv-btn-action.btn-autorizar { border-color: #fde68a; color: #92400e; }
+    .dv-btn-action.btn-autorizar:hover { background: #fef3c7; border-color: #fcd34d; }
+
+    /* ── Nombre con muted fallback ── */
+    .dv-muted { color: #cbd5e1; font-style: italic; font-size: .8rem; }
+</style>
+
+<div class="container-fluid px-0">
+
+    <div class="dv-page-header">
+        <div class="dv-page-header-left">
+            <div class="dv-page-icon"><i class="fas fa-exchange-alt"></i></div>
+            <div>
+                <p class="dv-page-title">Devoluciones Nacionales</p>
+                <p class="dv-page-subtitle">Gestión y seguimiento de devoluciones</p>
+            </div>
+        </div>
+        <a class="dv-btn-nueva"
+           asp-controller="Devolucion"
+           asp-action="Nuevo">
+            <i class="fas fa-plus"></i> Nueva Devolución
+        </a>
+    </div>
+
+    <div class="dv-table-card">
+        <div class="table-responsive">
+            <table class="table mb-0" id="tabla-devoluciones">
+                <thead>
+                    <tr>
+                        <th>N° Devolución</th>
+                        <th>Departamento</th>
+                        <th>Unidad</th>
+                        <th>Fecha</th>
+                        <th>Solicitante</th>
+                        <th>Origen</th>
+                        <th>Autorizado Por</th>
+                        <th>Estado</th>
+                        <th class="text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+
+<!-- MODAL DETALLE -->
+<div class="modal fade" id="modalDetalleDevolucion" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title mb-0">Detalle de devolución</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body" id="detalleDevolucionBody">
+                <div class="text-center text-muted py-4">
+                    Seleccione una devolución para ver el detalle.
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- MODAL AUTORIZACIÓN -->
+<div class="modal fade" id="modalAutorizacionDevolucion" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title mb-0">Autorizar devolución</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body" id="autorizacionDevolucionBody">
+                <div class="text-center text-muted py-4">Cargando...</div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+
+<script>
+(function () {
+
+    const usuarioRol = '@nombreRol';
+
+    // Mover modales al body para evitar problemas de z-index
+    $('#modalDetalleDevolucion, #modalAutorizacionDevolucion').appendTo('body');
+
+    // ── DataTable ────────────────────────────────────────────────────────
+    const tabla = $('#tabla-devoluciones').DataTable({
+        processing: true,
+        serverSide: true,
+        searching: true,
+        ordering: true,
+        ajax: {
+            url: '@Url.Action("ListaData", "Devolucion")',
+            type: 'POST'
+        },
+        columns: [
+            {
+                data: 'numeroDevolucion',
+                render: function (data) {
+                    return data ? `<span class="dv-num-badge"># ${data}</span>` : '<span class="dv-muted">-</span>';
+                }
+            },
+            {
+                data: 'departamentoNombre',
+                render: function (data) { return data || '<span class="dv-muted">-</span>'; }
+            },
+            {
+                data: 'unidadNombre',
+                render: function (data) { return data || '<span class="dv-muted">-</span>'; }
+            },
+            {
+                data: 'fechaSolicitud',
+                render: function (data) {
+                if (!data) return '<span class="dv-muted">-</span>';
+                var clean = data.replace(/([+-]\d{2}:\d{2}|Z)$/, '');
+                var match = clean.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+                if (!match) return data;
+            
+                var hora24 = parseInt(match[4]);
+                var minutos = match[5];
+                var ampm = hora24 >= 12 ? 'PM' : 'AM';
+                var hora12 = hora24 % 12 || 12;
+                var hora12Str = hora12 < 10 ? '0' + hora12 : hora12;
+            
+                return match[3] + '/' + match[2] + '/' + match[1]
+                     + ' ' + hora12Str + ':' + minutos + ' ' + ampm;
+            }
+            },
+            {
+                data: 'solicitanteNombre',
+                render: function (data) { return data || '<span class="dv-muted">-</span>'; }
+            },
+            {
+                data: 'bodegaOrigenNombre',
+                render: function (data) { return data || '<span class="dv-muted">-</span>'; }
+            },
+            {
+                data: 'autorizadoPor',
+                render: function (data) {
+                    return data ? data : '<span class="dv-muted">-</span>';
+                }
+            },
+            {
+                data: 'estadoNombre',
+                render: function (data) {
+                    const clases = {
+                        'Borrador':   'est-borrador',
+                        'Autorizado':    'est-autorizado',
+                        'En Proceso': 'est-proceso',
+                        'Aprobado':   'est-aprobado',
+                        'Rechazado':  'est-rechazado',
+                        'Anulado':    'est-anulado'
+                    };
+                    const cls = clases[data] || 'est-borrador';
+                    return `<span class="dv-estado ${cls}">${data}</span>`;
+                }
+            },
+            {
+                data: 'id',
+                orderable: false,
+                searchable: false,
+                className: 'text-right',
+                render: function (data, type, row) {
+                    let botones = `
+                        <div class="d-flex gap-1 flex-wrap justify-content-end">
+                            <button class="dv-btn-action btn-ver js-ver-detalle"
+                                    data-id="${data}" title="Ver detalle">
+                                <i class="fa fa-eye"></i>
+                            </button>
+                            <button class="dv-btn-action btn-pdf js-pdf"
+                                    data-id="${data}" title="Generar PDF">
+                                <i class="fa fa-file-pdf"></i>
+                            </button>`;
+
+                    if (row.estadoNombre === 'Borrador') {
+                        botones += `
+                            <button class="dv-btn-action btn-autorizar js-autorizar"
+                                    data-id="${data}" data-tipo="autorizacion" title="Autorizar devolución">
+                                <i class="fa fa-circle-check"></i>
+                            </button>`;
+                    }
+
+                    botones += `</div>`;
+                    return botones;
+                }
+            }
+        ],
+        language: {
+            emptyTable: "No hay devoluciones registradas.",
+            processing: "Cargando..."
+        }
+    });
+
+    // ── Modal Detalle ────────────────────────────────────────────────────
+    $(document).on('click', '.js-ver-detalle', async function () {
+        const id   = $(this).data('id');
+        const body = document.getElementById('detalleDevolucionBody');
+
+        body.innerHTML = '<div class="text-center py-4">Cargando...</div>';
+        $('#modalDetalleDevolucion').modal('show');
+
+        try {
+            const url  = '@Url.Action("DetalleModal", "Devolucion")' + '?id=' + encodeURIComponent(id);
+            const resp = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            body.innerHTML = await resp.text();
+        } catch (e) {
+            body.innerHTML = '<div class="alert alert-danger">Error al cargar el detalle de la devolución.</div>';
+        }
+    });
+
+    $('#modalDetalleDevolucion').on('hidden.bs.modal', function () {
+        document.getElementById('detalleDevolucionBody').innerHTML =
+            '<div class="text-center text-muted py-4">Seleccione una devolución para ver el detalle.</div>';
+    });
+
+    // ── Modal Autorización ───────────────────────────────────────────────
+    $(document).on('click', '.js-autorizar', async function () {
+        const id   = $(this).data('id');
+        const tipo = $(this).data('tipo');
+        const body = document.getElementById('autorizacionDevolucionBody');
+
+        body.innerHTML = '<div class="text-center py-4">Cargando formulario...</div>';
+        $('#modalAutorizacionDevolucion').modal('show');
+
+        try {
+            const url  = '@Url.Action("AutorizacionModal", "Devolucion")' + '?id=' + encodeURIComponent(id) + '&tipo=' + encodeURIComponent(tipo);
+            const resp = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            body.innerHTML = await resp.text();
+
+            $.ajax({
+                url: '/Devolucion/ConsultarDataUsuario',
+                method: 'POST',
+                success: function (dataResult) {
+                    const data = (typeof dataResult === 'string') ? JSON.parse(dataResult) : dataResult;
+                    if (data.Exitoso && data.Data && data.Data.Firma) {
+                        const base64 = data.Data.Firma;
+                        const img    = document.getElementById('imgFirmaPrevDevol');
+                        const prev   = document.getElementById('contenedorPrevisualizacionDevol');
+                        const sel    = document.getElementById('selectorFirmaDevol');
+                        const btn    = document.getElementById('btnFinalizarAutorizacionDevol');
+
+                        if (img && prev && sel && btn) {
+                            firmaBase64Devol = base64;
+                            img.src = base64;
+                            prev.classList.remove('d-none');
+                            sel.classList.add('d-none');
+                            btn.removeAttribute('disabled');
+                        }
+                    }
+                }
+            });
+
+        } catch (e) {
+            body.innerHTML = '<div class="alert alert-danger">Error al cargar el formulario de autorización.</div>';
+        }
+    });
+
+    $('#modalAutorizacionDevolucion').on('hidden.bs.modal', function () {
+        document.getElementById('autorizacionDevolucionBody').innerHTML =
+            '<div class="text-center text-muted py-4">Cargando...</div>';
+    });
+
+    // ── PDF ──────────────────────────────────────────────────────────────
+    $(document).on('click', '.js-pdf', function () {
+        const id = $(this).data('id');
+        if (id) window.open('/CrearPDF/generarPDFDevolucion?id=' + id, '_blank');
+    });
+
+    window.tablaDevolucion = tabla;
+
+})();
+</script>
+
+<script src="~/js/DevolucionAutorizacion.js"></script>
+
+}

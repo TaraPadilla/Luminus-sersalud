@@ -1,0 +1,157 @@
+@model sistema.Models.ConsultasViewModel
+@functions {
+    public int GetEdadEnAños(string edad)
+    {
+        // Extraer la parte de los años de la cadena "19 Años, 6 Meses y 15 Días"
+        if (!string.IsNullOrEmpty(edad))
+        {
+            var partes = edad.Split(' ');
+            if (int.TryParse(partes[0], out int años))
+            {
+                return años;
+            }
+        }
+        // Si no se puede extraer, devolver 0 como valor predeterminado
+        return 0;
+    }
+}
+
+@{
+    int edadEnAños = GetEdadEnAños(Model.PacienteEdad);
+}
+<br />
+
+<div class="border rounded p-3 bg-white shadow-sm">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
+        <h6 class="mb-0 font-weight-bold text-primary text-uppercase">
+            <i class="fas fa-user mr-2"></i> Datos personales
+        </h6>
+    </div>
+
+    <!-- Content -->
+    <div class="form-row">
+
+        <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
+            <div class="border rounded bg-light p-2">
+                <div class="font-weight-bold text-dark">
+                    <i class="fas fa-id-card text-primary mr-1"></i> Nombre
+                </div>
+                <div class="text-body">@Model.PacienteNombre</div>
+            </div>
+        </div>
+
+        @if (edadEnAños < 13)
+        {
+            <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
+                <div class="border rounded bg-light p-2">
+                    <div class="font-weight-bold text-dark">
+                        <i class="fas fa-user-shield text-primary mr-1"></i> Encargado
+                    </div>
+                    <div class="text-body">@Model.NombreEncargado</div>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
+                <div class="border rounded bg-light p-2">
+                    <div class="font-weight-bold text-dark">
+                        <i class="fas fa-id-badge text-primary mr-1"></i> DPI Encargado
+                    </div>
+                    <div class="text-body">@Model.DPIEncargado</div>
+                </div>
+            </div>
+        }
+
+        <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
+            <div class="border rounded bg-light p-2">
+                <div class="font-weight-bold text-dark">
+                    <i class="fas fa-file-invoice text-primary mr-1"></i> NIT
+                </div>
+                <div class="text-body">@Model.PacienteNit</div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
+            <div class="border rounded bg-light p-2">
+                <div class="font-weight-bold text-dark">
+                    <i class="fas fa-venus-mars text-primary mr-1"></i> Sexo
+                </div>
+                <div class="text-body">@Model.PacienteSexo</div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
+            <div class="border rounded bg-light p-2">
+                <div class="font-weight-bold text-dark">
+                    <i class="fas fa-birthday-cake text-primary mr-1"></i> Fecha de nacimiento
+                </div>
+                <div class="text-body">@Model.PacienteFechaNacimiento</div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
+            <div class="border rounded bg-light p-2">
+                <div class="font-weight-bold text-dark">
+                    <i class="fas fa-hourglass-half text-primary mr-1"></i> Edad
+                </div>
+                <div class="text-body">@Model.PacienteEdad</div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
+            <div class="border rounded bg-light p-2">
+                <div class="font-weight-bold text-dark">
+                    <i class="fas fa-map text-primary mr-1"></i> Departamento de residencia
+                </div>
+                <div class="text-body">@Model.PacienteDepartamentoId</div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
+            <div class="border rounded bg-light p-2">
+                <div class="font-weight-bold text-dark">
+                    <i class="fas fa-city text-primary mr-1"></i> Municipio de residencia
+                </div>
+                <div class="text-body">@Model.PacienteMunicipioId</div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
+            <div class="border rounded bg-light p-2">
+                <div class="font-weight-bold text-dark">
+                    <i class="fas fa-phone text-primary mr-1"></i> Celular
+                </div>
+                <div class="text-body">@Model.PacienteCelular</div>
+            </div>
+        </div>
+
+        <div class="col-12 mb-3">
+            <div class="border rounded bg-light p-2">
+                <div class="font-weight-bold text-dark">
+                    <i class="fas fa-map-marker-alt text-primary mr-1"></i> Dirección
+                </div>
+                <div class="text-body">@Model.PacienteDireccion</div>
+            </div>
+        </div>
+
+        @*MANANTIALES NO utiliza Seguro EPSS*@
+        @* <div class="col-md-2">
+            <b>Seguro EPSS:</b><br />@Model.PacienteSeguroEPSS
+        </div> *@
+
+        @*<b>ConsultaID: </b>@Model.ConsultaId<br />*@
+
+        @* <input type="hidden" class="form-control" asp-for="@Model.ConsultaId" id="ConsultaId" name="ConsultaId"
+            readonly="readonly"> *@
+
+    </div>
+
+    <!-- Actions -->
+    <div class="d-flex justify-content-end pt-2 border-top">
+        <button data-bind="click:editarPaciente" class="btn btn-primary">
+            <i class="fas fa-edit"></i>&nbsp;Editar datos del paciente
+        </button>
+    </div>
+
+</div>

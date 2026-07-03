@@ -1,0 +1,61 @@
+@model sistema.Models.RecetaMenuCrudViewModel
+
+@Html.HiddenFor(x => x.Id)
+
+<div class="form-row">
+    <div class="col-md-12 mb-3">
+        <h6 class="text-muted font-weight-bold"><i class="fas fa-info-circle mr-1"></i> Información General</h6>
+    </div>
+
+    @* Fila de Categoría y Nombre *@
+    <div class="form-group col-md-6">
+        <label class="small mb-1 font-weight-bold">Categoría de Dieta</label>
+        @Html.DropDownListFor(m => m.CategoriaId, Model.Categorias, "Seleccione una categoría...", 
+            new { @class = "form-control form-control-lg border-primary-soft", style = "font-size: 1.1rem;" })
+        @Html.ValidationMessageFor(m => m.CategoriaId, "", new { @class = "text-danger small" })
+    </div>
+
+    <div class="form-group col-md-6">
+        <label class="small mb-1 font-weight-bold">Nombre del Plato / Menú</label>
+        @Html.TextBoxFor(m => m.Nombre, 
+            new { @class = "form-control form-control-lg", autocomplete = "off", placeholder = "Ej: Dieta Blanda Hiposódica", style = "font-size: 1.1rem;" })
+        @Html.ValidationMessageFor(m => m.Nombre, "", new { @class = "text-danger small" })
+    </div>
+
+    @* Ingredientes - Texto más grande *@
+    <div class="form-group col-md-12 mt-2">
+        <label class="small mb-1 font-weight-bold">Ingredientes y Observaciones</label>
+        @Html.TextAreaFor(m => m.Ingredientes, 
+            new { @class = "form-control", rows = "4", placeholder = "Liste los ingredientes o restricciones...", style = "font-size: 1.1rem; line-height: 1.5;" })
+    </div>
+
+    @* Días de la semana con diseño simétrico *@
+    <div class="col-md-12 mt-4">
+        <label class="small mb-2 font-weight-bold text-primary text-uppercase">Programación de Días</label>
+        <div class="d-flex flex-wrap bg-light p-3 rounded border">
+            @{
+                var dias = new[]
+                {
+                    new { Value = (int)sistema.Models.DiasSemanaFlags.Lunes, Text = "Lunes" },
+                    new { Value = (int)sistema.Models.DiasSemanaFlags.Martes, Text = "Martes" },
+                    new { Value = (int)sistema.Models.DiasSemanaFlags.Miercoles, Text = "Miércoles" },
+                    new { Value = (int)sistema.Models.DiasSemanaFlags.Jueves, Text = "Jueves" },
+                    new { Value = (int)sistema.Models.DiasSemanaFlags.Viernes, Text = "Viernes" },
+                    new { Value = (int)sistema.Models.DiasSemanaFlags.Sabado, Text = "Sábado" },
+                    new { Value = (int)sistema.Models.DiasSemanaFlags.Domingo, Text = "Domingo" },
+                };
+            }
+
+            @foreach (var d in dias)
+            {
+                var isChecked = Model.DiasSeleccionados != null && Model.DiasSeleccionados.Contains(d.Value);
+                <div class="custom-control custom-checkbox mr-4 mb-2">
+                    <input type="checkbox" class="custom-control-input" id="dia_@d.Value" name="DiasSeleccionados" value="@d.Value" @(isChecked ? "checked" : "")>
+                    <label class="custom-control-label font-weight-normal" for="dia_@d.Value" style="font-size: 1rem; cursor: pointer;">
+                        @d.Text
+                    </label>
+                </div>
+            }
+        </div>
+    </div>
+</div>

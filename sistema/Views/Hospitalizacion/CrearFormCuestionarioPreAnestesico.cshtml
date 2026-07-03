@@ -1,0 +1,350 @@
+@model sistema.Models.CuestionarioPreAnestesicoViewModel
+
+@{
+    ViewData["Title"] = "Cuestionario Pre-Anestésico";
+}
+
+<div class="container-fluid">
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <h5 class="card-title">Cuestionario Pre-Anestésico</h5>
+
+            <div class="p-4" style="background:#f7f9fc; border-radius: 8px;">
+
+                @* Datos del paciente *@
+                <div class="mb-3">
+                    <h6 class="font-weight-bold" style="color:#3f6ad8;">Datos del Paciente</h6>
+                    <hr>
+                    <div class="form-row">
+                        <div class="col-md-4 form-group">
+                            <label class="font-weight-bold small">Registro Médico</label>
+                            <input type="text" class="form-control form-control-sm"
+                                   data-bind="value: pacienteRegistro, disable: true" />
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label class="font-weight-bold small">Nombre completo</label>
+                            <input type="text" class="form-control form-control-sm"
+                                   data-bind="value: pacienteNombre, disable: true" />
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <label class="font-weight-bold small">Edad</label>
+                            <input type="text" class="form-control form-control-sm"
+                                   data-bind="value: pacienteEdad, disable: true" />
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <label class="font-weight-bold small">Fecha</label>
+                            <input type="date" class="form-control form-control-sm"
+                                   data-bind="value: fechaCuestionario" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="col-md-2 form-group">
+                            <label class="font-weight-bold small">Peso (kg)</label>
+                            <input type="number" class="form-control form-control-sm"
+                                   data-bind="value: peso" />
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <label class="font-weight-bold small">Estatura (m)</label>
+                            <input type="number" class="form-control form-control-sm" step="0.01"
+                                   data-bind="value: estatura" />
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label class="font-weight-bold small">Fecha de última regla</label>
+                            <input type="date" class="form-control form-control-sm"
+                                   data-bind="value: fechaUltimaRegla" />
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label class="font-weight-bold small">Fecha del procedimiento</label>
+                            <input type="date" class="form-control form-control-sm"
+                                   data-bind="value: fechaProcedimiento" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="col-md-6 form-group">
+                            <label class="font-weight-bold small">Procedimiento programado</label>
+                            <input type="text" class="form-control form-control-sm"
+                                   data-bind="value: procedimientoProgramado" />
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label class="font-weight-bold small">Cirujano</label>
+                            <input type="text" class="form-control form-control-sm"
+                                   data-bind="value: cirujano" />
+                        </div>
+                    </div>
+                </div>
+
+                @* Instrucciones *@
+                <div class="alert alert-info py-2 mb-3" style="font-size:0.82rem;">
+                    <strong>INSTRUCCIONES:</strong> Por favor indique si usted padece o ha padecido de cualquiera de los siguientes
+                    (Si usted no sabe la respuesta a la pregunta, márquela con un signo de interrogación)
+                </div>
+
+                @* Antecedentes médicos *@
+                <div class="mb-3">
+                    <h6 class="font-weight-bold" style="color:#3f6ad8;">Antecedentes médicos</h6>
+                    <hr>
+                    <div class="form-row">
+                        @* Columna Izquierda *@
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="small mb-1">Es alérgico a algún medicamento? ¿A cuál?</label>
+                                <div class="input-group input-group-sm mb-2">
+                                    <div class="input-group-prepend">
+                                        <div class="input-group-text">
+                                            <input type="radio" name="pa_alergia" value="SI" data-bind="checked: pa_alergia">
+                                            <label class="mb-0 ml-2">SÍ</label>
+                                        </div>
+                                        <div class="input-group-text">
+                                            <input type="radio" name="pa_alergia" value="NO" data-bind="checked: pa_alergia">
+                                            <label class="mb-0 ml-2">NO</label>
+                                        </div>
+                                    </div>
+                                    <input type="text" class="form-control" placeholder="Especifique" data-bind="value: pa_alergiaCual" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="small mb-1">Alguna vez ha fumado? ¿Cuánto?</label>
+                                <div class="input-group input-group-sm mb-2">
+                                    <div class="input-group-prepend">
+                                        <div class="input-group-text">
+                                            <input type="radio" name="pa_fuma" value="SI" data-bind="checked: pa_fuma">
+                                            <label class="mb-0 ml-2">SÍ</label>
+                                        </div>
+                                        <div class="input-group-text">
+                                            <input type="radio" name="pa_fuma" value="NO" data-bind="checked: pa_fuma">
+                                            <label class="mb-0 ml-2">NO</label>
+                                        </div>
+                                    </div>
+                                    <input type="text" class="form-control" placeholder="Especifique" data-bind="value: pa_fumaCuanto" />
+                                </div>
+                            </div>
+                             <div class="form-group">
+                                <label class="small mb-1">Ha usado alguna vez drogas ilícitas? Describa cuáles</label>
+                                <div class="input-group input-group-sm mb-2">
+                                    <div class="input-group-prepend">
+                                        <div class="input-group-text">
+                                            <input type="radio" name="pa_drogas" value="SI" data-bind="checked: pa_drogas">
+                                            <label class="mb-0 ml-2">SÍ</label>
+                                        </div>
+                                        <div class="input-group-text">
+                                            <input type="radio" name="pa_drogas" value="NO" data-bind="checked: pa_drogas">
+                                            <label class="mb-0 ml-2">NO</label>
+                                        </div>
+                                    </div>
+                                    <input type="text" class="form-control" placeholder="Especifique" data-bind="value: pa_drogasCuales" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="small mb-1">Bebe Alcohol? ¿Cuánto?</label>
+                                <div class="input-group input-group-sm mb-2">
+                                    <div class="input-group-prepend">
+                                        <div class="input-group-text">
+                                            <input type="radio" name="pa_alcohol" value="SI" data-bind="checked: pa_alcohol">
+                                            <label class="mb-0 ml-2">SÍ</label>
+                                        </div>
+                                        <div class="input-group-text">
+                                            <input type="radio" name="pa_alcohol" value="NO" data-bind="checked: pa_alcohol">
+                                            <label class="mb-0 ml-2">NO</label>
+                                        </div>
+                                    </div>
+                                    <input type="text" class="form-control" placeholder="Especifique" data-bind="value: pa_alcoholCuanto" />
+                                </div>
+                            </div>
+                             <div class="form-group d-flex justify-content-between">
+                                <label class="small mb-0">Podría estar embarazada?</label>
+                                <div>
+                                    <input type="radio" name="pa_embarazo" value="SI" data-bind="checked: pa_embarazo" /> SÍ
+                                    <input type="radio" name="pa_embarazo" value="NO" data-bind="checked: pa_embarazo" class="ml-2" /> NO
+                                </div>
+                            </div>
+                            <div class="form-group d-flex justify-content-between">
+                                <label class="small mb-0">Ha recibido alguna transfusión de sangre?</label>
+                                <div>
+                                    <input type="radio" name="pa_transfusion" value="SI" data-bind="checked: pa_transfusion" /> SÍ
+                                    <input type="radio" name="pa_transfusion" value="NO" data-bind="checked: pa_transfusion" class="ml-2" /> NO
+                                </div>
+                            </div>
+                             <div class="form-group d-flex justify-content-between">
+                                <label class="small mb-0">Tiene asma?</label>
+                                <div>
+                                    <input type="radio" name="pa_asma" value="SI" data-bind="checked: pa_asma" /> SÍ
+                                    <input type="radio" name="pa_asma" value="NO" data-bind="checked: pa_asma" class="ml-2" /> NO
+                                </div>
+                            </div>
+                            <div class="form-group d-flex justify-content-between">
+                                <label class="small mb-0">Tiene problemas pulmonares?</label>
+                                <div>
+                                    <input type="radio" name="pa_pulmones" value="SI" data-bind="checked: pa_pulmones" /> SÍ
+                                    <input type="radio" name="pa_pulmones" value="NO" data-bind="checked: pa_pulmones" class="ml-2" /> NO
+                                </div>
+                            </div>
+                            <div class="form-group d-flex justify-content-between">
+                                <label class="small mb-0">Tiene problemas de corazón?</label>
+                                <div>
+                                    <input type="radio" name="pa_corazon" value="SI" data-bind="checked: pa_corazon" /> SÍ
+                                    <input type="radio" name="pa_corazon" value="NO" data-bind="checked: pa_corazon" class="ml-2" /> NO
+                                </div>
+                            </div>
+                        </div>
+
+                        @* Columna Derecha *@
+                        <div class="col-md-6">
+                            <div class="form-group d-flex justify-content-between">
+                                <label class="small mb-0">Ha tenido ataque cardíaco?</label>
+                                <div>
+                                    <input type="radio" name="pa_ataqueCardiaco" value="SI" data-bind="checked: pa_ataqueCardiaco" /> SÍ
+                                    <input type="radio" name="pa_ataqueCardiaco" value="NO" data-bind="checked: pa_ataqueCardiaco" class="ml-2" /> NO
+                                </div>
+                            </div>
+                            <div class="form-group d-flex justify-content-between">
+                                <label class="small mb-0">Ha tenido anginas o dolor en el pecho?</label>
+                                <div>
+                                    <input type="radio" name="pa_angina" value="SI" data-bind="checked: pa_angina" /> SÍ
+                                    <input type="radio" name="pa_angina" value="NO" data-bind="checked: pa_angina" class="ml-2" /> NO
+                                </div>
+                            </div>
+                            <div class="form-group d-flex justify-content-between">
+                                <label class="small mb-0">Tiene algún soplo o arritmia?</label>
+                                <div>
+                                    <input type="radio" name="pa_soplo" value="SI" data-bind="checked: pa_soplo" /> SÍ
+                                    <input type="radio" name="pa_soplo" value="NO" data-bind="checked: pa_soplo" class="ml-2" /> NO
+                                </div>
+                            </div>
+                             <div class="form-group d-flex justify-content-between">
+                                <label class="small mb-0">Tiene presión alta?</label>
+                                <div>
+                                    <input type="radio" name="pa_presion" value="SI" data-bind="checked: pa_presion" /> SÍ
+                                    <input type="radio" name="pa_presion" value="NO" data-bind="checked: pa_presion" class="ml-2" /> NO
+                                </div>
+                            </div>
+                            <div class="form-group d-flex justify-content-between">
+                                <label class="small mb-0">Ha tenido problemas con el hígado o hepatitis?</label>
+                                <div>
+                                    <input type="radio" name="pa_higado" value="SI" data-bind="checked: pa_higado" /> SÍ
+                                    <input type="radio" name="pa_higado" value="NO" data-bind="checked: pa_higado" class="ml-2" /> NO
+                                </div>
+                            </div>
+                            <div class="form-group d-flex justify-content-between">
+                                <label class="small mb-0">Ha tenido problemas con los riñones?</label>
+                                <div>
+                                    <input type="radio" name="pa_rinones" value="SI" data-bind="checked: pa_rinones" /> SÍ
+                                    <input type="radio" name="pa_rinones" value="NO" data-bind="checked: pa_rinones" class="ml-2" /> NO
+                                </div>
+                            </div>
+                            <div class="form-group d-flex justify-content-between">
+                                <label class="small mb-0">Tiene diabetes o azúcar alta?</label>
+                                <div>
+                                    <input type="radio" name="pa_diabetes" value="SI" data-bind="checked: pa_diabetes" /> SÍ
+                                    <input type="radio" name="pa_diabetes" value="NO" data-bind="checked: pa_diabetes" class="ml-2" /> NO
+                                </div>
+                            </div>
+                            <div class="form-group d-flex justify-content-between">
+                                <label class="small mb-0">Tiene epilepsia o convulsiones?</label>
+                                <div>
+                                    <input type="radio" name="pa_epilepsia" value="SI" data-bind="checked: pa_epilepsia" /> SÍ
+                                    <input type="radio" name="pa_epilepsia" value="NO" data-bind="checked: pa_epilepsia" class="ml-2" /> NO
+                                </div>
+                            </div>
+                            <div class="form-group d-flex justify-content-between">
+                                <label class="small mb-0">Ha tenido derrames cerebrales, parálisis o meningitis?</label>
+                                <div>
+                                    <input type="radio" name="pa_derrame" value="SI" data-bind="checked: pa_derrame" /> SÍ
+                                    <input type="radio" name="pa_derrame" value="NO" data-bind="checked: pa_derrame" class="ml-2" /> NO
+                                </div>
+                            </div>
+                            <div class="form-group d-flex justify-content-between">
+                                <label class="small mb-0">Padece de la tiroides?</label>
+                                <div>
+                                    <input type="radio" name="pa_tiroides" value="SI" data-bind="checked: pa_tiroides" /> SÍ
+                                    <input type="radio" name="pa_tiroides" value="NO" data-bind="checked: pa_tiroides" class="ml-2" /> NO
+                                </div>
+                            </div>
+                             <div class="form-group d-flex justify-content-between">
+                                <label class="small mb-0">Ha tenido usted o algún familiar problemas con algún anestésico?</label>
+                                <div>
+                                    <input type="radio" name="pa_anestesico" value="SI" data-bind="checked: pa_anestesico" /> SÍ
+                                    <input type="radio" name="pa_anestesico" value="NO" data-bind="checked: pa_anestesico" class="ml-2" /> NO
+                                </div>
+                            </div>
+                            <div class="form-group d-flex justify-content-between">
+                                <label class="small mb-0">Acepta recibir transfusiones sanguíneas?</label>
+                                <div>
+                                    <input type="radio" name="pa_aceptaTransfusion" value="SI" data-bind="checked: pa_aceptaTransfusion" /> SÍ
+                                    <input type="radio" name="pa_aceptaTransfusion" value="NO" data-bind="checked: pa_aceptaTransfusion" class="ml-2" /> NO
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                @* Información Adicional *@
+                <div>
+                     <h6 class="font-weight-bold" style="color:#3f6ad8;">Información Adicional</h6>
+                     <hr>
+                     <div class="form-group">
+                        <label class="small font-weight-bold">Describa qué medicinas, inhaladores o preparaciones naturales, toma o ha tomado frecuentemente durante los últimos seis meses</label>
+                        <textarea class="form-control form-control-sm" rows="2"
+                                  data-bind="value: ai_medicamentos"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold">Puede subir gradas rápidamente o caminar 6 KMS en una hora?</label>
+                        <div>
+                            <label class="mr-3">
+                                <input type="radio" name="pa_actividad" value="SI"
+                                       data-bind="checked: ai_actividad" /> SÍ
+                            </label>
+                            <label>
+                                <input type="radio" name="pa_actividad" value="NO"
+                                       data-bind="checked: ai_actividad" /> NO
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold">Cuál es la actividad física más extenuante que realiza y con qué frecuencia</label>
+                        <textarea class="form-control form-control-sm" rows="2"
+                                  data-bind="value: ai_actividadDetalle"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold">Enumere las operaciones quirúrgicas que ha tenido y cuándo</label>
+                        <textarea class="form-control form-control-sm" rows="2"
+                                  data-bind="value: ai_operacionesPrevias"></textarea>
+                    </div>
+                    <div class="form-group mb-0">
+                        <label class="small font-weight-bold">Comentarios sobre problemas no mencionados arriba</label>
+                        <textarea class="form-control form-control-sm" rows="2"
+                                  data-bind="value: ai_comentarios"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-footer text-right">
+                <button class="btn btn-primary"
+                        data-bind="click: guardarCuestionario, disable: guardando,
+                                   text: guardando() ? 'Guardando...' : 'Guardar Cuestionario'">
+                    Guardar Cuestionario
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script type="application/json" id="viewModelData">
+    @Html.Raw(Json.Serialize(new {
+        pacienteRegistro        = Model.pacienteRegistro,
+        pacienteNombre          = Model.pacienteNombre,
+        pacienteEdad            = Model.pacienteEdad,
+        fechaCuestionario       = Model.fechaCuestionario,
+        peso                    = Model.peso,
+        estatura                = Model.estatura,
+        fechaUltimaRegla        = Model.fechaUltimaRegla,
+        fechaProcedimiento      = Model.fechaProcedimiento,
+        procedimientoProgramado = Model.procedimientoProgramado,
+        cirujano                = Model.cirujano
+    }))
+</script>
+
+@section Scripts
+{
+<script type="text/javascript" src="~/ViewModelKo/CuestionarioPreAnestesicoVM.js"></script>
+}

@@ -1,0 +1,402 @@
+@model Database.Shared.Models.Paciente
+
+
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="form-row">
+                <div class="col-md-12">
+                    <h5><b>ANTECEDENTES PERSONALES UROLOGIA</b></h5>
+                    <br>
+                </div>
+                <div class="col-md-12 table-responsive">
+                    <table class="table table-hover">
+                        <tbody>
+                             
+                                    
+
+                                       
+                                       @foreach (var item2 in ViewBag.AntPersonalesNoPatologicos)
+                                      {
+
+                                          if (item2.Posicion == 30)
+                                          {
+                                            <tr>
+                                                <td>
+                                                    <label class="">Describa los antecedentes familiares</label>
+                                                    Deficiencias:<br />
+                                                    <input class="form-control" value="@item2.Descripcion" readonly />
+                                                </td>
+                                            </tr>
+                                       
+                                        }
+                                      }
+                                    
+                                    
+                              
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <hr>
+            <div class="form-row">
+                <div class="col-md-12">
+                    <h5><b>Antecedentes personales UROLOGIA</b></h5>
+                    <hr>
+                </div>
+                <div class="col-md-12">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <tbody>
+                                @foreach (var item in ViewBag.AntPersonalesNoPatologicos)
+                                {
+
+                                    if (item.Posicion == 1)
+                                    {
+
+                            <tr>
+                                <td> <b>Vivienda completa </b></td>
+                                <td>
+                                    &nbsp;
+                                    @if (item.Presento == true)
+                                    {
+                            <input class="form-control" value="SI" readonly /> }
+                        else
+                        {
+                            <input class="form-control" value="NO" readonly />}
+                                </td>
+                                <td>
+                                    Deficiencias:<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly />
+                                </td>
+                                <td>
+                                    No. de habitaciones:<br />
+                                    <input class="form-control" value="@item.Variable1" readonly />
+                                </td>
+                                <td>
+                                    No. de habitantes:<br />
+                                    <input class="form-control" value="@item.Variable2" readonly />
+                                </td>
+                            </tr>
+ }
+                        if (item.Posicion == 2)
+                        {
+
+                            <tr>
+                                <td> <b>Mascotas </b></td>
+                                <td>
+                                    &nbsp;
+                                    @if (item.Presento == true)
+                                    {
+                            <input class="form-control" value="SI" readonly /> }
+                        else
+                        {
+                            <input class="form-control" value="NO" readonly />}
+
+                                </td>
+                                <td>
+                                    Detalles:<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly />
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+ }
+
+
+                        if (item.Posicion == 3)
+                        {
+
+                            <tr>
+                                <td> <b>Alimentación adecuada</b></td>
+                                <td>
+                                    &nbsp;
+                                    @if (item.Presento == true)
+                                    {
+                            <input class="form-control" value="SI" readonly /> }
+                        else
+                        {
+                            <input class="form-control" value="NO" readonly />}
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+ }
+                        if (item.Posicion == 4)
+                        {
+
+                            <tr>
+                                <td> <b>Higiene adecuada</b></td>
+                                <td>
+                                    &nbsp;
+                                    @if (item.Presento == true)
+                                    {
+                            <input class="form-control" value="SI" readonly /> }
+                        else
+                        {
+                            <input class="form-control" value="NO" readonly />}
+                                </td>
+                                <td>
+                                    Detalles:<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly />
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+ }
+                        if (item.Posicion == 5)
+                        {
+
+                            <tr>
+                                <td> <b>Nivel socioeconómico</b></td>
+
+                                <td>
+                                    Detalles:<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly />
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+ }
+
+                        if (item.Posicion == 6)
+                        {
+
+                            <tr>
+                                <td> <b>Tabaquismo </b></td>
+                                <td>
+                                    &nbsp;
+                                    @if (item.Presento == true)
+                                    {
+                            <input class="form-control" value="SI" readonly /> }
+                        else
+                        {
+                            <input class="form-control" value="NO" readonly />}
+                                </td>
+                                <td>
+                                    ACTIVO:<br />
+                                    @if (item.Variable1 == "true")
+                                    {
+                            <input class="form-control" value="SI" readonly /> }
+                        else
+                        {
+                            <input class="form-control" value="NO" readonly />}
+
+                                </td>
+                                <td>
+                                    Inicio Años:<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly />
+                                </td>
+                                <td>
+                                    Cantidad Diaria:<br />
+                                    <input class="form-control" value="@item.Variable2" readonly />
+                                </td>
+                            </tr>
+ }
+                        if (item.Posicion == 7)
+                        {
+
+                            <tr>
+                                <td> <b>Alcoholismo </b></td>
+                                <td>
+                                    &nbsp;
+                                    @if (item.Presento == true)
+                                    {
+                            <input class="form-control" value="SI" readonly /> }
+                        else
+                        {
+                            <input class="form-control" value="NO" readonly />}
+                                </td>
+                                <td>
+                                    ACTIVO:<br />
+                                    @if (item.Variable1 == "true")
+                                    {
+                            <input class="form-control" value="SI" readonly /> }
+                        else
+                        {
+                            <input class="form-control" value="NO" readonly />}
+
+                                </td>
+                                <td>
+                                    Inicio Años:<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly />
+                                </td>
+                                <td>
+                                    Cantidad Diaria:<br />
+                                    <input class="form-control" value="@item.Variable2" readonly />
+                                </td>
+                            </tr>
+ }
+                        if (item.Posicion == 8)
+                        {
+
+                            <tr>
+                                <td> <b>Toxicomanias </b></td>
+
+                                <td>
+                                    Descripcion:<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly />
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+ }
+
+                        if (item.Posicion == 9)
+                        {
+
+                            <tr>
+                                <td> <b>IVSA(Inicio de la vida sexual activa) </b></td>
+
+                                <td>
+                                    Descripcion:<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly />
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+ }
+                        if (item.Posicion == 10)
+                        {
+
+                            <tr>
+                                <td> <b>Contacto sexual	</b></td>
+
+                                <td>
+                                    Descripcion:<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly />
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+ }
+                        if (item.Posicion == 11)
+                        {
+
+                            <tr>
+                                <td> <b>Comportamiento sexual</b></td>
+
+                                <td>
+                                    Descripcion:<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly />
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+ }
+                        if (item.Posicion == 12)
+                        {
+
+                            <tr>
+                                <td> <b>Act. Sexual	</b></td>
+
+                                <td>
+                                    Descripcion:<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly />
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+ }
+                  
+
+
+
+                        if (item.Posicion == 27)
+                        {
+
+                            <tr>
+                                <td> <b> 	</b></td>
+
+                                <td>
+                                    ¿Ha tenido usted alguna vez la impresión de que debería beber menos?:<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly />
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr> }
+                                            if (item.Posicion == 28)
+                                            {
+
+                            <tr>
+                                <td> <b> 	</b></td>
+
+                                <td>
+                                    ¿Le ha molestado alguna vez la gente criticándole su forma de beber?<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly />
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+ }
+                        if (item.Posicion == 29)
+                        {
+
+                            <tr>
+                                <td> <b> 	</b></td>
+
+                                <td>
+                                    ¿Alguna vez lo primero que ha hecho por la mañana ha sido beber para calmar los nervios o para librarse de una cruda (una resaca)?<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly />
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+}
+                        if (item.Posicion == 30)
+                        {
+
+                            <tr>
+                                <td> <b> 	</b></td>
+
+                                <td>
+                                    Describa los antecedentes familiares<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly />
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+}
+
+
+
+
+                    }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <hr />
+                </div>
+            </div>
+        </div>
+    </div>
+
+

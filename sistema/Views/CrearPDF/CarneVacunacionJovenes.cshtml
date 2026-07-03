@@ -1,0 +1,192 @@
+@using sistema.Models
+@model CarneVacunacionJovenViewModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Control de Vacunas";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+
+    var pac = Model?.Paciente;
+    var fn = pac?.FechaNacimiento;
+    int edad = 0;
+    if (fn != null)
+    {
+        var today = DateTime.Today;
+        edad = today.Year - fn.Value.Year;
+        if (today.Month < fn.Value.Month ||
+           (today.Month == fn.Value.Month && today.Day < fn.Value.Day))
+        {
+            edad--;
+        }
+    }
+
+    string fechaNacText   = fn == null ? "-" : fn.Value.ToString("yyyy/MM/dd");
+    string telefonoText   = string.IsNullOrWhiteSpace(pac?.Celular) ? "-" : pac.Celular;
+    string pacienteNombre = string.IsNullOrWhiteSpace(pac?.Nombre)  ? "-" : pac.Nombre;
+}
+
+<style>
+    .report-container {
+        margin-top: 10px;
+        font-size: 12px;
+    }
+
+    .report-title {
+        text-align: center;
+        font-weight: bold;
+        font-size: 16px;
+        color: #0d0e36;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+
+    .report-subtitle {
+        text-align: center;
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    /* Título de sección (barra azul) */
+    .report-table-title-row th {
+        background-color: #f3f4ff;
+        border-left: 3px solid #0d0e36;
+        color: #0d0e36;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: bold;
+        font-size: 12px;
+        text-align: left;
+        padding: 6px 8px;
+    }
+
+    /* Encabezados de columnas */
+    .report-table-header-row th {
+        background-color: #eef2ff;
+        color: #0d0e36;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 11px;
+        text-align: left;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table td {
+        font-size: 12px;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+        vertical-align: top;
+    }
+
+    .report-table tr:last-child td {
+        border-bottom: none;
+    }
+</style>
+
+<div class="report-container">
+    <!-- Título -->
+    <div class="report-title">@ViewData["Title"]</div>
+    <div class="report-subtitle">
+        <b>Fecha y hora de emisión:</b> @fecha.ToString("yyyy/MM/dd HH:mm")
+    </div>
+
+    <!-- DATOS DEL PACIENTE -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="3">Datos del Paciente</th>
+            </tr>
+            <tr class="report-table-header-row">
+                <th>Nombre</th>
+                <th>Fecha de nacimiento</th>
+                <th>Edad</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>@pacienteNombre</td>
+                <td>@fechaNacText</td>
+                <td>@edad</td>
+            </tr>
+
+            <tr class="report-table-header-row">
+                <th>Teléfono</th>
+                <th colspan="2">Observaciones</th>
+            </tr>
+            <tr>
+                <td>@telefonoText</td>
+                <td colspan="2"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- REGISTRO DE VACUNACIÓN -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="6">Registro de vacunación</th>
+            </tr>
+            <tr class="report-table-header-row">
+                <th>Vacuna</th>
+                <th>1ra</th>
+                <th>2da</th>
+                <th>3ra</th>
+                <th>1er Refuerzo</th>
+                <th>2do Refuerzo</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model?.VacunasPaciente != null && Model.VacunasPaciente.Count > 0)
+            {
+                for (var i = 0; i < Model.VacunasPaciente.Count; i++)
+                {
+                    var v   = Model.VacunasPaciente[i];
+                    string f1  = v.FechaPrimera?.ToString("yyyy/MM/dd") ?? "-";
+                    string f2  = v.FechaSegunda?.ToString("yyyy/MM/dd") ?? "-";
+                    string f3  = v.FechaTercera?.ToString("yyyy/MM/dd") ?? "-";
+                    string fr1 = v.FechaPrimerRefuerzo?.ToString("yyyy/MM/dd") ?? "-";
+                    string fr2 = v.FechaSegundoRefuerzo?.ToString("yyyy/MM/dd") ?? "-";
+
+                    <tr>
+                        <td>@v.Vacuna?.Nombre</td>
+                        <td>@(v.Primera         ? "Sí" : "No")</td>
+                        <td>@(v.Segunda         ? "Sí" : "No")</td>
+                        <td>@(v.Tercera         ? "Sí" : "No")</td>
+                        <td>@(v.PrimerRefuerzo  ? "Sí" : "No")</td>
+                        <td>@(v.SegundoRefuerzo ? "Sí" : "No")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Fechas</strong></td>
+                        <td>@f1</td>
+                        <td>@f2</td>
+                        <td>@f3</td>
+                        <td>@fr1</td>
+                        <td>@fr2</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="6">No hay vacunas registradas.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

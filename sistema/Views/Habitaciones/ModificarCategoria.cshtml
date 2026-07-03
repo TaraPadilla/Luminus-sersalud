@@ -1,0 +1,42 @@
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    // Leer el valor del appsettings.json. 
+    string sufijoLayout = Configuration["Cliente"]; 
+    
+    // Concatenar para formar el nombre del Layout (ejemplo: "_Layout" + "SS")
+    // Si la clave trae el nombre completo (ej. "_LayoutSS"), simplemente asignalo directo.
+    Layout = $"_Layout{sufijoLayout}"; 
+    ViewData["Title"] = "Categoria - Modificar";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12 text-center">
+                <span class="h4"><b>Modificar categor&iacute;a</b></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_CategoriaForm")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <button class="btn btn-primary" data-bind="click: modificarCategoria">
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+<!--JS Vista (depende de knockout)-->
+<script type="text/javascript" src="~/ViewModelKo/HabitacionesCategoriaVM.js"></script>
+}

@@ -1,0 +1,42 @@
+﻿@model sistema.Models.RecetaViewModel
+@{
+    ViewData["Title"] = "Nueva Receta";
+}
+
+<div class="container-fluid animated fadeIn">
+    @await Html.PartialAsync("_MensajeExito")
+
+    <div class="card shadow-sm border-0 mb-4">
+        @* Encabezado con identidad de creación *@
+        <div class="card-header bg-white py-3">
+            <h5 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-file-medical mr-2"></i>Crear Nueva Receta
+            </h5>
+        </div>
+
+        @using (Html.BeginForm("Nuevo", "Receta", FormMethod.Post, new { @class = "needs-validation" }))
+        {
+            @Html.AntiForgeryToken()
+
+            <div class="card-body px-lg-5 py-4">
+                @* Inyección del Parcial de Receta *@
+                @await Html.PartialAsync("_RecetaForm", Model)
+
+                <hr class="my-4" style="border-top: 1px dashed #e3e6f0;">
+
+                <div class="d-flex justify-content-end align-items-center">
+                    <a class="btn btn-light border px-4 mr-2 text-secondary font-weight-bold" asp-action="Lista" asp-controller="Receta">
+                        <i class="fas fa-times mr-1"></i> Cancelar
+                    </a>
+                    <button class="btn btn-success px-5 shadow-sm font-weight-bold" type="submit">
+                        <i class="fas fa-check-circle mr-1"></i> Guardar Receta
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

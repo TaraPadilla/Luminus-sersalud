@@ -1,0 +1,40 @@
+﻿@model sistema.Models.VacunaViewModel
+
+@{
+    ViewData["Title"] = "Modificar";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <h4><b>Modificar Vacuna</b></h4>
+        </div>
+    </div>
+</div>
+
+
+@await Html.PartialAsync("_VacunaForm")
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <button class="btn btn-success" data-bind="click:modificarVacuna">
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+
+@section Scripts {
+    <script type="text/javascript" src="~/ViewModelKo/VacunaVM.js"></script>
+    
+}
+
+

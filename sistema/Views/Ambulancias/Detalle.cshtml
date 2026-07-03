@@ -1,0 +1,78 @@
+@model Database.Shared.Models.Ambulancia
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Config
+@{
+    ViewData["Title"] = "Detalle Ambulancia";
+    ViewData["ImagenLogo"] = Config["ImagenLogoBase64"];
+}
+
+<div class="main-card mb-3 card shadow-lg">
+    <div class="card-body">
+        <h4 class="mb-4 text-primary"><b>Detalle del Servicio de Ambulancia</b></h4>
+
+        <dl class="row">
+            <dt class="col-sm-4 text-right">Tipo de Viaje:</dt>
+            <dd class="col-sm-8">@Model.TipoViaje</dd>
+
+            <dt class="col-sm-4 text-right">Servicio Solicitado:</dt>
+            <dd class="col-sm-8">@Model.ServicioSolicitado</dd>
+
+            <dt class="col-sm-4 text-right">Fecha y Hora de Solicitud:</dt>
+            <dd class="col-sm-8">@Model.FechaHoraSolicitud.ToString("dd/MM/yyyy HH:mm")</dd>
+
+            <dt class="col-sm-4 text-right">Nombre del Paciente:</dt>
+            <dd class="col-sm-8">@Model.NombrePaciente</dd>
+
+            <dt class="col-sm-4 text-right">Cama:</dt>
+            <dd class="col-sm-8">@Model.Cama</dd>
+
+            <dt class="col-sm-4 text-right">Dirección de Traslado:</dt>
+            <dd class="col-sm-8">@Model.DireccionTraslado</dd>
+
+            <dt class="col-sm-4 text-right">Traslado:</dt>
+            <dd class="col-sm-8">@(Model.EsTraslado ? "Sí" : "No")</dd>
+
+            <dt class="col-sm-4 text-right">Egreso:</dt>
+            <dd class="col-sm-8">@(Model.EsEgreso ? "Sí" : "No")</dd>
+
+            <dt class="col-sm-4 text-right">Forma de Conducción:</dt>
+            <dd class="col-sm-8">@Model.FormaConduccion</dd>
+
+            <dt class="col-sm-4 text-right">Hora de Salida:</dt>
+            <dd class="col-sm-8">@Model.HoraSalidaAmbulancia?.ToString("dd/MM/yyyy HH:mm")</dd>
+
+            <dt class="col-sm-4 text-right">Hora de Entrada:</dt>
+            <dd class="col-sm-8">@Model.HoraEntradaAmbulancia?.ToString("dd/MM/yyyy HH:mm")</dd>
+
+            <dt class="col-sm-4 text-right">Unidad Ambulancia:</dt>
+            <dd class="col-sm-8">@Model.AmbulanciaUnidad</dd>
+
+            <dt class="col-sm-4 text-right">Nombre del Piloto:</dt>
+            <dd class="col-sm-8">@Model.NombrePiloto</dd>
+
+            <dt class="col-sm-4 text-right">Examen / Consulta:</dt>
+            <dd class="col-sm-8">@Model.ExamenConsulta</dd>
+
+            <dt class="col-sm-4 text-right">Afiliación IGSS:</dt>
+            <dd class="col-sm-8">@Model.AfiliacionIGSS</dd>
+
+            <dt class="col-sm-4 text-right">Hora de Examen:</dt>
+            <dd class="col-sm-8">@Model.HoraExamen?.ToString("dd/MM/yyyy HH:mm")</dd>
+
+            <dt class="col-sm-4 text-right">¿Enfermera Acompaña?:</dt>
+            <dd class="col-sm-8">@(Model.EnfermeraAcompania ? "Sí" : "No")</dd>
+
+            <dt class="col-sm-4 text-right">¿Oxígeno?:</dt>
+            <dd class="col-sm-8">@(Model.Oxigeno ? "Sí" : "No")</dd>
+
+            <dt class="col-sm-4 text-right">Cantidad de Oxígeno:</dt>
+            <dd class="col-sm-8">@Model.CantidadOxigeno</dd>
+
+            <dt class="col-sm-4 text-right">Precio:</dt>
+            <dd class="col-sm-8">@Model.Precio.ToString("Q0.00")</dd>
+
+            <dt class="col-sm-4 text-right">Observaciones:</dt>
+            <dd class="col-sm-8">@Model.Observaciones</dd>
+        </dl>
+    </div>
+</div>

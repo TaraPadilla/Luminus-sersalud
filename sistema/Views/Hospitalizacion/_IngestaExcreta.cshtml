@@ -1,0 +1,131 @@
+@model sistema.Models.HospitalizacionDetallesViewModel
+@{
+    var usuarioAdmisiones = User.IsInRole("Admisiones");
+} 
+<div class="tab-pane tabs-animation fade show " id="tab-content-increta-excreta" role="tabpanel">
+    <div class="form-row">
+        <div class="col-md-12">
+            <div class="main-card mb-3 card" style="border-radius: 10px">
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="col-md-11">
+                            <h6><b>Ingesta / Excreta</b></h6>
+                        </div>
+                        <div class="col-md-1">
+                            @if (!usuarioAdmisiones)
+                            {
+                                @if (!Model.HospitalizacionFinalizada && !User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio")  && !User.IsInRole("Medico Externo"))
+                                {
+                                    <button class="btn btn-primary" data-bind="click:verModalAgregarExcretaIncreta">
+                                        Agregar
+                                    </button>
+                                }
+                            }
+                        </div>
+                        <div class="col-md-12">
+                            <!-- Tabla responsiva: scroll horizontal en móviles -->
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha de registro</th>
+                                            <th style="border-bottom: 2px solid #55efc4;">Oral</th>
+                                            <th style="border-bottom: 2px solid #55efc4;">Suero</th>
+                                            <th style="border-bottom: 2px solid #55efc4;">Med. Parenterales</th>
+                                            <th style="border-bottom: 2px solid #55efc4;">Transfusión</th>
+                                            <th style="border-bottom: 2px solid #55efc4;">Plasma</th>
+                                            <th style="border-bottom: 2px solid #55efc4;">Otros</th>
+                                            <th style="border-bottom: 2px solid #55efc4;">Ingesta PO (cc)</th>
+                                            <th style="background-color: #55efc4; border-bottom: 2px solid #55efc4;">Total Ingesta (g)</th>
+                                            <th style="border-bottom: 2px solid #00cec9;">Orina (mL)</th>
+                                            <th style="border-bottom: 2px solid #00cec9;">Heces (g)</th>
+                                            <th style="border-bottom: 2px solid #00cec9;">Vomito (mL)</th>
+                                            <th style="border-bottom: 2px solid #00cec9;">Sudoracion (mL)</th>
+                                            <th style="border-bottom: 2px solid #00cec9;">Drenajes (mL)</th>
+                                            <th style="border-bottom: 2px solid #00cec9;">Otros Liquidos (mL)</th>
+                                            @* <th>Detalles de Excreta</th> *@
+                                            <th style="background-color: #00cec9; border-bottom: 2px solid #00cec9;">Total Excreta (g)</th>
+                                            <th>Balance</th>
+                                            <th>Cuantas horas</th>
+                                            <th>Enfermer&iacute;a</th>
+                                            
+                                            <th>Estado</th>
+                                            @if(!User.IsInRole("Medico Externo")){
+                                                <th>Acciones</th>
+
+                                            }
+                                            @* <th>Información de Ingestas</th> *@
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!--ko foreach: IngestasExcretas-->
+                                        <tr data-bind="css: { 'highlight-intervalo': esResumenPorIntervalo, 'highlight-dia': esResumenPorDia }">
+                                            <td data-bind="text: esResumenPorIntervalo ? 'Cálculo del Turno' : (esResumenPorDia ? 'Cálculo del Día' : FechaRegistro)"></td>
+                                            <td data-bind="text:IngestaIV"></td>
+                                            <td data-bind="text:IngestaIV2"></td>
+                                            <td data-bind="text:IngestaIV3"></td>
+                                            <td data-bind="text:IngestaIV4"></td>
+                                            <td data-bind="text:IngestaIV5"></td>
+                                            <td data-bind="text:IngestaIV6"></td>
+                                            <td data-bind="text:IngestaPO"></td>
+                                            <td data-bind="text:TotalIngesta"></td>
+                                            <td data-bind="text:Orina"></td>
+                                            <td data-bind="text:Heces"></td>
+                                            <td data-bind="text:Vomito"></td>
+                                            <td data-bind="text:Sudoracion"></td>
+                                            <td data-bind="text:Drenajes"></td>
+                                            <td data-bind="text:OtrosLiquidos"></td>
+                                            @* <td>
+                                                <div>
+                                                    Orina: <span data-bind="text:Orina"></span><br />
+                                                    Heces: <span data-bind="text:Heces"></span><br />
+                                                    Vomito: <span data-bind="text:Vomito"></span><br />
+                                                    Sudoracion: <span data-bind="text:Sudoracion"></span><br />
+                                                    Drenajes: <span data-bind="text:Drenajes"></span><br />
+                                                    Otros Liquidos: <span data-bind="text:OtrosLiquidos"></span>
+                                                </div>
+                                            </td> *@
+                                            <td data-bind="text:Excreta"></td>
+                                            <td data-bind="text: balance"></td> 
+                                            <td data-bind="text:CuantasHoras"></td>
+                                            <td data-bind="text:Enfermeria"></td>
+                                            @* <td>
+                                                <button class="btn btn-dark" data-bind="visible: !esResumenPorIntervalo && !esResumenPorDia, click: function() { $root.verModalInfoIngesta(Id) }">
+                                                    <i class="fas fa-solid fa-eye mr-2"></i><span>Ver</span>
+                                                </button>
+                                            </td> *@
+                                         <td>
+                                            <!-- ko ifnot: $data.esResumenPorIntervalo || $data.esResumenPorDia -->
+                                                <!-- ko if: $data.Autorizado === true -->
+                                                <span class="badge badge-success">Autorizado</span>
+                                                <!-- /ko -->
+                                                <!-- ko if: $data.Autorizado === false -->
+                                                <span class="badge badge-warning">Pendiente por Autorización</span>
+                                                <!-- /ko -->
+                                            <!-- /ko -->
+                                            <!-- ko if: $data.esResumenPorIntervalo || $data.esResumenPorDia -->
+                                                <span class="text-muted">—</span>
+                                            <!-- /ko -->
+                                        </td>
+                                        @if(!User.IsInRole("Medico Externo")){
+
+                                        <td>
+                                            <!-- ko if: $data.Autorizado === false && !$data.esResumenPorIntervalo && !$data.esResumenPorDia -->
+                                            <button class="btn btn-sm btn-warning" data-bind="click: $root.autorizarIngestaExcreta">
+                                                <i class="fas fa-fingerprint"></i> Autorizar
+                                            </button>
+                                            <!-- /ko -->
+                                        </td>
+                                        }
+                                        </tr>
+                                        <!--/ko-->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

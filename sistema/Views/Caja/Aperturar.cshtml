@@ -1,0 +1,695 @@
+@using Database.Shared.Enumeraciones
+@model sistema.Models.CajaBaseViewModel
+@{
+    var ambiente = "";
+    switch (Model.AperturarAmbienteId)
+    {
+        case (int)AmbienteEnum.Clinica:
+            ambiente = "Clinica";
+            break;
+        case (int)AmbienteEnum.Farmacia:
+            ambiente = "Farmacia";
+            break;
+        case (int)AmbienteEnum.Hospital:
+            ambiente = "Hospital";
+            break;
+        case (int)AmbienteEnum.Laboratorio:
+            ambiente = "Laboratorio";
+            break;
+        case (int)AmbienteEnum.Global:
+            ambiente = "Global";
+            break;
+    }
+    var titulo = "Caja - " + ambiente;
+    ViewData["Title"] = titulo;
+
+    //Roles
+    var usuarioAdministrador = User.IsInRole("Administrador");
+    var usuarioDesarrollador = User.IsInRole("Desarrollador");
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="form-row">
+    <div class="col-md-6">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-6">
+                        <label>Sucursal</label>
+                        <select asp-for="AperturarSucursalId" asp-items="Model.ListaSucursales"
+                                class="form-control" disabled>
+                            @* @if (Model.AperturarAmbienteId == (int)AmbienteEnum.Global)
+                            {
+                                <option value="">TODAS</option>
+                            } *@
+                        </select>
+                        @Html.ValidationMessageFor(a => a.AperturarSucursalId, "", new { @class = "text-danger"})
+                    </div>
+                    <div class="col-md-6">
+                        <label>Ambiente</label>
+                        <select asp-for="AperturarAmbienteId" class="form-control" disabled>
+                            <option value="">Seleccione...</option>
+                            <option value="@((int)AmbienteEnum.Farmacia)">Farmacia</option>
+                            <option value="@((int)AmbienteEnum.Clinica)">Clinica</option>
+                            <option value="@((int)AmbienteEnum.Hospital)">Hospital</option>
+                            <option value="@((int)AmbienteEnum.Laboratorio)">Laboratorio</option>
+                            <option value="@((int)AmbienteEnum.Global)">Global</option>
+                        </select>
+                        @Html.ValidationMessageFor(a => a.AperturarSucursalId, "", new { @class = "text-danger"})
+                    </div>
+                    <div class="col-md-6">
+                        <label>Monto</label>
+                        @Html.TextBoxFor(a => a.CajaMontoApertura, new {@class="form-control",
+                        @placeholder="Monto a Aperturar"})
+                        @Html.ValidationMessageFor(a => a.CajaMontoApertura, "", new { @class = "text-danger"})
+                    </div>
+                    <div class="col-md-6">
+                        <label>Nombre</label>
+                        @Html.TextBoxFor(a => a.CajaNombrePersonalizado, new {@class="form-control",
+                        @placeholder="Nombre de caja"})
+                        @Html.ValidationMessageFor(a => a.CajaNombrePersonalizado, "", new { @class = "text-danger"})
+                    </div>
+                    <div class="col-md-12">
+                        <button class="btn btn-primary text-center" data-bind="click:aperturarCaja">
+                            Abrir caja
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    @if (usuarioAdministrador || usuarioDesarrollador)
+    {
+        <div class="col-md-6">
+            <form asp-controller="Caja" asp-action="Reporte" method="get" target="_blank">
+                <input type="hidden" name="ambienteIdReporte" value="@Model.AperturarAmbienteId">
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <div class="text-center">
+                            <div class="position-relative form-group">
+                                <label for="exampleEmail11" class="">Rango de fechas</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control float-right" id="reservationtime" name="fecha">
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary text-center">Generar PDF</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    }
+
+
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5 class="font-weight-bold">Filtrar por sucursales</h5>
+                <hr />
+            </div>
+            @if (Model.ListaSucursales != null)
+            {
+                foreach (var sucursal in Model.ListaSucursales)
+                {
+                    <div class="col-md-3">
+                        <input type="checkbox" checked id="filtro-sucursal-@sucursal.Value"
+                       data-bind="event:{change:aplicarFiltroSucursal}"
+                       class="check-filtro-sucursal" />
+                        <label for="filtro-sucursal-@sucursal.Value"> @sucursal.Text</label>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+
+
+<div class="form-row">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+
+                <div id="tabs">
+                    <ul>
+                        @if (Model.AperturarAmbienteId == (int)AmbienteEnum.Clinica)
+                        {
+                            <li><a href="#tab-caja-clinica">Clinica</a></li>
+                        }
+                        @if (Model.AperturarAmbienteId == (int)AmbienteEnum.Hospital)
+                        {
+                            <li><a href="#tab-caja-hospital">Hospital</a></li>
+                        }
+                        @if (Model.AperturarAmbienteId == (int)AmbienteEnum.Farmacia)
+                        {
+                            <li><a href="#tab-caja-farmacia">Farmacia</a></li>
+                        }
+                        @if (Model.AperturarAmbienteId == (int)AmbienteEnum.Laboratorio)
+                        {
+                            <li><a href="#tab-caja-laboratorio">Laboratorio</a></li>
+                        }
+                        @if (Model.AperturarAmbienteId == (int)AmbienteEnum.Global)
+                        {
+                            <li><a href="#tab-caja-laboratorio">CAJA GLOBAL</a></li>
+                        }
+                    </ul>
+                    @if (Model.AperturarAmbienteId == (int)AmbienteEnum.Clinica)
+                    {
+                        <div id="tab-caja-clinica">
+                            <div class="form-row">
+                                <div class="col-md-12">
+                                    <div class="table-responsive">
+                                        <table class="mb-0 table table-hover ">
+                                            <thead>
+                                                <tr>
+                                                    <th>Sucursal / Ambiente</th>
+                                                    <th>Fecha de apertura</th>
+                                                    <th>Resp. Apertura</th>
+                                                    <th>Monto de apertura</th>
+                                                    <th>Ingresos</th>
+                                                    <th>Gastos</th>
+                                                    <th>Fecha de cierre</th>
+                                                    <th>Resp. Cierre</th>
+                                                    <th>Total Cierre</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var item in Model.ListaCajas)
+                                                {
+                                                    if (item.AmbienteId == (int)TipoBodegaEnum.Clinica)
+                                                    {
+                                                        @if (item.EstadoCaja == true)
+                                                        {
+                                                            var personaApertura = item.ResponsableApertura == null ? "" : item.ResponsableAperturaText;
+                                                            var personaCierre = item.ResponsableCierre == null ? "" : item.ResponsableCierreText;
+
+                                                            <tr class="bg-success reg-sucursal-@item.SucursalId">
+                                                                <td>
+                                                                    @(item.Sucursal!=null?item.Sucursal.NombreSucursal:"-") /<br />
+                                                                    <span class="badge badge-primary">
+                                                                        @(item.Ambiente!=null?item.Ambiente.NombreAmbiente:"-")
+                                                                    </span>
+                                                                </td>
+                                                                <td>@item.FechaApertura</td>
+                                                                <td>@personaApertura</td>
+                                                                <td>@item.MontoApertura</td>
+                                                                <td>@item.DetalleCajas.Sum(x => x.Ingreso)</td>
+                                                                <td>@item.DetalleCajas.Sum(x => x.Gasto)</td>
+                                                                <td>@item.FechaCierre</td>
+                                                                <td>@personaCierre</td>
+                                                                @{
+                                                                    decimal suma1 = item.DetalleCajas.Sum(x => x.Ingreso - x.Gasto);
+                                                                    decimal montoap = item.MontoApertura;
+
+                                                                    decimal res = suma1 + montoap;
+                                                                }
+                                                                <td>@res</td>
+                                                                <td>
+                                                                    <a href="@Url.Action("VerDetalle","Caja", new {id = @item.Id})" class="btn btn-warning btn-sm">
+                                                                        <i class="fas fa-eye"></i>
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                        else
+                                                        {
+                                                            @if(usuarioAdministrador || usuarioDesarrollador)
+                                                            {
+                                                                var personaApertura = item.ResponsableApertura == null ? "" : item.ResponsableAperturaText;
+                                                                var personaCierre = item.ResponsableCierre == null ? "" : item.ResponsableCierreText;
+
+                                                                <tr class="reg-sucursal-@item.SucursalId">
+                                                                    <td>
+                                                                        @(item.Sucursal != null ? item.Sucursal.NombreSucursal : "-") /<br />
+                                                                        <span class="badge badge-primary">
+                                                                            @(item.Ambiente != null ? item.Ambiente.NombreAmbiente : "-")
+                                                                        </span>
+                                                                    </td>
+                                                                    <td>@item.FechaApertura</td>
+                                                                    <td>@personaApertura</td>
+                                                                    <td>@item.MontoApertura</td>
+                                                                    <td>@item.DetalleCajas.Sum(x => x.Ingreso)</td>
+                                                                    <td>@item.DetalleCajas.Sum(x => x.Gasto)</td>
+                                                                    <td>@item.FechaCierre</td>
+                                                                    <td>@personaCierre</td>
+                                                                    @{
+                                                                        decimal suma1 = item.DetalleCajas.Sum(x => x.Ingreso - x.Gasto);
+                                                                        decimal montoap = item.MontoApertura;
+                                                                        decimal res = suma1 + montoap;
+                                                                    }
+
+                                                                    <td>@res</td>
+                                                                    <td>
+                                                                        <a href="@Url.Action("VerDetalle","Caja", new {id = @item.Id})" class="btn btn-warning btn-sm">
+                                                                            <i class="fas fa-eye"></i>
+                                                                        </a>
+                                                                    </td>
+                                                                </tr>
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    @if (Model.AperturarAmbienteId == (int)AmbienteEnum.Hospital)
+                    {
+                        <div id="tab-caja-hospital">
+                            <div class="form-row">
+                                <div class="col-md-12">
+                                    <div class="table-responsive">
+                                        <table class="mb-0 table table-hover ">
+                                            <thead>
+                                                <tr>
+                                                    <th>Sucursal / Ambiente</th>
+                                                    <th>Fecha de apertura</th>
+                                                    <th>Resp. Apertura</th>
+                                                    <th>Monto de apertura</th>
+                                                    <th>Ingresos</th>
+                                                    <th>Gastos</th>
+                                                    <th>Fecha de cierre</th>
+                                                    <th>Resp. Cierre</th>
+                                                    <th>Total Cierre</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var item in Model.ListaCajas)
+                                                {
+                                                    if (item.AmbienteId == (int)AmbienteEnum.Hospital)
+                                                    {
+                                                        @if (item.EstadoCaja == true)
+                                                        {
+                                                            var personaApertura = item.ResponsableApertura == null ? "" : item.ResponsableAperturaText;
+                                                            var personaCierre = item.ResponsableCierre == null ? "" : item.ResponsableCierreText;
+
+                                                            <tr class="bg-success reg-sucursal-@item.SucursalId">
+                                                                <td>
+                                                                    @(item.Sucursal!=null?item.Sucursal.NombreSucursal:"-") /<br />
+                                                                    <span class="badge badge-primary">
+                                                                        @(item.Ambiente!=null?item.Ambiente.NombreAmbiente:"-")
+                                                                    </span>
+                                                                </td>
+                                                                <td>@item.FechaApertura</td>
+                                                                <td>@personaApertura</td>
+                                                                <td>@item.MontoApertura</td>
+                                                                <td>@item.DetalleCajas.Sum(x => x.Ingreso)</td>
+                                                                <td>@item.DetalleCajas.Sum(x => x.Gasto)</td>
+                                                                <td>@item.FechaCierre</td>
+                                                                <td>@personaCierre</td>
+                                                                @{
+                                                                    decimal suma1 = item.DetalleCajas.Sum(x => x.Ingreso - x.Gasto);
+                                                                    decimal montoap = item.MontoApertura;
+
+                                                                    decimal res = suma1 + montoap;
+                                                                }
+                                                                <td>@res</td>
+                                                                <td>
+                                                                    <a href="@Url.Action("VerDetalle","Caja", new {id = @item.Id})" class="btn btn-warning btn-sm">
+                                                                        <i class="fas fa-eye"></i>
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                        else
+                                                        {
+                                                            var personaApertura = item.ResponsableApertura == null ? "" : item.ResponsableAperturaText;
+                                                            var personaCierre = item.ResponsableCierre == null ? "" : item.ResponsableCierreText;
+
+                                                            <tr class="reg-sucursal-@item.SucursalId">
+                                                                <td>
+                                                                    @(item.Sucursal!=null?item.Sucursal.NombreSucursal:"-") /<br />
+                                                                    <span class="badge badge-primary">
+                                                                        @(item.Ambiente!=null?item.Ambiente.NombreAmbiente:"-")
+                                                                    </span>
+                                                                </td>
+                                                                <td>@item.FechaApertura</td>
+                                                                <td>@personaApertura</td>
+                                                                <td>@item.MontoApertura</td>
+                                                                <td>@item.DetalleCajas.Sum(x => x.Ingreso)</td>
+                                                                <td>@item.DetalleCajas.Sum(x => x.Gasto)</td>
+                                                                <td>@item.FechaCierre</td>
+                                                                <td>@personaCierre</td>
+                                                                @{
+                                                                    decimal suma1 = item.DetalleCajas.Sum(x => x.Ingreso - x.Gasto);
+                                                                    decimal montoap = item.MontoApertura;
+                                                                    decimal res = suma1 + montoap;
+                                                                }
+                                                                <td>@res</td>
+                                                                <td>
+                                                                    <a href="@Url.Action("VerDetalle","Caja", new {id = @item.Id})" class="btn btn-warning btn-sm">
+                                                                        <i class="fas fa-eye"></i>
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    }
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    @if (Model.AperturarAmbienteId == (int)TipoBodegaEnum.Farmacia)
+                    {
+                        <div id="tab-caja-farmacia">
+                            <div class="form-row">
+                                <div class="col-md-12">
+                                    <div class="table-responsive">
+                                        <table class="mb-0 table table-hover ">
+                                            <thead>
+                                                <tr>
+                                                    <th>Sucursal / Ambiente</th>
+                                                    <th>Fecha de apertura</th>
+                                                    <th>Resp. Apertura</th>
+                                                    <th>Monto de apertura</th>
+                                                    <th>Ingresos</th>
+                                                    <th>Gastos</th>
+                                                    <th>Fecha de cierre</th>
+                                                    <th>Resp. Cierre</th>
+                                                    <th>Total Cierre</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var item in Model.ListaCajas)
+                                                {
+                                                    @if (item.AmbienteId == (int)TipoBodegaEnum.Farmacia)
+                                                    {
+                                                        @if (item.EstadoCaja)
+                                                        {
+                                                            var personaApertura = item.ResponsableApertura == null ? "" : item.ResponsableAperturaText;
+                                                            var personaCierre = item.ResponsableCierre == null ? "" : item.ResponsableCierreText;
+
+                                                            <tr class="bg-success reg-sucursal-@item.SucursalId">
+                                                                <td>
+                                                                    @(item.Sucursal!=null?item.Sucursal.NombreSucursal:"-") /<br />
+                                                                    <span class="badge badge-primary">
+                                                                        @(item.Ambiente!=null?item.Ambiente.NombreAmbiente:"-")
+                                                                    </span>
+                                                                </td>
+                                                                <td>@item.FechaApertura</td>
+                                                                <td>@personaApertura</td>
+                                                                <td>@item.MontoApertura</td>
+                                                                <td>@item.DetalleCajas.Sum(x => x.Ingreso)</td>
+                                                                <td>@item.DetalleCajas.Sum(x => x.Gasto)</td>
+                                                                <td>@item.FechaCierre</td>
+                                                                <td>@personaCierre</td>
+                                                                @{
+                                                                    decimal suma1 = item.DetalleCajas.Sum(x => x.Ingreso - x.Gasto);
+                                                                    decimal montoap = item.MontoApertura;
+
+                                                                    decimal res = suma1 + montoap;
+                                                                }
+
+                                                                <td>@res</td>
+                                                                <td>
+                                                                    <a href="@Url.Action("VerDetalle","Caja", new {id = @item.Id})" class="btn btn-warning btn-sm">
+                                                                        <i class="fas fa-eye"></i>
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                        else
+                                                        {
+                                                            var personaApertura = item.ResponsableApertura == null ? "" : item.ResponsableAperturaText;
+                                                            var personaCierre = item.ResponsableCierre == null ? "" : item.ResponsableCierreText;
+
+                                                            <tr class="reg-sucursal-@item.SucursalId">
+                                                                <td>
+                                                                    @(item.Sucursal!=null?item.Sucursal.NombreSucursal:"-") /<br />
+                                                                    <span class="badge badge-primary">
+                                                                        @(item.Ambiente!=null?item.Ambiente.NombreAmbiente:"-")
+                                                                    </span>
+                                                                </td>
+                                                                <td>@item.FechaApertura</td>
+                                                                <td>@personaApertura</td>
+                                                                <td>@item.MontoApertura</td>
+                                                                <td>@item.DetalleCajas.Sum(x => x.Ingreso)</td>
+                                                                <td>@item.DetalleCajas.Sum(x => x.Gasto)</td>
+                                                                <td>@item.FechaCierre</td>
+                                                                <td>@personaCierre</td>
+                                                                @{
+                                                                    decimal suma1 = item.DetalleCajas.Sum(x => x.Ingreso - x.Gasto);
+                                                                    decimal montoap = item.MontoApertura;
+
+                                                                    decimal res = suma1 + montoap;
+                                                                }
+
+                                                                <td>@res</td>
+                                                                <td>
+                                                                    <a href="@Url.Action("VerDetalle","Caja", new {id = @item.Id})" class="btn btn-warning btn-sm">
+                                                                        <i class="fas fa-eye"></i>
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    }
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    @if (Model.AperturarAmbienteId == (int)TipoBodegaEnum.Laboratorio)
+                    {
+                        <div id="tab-caja-laboratorio">
+                            <div class="form-row">
+                                <div class="col-md-12">
+                                    <div class="table-responsive">
+                                        <table class="mb-0 table table-hover ">
+                                            <thead>
+                                                <tr>
+                                                    <th>Sucursal / Ambiente</th>
+                                                    <th>Fecha de apertura</th>
+                                                    <th>Resp. Apertura</th>
+                                                    <th>Monto de apertura</th>
+                                                    <th>Ingresos</th>
+                                                    <th>Gastos</th>
+                                                    <th>Fecha de cierre</th>
+                                                    <th>Resp. Cierre</th>
+                                                    <th>Total Cierre</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var item in Model.ListaCajas)
+                                                {
+                                                    @if (item.AmbienteId == (int)TipoBodegaEnum.Laboratorio)
+                                                    {
+                                                        @if (item.EstadoCaja == true)
+                                                        {
+                                                            var personaApertura = item.ResponsableApertura == null ? "" : item.ResponsableAperturaText;
+                                                            var personaCierre = item.ResponsableCierre == null ? "" : item.ResponsableCierreText;
+
+                                                            <tr class="bg-success reg-sucursal-@item.SucursalId">
+                                                                <td>
+                                                                    @(item.Sucursal!=null?item.Sucursal.NombreSucursal:"-") /<br />
+                                                                    <span class="badge badge-primary">
+                                                                        @(item.Ambiente!=null?item.Ambiente.NombreAmbiente:"-")
+                                                                    </span>
+                                                                </td>
+                                                                <td>@item.FechaApertura</td>
+                                                                <td>@personaApertura</td>
+                                                                <td>@item.MontoApertura</td>
+                                                                <td>@item.DetalleCajas.Sum(x => x.Ingreso)</td>
+                                                                <td>@item.DetalleCajas.Sum(x => x.Gasto)</td>
+                                                                <td>@item.FechaCierre</td>
+                                                                <td>@personaCierre</td>
+                                                                @{
+                                                                    decimal suma1 = item.DetalleCajas.Sum(x => x.Ingreso - x.Gasto);
+                                                                    decimal montoap = item.MontoApertura;
+
+                                                                    decimal res = suma1 + montoap;
+                                                                }
+                                                                <td>@res</td>
+                                                                <td>
+                                                                    <a href="@Url.Action("VerDetalle","Caja", new {id = @item.Id})" class="btn btn-warning btn-sm">
+                                                                        <i class="fas fa-eye"></i>
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                        else
+                                                        {
+                                                            var personaApertura = item.ResponsableApertura == null ? "" : item.ResponsableAperturaText;
+                                                            var personaCierre = item.ResponsableCierre == null ? "" : item.ResponsableCierreText;
+
+                                                            <tr class="reg-sucursal-@item.SucursalId">
+                                                                <td>
+                                                                    @(item.Sucursal!=null?item.Sucursal.NombreSucursal:"-") /<br />
+                                                                    <span class="badge badge-primary">
+                                                                        @(item.Ambiente!=null?item.Ambiente.NombreAmbiente:"-")
+                                                                    </span>
+                                                                </td>
+                                                                <td>@item.FechaApertura</td>
+                                                                <td>@personaApertura</td>
+                                                                <td>@item.MontoApertura</td>
+                                                                <td>@item.DetalleCajas.Sum(x => x.Ingreso)</td>
+                                                                <td>@item.DetalleCajas.Sum(x => x.Gasto)</td>
+                                                                <td>@item.FechaCierre</td>
+                                                                <td>@personaCierre</td>
+                                                                @{
+                                                                    decimal suma1 = item.DetalleCajas.Sum(x => x.Ingreso - x.Gasto);
+                                                                    decimal montoap = item.MontoApertura;
+
+                                                                    decimal res = suma1 + montoap;
+                                                                }
+                                                                <td>@res</td>
+                                                                <td>
+                                                                    <a href="@Url.Action("VerDetalle","Caja", new {id = @item.Id})" class="btn btn-warning btn-sm">
+                                                                        <i class="fas fa-eye"></i>
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    }
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    @if (Model.AperturarAmbienteId == (int)TipoBodegaEnum.Global)
+                    {
+                        <div id="tab-caja-laboratorio">
+                            <div class="form-row">
+                                <div class="col-md-12">
+                                    <div class="table-responsive">
+                                        <table class="mb-0 table table-hover ">
+                                            <thead>
+                                                <tr>
+                                                    <th>Sucursal / Ambiente</th>
+                                                    <th>Fecha de apertura</th>
+                                                    <th>Resp. Apertura</th>
+                                                    <th>Monto de apertura</th>
+                                                    <th>Ingresos</th>
+                                                    <th>Gastos</th>
+                                                    <th>Fecha de cierre</th>
+                                                    <th>Resp. Cierre</th>
+                                                    <th>Total Cierre</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var item in Model.ListaCajas)
+                                                {
+                                                    @if (item.AmbienteId == (int)AmbienteEnum.Global)
+                                                    {
+                                                        @if (item.EstadoCaja == true)
+                                                        {
+                                                            var personaApertura = item.ResponsableApertura == null ? "" : item.ResponsableAperturaText;
+                                                            var personaCierre = item.ResponsableCierre == null ? "" : item.ResponsableCierreText;
+
+                                                            <tr class="bg-success reg-sucursal-@item.SucursalId">
+                                                                <td>
+                                                                    @(item.Sucursal!=null?item.Sucursal.NombreSucursal:"TODAS")<br />
+                                                                    <span class="badge badge-primary">
+                                                                        @(item.Ambiente!=null?item.Ambiente.NombreAmbiente:"-")
+                                                                    </span>
+                                                                </td>
+                                                                <td>@item.FechaApertura</td>
+                                                                <td>@personaApertura</td>
+                                                                <td>@item.MontoApertura</td>
+                                                                <td>@item.DetalleCajas.Sum(x => x.Ingreso)</td>
+                                                                <td>@item.DetalleCajas.Sum(x => x.Gasto)</td>
+
+                                                                @{
+                                                                    decimal suma1 = item.DetalleCajas.Sum(x => x.Ingreso - x.Gasto);
+                                                                    decimal montoap = item.MontoApertura;
+
+                                                                    decimal res = suma1 + montoap;
+                                                                }
+
+                                                                <td>@item.FechaCierre</td>
+                                                                <td>@personaCierre</td>
+                                                                <td>@res</td>
+                                                                <td>
+                                                                    <a href="@Url.Action("VerDetalle","Caja", new {id = @item.Id})" class="btn btn-warning btn-sm">
+                                                                        <i class="fas fa-eye"></i>
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                        else
+                                                        {
+                                                            var personaApertura = item.ResponsableApertura == null ? "" : item.ResponsableAperturaText;
+                                                            var personaCierre = item.ResponsableCierre == null ? "" : item.ResponsableCierreText;
+
+                                                            <tr class="reg-sucursal-@item.SucursalId">
+                                                                <td>
+                                                                    @(item.Sucursal!=null?item.Sucursal.NombreSucursal:"TODAS")<br />
+                                                                    <span class="badge badge-primary">
+                                                                        @(item.Ambiente!=null?item.Ambiente.NombreAmbiente:"-")
+                                                                    </span>
+                                                                </td>
+                                                                <td>@item.FechaApertura</td>
+                                                                <td>@personaApertura</td>
+                                                                <td>@item.MontoApertura</td>
+                                                                <td>@item.DetalleCajas.Sum(x => x.Ingreso)</td>
+                                                                <td>@item.DetalleCajas.Sum(x => x.Gasto)</td>
+                                                                <td>@item.FechaCierre</td>
+                                                                <td>@personaCierre</td>
+                                                                @{
+                                                                    decimal suma1 = item.DetalleCajas.Sum(x => x.Ingreso - x.Gasto);
+                                                                    decimal montoap = item.MontoApertura;
+                                                                    decimal res = suma1 + montoap;
+                                                                }
+                                                                <td>@res</td>
+                                                                <td>
+                                                                    <a href="@Url.Action("VerDetalle","Caja", new {id = @item.Id})" class="btn btn-warning btn-sm">
+                                                                        <i class="fas fa-eye"></i>
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    }
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+
+
+
+<script type="text/javascript" src="~/js/moment.min.js"></script>
+<script type="text/javascript" src="~/js/daterangepicker.js"></script>
+<script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+
+<script src="~/ViewModelKo/CajaAperturarVM.js"></script>
+}
+

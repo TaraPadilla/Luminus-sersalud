@@ -1,0 +1,39 @@
+@{
+    ViewData["Title"] = "Nueva grabación";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <h4><b>Nueva grabación</b></h4>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_GrabacionForm")
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <button class="btn btn-danger" data-bind="click: cancelarRegistrarGrabacion">Cancelar</button>
+        <button class="btn btn-primary" data-bind="click: registrarGrabacion">Guardar grabación</button>
+    </div>
+</div>
+
+
+@section Scripts{
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.0.1/js/toastr.js"></script>
+<script type="text/javascript" src="~/js/moment.min.js"></script>
+<script type="text/javascript" src="~/js/daterangepicker.js"></script>
+<script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<script src="https://knockoutjs.com/downloads/knockout-3.5.1.js"></script>
+<script type="text/javascript" src="~/ViewModelKo/GrabacionVM.js"></script>
+}
+
+@section css {
+
+}

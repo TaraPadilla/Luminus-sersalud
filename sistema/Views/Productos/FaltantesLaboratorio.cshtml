@@ -1,0 +1,54 @@
+@using System;
+@using System.Globalization;
+@model IEnumerable<Database.Shared.Models.Producto>;
+
+@{
+    Layout = "_HojaLayout";
+}
+
+	<div>
+		<div class="text-center" style="border: 1px black solid;">
+			<h4> Reporte de productos con bajo stock </h4>
+			<h6>RED OWL SOFTWARE</h6>
+		</div>
+	</div>
+	<br>
+	<div>
+		<span class="font-weight-bold">FECHA DE EMISI&#211;N </span>
+		<span> @DateTime.Now.ToString("D",CultureInfo.CreateSpecificCulture("Es-GT")).ToUpperInvariant()</span>
+	</div>
+
+    <div>
+		<span class="font-weight-bold"> Lugar </span>
+		<span> Laboratorio </span>
+	</div>
+<br>
+
+        <table class="table table-bordered">
+                    <thead>
+                    <tr>
+                        <th style="background: #1f4724 !important; color: white;"><span contenteditable>Producto</span></th>
+                        <th style="background: #1f4724 !important; color: white;"><span contenteditable>Presentación</span></th>
+                        <th style="background: #1f4724 !important; color: white;"><span contenteditable>Stock</span></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach(var producto in Model)
+                        {
+                            var presentacion = producto.PresentacionProducto == null ? "// sin asignar" : producto.PresentacionProducto.PresentProducto;
+
+                        <tr>
+                            <td><span contenteditable>@producto.NombreProducto</span></td>
+                            <td><span data-prefix>@presentacion</span></td>
+                            <td><span>@producto.Stock</span> </td>
+                        </tr>
+                        }
+                    </tbody>
+        </table>
+
+
+      
+ 
+
+      	
+	

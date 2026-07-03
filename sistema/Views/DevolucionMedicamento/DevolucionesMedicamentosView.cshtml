@@ -1,0 +1,64 @@
+@{
+    ViewData["Title"] = "Gestión de Devoluciones de Medicamentos - Farmacia";
+}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link rel="stylesheet" href="~/js/DataTables/datatables.css" />
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.js"></script>
+
+<h2 class="text-center font-weight-bold mt-4">📦 Gestión de Devoluciones de Medicamentos</h2>
+
+<div class="row mt-3">
+    <div class="col-md-4">
+        <label for="categoriaFiltro">Filtrar por categoría:</label>
+        <select id="categoriaFiltro" class="form-control" 
+                data-bind="options: categoriasHabitacion, 
+                           optionsText: 'nombreCategoria', 
+                           optionsValue: 'id', 
+                           value: filtroCategoria">
+        </select>
+    </div>
+    <div class="col-md-2">
+        <button class="btn btn-primary mt-4" 
+                data-bind="click: obtenerDevoluciones">
+            🔍 Buscar
+        </button>
+    </div>
+</div>
+
+<br>
+
+<!-- Tabla de devoluciones -->
+<div class="table-responsive mt-4">
+    <table id="devolucionesTable" class="table table-hover text-center">
+        <thead class="thead-dark">
+            <tr>
+                <th style="text-align: center;">ID</th>
+                <th style="text-align: center;">Hospitalización</th>
+                <th style="text-align: center;">ID Aplicación Medicamento</th>
+                <th style="text-align: center;">Producto</th>
+                <th style="text-align: center;">Cantidad Devuelta</th>
+                <th style="text-align: center;">Motivo</th>
+                <th style="text-align: center;">Tipo Producto</th>
+                <th style="text-align: center;">Estado</th>
+                <th style="text-align: center;">Fecha Solicitud</th>
+                <th style="text-align: center;">Usuario que Solicita</th>
+                <th style="text-align: center;">Fecha Aprobación</th>
+                <th style="text-align: center;">Usuario Aprobador</th>
+                <th style="text-align: center;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<!-- Carga primero Knockout.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.5.1/knockout-min.js"></script>
+
+<!-- Cargar el ViewModel cuando Knockout.js ya esté disponible -->
+<script type="text/javascript">
+    document.addEventListener("DOMContentLoaded", function () {
+        var script = document.createElement("script");
+        script.src = "/ViewModelKo/DevolucionesMedicamentosVM.js"; // Asegúrate de que la ruta es correcta
+        document.body.appendChild(script);
+    });
+</script>

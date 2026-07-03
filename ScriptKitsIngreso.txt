@@ -1,0 +1,92 @@
+DROP TABLE IF EXISTS "KitsIngreso" CASCADE;
+
+CREATE TABLE "KitsIngreso" (
+    "Id" SERIAL4 NOT NULL,
+    "HospitalizacionId" INT4,
+    "FechaRegistro" TIMESTAMP NOT NULL DEFAULT now(),
+    "UserId" VARCHAR(450),
+    "NombrePaciente" VARCHAR(300),
+    "Medico" VARCHAR(200),
+    "Procedimiento" VARCHAR(300),
+    "Responsable" VARCHAR(200),
+    "FechaKit" DATE,
+    "NombreKit" VARCHAR(255),
+    "es_global" BOOL DEFAULT false,
+    "EsGlobal" BOOL DEFAULT false,
+    
+    -- Restricción de Clave Primaria
+    CONSTRAINT "KitsIngreso_pkey" PRIMARY KEY ("Id")
+);
+
+ALTER TABLE "KitsIngreso" 
+ADD CONSTRAINT "FK_KitsIngreso_Hospitalizaciones" 
+FOREIGN KEY ("HospitalizacionId") 
+REFERENCES "Hospitalizaciones"("Id") 
+ON DELETE CASCADE 
+ON UPDATE NO ACTION;
+
+
+
+DROP TABLE IF EXISTS "KitsIngresoDetalles" CASCADE;
+
+CREATE TABLE "KitsIngresoDetalles" (
+    "Id" SERIAL4 NOT NULL,
+    "KitIngresoId" INT4 NOT NULL,
+    "ProductoId" INT4 NOT NULL,
+    "ProductoCodigo" VARCHAR(100),
+    "ProductoNombre" VARCHAR(300),
+    "UnidadMedidaVentaId" INT4,
+    "UnidadMedidaVentaNombre" VARCHAR(100),
+    "PrecioId" INT4,
+    "PrecioNombre" VARCHAR(150),
+    "Cantidad" NUMERIC(10, 2) NOT NULL DEFAULT 1,
+    "ValorUnitario" NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    "ValorSubtotal" NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    "DescuentoPorcentaje" NUMERIC(5, 2) NOT NULL DEFAULT 0,
+    "DescuentoValor" NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    "ValorTotal" NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    "Eliminado" BOOL NOT NULL DEFAULT false,
+
+    -- Restricción de Clave Primaria
+    CONSTRAINT "KitsIngresoDetalles_pkey" PRIMARY KEY ("Id")
+);
+
+ALTER TABLE "KitsIngresoDetalles"
+ADD CONSTRAINT "FK_KitsIngresoDetalles_KitsIngreso"
+FOREIGN KEY ("KitIngresoId")
+REFERENCES "KitsIngreso"("Id")
+ON DELETE CASCADE
+ON UPDATE NO ACTION;
+
+
+
+
+DROP TABLE IF EXISTS "HospitalizacionKitConsumo" CASCADE;
+
+CREATE TABLE "HospitalizacionKitConsumo" (
+    "Id" SERIAL4 NOT NULL,
+    "HospitalizacionId" INT4 NOT NULL,
+    "KitIngresoDetalleId" INT4 NOT NULL,
+    "Utilizado" NUMERIC(18, 2) NOT NULL DEFAULT 0,
+    "FechaRegistro" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    -- Restricción de Clave Primaria
+    CONSTRAINT "HospitalizacionKitConsumo_pkey" PRIMARY KEY ("Id")
+);
+
+
+-- Relación con el detalle del kit
+ALTER TABLE "HospitalizacionKitConsumo"
+ADD CONSTRAINT "fk_consumo_detalle"
+FOREIGN KEY ("KitIngresoDetalleId")
+REFERENCES "KitsIngresoDetalles"("Id")
+ON DELETE NO ACTION
+ON UPDATE NO ACTION;
+
+-- Relación con la hospitalización
+ALTER TABLE "HospitalizacionKitConsumo"
+ADD CONSTRAINT "fk_consumo_hospitalizacion"
+FOREIGN KEY ("HospitalizacionId")
+REFERENCES "Hospitalizaciones"("Id")
+ON DELETE NO ACTION
+ON UPDATE NO ACTION;

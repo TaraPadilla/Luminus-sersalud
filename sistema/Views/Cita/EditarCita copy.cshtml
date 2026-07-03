@@ -1,0 +1,98 @@
+@using sistema.Models
+@model CitaViewModel
+@{
+    ViewData["Title"] = "Editar cita";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="form-row">
+    <div class="col-md-12">
+        <a asp-action="Lista" asp-controller="Cita" class="btn btn-danger">
+            <i class="fas fa-list"></i> &nbsp; Lista de citas
+        </a>
+
+        <a asp-action="CalendarioLineal" asp-controller="Cita" class="btn btn-danger" asp-route-buscar="@Model.FechaHora.ToString("yyy-MM-dd")">
+            <i class="fas fa-calendar-alt"></i> &nbsp; Regresar calendario @Model.FechaHora.ToString("yyy-MM-dd")
+        </a>
+    </div>
+</div>
+@if (User.IsInRole("CirugiaPlastica"))
+{
+    <div class="form-row">
+        <div class="col-md-4">
+            <div class="position-relative form-group">
+                <label for="Fecha">Fecha</label>
+                <label for="Dia">Dia</label>
+                <input type="date" class="form-control" id="Dia" value="@Model.FechaHora.Date.ToString("yyyy-MM-dd")">
+            </div>
+
+        </div>
+        <div class="col-md-5">
+            <div class="position-relative form-group">
+                <label for="hora">Hora</label>
+                <select class="form-control" id="Hora">
+                    <option value="@Model.Hora">@Model.Hora</option>
+                    @foreach (var hora in Model.Horas)
+                    {
+                        if (hora != Model.Hora)
+                        {
+                            <option value="@hora">@hora</option>
+                        }
+                        
+                    }
+                    
+                    
+                </select>
+            </div>
+        </div>
+    </div>
+
+}
+   
+@await Html.PartialAsync("_CitaForm")
+@if (User.IsInRole("CirugiaPlastica"))
+{
+    <div class="main-card mb-3 card">
+        <div class="card-body form-row">
+            <div class="col-md-12">
+                <button class="btn btn-primary" data-bind="click:editarCitaCP">
+                    Editar cita
+                </button>
+            </div>
+        </div>
+    </div>
+
+}
+else
+{
+    <div class="main-card mb-3 card">
+        <div class="card-body form-row">
+            <div class="col-md-12">
+                <button class="btn btn-primary" data-bind="click:editarCita">
+                    Editar cita
+                </button>
+            </div>
+        </div>
+    </div>
+    
+}
+
+
+@section Scripts {
+    <script src="~/ViewModelKo/CitaVM.js"></script>
+
+    <script>
+        // Bootstrap 4.3 tooltips (si los usas aquí también)
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip();
+        });
+
+        // 1) Mandamos el modelo del servidor a JS
+        var serverModel = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model));
+
+        // 2) Iniciamos KO
+        var citaVm = new CitaVM(serverModel);
+        ko.applyBindings(citaVm);
+    </script>
+}

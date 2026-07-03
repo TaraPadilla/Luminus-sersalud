@@ -1,0 +1,177 @@
+@model sistema.Models.ServicioBaseViewModel
+
+@Html.HiddenFor(m=>m.Id)
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <h5><b>Informaci&oacute;n general</b></h5>
+                        <hr />
+                    </div>
+                    <div class="col-md-12">
+                        <label>C&oacute;digo</label>
+                        @Html.TextBoxFor(a => a.CodigoInterno, new {@class="form-control",
+                        @placeholder="Codigo del servicio"})
+                    </div>
+                    <div class="col-md-12">
+                        <label>Nombre del servicio</label>
+                        @Html.TextBoxFor(a => a.NombreServicio, new {@class="form-control",
+                        @placeholder="Nombre del servicio"})
+                    </div>
+                    <div class="col-md-12">
+                        <label class="">Descripcion</label>
+                        @Html.TextAreaFor(a => a.Descripcion,5,500 ,htmlAttributes : new {
+                        @class="form-control ", @placeholder="Descripcion", @style="max-width:100% !important;"})
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <h5><b>Duraci&oacute;n</b></h5>
+                        <hr />
+                    </div>
+                    <div class="col-md-6">
+                        <label>Horas</label>
+                        @Html.TextBoxFor(a=>a.DuracionHoras,new{@class="form-control",@type="number",@step="1"})
+                    </div>
+                    <div class="col-md-6">
+                        <label>Minutos</label>
+                        <select class="form-control " asp-for="DuracionMinutos">
+                          
+                            <option value="0">0</option>
+                            <option value="15">15</option>
+                            <option value="30">30</option>
+                            <option value="45">45</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <h5><b>Insumos utilizados</b></h5>
+                        <hr />
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label>Insumo</label>               
+                        <select class="form-control" data-bind="options:insumos, optionsText:'ProductoNombre', value:insumoSeleccionado">
+                        </select>
+         
+                    </div>
+                   
+                    <div class="col-md-3">
+                        <label>Unidad de venta</label>
+                        <select class="form-control" data-bind="options:unidadesVentaInsumo,optionsText:'Nombre',
+                                    value:unidadVentaSeleccionada"></select>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Cantidad utilizada</label>
+                        <input class="form-control" data-bind="value:cantidadUtilizadaInsumo" />
+                    </div>
+                    <div class="col-md-3">
+                        <br />
+                        <input type="button" class="btn btn-primary" data-bind="click: agregarInsumo" value="Agregar">
+                    </div>
+                </div>
+                <div class="col-md-12">
+                    <br />
+                    <table class="table-hover table">
+                        <thead>
+                            <tr>
+                                <th><b>Nombre del insumo</b></th>
+                                <th><b>Unidad de venta</b></th>
+                                <th><b>Cantidad utilizada</b></th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!--ko foreach: insumosUtilizados-->
+                            <tr>
+                                <td data-bind="text: ProductoNombre"></td>
+                                <td data-bind="text: UnidadMedidaVentaNombre"></td>
+                                <td data-bind="text: CantidadUtilizada"></td>
+                                <td><button class="btn btn-danger" data-bind="click:$root.quitarInsumoUtilizado">Quitar</button></td>
+                            </tr>
+                            <!--/ko-->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <h5><b>Precios</b></h5>
+                        <hr />
+                    </div>
+                    <div class="col-md-12">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Activar</th>
+                                    <th>Nombre</th>
+                                    <th>Valor</th>
+                                    <th class="text-center">Mostrar en reservas</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!--ko foreach:precios-->
+                                <tr>
+                                    <td><input type="checkbox" class="form-control" data-bind="checked:Activar" /></td>
+                                    <td data-bind="text:PrecioNombre"></td>
+                                    <td><input class="form-control" data-bind="value:PrecioValor" /></td>
+                                    <td>
+                                        <input class="form-control" type="radio" name="precio-mostrar"
+                                               data-bind="checked:$root.precioMostrar,value:PrecioId,attr:{id:'precio-mostrar-'+PrecioId}" />
+                                    </td>
+                                </tr>
+                                <!--/ko-->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <h5><b>Sucursales</b></h5>
+                        <hr />
+                    </div>
+                    <div class="col-md-12">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Sucursal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!--ko foreach:sucursales-->
+                                <tr>
+                                    <td><input type="checkbox" class="form-control" data-bind="checked:Activar" /></td>
+                                    <td data-bind="text:SucursalNombre"></td>
+                                </tr>
+                                <!--/ko-->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

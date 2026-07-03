@@ -1,0 +1,35 @@
+@using Database.Shared.Models
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Config
+
+@{
+    // Valores por defecto desde configuración (disponibles en todo el archivo)
+    var nombreEmpresaDefault = Config["EstablecimientoNombreEmpresa"];
+    var tituloPestanaDefault = Config["EstablecimientoPestana"];
+
+   // var tituloPagina = Config["EstablecimientoPestana"];
+    var tituloPagina = (ViewData["Title"] as string) ?? tituloPestanaDefault ?? nombreEmpresaDefault ?? "AVM";
+}
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    @* Estilos básicos compartidos para reportes *@
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+
+    <title>@tituloPagina</title>
+</head>
+
+<body>
+
+
+    @* <hr class="header-separator" /> *@
+
+    @RenderBody()
+
+    @* @RenderSection("Scripts", required: false) *@
+</body>
+
+</html>

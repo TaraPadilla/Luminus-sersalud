@@ -1,0 +1,15 @@
+ALTER TABLE public."CuentasPorCobrar"
+ADD COLUMN IF NOT EXISTS "FelEstado" integer NOT NULL DEFAULT 0,
+ADD COLUMN IF NOT EXISTS "UuidFel" text NULL,
+ADD COLUMN IF NOT EXISTS "FelFechaEmitida" timestamp without time zone NULL,
+ADD COLUMN IF NOT EXISTS "FelUltimoError" text NULL,
+ADD COLUMN IF NOT EXISTS "FelFechaUltimoIntento" timestamp without time zone NULL,
+ADD COLUMN IF NOT EXISTS "FelIntentos" integer NOT NULL DEFAULT 0,
+ADD COLUMN IF NOT EXISTS "FelReceptorNit" text NULL,
+ADD COLUMN IF NOT EXISTS "FelReceptorNombre" text NULL,
+ADD COLUMN IF NOT EXISTS "FelReceptorDireccion" text NULL,
+ADD COLUMN IF NOT EXISTS "FelReceptorCorreo" text NULL;
+
+-- Opcional: índice por UUID si vas a buscar por este campo
+CREATE INDEX IF NOT EXISTS "IX_CuentasPorCobrar_UuidFel"
+ON public."CuentasPorCobrar" ("UuidFel");

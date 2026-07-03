@@ -1,0 +1,72 @@
+﻿@using Database.Shared.Models
+@model List<CategoriasCuentaContable>
+@{
+    ViewData["Title"] = "Categorias";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <center><h4><b>Categorias</b></h4></center>
+                <hr />
+                <a class="btn btn-danger" asp-action="Nuevo" asp-controller="CategoriasCuentaContable">
+                    Nueva Categoria
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="tabla-categoria">
+                <thead>
+                    <tr>
+                        <th>Nombre de la categoria</th>
+                        <th>Especificaciones</th>
+                        <th>Acciones</th>
+
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Count() > 0)
+                    {
+                        foreach (var categoria in Model)
+                        {
+                            <tr>
+                                <td>@categoria.Nombre</td>
+                                <td>@categoria.Especificacion</td>
+                                <td>
+                                    <button class="btn btn-warning" onclick="modificarCategoria(@categoria.Id)">
+                                        <i class="fa fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-danger" onclick="eliminarCategoria(@categoria.Id)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td><i>No hay categorias registrados</i></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/ViewModelKo/CategoriaCuentaContableListaVM.js"></script>
+}

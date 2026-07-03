@@ -1,0 +1,31 @@
+@{
+    ViewData["Title"] = "Modificar precio";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <h4><b>Modificar precio</b></h4>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_PrecioForm")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <button class="btn btn-primary" data-bind="click:editarPrecio">
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <script src="~/ViewModelKo/PrecioVM.js"></script>
+}

@@ -1,0 +1,224 @@
+@model sistema.Models.ReporteCajaFarmaciaViewModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Caja";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    decimal TotalCierre = 0m;
+
+    var Desde = Convert.ToDateTime(Model.Desde).ToString("MM/dd/yyyy");
+    var Hasta = Convert.ToDateTime(Model.Hasta).ToString("MM/dd/yyyy");
+    var fechaEmision = DateTime.Now;
+}
+
+<style>
+    .report-container {
+        margin-top: 10px;
+        font-size: 11px;
+    }
+
+    .report-title {
+        text-align: center;
+        font-weight: bold;
+        font-size: 16px;
+        color: #0d0e36;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+
+    .report-subtitle {
+        text-align: center;
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+
+    .report-meta {
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .report-meta b {
+        font-weight: bold;
+    }
+
+    .report-table {
+        width: 100%;
+        margin-top: 10px;
+        border-collapse: collapse;
+    }
+
+    /* Título de sección */
+    .report-table-title-row th {
+        background-color: #f3f4ff;
+        border-left: 3px solid #0d0e36;
+        color: #0d0e36;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: bold;
+        font-size: 12px;
+        text-align: center;
+        padding: 6px 8px;
+    }
+
+    /* Encabezados de columnas */
+    .report-table-header-row th {
+        background-color: #eef2ff;
+        color: #0d0e36;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 10px;
+        text-align: left;
+        padding: 4px 6px;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table tbody td {
+        font-size: 10px;
+        padding: 3px 4px;
+        vertical-align: top;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .report-table tbody tr:nth-child(even) {
+        background-color: #fbfbfb;
+    }
+
+    .empty-row td {
+        text-align: center;
+        font-style: italic;
+        color: #777777;
+    }
+
+    .status-pill {
+        display: inline-block;
+        padding: 1px 6px;
+        border-radius: 10px;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: lowercase;
+    }
+
+    .status-open {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-closed {
+        background-color: #fee2e2;
+        color: #991b1b;
+    }
+
+    .summary {
+        margin-top: 6px;
+        text-align: right;
+        font-size: 11px;
+    }
+
+    .summary-label {
+        font-weight: 600;
+        margin-right: 4px;
+    }
+</style>
+
+<div class="report-container">
+    <!-- Encabezado del reporte -->
+    <div class="report-title">
+        REPORTE - @ViewData["Title"] 
+    </div>
+    <div class="report-subtitle">
+        @Model.NombreAmbiente
+    </div>
+
+    <!-- Meta (fechas) -->
+    <div class="report-meta">
+        <b>Fecha y hora de emisión:</b> @fechaEmision
+    </div>
+    <div class="report-meta">
+        <b>Desde:</b> @Desde
+    </div>
+    <div class="report-meta">
+        <b>Hasta:</b> @Hasta
+    </div>
+
+    <!-- Tabla principal -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="10">Cajas</th>
+            </tr>
+            <tr class="report-table-header-row">
+                <th>Estado / Sucursal / Ambiente</th>
+                <th>Fecha Apertura</th>
+                <th>Resp. Apertura</th>
+                <th>Monto Apertura</th>
+                <th>Ingresos</th>
+                <th>Gastos</th>
+                <th>Fecha cierre</th>
+                <th>Resp. Cierre</th>
+                <th>Total Cierre</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Cajas == null || Model.Cajas.Count == 0)
+            {
+                <tr class="empty-row">
+                    <td colspan="9">No hay registros para la fecha seleccionada</td>
+                </tr>
+            }
+            else
+            {
+                foreach (var item in Model.Cajas)
+                {
+                    var personaApertura = item.ResponsableApertura == null ? "" : item.ResponsableAperturaText;
+                    var personaCierre = item.ResponsableCierre == null ? "" : item.ResponsableCierreText;
+
+                    decimal suma1 = item.DetalleCajas.Sum(x => x.Ingreso - x.Gasto);
+                    decimal montoap = item.MontoApertura;
+                    decimal res = suma1 + montoap;
+                    TotalCierre += res;
+
+                    <tr>
+                        <td>
+                            @if (item.EstadoCaja)
+                            {
+                                <span class="status-pill status-open">abierta</span><br />
+                            }
+                            else
+                            {
+                                <span class="status-pill status-closed">cerrada</span><br />
+                            }
+                            <b>@(item.Sucursal != null ? item.Sucursal.NombreSucursal : "-")</b><br />
+                            @(item.Ambiente != null ? item.Ambiente.NombreAmbiente : "-")
+                        </td>
+                        <td>@item.FechaApertura</td>
+                        <td>@personaApertura</td>
+                        <td>@item.MontoApertura</td>
+                        <td>@item.DetalleCajas.Sum(x => x.Ingreso)</td>
+                        <td>@item.DetalleCajas.Sum(x => x.Gasto)</td>
+                        <td>@item.FechaCierre</td>
+                        <td>@personaCierre</td>
+                        <td>@res</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+
+    <div class="summary">
+        <span class="summary-label">Monto:</span>
+        <span>Q @TotalCierre</span>
+    </div>
+</div>

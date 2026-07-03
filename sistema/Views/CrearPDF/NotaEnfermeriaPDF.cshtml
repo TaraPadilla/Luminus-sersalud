@@ -1,0 +1,169 @@
+@using farmamest.Models
+@model NotaEnfermeriaPdfViewModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Nota de Enfermería";
+
+    // Configuración estándar del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+}
+
+<style>
+    .notes p { margin: 0 0 4px 0; }
+    .notes strong { font-weight: bold; }
+    .notes em { font-style: italic; }
+    .notes u { text-decoration: underline; }
+    .notes s { text-decoration: line-through; }
+    .notes ol { margin: 4px 0; padding-left: 20px; list-style-type: decimal; }
+    .notes ul { margin: 4px 0; padding-left: 20px; list-style-type: disc; }
+    .notes li { margin-bottom: 2px; }
+    .notes h1 { font-size: 1.4em; font-weight: bold; margin: 6px 0; }
+    .notes h2 { font-size: 1.2em; font-weight: bold; margin: 5px 0; }
+    .notes h3 { font-size: 1.1em; font-weight: bold; margin: 4px 0; }
+    .notes blockquote { border-left: 3px solid #ccc; margin: 4px 0 4px 10px; padding-left: 8px; color: #555; }
+</style>
+
+<div class="doc">
+
+    <!-- Título principal -->
+    <div class="doc-title">REPORTE - @ViewData["Title"]</div>
+    <div class="doc-underline"></div>
+
+    <!-- Fecha de emisión -->
+    <table class="table" style="border:0;">
+        <tbody>
+            <tr>
+                <td style="text-align:center; font-weight:700; border:0;">
+                    Fecha y hora de emisión: @fecha.ToString("dd/MM/yyyy hh:mm tt")
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- DATOS DEL PACIENTE -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Datos del paciente</td>
+        </tr>
+    </table>
+
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table threecol">
+                    <colgroup>
+                        <col />
+                        <col />
+                        <col />
+                    </colgroup>
+                    <tbody>
+                        <tr class="kv-row">
+                            <td>
+                                <span class="label">Nombre</span>
+                                <span class="value">@Model.PacienteNombre</span>
+                            </td>
+                            <td>
+                                <span class="label">Hospitalización N°</span>
+                                <span class="value">@Model.HospitalizacionId</span>
+                            </td>
+                            <td></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td>
+                                <span class="label">Profesional</span>
+                                <span class="value">@Model.Profesional</span>
+                            </td>
+                            <td>
+                                <span class="label">Fecha y hora</span>
+                                <span class="value">@Model.FechaRegistro</span>
+                            </td>
+                            <td>
+                                <span class="label">Estado</span>
+                                <span class="value">@(Model.Firmado ? "Firmado" : "Pendiente")</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- CONTENIDO DE LA NOTA -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Registro de enfermería</td>
+        </tr>
+    </table>
+
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <tbody>
+                        <tr class="kv-row">
+                            <td class="notes">
+                                @Html.Raw(Model.Diagnostico?.Replace("\n", "<br />"))
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- FIRMA (si está firmada) -->
+    @if (Model.Firmado)
+    {
+        <table class="section-title">
+            <tr>
+                <td class="bar"></td>
+                <td>Firma del profesional</td>
+            </tr>
+        </table>
+
+        <table class="block">
+            <tr>
+                <td style="padding:0;">
+                    <table class="table">
+                        <tbody>
+                            <tr class="kv-row">
+                                <td>
+                                    <span class="label">Firmado por:</span>
+                                    <span class="value">@Model.Profesional</span>
+                                </td>
+                                <td>
+                                    <span class="label">Fecha de firma:</span>
+                                    <span class="value">@Model.FechaFirma</span>
+                                </td>
+                            </tr>
+                            @if (!string.IsNullOrEmpty(Model.FirmaBase64))
+                            {
+                                <tr class="kv-row">
+                                    <td colspan="2" style="text-align:center;">
+                                        <img src="@Model.FirmaBase64" style="max-height:100px; max-width:300px; border:1px solid #ccc; padding:4px;" />
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    }
+    else
+    {
+        <div style="margin-top:20px; font-style:italic; text-align:center; color:#888;">Documento pendiente de firma</div>
+    }
+
+</div>

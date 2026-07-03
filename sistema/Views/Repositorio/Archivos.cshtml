@@ -1,0 +1,61 @@
+@{
+    ViewData["Title"] = "Repositorio";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <h4><b>Archivos</b></h4>
+        </div>
+    </div>
+</div>
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <a class="btn btn-primary enlace-redirigir" asp-action="SubirArchivos" asp-controller="Repositorio">
+                    Subir archivos
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="tabla-archivos">
+                <thead>
+                    <tr class="text-center">
+                        <th>Nombre de archivo</th>
+                        <th>Carpeta</th>
+                        <th>Tipo</th>
+                        <th>País</th>
+                        <th>Vigente hasta</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Contrato 001</td>
+                        <td>Sociedades</td>
+                        <td>Contrato laboral</td>
+                        <td>Guatemala</td>
+                        <td>2023/06/06</td>
+                        <td>
+                            <a download target="_blank" href="~/assets/images/logocentral.png" class="btn btn-success">Descargar</a>
+                            <button class="btn btn-danger">Eliminar</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://knockoutjs.com/downloads/knockout-3.5.1.js"></script>
+<script type="text/javascript" src="~/ViewModelKo/RepositorioIndexVM.js"></script>

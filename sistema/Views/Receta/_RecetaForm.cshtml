@@ -1,0 +1,195 @@
+﻿@model sistema.Models.RecetaViewModel
+@using System.Linq
+@using System.Collections.Generic
+
+@Html.HiddenFor(m => m.Id)
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+        @* Sección: Información Principal *@
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <h5 class="text-primary font-weight-bold">
+                    <i class="fas fa-info-circle mr-2"></i>Información de la Receta
+                </h5>
+                <hr class="mt-2" />
+            </div>
+
+            <div class="form-group col-md-12">
+                <label class="font-weight-bold">Nombre de la receta</label>
+                @Html.TextBoxFor(a => a.NombreReceta, new { 
+                    @class = "form-control form-control-lg", 
+                    @placeholder = "Ej: Dieta Líquida Post-Operatoria", 
+                    autocomplete = "off",
+                    style = "font-size: 1.1rem;"
+                })
+                @Html.ValidationMessageFor(a => a.NombreReceta, "", new { @class = "text-danger small" })
+            </div>
+
+            <div class="form-group col-md-12">
+                <label class="font-weight-bold">Ingredientes / Preparación</label>
+                @Html.TextAreaFor(a => a.Ingredientes, new { 
+                    @class = "form-control", 
+                    @placeholder = "Describa los componentes y cantidades...",
+                    @rows = "4",
+                    style = "font-size: 1.05rem;"
+                })
+                @Html.ValidationMessageFor(a => a.Ingredientes, "", new { @class = "text-danger small" })
+            </div>
+
+            <div class="form-group col-md-6">
+                <label class="font-weight-bold text-muted">Precio Costo</label>
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text bg-light border-right-0">$</span>
+                    </div>
+                    @Html.TextBoxFor(a => a.PrecioCosto, new { 
+                        @class = "form-control form-control-lg border-left-0", 
+                        type = "number", step = "0.01", min = "0" 
+                    })
+                </div>
+                @Html.ValidationMessageFor(a => a.PrecioCosto, "", new { @class = "text-danger small" })
+            </div>
+
+            <div class="form-group col-md-6">
+                <label class="font-weight-bold text-success">Precio Venta</label>
+                <div class="input-group shadow-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text bg-success text-white border-0">$</span>
+                    </div>
+                    @Html.TextBoxFor(a => a.PrecioVenta, new { 
+                        @class = "form-control form-control-lg border-success", 
+                        type = "number", step = "0.01", min = "0" 
+                    })
+                </div>
+                @Html.ValidationMessageFor(a => a.PrecioVenta, "", new { @class = "text-danger small" })
+            </div>
+        </div>
+
+        @* Sección: Asociación de Menús *@
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <h5 class="text-primary font-weight-bold">
+                    <i class="fas fa-list-ul mr-2"></i>Asignación a Menús
+                </h5>
+                <hr class="mt-2" />
+            </div>
+
+            <div class="form-group col-md-5">
+                <label class="small font-weight-bold">1. Filtrar por Categoría</label>
+                @Html.DropDownListFor(m => m.CategoriaId, Model.Categorias, "Seleccione Categoría", 
+                    new { @class = "form-control shadow-sm", id = "CategoriaId" })
+            </div>
+
+            <div class="form-group col-md-5">
+                <label class="small font-weight-bold">2. Seleccionar Menú</label>
+                <select class="form-control shadow-sm" id="MenuSeleccionadoId">
+                    <option value="">Seleccione Menú</option>
+                    @foreach (var menu in Model.Menus)
+                    {
+                        <option value="@menu.Id" data-categoria="@menu.CategoriaId">@menu.Nombre</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-2 d-flex align-items-end mb-3">
+                <button type="button" class="btn btn-outline-primary btn-block shadow-sm" id="btnAgregarMenu">
+                    <i class="fas fa-plus"></i> Agregar
+                </button>
+            </div>
+
+            @* Listado de Menús Agregados *@
+            <div class="col-md-12 mt-3">
+                <label class="font-weight-bold text-secondary small">Menús vinculados a esta receta:</label>
+                <div class="border rounded bg-light p-2" style="min-height: 100px;">
+                    <ul id="listaMenus" class="list-group shadow-sm">
+                        @foreach (var id in Model.MenuIds ?? new List<int>())
+                        {
+                            var menu = Model.Menus.FirstOrDefault(x => x.Id == id);
+                            <li class="list-group-item d-flex justify-content-between align-items-center animate__animated animate__fadeIn" data-menuid="@id">
+                                <span class="font-weight-bold text-dark"><i class="fas fa-check-circle text-success mr-2"></i> @(menu?.Nombre ?? ("Menú Id " + id))</span>
+                                <button type="button" class="btn btn-sm btn-danger btnQuitarMenu shadow-sm px-3">
+                                    <i class="fas fa-trash-alt mr-1"></i> Quitar
+                                </button>
+                                <input type="hidden" name="MenuIds" value="@id" />
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const categoria = document.getElementById('CategoriaId');
+        const menuSelect = document.getElementById('MenuSeleccionadoId');
+        const lista = document.getElementById('listaMenus');
+        const btnAgregar = document.getElementById('btnAgregarMenu');
+
+        let lastCategoria = null;
+
+        function filtrarMenus() {
+            const cat = (categoria && categoria.value) ? categoria.value : "";
+
+            if (lastCategoria !== null && lastCategoria !== cat) {
+                while (lista.firstChild) {
+                    lista.removeChild(lista.firstChild);
+                }
+            }
+            lastCategoria = cat;
+
+            const options = menuSelect.querySelectorAll('option[data-categoria]');
+            options.forEach(o => {
+                o.hidden = !cat || o.dataset.categoria !== cat;
+            });
+
+            menuSelect.value = "";
+        }
+
+        function existeMenu(menuId) {
+            return !!lista.querySelector('li[data-menuid="' + menuId + '"]');
+        }
+
+        function agregarMenu() {
+            const id = menuSelect.value;
+            if (!id) return;
+            if (existeMenu(id)) return;
+
+            const selectedOption = menuSelect.options[menuSelect.selectedIndex];
+            const text = selectedOption ? selectedOption.text : ("Menú Id " + id);
+
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center animate__animated animate__fadeIn';
+            li.setAttribute('data-menuid', id);
+
+            li.innerHTML = `
+                <span class="font-weight-bold text-dark"><i class="fas fa-check-circle text-success mr-2"></i> ${text}</span>
+                <button type="button" class="btn btn-sm btn-danger btnQuitarMenu shadow-sm px-3">
+                    <i class="fas fa-trash-alt mr-1"></i> Quitar
+                </button>
+                <input type="hidden" name="MenuIds" value="${id}" />
+            `;
+
+            lista.appendChild(li);
+            menuSelect.value = "";
+        }
+
+        function quitarMenu(e) {
+            const btn = e.target.closest('.btnQuitarMenu');
+            if (!btn) return;
+            const li = btn.closest('li');
+            if (li) {
+                li.classList.replace('animate__fadeIn', 'animate__fadeOut');
+                setTimeout(() => li.remove(), 300);
+            }
+        }
+
+        if (categoria) categoria.addEventListener('change', filtrarMenus);
+        if (btnAgregar) btnAgregar.addEventListener('click', agregarMenu);
+        if (lista) lista.addEventListener('click', quitarMenu);
+
+        filtrarMenus();
+    })();
+</script>

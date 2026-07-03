@@ -1,0 +1,63 @@
+@* @{
+
+    Layout = "_HojaLayout";
+
+    DateTime fecha = DateTime.Now;
+
+
+    }
+
+    @model IEnumerable<Database.Shared.Models.VentaServicio>
+
+    <img width="40"  src="/assets/images/farmamestlogo.png" alt="">
+    <div class="text-right" style="font-size: 12px;">
+    <label class=""><strong>Fecha y Hora de Emision: </strong>@fecha</label> &nbsp; &nbsp;
+
+    <br/>
+    </div>
+
+    <table class="table">
+    <thead>
+    <tr>
+    <th>Fecha Venta</th>
+    <th>Venta Servicio #</th>
+    <th>Vendedor</th>
+    <th>NoComprobante</th>
+    <th>Nombre</th>
+    <th>Cliente</th>
+    <th>Nit</th>
+    <th>Forma de Pago</th>
+    <th>Dirección</th>
+    <th>Total</th>
+    <th>Acciones</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var item in Model)
+    {
+    <tr>
+    <td>@item.FechaVenta</td>
+    <td>@item.Id</td>
+    <td>@item.Empleado.Nombre</td>
+    <td>@item.NoComprobante</td>
+    <td>@item.Nombres</td>
+    <td>@item.Paciente.Nombre</td>
+    <td>@item.Nit</td>
+    <td>@item.FormaPago</td>
+    <td>@item.Direccion</td>
+    <td>Q @item.DetalleServicio.Sum(a => a.Total)</td>
+    <td>
+    <a href="@Url.Action("Modificar","VentaServicio", new {id = @item.Id})"
+    class="btn btn-primary">
+    Ver detalles
+    </a>
+    @* <a href="@Url.Action("Eliminar","Venta", new {id = @item.Id})" class="btn
+    btn-danger">
+    Eliminar
+    </a>
+    </td>
+    </tr>
+    }
+    </tbody>
+    </table>
+       *@

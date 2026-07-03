@@ -1,0 +1,327 @@
+@using System.Linq
+@model sistema.Models.ConsultasViewModel
+
+<br />
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        @* ------------------ AGREGAR SERVICIOS ------------------ *@
+        @if (Model.HabilitarEdicion && !Model.Hospitalizada)
+        {
+            <div class="form-row">
+                <div class="col-md-12">
+                    <h5><b>Servicios (agregar)</b></h5>
+                </div>
+                <div class="col-md-12">
+                    <hr>
+                </div>
+                <div class="col-md-5">
+                    <label>Seleccionar servicio:</label>
+                    <select class="form-control select2bs4" style="width:100%" data-bind="options: servicios,
+                                           optionsText: 'ServicioNombreCodigo',
+                                           value: servicioSeleccionado,
+                                           event: {change:consultarPrecios}">
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label>Seleccionar precio:</label>
+                    <select class="form-control" data-bind="options: precios,
+                                           optionsText: 'PrecioNombreValor',
+                                           value: precioSeleccionado">
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label>Cantidad:</label>
+                    <input class="form-control" data-bind="value:servicioSeleccionadoCantidad" />
+                </div>
+                <div class="col-md-1">
+                    <label class="text-white">Agregar</label><br />
+                    <button class="btn btn-primary text-white" data-bind="click: agregarServicioConsulta">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+        }
+
+        @* ------------------ SERVICIOS AGREGADOS ------------------ *@
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Servicios agregados</b></h5>
+            </div>
+            <div class="col-md-12">
+                <hr />
+            </div>
+            <div class="col-md-12">
+                <div class="table-responsive">
+                    <table class='table table-hover'>
+                        <thead>
+                            <tr>
+                                @if (Model.HabilitarEdicion && !Model.Hospitalizada)
+                                {
+                                    <th>Aplicar</th>
+                                }
+                                <th>Codigo</th>
+                                <th>Nombre servicio</th>
+                                <th>Cantidad</th>
+                                <th>Precio</th>
+                                <th>Valor unitario</th>
+                                <th>Valor total</th>
+                                @if (Model.CitaTipoAtencion == "SEGURO")
+                                {
+                                    <th>Valor Cubierto Seguro</th>
+                                    <th>Valor Copago</th>
+                                }
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!--ko foreach: serviciosAgregadosConsulta-->
+                            <tr>
+                                @if (Model.HabilitarEdicion && !Model.Hospitalizada)
+                                {
+                                    <td>
+                                        <!--ko if:!Pagado-->
+                                        <input type="checkbox" class="form-control" data-bind="checked:Aplicar,
+                                                              event:{change:$root.actualizarTotales}" />
+                                        <!--/ko-->
+                                    </td>
+                                }
+                                <td data-bind="text: ServicioCodigo"></td>
+                                <td data-bind="text: NombreServicio"></td>
+                                <td data-bind="text: ServicioCantidad"></td>
+                                <td data-bind="text: PrecioNombre"></td>
+                                <td data-bind="text: PrecioValor"></td>
+                                <td data-bind="text: ServicioValorTotal"></td>
+                                @if (Model.CitaTipoAtencion == "SEGURO")
+                                {
+                                    <td>
+                                        @if (Model.HabilitarEdicion && !Model.Hospitalizada)
+                                        {
+                                            <input class="form-control" data-bind="value: ServicioValorCubiertoSeguro,
+                                                                      event:{change:$root.actualizarTotales}" />
+                                        }
+                                        else
+                                        {
+                                            <span data-bind="text:ServicioValorCubiertoSeguro"></span>
+                                        }
+                                    </td>
+                                    <td data-bind="text: ServicioValorCopago"></td>
+                                }
+                                <td>
+                                    @if (Model.HabilitarEdicion && !Model.Hospitalizada)
+                                    {
+                                        <!--ko if:!Pagado-->
+                                        <a class="btn btn-danger" style="color:white"
+                                           data-bind="click: $root.quitarServicioConsulta">
+                                            <i class="fa fa-trash"></i>
+                                        </a>
+                                        <!--/ko-->
+                                    }
+                                </td>
+                            </tr>
+                            <!--/ko-->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        @* ------------------ HISTORIAL DE SERVICIOS ------------------ *@
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Historial de servicios del paciente</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-12 table-responsive">
+                @{
+                    var serviciosHistorial = ViewBag.ServiciosHistorial as IEnumerable<dynamic>
+                                             ?? Enumerable.Empty<dynamic>();
+
+                    var serviciosAgrupados = serviciosHistorial
+                        .GroupBy(s => new
+                        {
+                            ConsultaId = (int)s.ConsultaId,
+                            Fecha = (DateTime)s.Fecha
+                        })
+                        .OrderByDescending(g => g.Key.Fecha)
+                        .ToList();
+
+                    var tieneHistorialServicios = serviciosAgrupados.Any();
+                }
+
+                @if (!tieneHistorialServicios)
+                {
+                    <p class="text-muted mb-3">
+                        No hay historial de servicios disponible para este paciente.
+                    </p>
+                }
+                else
+                {
+                    <table class="table table-hover display dataTable" id="historial-servicios-table">
+                        <thead>
+                            <tr>
+                                <th>No. Consulta</th>
+                                <th></th> @* detalle *@
+                                <th>Fecha</th>
+                                <th>Código</th>
+                                <th>Nombre servicio</th>
+                                <th>Cantidad</th>
+                                <th>Valor total</th>
+                                <th>PDF</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var grupo in serviciosAgrupados)
+                            {
+                                var lista = grupo.ToList();
+                                var multiple = lista.Count > 1;
+
+                                // Igual que exámenes: si viene Pagado, pintamos de verde
+                                bool filaPagada = lista.Count > 0 && lista[0].Pagado == true;
+
+                                <tr class="@(filaPagada ? "table-success" : "")">
+                                    <td>@grupo.Key.ConsultaId</td>
+                                    <td>
+                                        @if (multiple)
+                                        {
+                                            <button type="button" class="btn btn-link btn-sm text-primary toggle-servicios"
+                                                    data-consulta-id="@grupo.Key.ConsultaId">
+                                                <i class="fa fa-chevron-down"></i> Ver
+                                            </button>
+                                        }
+                                    </td>
+                                    <td>@grupo.Key.Fecha.ToString("dd/MM/yyyy")</td>
+
+                                    <td>
+                                        @{
+                                            var index = 0;
+                                            foreach (var s in lista)
+                                            {
+                                                if (index == 0)
+                                                {
+                                                    <div>@s.ServicioCodigo</div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="detalle-servicio-@grupo.Key.ConsultaId" style="display:none;">
+                                                        @s.ServicioCodigo
+                                                    </div>
+                                                }
+                                                index++;
+                                            }
+                                        }
+                                    </td>
+                                    <td>
+                                        @{
+                                            var index2 = 0;
+                                            foreach (var s in lista)
+                                            {
+                                                if (index2 == 0)
+                                                {
+                                                    <div>@s.ServicioNombre</div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="detalle-servicio-@grupo.Key.ConsultaId" style="display:none;">
+                                                        @s.ServicioNombre
+                                                    </div>
+                                                }
+                                                index2++;
+                                            }
+                                        }
+                                    </td>
+                                    <td>
+                                        @{
+                                            var index3 = 0;
+                                            foreach (var s in lista)
+                                            {
+                                                if (index3 == 0)
+                                                {
+                                                    <div>@s.Cantidad</div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="detalle-servicio-@grupo.Key.ConsultaId" style="display:none;">
+                                                        @s.Cantidad
+                                                    </div>
+                                                }
+                                                index3++;
+                                            }
+                                        }
+                                    </td>
+                                    <td>
+                                        @{
+                                            var index4 = 0;
+                                            foreach (var s in lista)
+                                            {
+                                                if (index4 == 0)
+                                                {
+                                                    <div>@s.ValorTotal</div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="detalle-servicio-@grupo.Key.ConsultaId" style="display:none;">
+                                                        @s.ValorTotal
+                                                    </div>
+                                                }
+                                                index4++;
+                                            }
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="javascript:void(0);" class="btn btn-link btn-sm" title="Ver PDF">
+                                            <span class="fa fa-file-pdf-o text-danger"></span>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        if (!$.fn.DataTable) return;
+
+        var $tablaServicios = $('#historial-servicios-table');
+
+        // Solo inicializar si la tabla existe (hay historial)
+        if ($tablaServicios.length && !$.fn.DataTable.isDataTable('#historial-servicios-table')) {
+            $tablaServicios.DataTable({
+                pageLength: 10,
+                order: [[0, "desc"]], // por No. Consulta
+                columnDefs: [
+                    { orderable: false, targets: [1, 7] } // botón detalle y PDF
+                ],
+                language: {
+                    search: "Buscar:",
+                    lengthMenu: "Mostrar _MENU_ registros por página",
+                    zeroRecords: "No se encontraron resultados",
+                    info: "Mostrando página _PAGE_ de _PAGES_",
+                    infoEmpty: "No hay registros disponibles",
+                    infoFiltered: "(filtrado de _MAX_ registros totales)",
+                    paginate: {
+                        first: "Primero",
+                        last: "Último",
+                        next: "Siguiente",
+                        previous: "Anterior"
+                    }
+                }
+            });
+
+            // Toggle de detalles de servicios
+            $tablaServicios.on('click', '.toggle-servicios', function () {
+                var button = $(this);
+                var consultaId = button.data('consulta-id');
+
+                $('.detalle-servicio-' + consultaId).toggle();
+
+                var icon = button.find('i');
+                icon.toggleClass('fa-chevron-down fa-chevron-up');
+            });
+        }
+    });
+</script>

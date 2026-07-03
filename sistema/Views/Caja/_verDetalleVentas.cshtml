@@ -1,0 +1,185 @@
+@using Database.Shared.Enumeraciones
+@using sistema.Models
+
+@model CajaDetallesViewModel
+
+@{
+    decimal totalVenta = 0.00m;
+}
+
+<div class="form-row">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <h4>Ventas</h4>
+                <hr />
+                @if (Model.AmbienteId == (int)AmbienteEnum.Global)
+                {
+                    @if (Model.SucursalId == null)
+                    {
+                        <b>Filtrar por sucursal:</b>
+                        <div class="form-row">
+                            <div class="col-md-2">
+                                <input type="checkbox" class="ventas-filtro-sucursal"
+                               id="ventas-filtro-sucursal-" checked onchange="aplicarFiltrosVentas()" />
+                                <label for="ventas-filtro-sucursal-">TODAS</label>
+                            </div>
+                            @foreach (var sucursal in Model.ListaSucursales)
+                            {
+                                <div class="col-md-2">
+                                    <input type="checkbox" class="ventas-filtro-sucursal"
+                               id="ventas-filtro-sucursal-@sucursal.Id" checked onchange="aplicarFiltrosVentas()" />
+                                    <label for="ventas-filtro-sucursal-@sucursal.Id">@sucursal.NombreSucursal</label>
+                                </div>
+                            }
+                        </div>
+                        <hr />
+                    }
+                    <b>Filtrar por ambiente:</b>
+                    <div class="form-row">
+                        <div class="col-md-2">
+                            <input type="checkbox" class="ventas-filtro-ambiente"
+                               id="ventas-filtro-ambiente-@((int)AmbienteEnum.Global)"
+                               checked onchange="aplicarFiltrosVentas()" />
+                            <label for="ventas-filtro-ambiente-@((int)AmbienteEnum.Global)">Global</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="checkbox" class="ventas-filtro-ambiente"
+                               id="ventas-filtro-ambiente-@((int)AmbienteEnum.Hospital)"
+                               checked onchange="aplicarFiltrosVentas()" />
+                            <label for="ventas-filtro-ambiente-@((int)AmbienteEnum.Hospital)">Hospital</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="checkbox" class="ventas-filtro-ambiente"
+                               id="ventas-filtro-ambiente-@((int)AmbienteEnum.Farmacia)"
+                               checked onchange="aplicarFiltrosVentas()" />
+                            <label for="ventas-filtro-ambiente-@((int)AmbienteEnum.Farmacia)">Farmacia</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="checkbox" class="ventas-filtro-ambiente"
+                               id="ventas-filtro-ambiente-@((int)AmbienteEnum.Clinica)"
+                               checked onchange="aplicarFiltrosVentas()" />
+                            <label for="ventas-filtro-ambiente-@((int)AmbienteEnum.Clinica)">Clinica</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="checkbox" class="ventas-filtro-ambiente"
+                               id="ventas-filtro-ambiente-@((int)AmbienteEnum.Laboratorio)"
+                               checked onchange="aplicarFiltrosVentas()" />
+                            <label for="ventas-filtro-ambiente-@((int)AmbienteEnum.Laboratorio)">Laboratorio</label>
+                        </div>
+                        <!-- NUEVO: Filtro para Emergencia -->
+                        <div class="col-md-2">
+                            <input type="checkbox" class="ventas-filtro-ambiente"
+                               id="ventas-filtro-ambiente-emergencia"
+                               checked onchange="aplicarFiltrosVentas()" />
+                            <label for="ventas-filtro-ambiente-emergencia">
+                                Emergencia
+                            </label>
+                        </div>
+                    </div>
+                }
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="table-responsive">
+                            <table class="mb-0 table table-hover ">
+                                <thead>
+                                    <tr>
+                                        <th>Sucursal</th>
+                                        <th>Ambiente</th>
+                                        <th>Fecha Venta</th>
+                                        <th>No. Venta</th>
+                                        <th>Comprobante</th>
+                                        <th>Descripción</th>
+                                        <th>Cliente</th>
+                                        <th>Vendedor</th>
+                                        <th>Forma de Pago</th>
+                                        <th>Monto Pagado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.Ventas == null || Model.Ventas.Count == 0)
+                                    {
+                                        <tr>
+                                            <td colspan="11">No hay ventas registradas</td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var venta in Model.Ventas)
+                                        {
+                                            // Determinar la clase CSS para el ambiente
+                                            var ambienteId = venta.AmbienteId;
+                                            var ambienteClase = "ventas-reg-ambiente-" + ambienteId;
+                                            
+                                            // Si es emergencia, agregar clase especial
+                                            if (venta.EsEmergencia)
+                                            {
+                                                ambienteClase += " ventas-reg-ambiente-emergencia";
+                                            }
+                                            
+                                            <tr class="ventas-reg-sucursal-@venta.SucursalId @ambienteClase">
+                                                <td>@venta.SucursalNombre</td>
+                                                <td>
+                                                    @if (venta.EsEmergencia)
+                                                    {
+                                                        <span class="badge badge-primary">Emergencia</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge badge-primary">@venta.AmbienteNombre</span>
+                                                    }
+                                                </td>
+                                                <td>@venta.FechaVenta</td>
+                                                <td>@venta.VentaId</td>
+                                                <td>@venta.Comprobante</td>
+                                                <td>@venta.Descripcion</td>
+                                                <td>@venta.Cliente</td>
+                                                <td>@venta.Vendedor</td>
+                                                <td>
+                                                    @if (venta.FormasPago != null && venta.FormasPago.Count > 0)
+                                                    {
+                                                        foreach (var formaPago in venta.FormasPago)
+                                                        {
+                                                            <span><b>@formaPago.NombreFormaPago</b>: @formaPago.Monto</span><br />
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge badge-danger">
+                                                            No hay formas de pago registradas
+                                                        </span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    Q <span class="ventas-valor-sucursal-@venta.SucursalId 
+                                                                       ventas-valor-ambiente-@venta.AmbienteId
+                                                                       @(venta.EsEmergencia ? "ventas-valor-ambiente-emergencia" : "")">
+                                                        @venta.Total
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <a href="@Url.Action("ReciboVentaPdf","CrearPDF",
+                                                    new {id = @venta.VentaId})" class="btn btn-danger">
+                                                        <i class="fas fa-file-pdf"></i> Recibo
+                                                    </a>
+                                                </td>
+                                            </tr>
+
+                                            totalVenta += @venta.Total;
+                                        }
+                                        <tr class="bg-dark text-light font-weight-bolder">
+                                            <td colspan="9">TOTAL</td>
+                                            <td>Q <span id="ventas-total">@totalVenta</span></td>
+                                            <td></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

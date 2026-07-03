@@ -1,0 +1,135 @@
+@model sistema.Models.TrasladoViewModel
+
+@Html.HiddenFor(a=>a.TrasladoId)
+@Html.HiddenFor(a=>a.EstadoTraslado)
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-6">
+                <label>Ubicacion de origen</label>
+                @if (Model.TrasladoId == null)
+                {
+                    <select class="form-control" asp-for="BodegaOrigenId" asp-items="Model.ListaBodegasOrigen">
+                        <option value="">Seleccione...</option>
+                    </select>
+                }
+                else
+                {
+                    <select class="form-control" disabled asp-for="BodegaOrigenId" asp-items="Model.ListaBodegasOrigen">
+                        <option value="">Seleccione...</option>
+                    </select>
+                }
+            </div>
+            <div class="col-md-6">
+                <label>Ubicacion de destino</label>
+                @if (Model.TrasladoId == null)
+                {
+                    <select class="form-control" asp-for="BodegaDestinoId" asp-items="Model.ListaBodegasDestino">
+                        <option value="">Seleccione...</option>
+                    </select>
+                }
+                else
+                {
+                    <select class="form-control" asp-for="BodegaDestinoId" disabled asp-items="Model.ListaBodegasDestino">
+                        <option value="">Seleccione...</option>
+                    </select>
+                }
+            </div>
+            <div class="col-md-12">
+                <label>Observaciones</label>
+                @Html.TextAreaFor(a=>a.Observaciones,new{@class="form-control"})
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-6">
+                <h5><b>PRODUCTOS EXISTENTES</b></h5><br />
+                <div class="table-responsive">
+                    <table class='table table-hover' id="tabla-traslado">
+                        <thead>
+                            <tr>
+                                <th>Codigo / Producto</th>
+                                <th>Unidad de venta</th>
+                                <th>Stock</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!--ko foreach: productosDisponibles-->
+                            <tr>
+                                <td data-bind="text:ProductoNombre"></td>
+                                <td data-bind="text:UnidadMedidaVentaNombre"></td>
+                                <td data-bind="text:CantidadExistente"></td>
+                                <td>
+                                    <button class="btn btn-primary" data-bind="click:$root.anniadirProductoTraslado">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <!--/ko-->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5><b>PRODUCTOS TRASLADADOS</b></h5>
+                    <button class="btn btn-info" data-bind="click: verProductosEnCompras">
+                        Ver en Cotizaciones
+                    </button>
+                </div>
+
+
+                <!-- Barra de búsqueda -->
+                <input type="text" class="form-control mb-2" placeholder="Buscar producto..." data-bind="value: searchQuery, valueUpdate: 'input'">
+
+                <div class="table-responsive">
+                    <table class='table table-hover' id="tabla-trasladados">
+                        <thead>
+                            <tr>
+                                <th style="display: none;">Fecha</th>
+                                <th>Codigo / Producto</th>
+                                <th>Unidad de venta</th>
+                                <th>Cantidad trasladada</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody data-bind="foreach: paginatedProductosTrasladados">
+                            <tr>
+                                <td style="display: none;"data-bind="text: FechaTraslado"></td>
+                                <td data-bind="text: ProductoNombre"></td>
+                                <td data-bind="text: UnidadMedidaVentaNombre"></td>
+                                <td>
+                                    <input class="form-control" data-bind="value: CantidadTrasladada" />
+                                </td>
+                                <td>
+                                    <button class="btn btn-danger" data-bind="click: $root.quitarProductoTraslado">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Contenedor de paginación -->
+                <div class="d-flex justify-content-center align-items-center mt-3">
+                    <button class="btn btn-secondary mx-2" data-bind="click: prevPage, enable: currentPage() > 1">
+                        Anterior
+                    </button>
+                    <span class="mx-2" data-bind="text: 'Página ' + currentPage() + ' de ' + totalPages()"></span>
+                    <button class="btn btn-secondary mx-2" data-bind="click: nextPage, enable: currentPage() < totalPages()">
+                        Siguiente
+                    </button>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+</div>

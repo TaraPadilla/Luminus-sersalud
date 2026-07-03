@@ -1,0 +1,243 @@
+@model sistema.Models.PacientesCambiarFaseViewModel
+@{
+    ViewData["Title"] = "Cambiar fase de tratamiento";
+}
+@Html.HiddenFor(m=>m.PacienteId)
+@Html.HiddenFor(m=>m.PacienteFaseTratamientoActual)
+@Html.HiddenFor(m=>m.FechaCambioFase)
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <h4><b>Cambiar fase de tratamiento</b></h4>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Datos del paciente</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-12">
+                <div class="form-row">
+                    <div class="col-md-4">
+                        <span><b>Nombre</b></span><br>
+                        @Model.PacienteNombre
+                    </div>
+                    <div class="col-md-4">
+                        <span><b>Fecha de registro</b></span><br>
+                        @Model.PacienteFechaRegistro
+                    </div>
+                    <div class="col-md-4">
+                        <span><b>Fase actual</b></span><br>
+                        @Model.PacienteFaseTratamientoActual
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br><br>
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Fase nueva</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-3">
+                <input type="radio" name="fase-nueva" data-bind="checked: faseNueva"
+                       value="adelgazamiento" /> Adelgazamiento
+            </div>
+            <div class="col-md-3">
+                <input type="radio" name="fase-nueva" data-bind="checked: faseNueva"
+                       value="mantenimiento1" /> Mantenimiento 1
+            </div>
+            <div class="col-md-3">
+                <input type="radio" name="fase-nueva" data-bind="checked: faseNueva"
+                       value="mantenimiento2" /> Mantenimiento 2
+            </div>
+            <div class="col-md-3">
+                <input type="radio" name="fase-nueva" data-bind="checked: faseNueva"
+                       value="mantenimiento3" /> Mantenimiento 3
+            </div>
+            <div class="col-md-12">
+                <label>Peso al iniciar fase</label>
+                @Html.TextBoxFor(m=>m.PesoAlIniciar,new{@class="form-control"})
+            </div>
+            <div class="col-md-12">
+                <label>Fecha de cambio</label>
+                @Html.TextBoxFor(m=>m.FechaCambioFase,new{@class="form-control",@type="date"})
+            </div>
+        </div>
+        <br><br>
+        <div class="form-row" data-bind="visible: verRequisitosMantenimiento1">
+            <div class="col-md-12">
+                <h5><b>¡Bienvenido a Mantenimiento!</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-12">
+                ¡Te ofrecemos otra poderosa razón para mantenerte bien!<br />
+                Siempre que te mantengas dentro de tu rango de peso saludable, gozarás del beneficio de que tu inversión
+                mensual sea de Q 1600 para que aproveches los mismos servicios que durante la fase de adelgazamiento
+                a un costo mucho menor.<br /><br />
+                MUY IMPORTANTE: En caso de salir del rango o de no asistir a la cita mensual de mantenimiento,
+                el costo de tratamiento regresa a ser el de adelgazamiento durante el tiempo que sea
+                necesario hasta regresar al rango de peso saludable establecido por la nutricionista.
+                <br><br>
+            </div>
+            <div class="col-md-12">
+                <h6><b>Consentimiento</b></h6>
+                <hr>
+            </div>
+            <div class="col-md-12 p-1">
+                <input type="checkbox" data-bind="checked: aceptaTerminosMantenimiento1" />
+                He tomado conocimiento de las políticas de mensualidad del mantenimiento en el programa PlusVida
+                <br><br>
+            </div>
+            <div class="col-md-12">
+                <h6><b>Firma del paciente</b></h6>
+                <hr>
+            </div>
+            <div class="col-md-12">
+                <canvas id="pizarra"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <button class="btn btn-primary" data-bind="click: guardarCambioFase">
+                    Guardar
+                </button>
+                <a class="btn btn-danger text-light" href="/Pacientes/Lista">
+                    Cancelar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.0.1/js/toastr.js"></script>
+<script type="text/javascript" src="~/js/moment.min.js"></script>
+<script type="text/javascript" src="~/js/daterangepicker.js"></script>
+<script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<script src="https://knockoutjs.com/downloads/knockout-3.5.1.js"></script>
+<script src="~/ViewModelKo/PacienteCambiarFaseVM.js"></script>
+<script>
+    //======================================================================
+    // VARIABLES
+    //======================================================================
+    let miCanvas = document.querySelector('#pizarra');
+    let lineas = [];
+    let correccionX = 0;
+    let correccionY = 0;
+    let pintarLinea = false;
+    // Marca el nuevo punto
+    let nuevaPosicionX = 0;
+    let nuevaPosicionY = 0;
+
+    let posicion = miCanvas.getBoundingClientRect()
+    correccionX = posicion.x;
+    correccionY = posicion.y;
+
+    miCanvas.width = 900;
+    miCanvas.height = 300;
+
+    //======================================================================
+    // FUNCIONES
+    //======================================================================
+
+    /**
+     * Funcion que empieza a dibujar la linea
+     */
+    function empezarDibujo() {
+        pintarLinea = true;
+        lineas.push([]);
+    };
+
+    /**
+     * Funcion que guarda la posicion de la nueva línea
+     */
+    function guardarLinea() {
+        lineas[lineas.length - 1].push({
+            x: nuevaPosicionX,
+            y: nuevaPosicionY
+        });
+    }
+
+    /**
+     * Funcion dibuja la linea
+     */
+    function dibujarLinea(event) {
+        event.preventDefault();
+        if (pintarLinea) {
+            let ctx = miCanvas.getContext('2d')
+            // Estilos de linea
+            ctx.lineJoin = ctx.lineCap = 'round';
+            ctx.lineWidth = 3;
+            // Color de la linea
+            ctx.strokeStyle = '#000000';
+            // Marca el nuevo punto
+            if (event.changedTouches == undefined) {
+                // Versión ratón
+                nuevaPosicionX = event.layerX;
+                nuevaPosicionY = event.layerY;
+            } else {
+                // Versión touch, pantalla tactil
+                nuevaPosicionX = event.changedTouches[0].pageX - correccionX;
+                nuevaPosicionY = event.changedTouches[0].pageY - correccionY;
+            }
+            // Guarda la linea
+            guardarLinea();
+            // Redibuja todas las lineas guardadas
+            ctx.beginPath();
+            lineas.forEach(function (segmento) {
+                ctx.moveTo(segmento[0].x, segmento[0].y);
+                segmento.forEach(function (punto, index) {
+                    ctx.lineTo(punto.x, punto.y);
+                });
+            });
+            ctx.stroke();
+        }
+    }
+
+    /**
+     * Funcion que deja de dibujar la linea
+     */
+    function pararDibujar() {
+        pintarLinea = false;
+        guardarLinea();
+    }
+
+    //======================================================================
+    // EVENTOS
+    //======================================================================
+
+    // Eventos raton
+    miCanvas.addEventListener('mousedown', empezarDibujo, false);
+    miCanvas.addEventListener('mousemove', dibujarLinea, false);
+    miCanvas.addEventListener('mouseup', pararDibujar, false);
+
+    // Eventos pantallas táctiles
+    miCanvas.addEventListener('touchstart', empezarDibujo, false);
+    miCanvas.addEventListener('touchmove', dibujarLinea, false);
+
+</script>
+}
+
+@section css{
+<style>
+    canvas {
+        width: 900px;
+        height: 300px;
+        background-color: #ffffff;
+        border: 1px solid black;
+    }
+</style>
+}

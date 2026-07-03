@@ -1,0 +1,102 @@
+﻿@model IEnumerable<sistema.Models.ExamenesRealizadosViewModel>
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Laboratorio - Exámenes realizados";
+
+    // Configuración estándar de membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    var fecha = DateTime.Now;
+
+    // Paginación simple por número fijo de filas
+    var rowsPerPage = 28; // ajusta si necesitas más/menos por hoja
+    var data = (Model ?? Enumerable.Empty<sistema.Models.ExamenesRealizadosViewModel>()).ToList();
+    var totalPages = (int)Math.Ceiling(data.Count / (double)rowsPerPage);
+}
+
+<div class="doc">
+    @for (int page = 0; page < totalPages; page++)
+    {
+        var slice = data.Skip(page * rowsPerPage).Take(rowsPerPage).ToList();
+        var i = 0;
+        <div class="page">
+            <!-- Título -->
+            <div class="doc-title">REPORTE - @ViewData["Title"]</div>
+            <div class="doc-underline"></div>
+
+            <!-- Fecha de emisión -->
+            <table class="table" style="border:0;">
+                <tbody>
+                    <tr>
+                        <td style="text-align:center; font-weight:700; border:0;">
+                            Fecha y hora de emisión: @fecha.ToString("dd/MM/yyyy hh:mm tt")
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Sección -->
+            <table class="section-title">
+                <tr>
+                    <td class="bar"></td>
+                    <td>Exámenes realizados</td>
+                </tr>
+            </table>
+
+            <!-- Tabla -->
+            <table class="block">
+                <tr>
+                    <td style="padding:0;">
+                        <table class="table">
+                            <colgroup>
+                                <col style="width:12%" />   @* # Examen *@
+                                <col />                     @* Paciente *@
+                                <col style="width:16%" />   @* Fecha realización *@
+                                <col style="width:18%" />   @* Médico Referido *@
+                                <col style="width:18%" />   @* Clínica referida *@
+                                <col style="width:12%" />   @* Estado *@
+                                <col style="width:16%" />   @* Usuario solicita *@
+                                <col style="width:16%" />   @* Usuario ingreso *@
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th># Examen</th>
+                                    <th>Paciente</th>
+                                    <th>Fecha realización</th>
+                                    <th>Médico referido</th>
+                                    <th>Clínica referida</th>
+                                    <th>Estado</th>
+                                    <th>Usuario solicita</th>
+                                    <th>Usuario ingreso</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in slice)
+                                {
+                                    var zebra = (i++ % 2 == 0) ? "kv-row" : "";
+                                    <tr class="@zebra">
+                                        <td><span class="value">@item.ExamenNumero</span></td>
+                                        <td><span class="value">@item.Paciente</span></td>
+                                        <td><span class="value">@item.FechaRealizacion</span></td>
+                                        <td><span class="value">@item.MedicoReferido</span></td>
+                                        <td><span class="value">@item.ClinicaReferida</span></td>
+                                        <td><span class="value">@item.Estado</span></td>
+                                        <td><span class="value">@item.UsuarioSolicita</span></td>
+                                        <td><span class="value">@item.UsuarioIngreso</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    }
+</div>

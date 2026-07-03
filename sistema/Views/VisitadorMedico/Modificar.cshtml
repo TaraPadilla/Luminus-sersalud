@@ -1,0 +1,34 @@
+@{
+    ViewData["Title"] = "Modificar Visitador Médico";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <h4><b>Modificar Visitador Médico</b></h4>
+        </div>
+    </div>
+</div>
+
+<!-- Formulario reutilizado -->
+@await Html.PartialAsync("_VisitadorMedicoForm")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <button class="btn btn-danger"
+                data-bind="click: function() { window.location.href = '/VisitadorMedico/Lista'; }">
+                Cancelar
+            </button>
+            <button id="btnGuardar" class="btn btn-success" data-bind="click: modificarVisitadorMedico">
+                Guardar Cambios
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script type="text/javascript" src="~/ViewModelKo/VisitadorMedico/VisitadorMedicoAddUpdateVM.js"></script>
+}

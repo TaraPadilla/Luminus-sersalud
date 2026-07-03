@@ -1,0 +1,509 @@
+@model sistema.Models.ModificarResultadosExamen
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    // Leer el valor del appsettings.json. 
+    string sufijoLayout = Configuration["Cliente"]; 
+    
+    // Concatenar para formar el nombre del Layout (ejemplo: "_Layout" + "SS")
+    // Si la clave trae el nombre completo (ej. "_LayoutSS"), simplemente asignalo directo.
+    Layout = $"_Layout{sufijoLayout}";
+    ViewData["Title"] = "Modificar";
+
+    // bool hayParasitos = false;
+}
+
+@{
+    
+    var parasitos = Model.DatosResultados.Any(r => r.DatosExamenesLabClinico?.Tipo == "Parasitos");
+    var macroscopico = Model.DatosResultados.Any(r => r.DatosExamenesLabClinico?.Tipo == "Macroscopico");
+    var microscopico = Model.DatosResultados.Any(r => r.DatosExamenesLabClinico?.Tipo == "Microscopico");
+    var quimico = Model.DatosResultados.Any(r => r.DatosExamenesLabClinico?.Tipo == "Quimico");
+    var sencible = Model.DatosResultados.Any(r => r.DatosExamenesLabClinico?.Tipo == "Sencible");
+    var intermedio = Model.DatosResultados.Any(r => r.DatosExamenesLabClinico?.Tipo == "Intermedio");
+    var resistente = Model.DatosResultados.Any(r => r.DatosExamenesLabClinico?.Tipo == "Resistente");
+    var bioquimico = Model.DatosResultados.Any(r => r.DatosExamenesLabClinico?.Tipo == "Bioquimico");
+    var citologico = Model.DatosResultados.Any(r => r.DatosExamenesLabClinico?.Tipo == "Citologico");
+    var movilidad = Model.DatosResultados.Any(r => r.DatosExamenesLabClinico?.Tipo == "Movilidad");
+    var morfologia = Model.DatosResultados.Any(r => r.DatosExamenesLabClinico?.Tipo == "Morfologia");
+}
+
+<style>
+   .tipos{
+        color: #1D50BD;
+        font-weight: bold;
+        font-size:16px;
+   }
+
+   
+</style>
+@await Html.PartialAsync("_MensajeExito")
+
+<form asp-controller="LaboratorioClinico" asp-action="ModificarResultadosExamen" method="post">
+
+    @Html.HiddenFor(a => a.ExamenId)
+    @Html.HiddenFor(a => a.Id)
+    @Html.HiddenFor(a => a.DetalleExamen.ExamenLabClinicoId)
+
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="form-row">
+                <div class="col-12 text-center">
+                    <h4><b>Modificar resultados de examen</b></h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="main-card mb-3 card">
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="col-md-12">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Campo</th>
+                                        <th>Resultado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+
+                                    
+                                    @for (int i = 0; i < Model.DatosResultados.Count(); i++)
+                                   {
+                                        var res = Model.DatosResultados[i];
+
+                                        var nombreCampo = Model.DatosResultados[i].DatosExamenesLabClinico == null ? ""
+                                        : Model.DatosResultados[i].DatosExamenesLabClinico.Campos;
+                                        var nombreTipo = Model.DatosResultados[i].DatosExamenesLabClinico == null ? ""
+                                        : Model.DatosResultados[i].DatosExamenesLabClinico.Tipo;
+                                        <tr>
+                                            @if (string.IsNullOrEmpty(nombreTipo))
+                                            {
+                                                <td><b>@nombreCampo</b></td>
+                                                <td>
+                                                    <input class="form-control" asp-for="DatosResultados[i].ValorResultado" />
+                                                    <input type="hidden" asp-for="DatosResultados[i].Id">
+                                                    <input type="hidden" asp-for="DatosResultados[i].DetalleExamenId">
+                                                    <input type="hidden" asp-for="DatosResultados[i].DatosExamenesLabClinicoId">
+                                                </td>
+                                                  
+                                            }
+                                            
+
+                                        </tr>
+                                    }
+
+                                    @if (macroscopico)
+                                    {
+                                        <tr>
+                                            <td class="tipos">Macroscopicos</td>
+                                        </tr>
+                                       
+                                    }
+
+                                    @for (int i = 0; i < Model.DatosResultados.Count(); i++)
+                                    {
+                                        var res = Model.DatosResultados[i];
+
+                                        var nombreCampo = Model.DatosResultados[i].DatosExamenesLabClinico == null ? ""
+                                        : Model.DatosResultados[i].DatosExamenesLabClinico.Campos;
+                                        var nombreTipo = Model.DatosResultados[i].DatosExamenesLabClinico == null ? ""
+                                        : Model.DatosResultados[i].DatosExamenesLabClinico.Tipo;
+                                        <tr>
+                                            @if (nombreTipo == "Macroscopico")
+                                            {
+                                                <td><b>@nombreCampo</b></td>
+                                                <td>
+                                                    <input class="form-control" asp-for="DatosResultados[i].ValorResultado" />
+                                                    <input type="hidden" asp-for="DatosResultados[i].Id">
+                                                    <input type="hidden" asp-for="DatosResultados[i].DetalleExamenId">
+                                                    <input type="hidden" asp-for="DatosResultados[i].DatosExamenesLabClinicoId">
+                                                </td>
+
+                                            }
+
+
+                                        </tr>
+                                    }
+
+
+                                    @if (parasitos)
+                                    {
+                                        <tr>
+                                            <td class="tipos">Parasitos</td>
+                                        </tr>
+
+                                    }
+                                    
+                                    @for (int i = 0; i < Model.DatosResultados.Count(); i++)
+                                    {
+
+                                        var nombreCampo = Model.DatosResultados[i].DatosExamenesLabClinico == null ? ""
+                                        : Model.DatosResultados[i].DatosExamenesLabClinico.Campos;
+                                        var nombreTipo = Model.DatosResultados[i].DatosExamenesLabClinico == null ? ""
+                                        : Model.DatosResultados[i].DatosExamenesLabClinico.Tipo;
+                                        <tr>
+                                            @*  En casos de que el tipo de campo del examne pertenezca a parasitos *@
+                                            @if (nombreTipo == "Parasitos")
+                                            {
+                                                @* hayParasitos = true; *@
+                                                <td><b>@nombreCampo</b></td>
+                                                <td>
+                                                    <div style="width: 120px; display: inline-block;">
+                                                        <label><b>Huevos</b></label><br />
+                                                        <input type="input" class="form-control" asp-for="DatosResultados[i].Huevos" />
+                                                    </div>
+                                                    <div style="width: 120px; display: inline-block;">
+                                                        <label><b>Larvas</b></label><br />
+                                                        <input type="input" class="form-control" asp-for="DatosResultados[i].Larvas" />
+                                                    </div>
+                                                    <div style="width: 120px; display: inline-block;">
+                                                        <label><b>Quistes</b></label><br />
+                                                        <input type="input" class="form-control" asp-for="DatosResultados[i].Quistes" />
+                                                    </div>
+                                                    <div style="width: 120px; display: inline-block;">
+                                                        <label><b>Trofozoitos</b></label><br />
+                                                        <input type="input" class="form-control" asp-for="DatosResultados[i].Trofozoitos" />
+                                                    </div>
+                                                    <input type="hidden" asp-for="DatosResultados[i].Id">
+                                                    <input type="hidden" asp-for="DatosResultados[i].DetalleExamenId">
+                                                    <input type="hidden" asp-for="DatosResultados[i].DatosExamenesLabClinicoId">
+                                                </td>
+
+
+                                            }
+
+                                        </tr>
+
+                                       
+                                    }
+                                    @if (microscopico)
+                                    {
+                                        <tr>
+                                            <td class="tipos">Microscopicos</td>
+                                        </tr>
+
+                                    }
+
+                                    @for (int i = 0; i < Model.DatosResultados.Count(); i++)
+                                    {
+                                        var res = Model.DatosResultados[i];
+
+                                        var nombreCampo = Model.DatosResultados[i].DatosExamenesLabClinico == null ? ""
+                                        : Model.DatosResultados[i].DatosExamenesLabClinico.Campos;
+                                        var nombreTipo = Model.DatosResultados[i].DatosExamenesLabClinico == null ? ""
+                                        : Model.DatosResultados[i].DatosExamenesLabClinico.Tipo;
+                                        <tr>
+                                            @if (nombreTipo == "Microscopico")
+                                            {
+                                                <td><b>@nombreCampo</b></td>
+                                                <td>
+                                                    <input class="form-control" asp-for="DatosResultados[i].ValorResultado" />
+                                                    <input type="hidden" asp-for="DatosResultados[i].Id">
+                                                    <input type="hidden" asp-for="DatosResultados[i].DetalleExamenId">
+                                                    <input type="hidden" asp-for="DatosResultados[i].DatosExamenesLabClinicoId">
+                                                </td>
+
+                                            }
+
+
+                                        </tr>
+                                    }
+
+
+                                    @if (quimico)
+                                    {
+                                        <tr>
+                                            <td class="tipos">Quimicos</td>
+                                        </tr>
+
+                                    }
+
+                                    @for (int i = 0; i < Model.DatosResultados.Count(); i++)
+                                    {
+                                        var res = Model.DatosResultados[i];
+
+                                        var nombreCampo = Model.DatosResultados[i].DatosExamenesLabClinico == null ? ""
+                                        : Model.DatosResultados[i].DatosExamenesLabClinico.Campos;
+                                        var nombreTipo = Model.DatosResultados[i].DatosExamenesLabClinico == null ? ""
+                                        : Model.DatosResultados[i].DatosExamenesLabClinico.Tipo;
+                                        <tr>
+                                            @if (nombreTipo == "Quimico")
+                                            {
+                                                <td><b>@nombreCampo</b></td>
+                                                <td>
+                                                    <input class="form-control" asp-for="DatosResultados[i].ValorResultado" />
+                                                    <input type="hidden" asp-for="DatosResultados[i].Id">
+                                                    <input type="hidden" asp-for="DatosResultados[i].DetalleExamenId">
+                                                    <input type="hidden" asp-for="DatosResultados[i].DatosExamenesLabClinicoId">
+                                                </td>
+
+                                            }
+
+
+                                        </tr>
+                                    }
+
+
+                                    @if (sencible)
+                                    {
+                                        <tr>
+                                            <td class="tipos">Sencibles</td>
+                                        </tr>
+
+                                    }
+
+                                    @for (int i = 0; i < Model.DatosResultados.Count(); i++)
+                                    {
+                                        var res = Model.DatosResultados[i];
+
+                                        var nombreCampo = Model.DatosResultados[i].DatosExamenesLabClinico == null ? ""
+                                        : Model.DatosResultados[i].DatosExamenesLabClinico.Campos;
+                                        var nombreTipo = Model.DatosResultados[i].DatosExamenesLabClinico == null ? ""
+                                        : Model.DatosResultados[i].DatosExamenesLabClinico.Tipo;
+                                        <tr>
+                                            @if (nombreTipo == "Sencible")
+                                            {
+                                                <td><b>@nombreCampo</b></td>
+                                                <td>
+                                                    <input class="form-control" asp-for="DatosResultados[i].ValorResultado" />
+                                                    <input type="hidden" asp-for="DatosResultados[i].Id">
+                                                    <input type="hidden" asp-for="DatosResultados[i].DetalleExamenId">
+                                                    <input type="hidden" asp-for="DatosResultados[i].DatosExamenesLabClinicoId">
+                                                </td>
+
+                                            }
+
+
+                                        </tr>
+                                    }
+
+
+                                     @if (intermedio)
+                                    {
+                                        <tr>
+                                            <td class="tipos">Intermedios</td>
+                                        </tr>
+
+                                    }
+
+                                    @for (int i = 0; i < Model.DatosResultados.Count(); i++)
+                                    {
+                                        var res = Model.DatosResultados[i];
+
+                                        var nombreCampo = Model.DatosResultados[i].DatosExamenesLabClinico == null ? ""
+                                        : Model.DatosResultados[i].DatosExamenesLabClinico.Campos;
+                                        var nombreTipo = Model.DatosResultados[i].DatosExamenesLabClinico == null ? ""
+                                        : Model.DatosResultados[i].DatosExamenesLabClinico.Tipo;
+                                        <tr>
+                                            @if (nombreTipo == "Intermedio")
+                                            {
+                                                <td><b>@nombreCampo</b></td>
+                                                <td>
+                                                    <input class="form-control" asp-for="DatosResultados[i].ValorResultado" />
+                                                    <input type="hidden" asp-for="DatosResultados[i].Id">
+                                                    <input type="hidden" asp-for="DatosResultados[i].DetalleExamenId">
+                                                    <input type="hidden" asp-for="DatosResultados[i].DatosExamenesLabClinicoId">
+                                                </td>
+
+                                            }
+
+
+                                        </tr>
+                                    }
+
+
+                                    @if (resistente)
+                                    {
+                                        <tr>
+                                            <td class="tipos">Resistentes</td>
+                                        </tr>
+
+                                    }
+
+                                    @for (int i = 0; i < Model.DatosResultados.Count(); i++)
+                                    {
+                                        var res = Model.DatosResultados[i];
+
+                                        var nombreCampo = Model.DatosResultados[i].DatosExamenesLabClinico == null ? ""
+                                        : Model.DatosResultados[i].DatosExamenesLabClinico.Campos;
+                                        var nombreTipo = Model.DatosResultados[i].DatosExamenesLabClinico == null ? ""
+                                        : Model.DatosResultados[i].DatosExamenesLabClinico.Tipo;
+                                        <tr>
+                                            @if (nombreTipo == "Resistente")
+                                            {
+                                                <td><b>@nombreCampo</b></td>
+                                                <td>
+                                                    <input class="form-control" asp-for="DatosResultados[i].ValorResultado" />
+                                                    <input type="hidden" asp-for="DatosResultados[i].Id">
+                                                    <input type="hidden" asp-for="DatosResultados[i].DetalleExamenId">
+                                                    <input type="hidden" asp-for="DatosResultados[i].DatosExamenesLabClinicoId">
+                                                </td>
+
+                                            }
+
+
+                                        </tr>
+                                    }
+
+                                    @if (bioquimico)
+                                    {
+                                        <tr>
+                                            <td class="tipos">Bioquimicos</td>
+                                        </tr>
+
+                                    }
+
+                                    @for (int i = 0; i < Model.DatosResultados.Count(); i++)
+                                    {
+                                        var res = Model.DatosResultados[i];
+
+                                        var nombreCampo = Model.DatosResultados[i].DatosExamenesLabClinico == null ? ""
+                                        : Model.DatosResultados[i].DatosExamenesLabClinico.Campos;
+                                        var nombreTipo = Model.DatosResultados[i].DatosExamenesLabClinico == null ? ""
+                                        : Model.DatosResultados[i].DatosExamenesLabClinico.Tipo;
+                                        <tr>
+                                            @if (nombreTipo == "Bioquimico")
+                                            {
+                                                <td><b>@nombreCampo</b></td>
+                                                <td>
+                                                    <input class="form-control" asp-for="DatosResultados[i].ValorResultado" />
+                                                    <input type="hidden" asp-for="DatosResultados[i].Id">
+                                                    <input type="hidden" asp-for="DatosResultados[i].DetalleExamenId">
+                                                    <input type="hidden" asp-for="DatosResultados[i].DatosExamenesLabClinicoId">
+                                                </td>
+
+                                            }
+
+
+                                        </tr>
+                                    }
+
+                                     @if (citologico)
+                                    {
+                                        <tr>
+                                            <td class="tipos">Citologicos</td>
+                                        </tr>
+
+                                    }
+
+                                    @for (int i = 0; i < Model.DatosResultados.Count(); i++)
+                                    {
+                                        var res = Model.DatosResultados[i];
+
+                                        var nombreCampo = Model.DatosResultados[i].DatosExamenesLabClinico == null ? ""
+                                        : Model.DatosResultados[i].DatosExamenesLabClinico.Campos;
+                                        var nombreTipo = Model.DatosResultados[i].DatosExamenesLabClinico == null ? ""
+                                        : Model.DatosResultados[i].DatosExamenesLabClinico.Tipo;
+                                        <tr>
+                                            @if (nombreTipo == "Citologico")
+                                            {
+                                                <td><b>@nombreCampo</b></td>
+                                                <td>
+                                                    <input class="form-control" asp-for="DatosResultados[i].ValorResultado" />
+                                                    <input type="hidden" asp-for="DatosResultados[i].Id">
+                                                    <input type="hidden" asp-for="DatosResultados[i].DetalleExamenId">
+                                                    <input type="hidden" asp-for="DatosResultados[i].DatosExamenesLabClinicoId">
+                                                </td>
+
+                                            }
+
+
+                                        </tr>
+                                    }
+
+                                     @if (movilidad)
+                                    {
+                                        <tr>
+                                            <td class="tipos">Movilidad</td>
+                                        </tr>
+
+                                    }
+
+                                    @for (int i = 0; i < Model.DatosResultados.Count(); i++)
+                                    {
+                                        var res = Model.DatosResultados[i];
+
+                                        var nombreCampo = Model.DatosResultados[i].DatosExamenesLabClinico == null ? ""
+                                        : Model.DatosResultados[i].DatosExamenesLabClinico.Campos;
+                                        var nombreTipo = Model.DatosResultados[i].DatosExamenesLabClinico == null ? ""
+                                        : Model.DatosResultados[i].DatosExamenesLabClinico.Tipo;
+                                        <tr>
+                                            @if (nombreTipo == "Movilidad")
+                                            {
+                                                <td><b>@nombreCampo</b></td>
+                                                <td>
+                                                    <input class="form-control" asp-for="DatosResultados[i].ValorResultado" />
+                                                    <input type="hidden" asp-for="DatosResultados[i].Id">
+                                                    <input type="hidden" asp-for="DatosResultados[i].DetalleExamenId">
+                                                    <input type="hidden" asp-for="DatosResultados[i].DatosExamenesLabClinicoId">
+                                                </td>
+
+                                            }
+
+
+                                        </tr>
+                                    }
+
+                                    @if (morfologia)
+                                    {
+                                        <tr>
+                                            <td class="tipos">Morfologia</td>
+                                        </tr>
+
+                                    }
+
+                                    @for (int i = 0; i < Model.DatosResultados.Count(); i++)
+                                    {
+                                        var res = Model.DatosResultados[i];
+
+                                        var nombreCampo = Model.DatosResultados[i].DatosExamenesLabClinico == null ? ""
+                                        : Model.DatosResultados[i].DatosExamenesLabClinico.Campos;
+                                        var nombreTipo = Model.DatosResultados[i].DatosExamenesLabClinico == null ? ""
+                                        : Model.DatosResultados[i].DatosExamenesLabClinico.Tipo;
+                                        <tr>
+                                            @if (nombreTipo == "Morfologia")
+                                            {
+                                                <td><b>@nombreCampo</b></td>
+                                                <td>
+                                                    <input class="form-control" asp-for="DatosResultados[i].ValorResultado" />
+                                                    <input type="hidden" asp-for="DatosResultados[i].Id">
+                                                    <input type="hidden" asp-for="DatosResultados[i].DetalleExamenId">
+                                                    <input type="hidden" asp-for="DatosResultados[i].DatosExamenesLabClinicoId">
+                                                </td>
+
+                                            }
+
+
+                                        </tr>
+                                    }
+                                   
+                               </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="form-row">
+                <div class="col-md-12">
+                    <button class="btn btn-success">Guardar resultados</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</form>
+
+
+@section Scripts{
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.0.1/js/toastr.js"></script>
+<script type="text/javascript" src="~/js/moment.min.js"></script>
+<script type="text/javascript" src="~/js/daterangepicker.js"></script>
+<script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+}

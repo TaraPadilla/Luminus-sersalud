@@ -1,0 +1,160 @@
+@using Database.Shared.Paginacion;
+@model List<Database.Shared.Models.Servicio>
+
+@{
+    ViewData["Title"] = "Lista servicios";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <center><h4><b>Servicios</b></h4></center>
+                <hr />
+                <a href="/Servicio/Nuevo" class="btn btn-primary"><i class="fa fa-plus"></i>&nbsp;Nuevo</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* <div class="col-md-6">
+    <a href="@Url.Action("ServiciosPdf","CrearPDF")" class="btn btn-primary">
+    Generar Pdf
+    </a>
+    </div> *@
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="tabla-servicios">
+                <thead>
+                    <tr>
+                        <th>Codigo</th>
+                        <th>Servicio</th>
+                        <th>Sucursales</th>
+                        <th>Duraci&oacute;n</th>
+                        <th>Precios</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        var duracionHoras = item.DuracionHoras ?? 0;
+                        var duracionMinutos = item.DuracionMinutos ?? 0;
+                        <tr>
+                            <td>@item.CodigoInterno</td>
+                            <td>
+                                <b>@item.NombreServicio</b><br>
+                                <i>@item.Descripcion</i>
+                            </td>
+                            <td>
+                                @if (item.SucursalServicios != null && item.SucursalServicios.Count() > 0)
+                                {
+                                    foreach (var sucursal in item.SucursalServicios)
+                                    {
+                                        @if (sucursal.Activar)
+                                        {
+                                            <label class="badge-success col-md-12">@sucursal.Sucursal.NombreSucursal</label>
+                                        }
+                                    }
+                                }
+                            </td>
+                            <td>@(duracionHoras+"h"+duracionMinutos+"m")</td>
+                            <td>
+                                @if (item.ServiciosPrecios != null && item.ServiciosPrecios.Count() > 0)
+                                {
+                                    <!-- 
+                                    1) El select con un id único basado en item.Id
+                                    2) Un span que mostrará el precio elegido
+                                    -->
+                                    <select id="select-precios-@item.Id" class="form-control select-precios" style="width: 150px;">
+                                        @foreach (var precio in item.ServiciosPrecios)
+                                        {
+                                            if (precio.Activar)
+                                            {
+                                                if (precio.PrecioId == item.PrecioId)
+                                                {
+                                                    <option value="@precio.PrecioId" selected>
+                                                        (Principal) @precio.Precio.NombrePrecio - @precio.Valor
+                                                    </option>
+                                                }
+                                                else
+                                                {
+                                                    <option value="@precio.PrecioId">
+                                                        @precio.Precio.NombrePrecio - @precio.Valor
+                                                    </option>
+                                                }
+                                            }
+                                        }
+                                    </select>
+
+                                    <!-- Elemento donde se imprime el texto del precio seleccionado -->
+                                    <span id="price-display-@item.Id" style="margin-left: 8px; font-weight: bold;">
+                                        <!-- Opcionalmente, podrías mostrar el precio principal por defecto -->
+                                        @(item.ServiciosPrecios
+                                        .Where(p => p.Activar && p.PrecioId == item.PrecioId)
+                                        .Select(p => $"(Principal) {p.Precio.NombrePrecio} - {p.Valor}")
+                                        .FirstOrDefault() 
+                                        ?? "Seleccione un precio")
+                                    </span>
+                                }
+                                else
+                                {
+                                    <i>No hay precios registrados</i>
+                                }
+                            </td>
+                            <td>
+                                <a href="@Url.Action("Modificar","Servicio", new {id = @item.Id})" class="btn btn-warning text-white">
+                                    <i class="fa fa-edit"></i>
+                                </a>
+                                <a href="@Url.Action("Eliminar","Servicio", new {id = @item.Id})" class="btn btn-danger">
+                                    <i class="fa fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/ViewModelKo/ServiciosListaVM.js"></script>
+
+    <!-- Librerías Select2 -->
+    <script src="~/lib/select2/js/select2.full.min.js"></script>
+    <link rel="stylesheet" href="~/lib/select2/css/select2.min.css" />
+
+    <script>
+        $(document).ready(function() {
+            // Inicializamos select2
+            $('.select-precios').select2({
+                placeholder: 'Selecciona un precio',
+                allowClear: true,
+                width: '150px'
+            });
+
+            // Escuchamos el evento "change" en cada select
+            $('.select-precios').on('change', function () {
+                // 1) Tomar el texto de la opción seleccionada
+                const selectedText = $(this).find('option:selected').text();
+
+                // 2) Obtener el id del <select>, que contiene el item.Id
+                const selectId = $(this).attr('id'); // e.g. "select-precios-5"
+
+                // 3) Construimos el id del <span> => "price-display-5", por ejemplo
+                //    asumiendo que inicias con "select-precios-" y tu contenedor con "price-display-"
+                const displayId = selectId.replace('select-precios-', 'price-display-');
+
+                // 4) Actualizamos el contenido del span
+                $('#' + displayId).text(selectedText);
+            });
+        });
+    </script>
+}

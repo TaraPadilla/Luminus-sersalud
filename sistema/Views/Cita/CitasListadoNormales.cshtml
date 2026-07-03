@@ -1,0 +1,130 @@
+@using System;
+@using System.Globalization;
+@model sistema.Models.ReporteCitasViewModel
+
+@{
+    Layout = "_HojaLayout";
+}
+
+    <div>
+        <div class="text-center" style="border: 1px black solid;">
+            <h4> Reporte de Citas </h4>
+            <h6>RED OWL SOFTWARE</h6>
+        </div>
+    </div>
+    <br>
+    <div>
+        <span class="font-weight-bold">FECHA DE EMISI&#211;N </span>
+        <span> @DateTime.Now.ToString("D",CultureInfo.CreateSpecificCulture("Es-GT")).ToUpperInvariant()</span>
+    </div>
+
+    <div>
+        <span class="font-weight-bold">USUARIO QUE LO EMITE </span>
+        <span> @Model.Usuario </span>
+    </div>
+
+    <div>
+        <span class="font-weight-bold">Lugar </span>
+        <span> Clínica </span>
+    </div>
+<br>
+
+        <table class="table table-bordered">
+                    <thead>
+                    <tr>
+
+                            <th style="background: #1f4724 !important; color: white;">Fecha</th>
+                            <th style="background: #1f4724 !important; color: white;">Hora</th>
+                            <th style="background: #1f4724 !important; color: white;">Especialdad</th>
+                            <th style="background: #1f4724 !important; color: white;">Doctor</th>
+                            <th style="background: #1f4724 !important; color: white;">Servicio</th>
+                            <th style="background: #1f4724 !important; color: white;">Paciente</th>
+                            <th style="background: #1f4724 !important; color: white;">Número</th>
+                            <th style="background: #1f4724 !important; color: white;">Asitencia</th>
+            @* <th>Observaciones</th> *@
+                            <th style="background: #1f4724 !important; color: white;">Usuario</th>
+                            <th style="background: #1f4724 !important; color: white;">Menor de edad</th>
+                            <th style="background: #1f4724 !important; color: white;">Nombre encargado</th>
+            @* <th>Observaciones</th> *@
+                    </tr>
+                    </thead>
+                    <tbody>
+        @foreach (var item in Model.Citas)
+        {
+            var cliente = item.Paciente == null ? "" : item.Paciente.Nombre;
+            var telefono = item.Paciente == null ? "" : item.Paciente.Telefono;
+            var celular = item.Paciente == null ? "" : item.Paciente.Celular;
+            var sexo = item.Paciente == null ? "" : item.Paciente.sexoText;
+
+            var background = "";
+            var color = "";
+
+            @if (item.EspecialidadText == "Medicina general")
+            {
+                background = "#2fb9e7";
+                color = "black";
+            }
+            else if (item.EspecialidadText == "Medicina estética")
+            {
+                background = "#A02B4E";
+                color = "white";
+            }
+            else if (item.EspecialidadText == "Ginecología y Obstetricia")
+            {
+                background = "#e660c3";
+                color = "white";
+            }
+            else if (item.EspecialidadText == "Pediatría")
+            {
+                background = "#ffa500";
+                color = "black";
+            }
+            else if (item.EspecialidadText == "Cirugía")
+            {
+                background = "#808080";
+                color = "white";
+            }
+
+            else if (item.EspecialidadText == "Traumatología")
+            {
+                background = "#000000";
+                color = "white";
+            }
+
+            else if (item.EspecialidadText == "Medicina interna")
+            {
+                background = "#8B4513";
+                color = "white";
+            }
+
+
+            else if (item.EspecialidadText == "Laboratorio clínico")
+            {
+                background = "#008000";
+                color = "white";
+            }
+
+
+                                <tr>
+                                    <td>@((DateTime)item.FechaInicio).ToString("dd/MM/yyyy") </td>
+                                    <td>@((DateTime)item.FechaInicio).ToString("HH:mm")</td>
+                                    <td style="background: @background; color: @color"> @item.EspecialidadText</td>
+                                    <td> @item.EmpleadoText </td>
+                                    <td> @item.ServicioId </td>
+                                    <td>@cliente</td>
+                                    <td>@telefono</td>
+                                    <td>@item.EstadoCita</td>
+                                    <td> @item.PersonText </td>
+                                    <td>@item.EsMenorDeEdadText</td>
+                                    <td>@item.NombreEncargado</td>
+                               </tr>
+        }
+                    </tbody>
+        </table>
+
+
+
+
+
+
+

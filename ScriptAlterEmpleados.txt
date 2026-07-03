@@ -1,0 +1,2 @@
+ALTER TABLE "Empleados" 
+RENAME COLUMN "Telefono_3" TO "Email";

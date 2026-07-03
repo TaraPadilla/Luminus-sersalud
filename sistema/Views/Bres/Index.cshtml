@@ -1,0 +1,177 @@
+@{
+    ViewData["Title"] = "BRES";
+}
+
+<div class="container-fluid mt-3">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+
+                    <div class="d-flex flex-wrap align-items-center justify-content-between mb-3">
+                        <div>
+                            <h5 class="mb-0">BALANCE, REQUISICIÓN Y ENVÍO DE SUMINISTROS</h5>
+                            <small class="text-muted">MEDICAMENTOS</small>
+                        </div>
+
+                        <div class="btn-group mt-2 mt-sm-0" role="group" aria-label="Exportaciones">
+                            <a class="btn btn-success" asp-controller="Bres" asp-action="ExportarExcel">
+                                <i class="fa fa-file-excel-o"></i> Excel
+                            </a>
+                            <a class="btn btn-danger" asp-controller="Bres" asp-action="ExportarPdf" target="_blank">
+                                <i class="fa fa-file-pdf-o"></i> PDF
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="row mb-2">
+                        <div class="col-md-4 col-sm-12">
+                            <strong>Unidad:</strong> Hospital Pedro de Bethancourt
+                        </div>
+                        <div class="col-md-3 col-sm-12">
+                            <strong>Fecha de Elaboración:</strong> 01/02/2026
+                        </div>
+                        <div class="col-md-5 col-sm-12">
+                            <strong>Niveles de Seguridad:</strong> Mín 3 / Máx 6
+                            &nbsp;&nbsp;|&nbsp;&nbsp;
+                            <strong>Mes:</strong> 3
+                            &nbsp;&nbsp;
+                            <strong>Año:</strong> 2026
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4 col-sm-12">
+                            <strong>Cuantos servicios deben informar:</strong> 3
+                        </div>
+                        <div class="col-md-4 col-sm-12">
+                            <strong>Cuantos servicios informan:</strong> 3
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table id="tabla-bres" class="table table-bordered table-sm w-100">
+                            <thead>
+                                <tr>
+                                    <th>No.</th>
+                                    <th>CODIGO DE FINANZAS</th>
+                                    <th>CODIGO MINISTERIO</th>
+                                    <th>INDICADOR</th>
+                                    <th>ACTIVO/INACTIVO</th>
+                                    <th>DESCRIPCION DE PRODUCTO</th>
+                                    <th>DESCRIPCION DE PRODUCTO DEL MINISTERIO</th>
+                                    <th>MEDIDA</th>
+                                    <th>SALDO MES ANTERIOR</th>
+                                    <th>ENTRADA A NIVEL SUPERIOR</th>
+                                    <th>ENTREGA USUARIO</th>
+                                    <th>REAJUSTES (+) (-)</th>
+                                    <th>EXISTENCIA A</th>
+                                    <th>EXISTENCIA</th>
+                                    <th>PROMEDIO CONSUMO</th>
+                                    <th>EXISTENC MES</th>
+                                    <th>A SOLICITAR</th>
+                                    <th>PRECIO UNITARIO</th>
+                                    <th>TOTAL</th>
+                                    <th>OBSERVACIONES</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Datos quemados (mock) -->
+                                <tr>
+                                    <td>4</td>
+                                    <td>25</td>
+                                    <td></td>
+                                    <td></td>
+                                    <td>Inactivo</td>
+                                    <td>Aciclovir, Concentración: 200mg; Forma farmacéutica: Tableta; Vía de administración: Oral;</td>
+                                    <td></td>
+                                    <td>Unidad/1 Unidad(es)</td>
+                                    <td>0.00</td>
+                                    <td>0.00</td>
+                                    <td>0.00</td>
+                                    <td>0.00</td>
+                                    <td>0.00</td>
+                                    <td>0.00</td>
+                                    <td>2.00</td>
+                                    <td>0.00</td>
+                                    <td>12.00</td>
+                                    <td>Q 0.37</td>
+                                    <td>Q 4.44</td>
+                                    <td></td>
+                                </tr>
+
+                                <tr>
+                                    <td>3</td>
+                                    <td>59479</td>
+                                    <td>MX0007430101</td>
+                                    <td></td>
+                                    <td>Activo</td>
+                                    <td>Acetaminofén (paracetamol), Concentración: 10mg/ml; Forma farmacéutica: solución inyectable; vía: intravenosa;</td>
+                                    <td></td>
+                                    <td>Bols, 100 Mililitro</td>
+                                    <td>0.00</td>
+                                    <td>0.00</td>
+                                    <td>0.00</td>
+                                    <td>0.00</td>
+                                    <td>0.00</td>
+                                    <td>0.00</td>
+                                    <td>2300.00</td>
+                                    <td>0.00</td>
+                                    <td>13800.00</td>
+                                    <td>Q 18.10</td>
+                                    <td>Q 249,780.00</td>
+                                    <td></td>
+                                </tr>
+
+                                <tr>
+                                    <td>17</td>
+                                    <td>90480</td>
+                                    <td>MX0038430201</td>
+                                    <td></td>
+                                    <td>Activo</td>
+                                    <td>Albúmina humana, Concentración: 20%; Forma farmacéutica: Solución inyectable; Vía: intravenosa;</td>
+                                    <td></td>
+                                    <td>Vial, 50 Mililitro</td>
+                                    <td>735.00</td>
+                                    <td>0.00</td>
+                                    <td>680.00</td>
+                                    <td>55.00</td>
+                                    <td>110.00</td>
+                                    <td>110.00</td>
+                                    <td>450.00</td>
+                                    <td>0.24</td>
+                                    <td>2645.00</td>
+                                    <td>Q 375.00</td>
+                                    <td>Q 991,875.00</td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#tabla-bres').DataTable({
+                responsive: false,
+                scrollX: true,
+                paging: true,
+                pageLength: 10,
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]],
+                ordering: true,
+                searching: true,
+                info: true,
+                autoWidth: false,
+                language: {
+                    url: "//cdn.datatables.net/plug-ins/1.10.20/i18n/Spanish.json"
+                }
+            });
+        });
+    </script>
+}

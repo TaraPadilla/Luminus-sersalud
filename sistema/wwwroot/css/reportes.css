@@ -1,0 +1,33 @@
+.receipt-main-title
+{
+  font-family: "Arial Black", Arial, sans-serif;
+}
+
+.receipt-slogan
+{
+font-family: "Arial", Arial, sans-serif;
+  font-size: 0.55em;
+}
+
+
+.farm-info
+{
+    margin: 0;
+    padding: 0;
+    text-align: center;
+}
+
+.farm-info .info-farm-content{
+    font-size: 0.65em;
+}
+
+.normal-info .info-farm-content{
+    font-size: 0.65em;
+}
+
+.farm-normalinfo{
+
+}
+
+.farm-i{
+}

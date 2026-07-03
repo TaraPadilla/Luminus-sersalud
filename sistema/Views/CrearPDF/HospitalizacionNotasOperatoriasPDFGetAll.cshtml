@@ -1,0 +1,158 @@
+@using farmamest.Models
+@model NotaMedica2ListaViewModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Hospitalización - Notas Operatorias";
+
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+}
+
+<div class="doc">
+
+    <!-- Título principal -->
+    <div class="doc-title">REPORTE - @ViewData["Title"]</div>
+    <div class="doc-underline"></div>
+
+    <!-- Fecha de emisión -->
+    <table class="table" style="border:0;">
+        <tbody>
+            <tr>
+                <td style="text-align:center; font-weight:700; border:0;">
+                    Fecha y hora de emisión: @fecha.ToString("dd/MM/yyyy hh:mm tt")
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- DATOS DEL PACIENTE -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Datos del paciente</td>
+        </tr>
+    </table>
+
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table threecol">
+                    <colgroup>
+                        <col />
+                        <col />
+                        <col />
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Sexo</th>
+                            <th>Edad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="kv-row">
+                            <td><span class="value">@Model.PacienteNombre</span></td>
+                            <td><span class="value">@Model.PacienteSexoText</span></td>
+                            <td><span class="value">@Model.PacienteEdad</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- MÉDICO ASIGNADO -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Médico asignado</td>
+        </tr>
+    </table>
+
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table threecol">
+                    <colgroup>
+                        <col />
+                        <col />
+                        <col />
+                    </colgroup>
+                    <tbody>
+                        <tr class="kv-row">
+                            <td>
+                                <span class="label">Nombre</span>
+                                <span class="value">@Model.EmpleadoText</span>
+                            </td>
+                            <td>
+                                <span class="label">Colegiatura</span>
+                                <span class="value">@Model.ColegioEmpleado</span>
+                            </td>
+                            <td>
+                                <span class="label">Especialidad</span>
+                                <span class="value">@Model.EmpleadoEspecialidad</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- NOTAS OPERATORIAS -->
+    @foreach (var nota in Model.NotasMedicas)
+    {
+        <table class="section-title" style="margin-top:14px;">
+            <tr>
+                <td class="bar"></td>
+                <td>Nota Operatoria #@nota.Id</td>
+            </tr>
+        </table>
+
+        <table class="block">
+            <tr>
+                <td style="padding:0;">
+                    <table class="table">
+                        <tbody>
+                            <tr class="kv-row">
+                                <td style="width:25%;">
+                                    <span class="label">Diagnóstico</span>
+                                </td>
+                                <td class="notes">
+                                    <span class="value" style="white-space:pre-wrap;">
+                                        @nota.Diagnostico
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr class="kv-row">
+                                <td>
+                                    <span class="label">Profesional</span>
+                                </td>
+                                <td>
+                                    <span class="value">@nota.Profesional</span>
+                                </td>
+                            </tr>
+                            <tr class="kv-row">
+                                <td>
+                                    <span class="label">Fecha y hora</span>
+                                </td>
+                                <td>
+                                    <span class="value">@nota.FechaRegistro</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    }
+
+</div>

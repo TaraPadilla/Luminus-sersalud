@@ -1,0 +1,105 @@
+@using sistema.Models
+@model EmergenciasListaVM
+@{
+    ViewData["Title"] = "Emergencias - " + ViewData["Estado"];
+
+    var urlGenerarVenta = Url.Action("GenerarVenta", "Consultas", new { id = 0 });
+
+}
+@Html.HiddenFor(a => a.Ingresadas)
+
+<div class="main-card mb-card card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-10">
+                <center>
+                    <h4><b>Emergencias - @ViewData["Estado"]</b></h4>
+                </center>
+            </div>
+            <div class="col-md-2">
+                <a href="/Emergencias/Nueva" class="btn btn-primary">Nueva</a>
+            </div>
+        </div>
+    </div>
+</div>
+<br />
+<div class="main-card mb-card card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12 text-primary" id="texto-cargando-emergencias" style="display:none">
+                Cargando emergencias...
+            </div>
+            <div class="col-md-12 text-danger" id="texto-error-cargando-emergencias" style="display:none">
+                Error al consultar emergencias.
+                <a href="#" data-bind="click:consultarEmergencias">Reintentar</a>
+            </div>
+            <div class="col-md-12 table-responsive">
+                <table class="table table-hover" id="tabla-emergencias">
+                    <thead>
+                        <tr>
+                            <th>No.</th>
+                            <th>Fecha de registro</th>
+                            <th>Paciente</th>
+                            <th>Valor total</th>
+                            @if(!Model.Ingresadas){
+                                <th>Estado</th>
+                            }
+                            @if (!Model.Ingresadas)
+                            {
+                                <th></th>
+                            }
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!--ko foreach:emergencias-->
+                        <tr>
+                            <td data-bind="text:EmergenciaId"></td>
+                            <td data-bind="text:EmergenciasFechaRegistro"></td>
+                            <td data-bind="text:PacienteNombre"></td>
+                            <td>
+                                Q <span data-bind="text:EmergenciaValorTotal"></span>
+
+                            </td>
+                            @if(!Model.Ingresadas){
+                                <td>
+                                    <span class="badge badge-pill" data-bind="text: Pagado ? 'Pagado' : 'Pendiente', 
+                                        css: { 'badge-success': Pagado, 'badge-danger': !Pagado }">
+                                    </span>
+                                </td>
+                            }
+                            @if (!Model.Ingresadas)
+                            {
+                                <td>
+                                    <a class="btn btn-warning"
+                                           data-bind="attr:{href:'/Emergencias/Editar?emergenciaId='+EmergenciaId}, visible: !Pagado">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+
+                                    <a class="btn btn-primary text-white"   data-bind="attr:{href:'/Venta/NuevaVentaUnificada?isEmergencia=true&emergenciaId='+EmergenciaId}, 
+                                        visible: !Pagado">
+                                        <i class="fas fa-store"></i>
+                                    </a>
+                                </td>
+                            }
+                            <td>
+                                <a class="btn btn-primary text-white"
+                                       data-bind="attr:{href:'/Emergencias/Detalles?emergenciaId='+EmergenciaId}">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+
+
+
+                            </td>
+                        </tr>
+                        <!--/ko-->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/ViewModelKo/EmergenciasListaVM.js"></script>
+}

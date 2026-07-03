@@ -1,0 +1,130 @@
+@model sistema.Models.SignosVitalesViewModel
+@{
+    ViewData["Title"] = "Editar Consulta";
+}
+<script>
+    var MedicamentosOtrosData = @Html.Raw(Json.Serialize(Model.MedicamentosOtros));
+</script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+@Html.HiddenFor(m => m.ConsultaId)
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="col-md-12">
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="text-center">
+                <h4><b>Ingresar Signos Vitales</b></h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+
+        <br />
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-12">
+                        <h5><b>Examen físico</b></h5>
+                        <hr>
+                    </div>
+                    <div class="col-md-5">
+                        <b>ESTADO GENERAL:</b><br>
+                        @Html.TextBoxFor(m => m.ExamenFisicoEstadoGeneral, new
+                            {
+                                @class = "form-control dato-consulta"
+                            })
+                    </div>
+                    <div class="col-md-4">
+                        <b>PESO (KG):</b><br />
+                        @Html.TextBoxFor(m => m.ExamenFisicoPeso,
+                                 new
+                                 {
+                                     @class = "form-control dato-consulta",
+                                     @placeholder = "Peso",
+                                     @onchange = "getIMC()"
+                                 })
+                    </div>
+                    <div class="col-md-3">
+                        TALLA (M):<br />
+                        @Html.TextBoxFor(m => m.ExamenFisicoTalla,
+                                 new
+                                 {
+                                     @class = "form-control dato-consulta",
+                                     @placeholder = "Talla",
+                                     @onchange = "getIMC()"
+                                 })
+                    </div>
+                    <div class="col-md-2">
+                        FC:<br>
+                        @Html.TextBoxFor(m => m.ExamenFisicoFrecuenciaCardiaca,
+                                 new
+                                 {
+                                     @class = "form-control dato-consulta",
+                                     @placeholder = "Frecuencia cardiaca"
+                                 })
+                    </div>
+                    <div class="col-md-2">
+                        FR:<br>
+                        @Html.TextBoxFor(m => m.ExamenFisicoFrecuenciaRespiratoria,
+                                 new
+                                 {
+                                     @class = "form-control dato-consulta",
+                                     @placeholder = "Frecuencia respiratoria"
+                                 })
+                    </div>
+                    <div class="col-md-2">
+                        P/A:<br>
+                        @Html.TextBoxFor(m => m.ExamenFisicoPresionArterial,
+                                 new
+                                 {
+                                     @class = "form-control dato-consulta",
+                                     @placeholder = "P/A"
+                                 })
+                    </div>
+                    <div class="col-md-2">
+                        TEMP:<br>
+                        @Html.TextBoxFor(m => m.ExamenFisicoTemperatura,
+                                 new
+                                 {
+                                     @class = "form-control dato-consulta",
+                                     @placeholder = "Temperatura"
+                                 })
+                    </div>
+                    <div class="col-md-2">
+                        SpO2:<br>
+                        @Html.TextBoxFor(m => m.ExamenFisicoSaturacionOxigeno,
+                                 new
+                                 {
+                                     @class = "form-control dato-consulta",
+                                     @placeholder = "Saturación de oxígeno"
+                                 })
+                    </div>
+                    <div class="col-md-2">
+                        GLASGOW<br>
+                        @Html.TextBoxFor(m => m.ExamenFisicoGlasgow, new { @class = "form-control dato-consulta" })
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div>
+            <a href="#" class="btn btn-primary" data-bind="click: editarConsultaSignosVitales">
+                Guardar consulta
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script type="text/javascript" src="~/js/moment.min.js"></script>
+    <script type="text/javascript" src="~/ViewModelKo/ConsultaVM.js"></script>
+}

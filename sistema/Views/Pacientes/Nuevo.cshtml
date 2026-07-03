@@ -1,0 +1,56 @@
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    // Leer el valor del appsettings.json. 
+    string sufijoLayout = Configuration["Cliente"]; 
+    
+    // Concatenar para formar el nombre del Layout (ejemplo: "_Layout" + "SS")
+    // Si la clave trae el nombre completo (ej. "_LayoutSS"), simplemente asignalo directo.
+    Layout = $"_Layout{sufijoLayout}";
+    ViewData["Title"] = "Nuevo paciente";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        @if (User.IsInRole("CirugiaPlastica"))
+        {
+            <div class="text-center">
+                <h4><b>Nuevo archivo paciente</b></h4>
+            </div>
+        }
+        else
+        {
+            <div class="text-center">
+                <h4><b>Nuevo paciente</b></h4>
+            </div>
+
+
+        }
+
+    </div>
+</div>
+
+
+@await Html.PartialAsync("_PacientesForm")
+
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div>
+            <button class="btn btn-danger" data-bind="click: cancelarRegistroPaciente">
+                Cancelar
+            </button>
+            <button class="btn btn-primary" data-bind="click: registrarPaciente">
+                Guardar paciente
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+<script src="https://knockoutjs.com/downloads/knockout-3.5.1.js"></script>
+<script type="text/javascript" src="~/js/moment.min.js"></script>
+<script type="text/javascript" src="~/ViewModelKo/PacienteVM.js"></script>
+}

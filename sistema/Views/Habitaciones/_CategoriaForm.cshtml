@@ -1,0 +1,109 @@
+@model sistema.Models.HabitacionesCategoriaViewModel
+
+@Html.HiddenFor(m=>m.CategoriaId)
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <div class="position-relative form-group">
+                    <label>Nombre Categor&iacute;a</label>
+                    @Html.TextBoxFor(a => a.Nombre, new {@class="form-control",
+                    @placeholder="Nombre de categoria"})
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-11">
+                <h5><b>Tarifas</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-1">
+                <button class="btn btn-primary" data-bind="click:agregarTarifa">Agregar</button>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="col-md-12">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Lunes</th>
+                            <th>Martes</th>
+                            <th>Mi&eacute;rcoles</th>
+                            <th>Jueves</th>
+                            <th>Viernes</th>
+                            <th>Sabado</th>
+                            <th>Domingo</th>
+                            <th>Fecha especial</th>
+                            <th>Fecha</th>
+                            <th>Valor</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!--ko foreach: tarifas-->
+                        <tr>
+                            <td>
+                                <input class="form-control"
+                                       data-bind="value:Nombre" />
+                            </td>
+                            <td>
+                                <input type="checkbox" class="form-control"
+                                       data-bind="checked:Lunes" />
+                            </td>
+                            <td>
+                                <input type="checkbox" class="form-control"
+                                       data-bind="checked:Martes" />
+                            </td>
+                            <td>
+                                <input type="checkbox" class="form-control"
+                                       data-bind="checked:Miercoles" />
+                            </td>
+                            <td>
+                                <input type="checkbox" class="form-control"
+                                       data-bind="checked:Jueves" />
+                            </td>
+                            <td>
+                                <input type="checkbox" class="form-control"
+                                       data-bind="checked:Viernes" />
+                            </td>
+                            <td>
+                                <input type="checkbox" class="form-control"
+                                       data-bind="checked:Sabado" />
+                            </td>
+                            <td>
+                                <input type="checkbox" class="form-control"
+                                       data-bind="checked:Domingo" />
+                            </td>
+                            <td>
+                                <input type="checkbox" class="form-control"
+                                       data-bind="checked:FechaEspecial" />
+                            </td>
+                            <td>
+                                <input type="date" class="form-control"
+                                       data-bind="value:Fecha" />
+                            </td>
+                            <td>
+                                <input class="form-control"
+                                       data-bind="value:Valor" />
+                            </td>
+                            <td>
+                                <button class="btn btn-danger"
+                                        data-bind="click:$root.quitarTarifa">
+                                    Quitar
+                                </button>
+                            </td>
+                        </tr>
+                        <!--/ko-->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,177 @@
+@{
+    ViewData["Title"] = "Reporte General de Ventas";
+}
+
+<div class="container-fluid mt-4">
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white d-flex align-items-center">
+            <i class="fa fa-file-pdf-o mr-2"></i>
+            <strong>Reporte General de Ventas — Todos los Ambientes</strong>
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-3 form-group">
+                    <label for="inputDesde"><i class="fa fa-calendar"></i> Fecha Desde</label>
+                    <input type="date" id="inputDesde" class="form-control"
+                           value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                </div>
+
+                <div class="col-md-3 form-group">
+                    <label for="inputHasta"><i class="fa fa-calendar"></i> Fecha Hasta</label>
+                    <input type="date" id="inputHasta" class="form-control"
+                           value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                </div>
+
+                <div class="col-md-3 form-group">
+                    <label for="inputAmbiente"><i class="fa fa-hospital-o"></i> Ambiente</label>
+                    <select id="inputAmbiente" class="form-control">
+                        <option value="0">— Todos —</option>
+                        <option value="1">Farmacia</option>
+                        <option value="2">Clínica</option>
+                        <option value="4">Hospital</option>
+                        <option value="5">Laboratorio</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3 form-group">
+                    <label for="inputEmpleado"><i class="fa fa-user"></i> Empleado (opcional)</label>
+                    <select id="inputEmpleado" class="form-control">
+                        <option value="0">— Todos —</option>
+                        @foreach (var emp in ViewBag.Empleados ?? new List<dynamic>())
+                        {
+                            <option value="@emp.Id">@emp.NombreYApellidos</option>
+                        }
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="row mt-2">
+
+                <div class="col-md-6 form-group">
+                    <label><i class="fa fa-list-alt"></i> Detalle de ítems en el PDF</label>
+                    <div class="d-flex flex-wrap align-items-center" style="gap:12px; margin-top:4px;">
+
+                        <div class="form-check form-check-inline m-0">
+                            <input class="form-check-input" type="radio" name="modoDetalle" id="modoMonto" value="monto"
+                                   checked />
+                            <label class="form-check-label" for="modoMonto">
+                                <i class="fa fa-dollar"></i> Solo montos por categoría
+                            </label>
+                        </div>
+
+                        <div class="form-check form-check-inline m-0">
+                            <input class="form-check-input" type="radio" name="modoDetalle" id="modoDescripcion"
+                                   value="descripcion" />
+                            <label class="form-check-label" for="modoDescripcion">
+                                <i class="fa fa-align-left"></i> Con descripción de ítems
+                                <small class="text-muted">(servicios, exámenes, lab., paquetes, dietas)</small>
+                            </label>
+                        </div>
+
+                        <div class="form-check form-check-inline m-0">
+                            <input class="form-check-input" type="checkbox" name="incluirConsolidadoItems"
+                                   id="incluirConsolidadoItems" value="true" />
+                            <label class="form-check-label" for="incluirConsolidadoItems">
+                                Incluir consolidado detallado de categorías (servicios, exámenes, lab., paquetes, dietas)
+                            </label>
+                        </div>
+
+                        <div class="form-check form-check-inline m-0">
+                            <input class="form-check-input" type="checkbox" name="incluirConsolidadoMedicos"
+                                   id="incluirConsolidadoMedicos" value="true" checked />
+                            <label class="form-check-label" for="incluirConsolidadoMedicos">
+                                Incluir consolidado por médico
+                            </label>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="col-md-6 form-group d-flex align-items-end">
+                    <div>
+                        <button type="button" class="btn btn-danger mr-2" onclick="generarReportePDF()">
+                            <i class="fa fa-file-pdf-o"></i> Generar PDF
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="limpiarFiltros()">
+                            <i class="fa fa-refresh"></i> Limpiar
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+
+<script>
+    function generarReportePDF() {
+        var desde = document.getElementById("inputDesde").value;
+        var hasta = document.getElementById("inputHasta").value;
+        var ambienteId = document.getElementById("inputAmbiente").value;
+        var empleadoId = document.getElementById("inputEmpleado").value;
+        var modoDetalle = document.querySelector("input[name='modoDetalle']:checked").value;
+
+        // Obtener el checkbox de consolidado de ítems
+        var chkConsolidado = document.querySelector("input[name='incluirConsolidadoItems']");
+        var incluirConsolidado = chkConsolidado ? chkConsolidado.checked : false;
+
+        // Obtener el checkbox de consolidado por médico
+        var chkMedicos = document.querySelector("input[name='incluirConsolidadoMedicos']");
+        var incluirMedicos = chkMedicos ? chkMedicos.checked : true;
+
+        // Validaciones básicas
+        if (!desde || !hasta) {
+            alert("Por favor selecciona el rango de fechas.");
+            return;
+        }
+        if (new Date(desde) > new Date(hasta)) {
+            alert("La fecha 'Desde' no puede ser mayor que la fecha 'Hasta'.");
+            return;
+        }
+
+        // Construir URL base
+        var url = "/CrearPDF/ReporteVentasGeneralPDF"
+            + "?desde=" + encodeURIComponent(desde)
+            + "&hasta=" + encodeURIComponent(hasta)
+            + "&ambienteId=" + ambienteId
+            + "&empleadoId=" + empleadoId
+            + "&modoDetalle=" + modoDetalle;
+
+        // Agregar el parámetro de consolidado si está marcado
+        if (incluirConsolidado) {
+            url += "&incluirConsolidadoItems=true";
+        }
+
+        // Agregar el parámetro de médicos si está marcado
+        if (incluirMedicos) {
+            url += "&incluirConsolidadoMedicos=true";
+        }
+
+        window.open(url, "_blank");
+    }
+
+    function limpiarFiltros() {
+        var hoy = new Date().toISOString().split("T")[0];
+        document.getElementById("inputDesde").value = hoy;
+        document.getElementById("inputHasta").value = hoy;
+        document.getElementById("inputAmbiente").value = "0";
+        document.getElementById("inputEmpleado").value = "0";
+        document.querySelector("input[name='modoDetalle'][value='monto']").checked = true;
+
+        // También limpiar el checkbox de consolidado (opcional)
+        var chkConsolidado = document.querySelector("input[name='incluirConsolidadoItems']");
+        if (chkConsolidado) chkConsolidado.checked = false;
+
+        // Restablecer checkbox de médicos (marcado por defecto)
+        var chkMedicos = document.querySelector("input[name='incluirConsolidadoMedicos']");
+        if (chkMedicos) chkMedicos.checked = true;
+    }
+</script>

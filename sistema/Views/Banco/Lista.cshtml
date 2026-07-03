@@ -1,0 +1,72 @@
+﻿@using Database.Shared.Models
+@model List<Banco>
+@{
+    ViewData["Title"] = "Bancos";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <center><h4><b>Bancos</b></h4></center>
+                <hr />
+                <a class="btn btn-danger" asp-action="Nuevo" asp-controller="Banco">
+                    Nuevo banco
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="tabla-bancos">
+                <thead>
+                    <tr>
+                        <th>Nombre del banco</th>
+                        <th>Dirección</th>
+                        <th>Acciones</th>
+
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Count() > 0)
+                    {
+                        foreach (var banco in Model)
+                        {
+                            <tr>
+                                <td>@banco.Nombre</td>
+                                <td>@banco.Direccion</td>
+                                <td>
+                                    <button class="btn btn-warning" onclick="modificarBanco(@banco.Id)">
+                                        <i class="fa fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-danger" onclick="eliminarBanco(@banco.Id)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td><i>No hay Bancos registrados</i></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/ViewModelKo/BancoListaVM.js"></script>
+}

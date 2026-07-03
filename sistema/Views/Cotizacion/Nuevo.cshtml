@@ -1,0 +1,48 @@
+@{
+    ViewData["Title"] = "Nueva cotizacion";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <center><h4><b>Nueva cotizaci&oacute;n</b></h4></center>
+    </div>
+</div>
+
+<div class="radio-toolbar">
+    <input type="radio" id="radioProductos" name="radiocoti" value="productos" checked>
+    <label for="radioProductos">Productos</label>
+
+    <input type="radio" id="radioServicios" name="radiocoti" value="servicios">
+    <label for="radioServicios">Servicios</label>
+</div>
+
+<button type="button" class="btn btn-primary" onclick="GuardarCotizacion()">Guardar emergencia !!</button>
+<br />
+
+@await Html.PartialAsync("_CotizacionForm")
+
+@section Scripts
+{
+<script src="~/js/FuncionesCotizacion.js"></script>
+
+<script>
+    $(function(){
+          $('#reservationtime').daterangepicker({
+                    timePicker: true,
+                    timePickerIncrement: 30,
+                    locale: {
+                        format: 'DD/MM/YYYY hh:mm A'
+                    }
+                });
+    });
+</script>
+}
+
+@section css
+{
+<link href="~/css/daterangepicker.css" rel="stylesheet">
+<link href="~/css/radiobutton.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.0.1/css/toastr.css" rel="stylesheet" />
+}

@@ -1,0 +1,257 @@
+@model sistema.Models.ConsultasViewModel
+
+<br />
+
+<div class="border rounded p-3 bg-white shadow-sm mb-3">
+
+    <!-- Header: Examen físico -->
+    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+        <h6 class="m-0 font-weight-bold text-primary text-uppercase">
+            <i class="fas fa-stethoscope mr-2"></i> Examen f&iacute;sico
+        </h6>
+        <small class="text-muted">
+            <i class="fas fa-clipboard-check mr-1"></i> Signos vitales y hallazgos
+        </small>
+    </div>
+
+    <div class="form-row">
+
+        <div class="col-md-5 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">ESTADO GENERAL:</div>
+                @Html.TextBoxFor(m => m.ExamenFisicoEstadoGeneral, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">PESO (KG):</div>
+                @Html.TextBoxFor(m => m.ExamenFisicoPeso,
+                         new
+                         {
+                             @class = "form-control dato-consulta",
+                             @placeholder = "Peso",
+                             @onchange = "getIMC()"
+                         })
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">TALLA (M):</div>
+                @Html.TextBoxFor(m => m.ExamenFisicoTalla,
+                         new
+                         {
+                             @class = "form-control dato-consulta",
+                             @placeholder = "Talla",
+                             @onchange = "getIMC()"
+                         })
+            </div>
+        </div>
+
+        <div class="col-md-2 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">FC:</div>
+                @Html.TextBoxFor(m => m.ExamenFisicoFrecuenciaCardiaca,
+                         new
+                         {
+                             @class = "form-control dato-consulta",
+                             @placeholder = "Frecuencia cardiaca"
+                         })
+            </div>
+        </div>
+
+        <div class="col-md-2 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">FR:</div>
+                @Html.TextBoxFor(m => m.ExamenFisicoFrecuenciaRespiratoria,
+                         new
+                         {
+                             @class = "form-control dato-consulta",
+                             @placeholder = "Frecuencia respiratoria"
+                         })
+            </div>
+        </div>
+
+        <div class="col-md-2 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">P/A:</div>
+                @Html.TextBoxFor(m => m.ExamenFisicoPresionArterial,
+                         new
+                         {
+                             @class = "form-control dato-consulta",
+                             @placeholder = "P/A"
+                         })
+            </div>
+        </div>
+
+        <div class="col-md-2 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">TEMP:</div>
+                @Html.TextBoxFor(m => m.ExamenFisicoTemperatura,
+                         new
+                         {
+                             @class = "form-control dato-consulta",
+                             @placeholder = "Temperatura"
+                         })
+            </div>
+        </div>
+
+        <div class="col-md-2 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">SpO2:</div>
+                @Html.TextBoxFor(m => m.ExamenFisicoSaturacionOxigeno,
+                         new
+                         {
+                             @class = "form-control dato-consulta",
+                             @placeholder = "Saturación de oxígeno"
+                         })
+            </div>
+        </div>
+
+        @*MANANTIALES no utiliza este campo*@
+        @* <div class="col-md-3">
+        Presión arterial brazo derecho:<br>
+        // @Html.TextBoxFor(m => m.ExamenFisicoDerecho, *@
+        @* // new
+        // {
+        // @class = "form-control",
+        // @placeholder = " "
+        // })
+        // </div>
+        // < div class="col-md-3">
+        // Presión arterial brazo izquierdo<br>
+        // @Html.TextBoxFor(m => m.ExamenFisicoIzquierdo,
+        // new
+        // {
+        // @class = "form-control",
+        // @placeholder = ""
+        // })
+        // </div>
+        // <div class="col-md-3">
+        // IMC<br>
+        // @Html.TextBoxFor(m => m.ExamenFisicoIMC, new { @class = "form-control", @placeholder = "IMC", @readonly =
+        "readonly" })
+        // </ div >
+        // < div class= "col-md-3" >
+        // Glucosa < br >
+        // @Html.TextBoxFor(m => m.ExamenFisicoGlucosa, new { @class = "form-control", @placeholder = "Glucosa" })
+        // </ div > *@
+
+        <div class="col-md-2 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">GLASGOW</div>
+                @Html.TextBoxFor(m => m.ExamenFisicoGlasgow, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+
+        @*MANANTIALES usa esto solo para pediatricos*@
+        @* <div class="col-md-4">
+        PESO/TALLA<br>
+        @Html.TextBoxFor(m => m.ExamenFisicoPediatricoPesoTalla, new { @class = "form-control" })
+        </div>
+        <div class="col-md-4">
+        PESO/EDAD<br>
+        @Html.TextBoxFor(m => m.ExamenFisicoPediatricoPesoEdad, new { @class = "form-control" })
+        </div>
+        <div class="col-md-4">
+        TALLA/EDAD<br>
+        @Html.TextBoxFor(m => m.ExamenFisicoPediatricoTallaEdad, new { @class = "form-control" })
+        </div> *@
+
+    </div>
+
+    <div class="mt-3"></div>
+
+    <!-- Header: Historial -->
+    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+        <h6 class="m-0 font-weight-bold text-primary text-uppercase">
+            <i class="fas fa-history mr-2"></i> Examen f&iacute;sico (historial)
+        </h6>
+    </div>
+
+    <div class="form-row">
+
+        <div class="col-md-12 text-primary texto-cargando-historial mb-2" style="display:none">
+            <i class="fas fa-spinner fa-spin mr-1"></i> Cargando historial...
+        </div>
+
+        <div class="col-md-12 text-danger texto-error-cargando-historial mb-2" style="display:none">
+            <i class="fas fa-exclamation-triangle mr-1"></i>
+            Error de servidor y/o conexion. <a href="#" data-bind="click:consultarHistorialConsultas">Reintentar</a>
+        </div>
+
+        <!--ko foreach:historialConsultas-->
+        <div class="col-md-12 mb-3">
+            <div class="border rounded p-3 bg-white">
+
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="font-weight-bold text-dark">
+                        <i class="fas fa-calendar-alt text-primary mr-1"></i>
+                        Fecha: <span data-bind="text:Fecha"></span>
+                    </div>
+                    <span class="badge badge-light border">
+                        <i class="fas fa-clipboard-check text-primary mr-1"></i> Registro
+                    </span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-2 mb-2">
+                        <div class="font-weight-bold text-dark">ESTADO GENERAL:</div>
+                        <span class="text-body" data-bind="text:ExamenFisicoEstadoGeneral"></span>
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <div class="font-weight-bold text-dark">PESO:</div>
+                        <span class="text-body" data-bind="text:ExamenFisicoPeso"></span>
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <div class="font-weight-bold text-dark">TALLA:</div>
+                        <span class="text-body" data-bind="text:ExamenFisicoTalla"></span>
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <div class="font-weight-bold text-dark">FC:</div>
+                        <span class="text-body" data-bind="text:ExamenFisicoFrecuenciaCardiaca"></span>
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <div class="font-weight-bold text-dark">FR:</div>
+                        <span class="text-body" data-bind="text:ExamenFisicoFrecuenciaRespiratoria"></span>
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <div class="font-weight-bold text-dark">P/A:</div>
+                        <span class="text-body" data-bind="text:ExamenFisicoPresionArterial"></span>
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <div class="font-weight-bold text-dark">TEMP:</div>
+                        <span class="text-body" data-bind="text:ExamenFisicoTemperatura"></span>
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <div class="font-weight-bold text-dark">SpO2:</div>
+                        <span class="text-body" data-bind="text:ExamenFisicoSaturacionOxigeno"></span>
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <div class="font-weight-bold text-dark">GLASGOW:</div>
+                        <span class="text-body" data-bind="text:ExamenFisicoGlasgow"></span>
+                    </div>
+
+                    @* <div class="col-md-2"><b>PESO/TALLA:</b><br /><span
+                    data-bind="text:ExamenFisicoPediatricoPesoTalla"></span></div>
+                    <div class="col-md-2"><b>PESO/EDAD:</b><br /><span
+                    data-bind="text:ExamenFisicoPediatricoPesoEdad"></span></div>
+                    <div class="col-md-2"><b>TALLA/EDAD:</b><br /><span
+                    data-bind="text:ExamenFisicoPediatricoTallaEdad"></span></div> *@
+
+                </div>
+
+            </div>
+        </div>
+        <!--/ko-->
+
+        <!--ko if:historialConsultas().length==0-->
+        <div class="col-md-12 text-muted">
+            <i class="fas fa-info-circle mr-1"></i> No hay registro de consultas anteriores
+        </div>
+        <!--/ko-->
+
+    </div>
+
+</div>

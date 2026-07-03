@@ -1,0 +1,659 @@
+@model sistema.Models.ConsultasViewModel
+@using Database.Shared.Models
+
+@* IDs necesarios para upsert; viajarán en el POST del formulario principal *@
+@Html.HiddenFor(m => m.Ve_ConsultaId)
+@Html.HiddenFor(m => m.Ve_Id)
+  @{
+  var _veHist = ViewBag.VeHistorialFull as IEnumerable<ConsultasValoracionInicialEnfermeria>;
+      Func<object, string> Vh = (val) =>
+      {
+          if (val == null) return "Sin definir";
+          if (val is string s) return string.IsNullOrWhiteSpace(s) ? "Sin definir" : s;
+          return Convert.ToString(val);
+      };
+      int vidx = 0;
+  }
+
+
+<style>
+  :root{
+    --ink:#1f2937;--ink-soft:#334155;--muted:#6b7280;--brand:#0ea5e9;--brand-ink:#0369a1;
+    --bg:#f7fbff;--card:#ffffff;--card-bdr:#e5edf7;--accent:#dbeafe;
+  }
+  .oft-wrap{background:var(--bg);color:var(--ink)}
+  .oft-card{background:var(--card);border:1px solid var(--card-bdr);border-radius:.9rem;box-shadow:0 8px 24px rgba(2,32,71,.06)}
+  .oft-head{display:flex;align-items:center;gap:.6rem;color:var(--brand-ink);font-weight:800;letter-spacing:.2px;margin-bottom:.75rem}
+  .oft-head i{font-size:1.3rem;color:var(--brand)}
+  .oft-sub{color:var(--muted);font-size:.95rem}
+  .oft-pill{display:inline-block;padding:.25rem .6rem;border-radius:9999px;background:var(--accent);color:var(--brand-ink);font-weight:700;font-size:.8rem}
+  .form-label{font-weight:600;color:var(--ink-soft)}
+  .font-weight-bold{font-weight:700}
+  .hr-soft{border-top:1px dashed #e5edf7}
+  .table thead th{background:var(--accent);color:var(--ink-soft);border-bottom:1px solid var(--card-bdr)}
+</style>
+
+<div class="oft-wrap">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    @if (Model.HabilitarEdicion)
+    {
+      <span class="oft-pill">MODO EDICIÓN</span>
+    }
+    else
+    {
+      <span class="oft-pill" style="background:#eaeef6;color:#475569">MODO LECTURA</span>
+    }
+    <div class="text-danger" asp-validation-summary="ModelOnly"></div>
+  </div>
+
+  @* ============================ EDICIÓN ============================ *@
+  @if (Model.HabilitarEdicion)
+  {
+    @* Esta parcial NO abre <form>; el formulario principal la envuelve *@
+
+    <div class="row">
+      <!-- 1. Datos de Valoración Inicial -->
+      <div class="col-lg-8 mb-3">
+        <div class="oft-card p-3 p-md-4">
+          <div class="oft-head"><i class="fas fa-file-medical"></i><h5 class="mb-0">1. Datos de Valoración Inicial</h5></div>
+
+          <div class="mb-3">
+            <label class="form-label">Motivo de consulta</label>
+            <textarea class="form-control" rows="2" asp-for="Ve_Motivo" placeholder="Síntomas principales que motivan la sueroterapia."></textarea>
+            <span class="text-danger" asp-validation-for="Ve_Motivo"></span>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Diagnóstico médico (Si aplica)</label>
+              <textarea class="form-control" rows="2" asp-for="Ve_DiagnosticoMedico" placeholder="Diagnóstico establecido o presuntivo."></textarea>
+              <span class="text-danger" asp-validation-for="Ve_DiagnosticoMedico"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Laboratorios a la vista</label>
+              <textarea class="form-control" rows="2" asp-for="Ve_Labs" placeholder="Resultados clave recientes."></textarea>
+              <span class="text-danger" asp-validation-for="Ve_Labs"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. ¿Cómo se enteró del servicio? -->
+      <div class="col-lg-4 mb-3">
+        <div class="oft-card p-3 p-md-4">
+          <div class="oft-head"><i class="fas fa-bullhorn"></i><h5 class="mb-0">2. ¿Cómo se enteró del servicio?</h5></div>
+          <div class="d-flex flex-column gap-2">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="Ve_Medio" value="referencia" @(Model?.Ve_Medio != null && Model.Ve_Medio.Contains("referencia") ? "checked" : "") />
+              <label class="form-check-label">Referencia personal</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="Ve_Medio" value="redes" @(Model?.Ve_Medio != null && Model.Ve_Medio.Contains("redes") ? "checked" : "") />
+              <label class="form-check-label">Redes sociales</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="Ve_Medio" value="salud" @(Model?.Ve_Medio != null && Model.Ve_Medio.Contains("salud") ? "checked" : "") />
+              <label class="form-check-label">Personal de salud</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="Ve_Medio" value="otro" @(Model?.Ve_Medio != null && Model.Ve_Medio.Contains("otro") ? "checked" : "") />
+              <label class="form-check-label">Otro</label>
+            </div>
+          </div>
+          <span class="text-danger" asp-validation-for="Ve_Medio"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Oxigenación y Circulación -->
+    <div class="oft-card mb-3 p-3 p-md-4">
+      <div class="oft-head"><i class="fas fa-lungs"></i><h5 class="mb-0">3. Oxigenación y Circulación</h5></div>
+      <div class="row">
+        <div class="col-md-6 mb-2">
+          <div class="font-weight-bold text-primary mb-2">Sistema Respiratorio</div>
+          <div class="d-flex flex-column gap-2">
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Resp" value="sin_alteracion" @(Model?.Ve_Resp != null && Model.Ve_Resp.Contains("sin_alteracion") ? "checked" : "") /><label class="form-check-label">Sin alteración observada</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Resp" value="disnea_esfuerzo" @(Model?.Ve_Resp != null && Model.Ve_Resp.Contains("disnea_esfuerzo") ? "checked" : "") /><label class="form-check-label">Disnea de esfuerzo</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Resp" value="disnea_reposo" @(Model?.Ve_Resp != null && Model.Ve_Resp.Contains("disnea_reposo") ? "checked" : "") /><label class="form-check-label">Disnea en reposo</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Resp" value="tos_seca" @(Model?.Ve_Resp != null && Model.Ve_Resp.Contains("tos_seca") ? "checked" : "") /><label class="form-check-label">Tos seca</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Resp" value="tos_productiva" @(Model?.Ve_Resp != null && Model.Ve_Resp.Contains("tos_productiva") ? "checked" : "") /><label class="form-check-label">Tos productiva</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Resp" value="oxigeno" @(Model?.Ve_Resp != null && Model.Ve_Resp.Contains("oxigeno") ? "checked" : "") /><label class="form-check-label">Oxígeno suplementario</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Resp" value="marcapasos" @(Model?.Ve_Resp != null && Model.Ve_Resp.Contains("marcapasos") ? "checked" : "") /><label class="form-check-label">Marca pasos</label></div>
+          </div>
+          <span class="text-danger" asp-validation-for="Ve_Resp"></span>
+        </div>
+
+        <div class="col-md-6 mb-2">
+          <div class="font-weight-bold text-primary mb-2">Sistema Circulatorio</div>
+          <div class="d-flex flex-column gap-2">
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Circ" value="sin_alteracion" @(Model?.Ve_Circ != null && Model.Ve_Circ.Contains("sin_alteracion") ? "checked" : "") /><label class="form-check-label">Sin alteración observada</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Circ" value="palpitaciones" @(Model?.Ve_Circ != null && Model.Ve_Circ.Contains("palpitaciones") ? "checked" : "") /><label class="form-check-label">Palpitaciones</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Circ" value="entumecimiento" @(Model?.Ve_Circ != null && Model.Ve_Circ.Contains("entumecimiento") ? "checked" : "") /><label class="form-check-label">Entumecimiento</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Circ" value="ext_frio" @(Model?.Ve_Circ != null && Model.Ve_Circ.Contains("ext_frio") ? "checked" : "") /><label class="form-check-label">Extremidades frías</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Circ" value="edemas" @(Model?.Ve_Circ != null && Model.Ve_Circ.Contains("edemas") ? "checked" : "") /><label class="form-check-label">Edemas</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Circ" value="dolor_precordial" @(Model?.Ve_Circ != null && Model.Ve_Circ.Contains("dolor_precordial") ? "checked" : "") /><label class="form-check-label">Dolor precordial</label></div>
+          </div>
+          <span class="text-danger" asp-validation-for="Ve_Circ"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Necesidad de Nutrición -->
+    <div class="oft-card mb-3 p-3 p-md-4">
+      <div class="oft-head"><i class="fas a-egg"></i><h5 class="mb-0">4. Necesidad de Nutrición</h5></div>
+
+      <div class="mb-2">
+        <div class="d-flex flex-wrap gap-3">
+          <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Nutricion" value="sin_alteracion" @(Model?.Ve_Nutricion != null && Model.Ve_Nutricion.Contains("sin_alteracion") ? "checked" : "") /><label class="form-check-label">Sin alteración observada</label></div>
+          <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Nutricion" value="masticacion" @(Model?.Ve_Nutricion != null && Model.Ve_Nutricion.Contains("masticacion") ? "checked" : "") /><label class="form-check-label">Dificultad para la masticación</label></div>
+          <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Nutricion" value="protesis" @(Model?.Ve_Nutricion != null && Model.Ve_Nutricion.Contains("protesis") ? "checked" : "") /><label class="form-check-label">Prótesis</label></div>
+          <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Nutricion" value="deglucion" @(Model?.Ve_Nutricion != null && Model.Ve_Nutricion.Contains("deglucion") ? "checked" : "") /><label class="form-check-label">Dificultad para la deglución</label></div>
+          <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Nutricion" value="nauseas" @(Model?.Ve_Nutricion != null && Model.Ve_Nutricion.Contains("nauseas") ? "checked" : "") /><label class="form-check-label">Náuseas</label></div>
+          <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Nutricion" value="vomitos" @(Model?.Ve_Nutricion != null && Model.Ve_Nutricion.Contains("vomitos") ? "checked" : "") /><label class="form-check-label">Vómitos</label></div>
+          <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Nutricion" value="peso" @(Model?.Ve_Nutricion != null && Model.Ve_Nutricion.Contains("peso") ? "checked" : "") /><label class="form-check-label">Alteración del peso</label></div>
+          <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Nutricion" value="ayuda" @(Model?.Ve_Nutricion != null && Model.Ve_Nutricion.Contains("ayuda") ? "checked" : "") /><label class="form-check-label">Necesita ayuda</label></div>
+          <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Nutricion" value="dieta" @(Model?.Ve_Nutricion != null && Model.Ve_Nutricion.Contains("dieta") ? "checked" : "") /><label class="form-check-label">Dieta especial</label></div>
+        </div>
+        <span class="text-danger" asp-validation-for="Ve_Nutricion"></span>
+      </div>
+
+      <div class="mb-0">
+        <label class="form-label">Observaciones / Detalles de la dieta</label>
+        <textarea class="form-control" rows="1" asp-for="Ve_NutricionObs" placeholder="Detalle si dificultad, prótesis o dieta especial."></textarea>
+        <span class="text-danger" asp-validation-for="Ve_NutricionObs"></span>
+      </div>
+    </div>
+
+    <!-- 5. Necesidad de Eliminación -->
+    <div class="oft-card mb-3 p-3 p-md-4">
+      <div class="oft-head"><i class="fas fa-tint"></i><h5 class="mb-0">5. Necesidad de Eliminación</h5></div>
+      <div class="row">
+        <div class="col-md-6 mb-2">
+          <div class="font-weight-bold text-primary mb-2">Patrón Urinario</div>
+          <div class="d-flex flex-column gap-2">
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Urinario" value="sin_alteracion" @(Model?.Ve_Urinario != null && Model.Ve_Urinario.Contains("sin_alteracion") ? "checked" : "") /><label class="form-check-label">Sin alteración observada</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Urinario" value="incontinencia" @(Model?.Ve_Urinario != null && Model.Ve_Urinario.Contains("incontinencia") ? "checked" : "") /><label class="form-check-label">Incontinencia</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Urinario" value="retencion" @(Model?.Ve_Urinario != null && Model.Ve_Urinario.Contains("retencion") ? "checked" : "") /><label class="form-check-label">Retención</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Urinario" value="disuria" @(Model?.Ve_Urinario != null && Model.Ve_Urinario.Contains("disuria") ? "checked" : "") /><label class="form-check-label">Disuria</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Urinario" value="hematuria" @(Model?.Ve_Urinario != null && Model.Ve_Urinario.Contains("hematuria") ? "checked" : "") /><label class="form-check-label">Hematuria</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Urinario" value="sonda" @(Model?.Ve_Urinario != null && Model.Ve_Urinario.Contains("sonda") ? "checked" : "") /><label class="form-check-label">Sonda vesical</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Urinario" value="ostomia" @(Model?.Ve_Urinario != null && Model.Ve_Urinario.Contains("ostomia") ? "checked" : "") /><label class="form-check-label">Ostomía</label></div>
+          </div>
+          <span class="text-danger" asp-validation-for="Ve_Urinario"></span>
+        </div>
+
+        <div class="col-md-6 mb-2">
+          <div class="font-weight-bold text-primary mb-2">Patrón Intestinal</div>
+          <div class="d-flex flex-column gap-2">
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Intestinal" value="sin_alteracion" @(Model?.Ve_Intestinal != null && Model.Ve_Intestinal.Contains("sin_alteracion") ? "checked" : "") /><label class="form-check-label">Sin alteración observada</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Intestinal" value="incontinencia" @(Model?.Ve_Intestinal != null && Model.Ve_Intestinal.Contains("incontinencia") ? "checked" : "") /><label class="form-check-label">Incontinencia</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Intestinal" value="estrenimiento" @(Model?.Ve_Intestinal != null && Model.Ve_Intestinal.Contains("estrenimiento") ? "checked" : "") /><label class="form-check-label">Estreñimiento</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Intestinal" value="diarrea" @(Model?.Ve_Intestinal != null && Model.Ve_Intestinal.Contains("diarrea") ? "checked" : "") /><label class="form-check-label">Diarrea</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Intestinal" value="hematoquesia" @(Model?.Ve_Intestinal != null && Model.Ve_Intestinal.Contains("hematoquesia") ? "checked" : "") /><label class="form-check-label">Hematoquesia</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Intestinal" value="melena" @(Model?.Ve_Intestinal != null && Model.Ve_Intestinal.Contains("melena") ? "checked" : "") /><label class="form-check-label">Melena</label></div>
+          </div>
+          <span class="text-danger" asp-validation-for="Ve_Intestinal"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. Movilización y Estado de Conciencia -->
+    <div class="oft-card mb-3 p-3 p-md-4">
+      <div class="oft-head"><i class="fas fa-person-walking"></i><h5 class="mb-0">6. Movilización y Estado de Conciencia</h5></div>
+      <div class="row">
+        <div class="col-md-6 mb-2">
+          <div class="font-weight-bold text-primary mb-2">Actividad / Movilidad</div>
+          <div class="d-flex flex-column gap-2">
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Mov" value="independiente" @(Model?.Ve_Mov != null && Model.Ve_Mov.Contains("independiente") ? "checked" : "") /><label class="form-check-label">Completamente independiente</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Mov" value="dispositivo" @(Model?.Ve_Mov != null && Model.Ve_Mov.Contains("dispositivo") ? "checked" : "") /><label class="form-check-label">Requiere dispositivo/equipo</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Mov" value="persona" @(Model?.Ve_Mov != null && Model.Ve_Mov.Contains("persona") ? "checked" : "") /><label class="form-check-label">Requiere otra persona</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Mov" value="persona_dispositivo" @(Model?.Ve_Mov != null && Model.Ve_Mov.Contains("persona_dispositivo") ? "checked" : "") /><label class="form-check-label">Persona + dispositivo/equipo</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Mov" value="dependiente" @(Model?.Ve_Mov != null && Model.Ve_Mov.Contains("dependiente") ? "checked" : "") /><label class="form-check-label">Dependiente (Ayuda total)</label></div>
+          </div>
+          <span class="text-danger" asp-validation-for="Ve_Mov"></span>
+        </div>
+
+        <div class="col-md-6 mb-2">
+          <div class="font-weight-bold text-primary mb-2">Estado de Conciencia</div>
+          <div class="d-flex flex-column gap-2">
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Conciencia" value="consciente" @(Model?.Ve_Conciencia != null && Model.Ve_Conciencia.Contains("consciente") ? "checked" : "") /><label class="form-check-label">Consciente y orientado</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Conciencia" value="desorientado" @(Model?.Ve_Conciencia != null && Model.Ve_Conciencia.Contains("desorientado") ? "checked" : "") /><label class="form-check-label">Desorientado</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Conciencia" value="letargico" @(Model?.Ve_Conciencia != null && Model.Ve_Conciencia.Contains("letargico") ? "checked" : "") /><label class="form-check-label">Letárgico</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Conciencia" value="inconsciente" @(Model?.Ve_Conciencia != null && Model.Ve_Conciencia.Contains("inconsciente") ? "checked" : "") /><label class="form-check-label">Inconsciente/comatoso</label></div>
+          </div>
+          <span class="text-danger" asp-validation-for="Ve_Conciencia"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. Autocuidado y Reposo -->
+    <div class="oft-card mb-3 p-3 p-md-4">
+      <div class="oft-head"><i class="fas fa-hospital"></i><h5 class="mb-0">7. Autocuidado y Reposo</h5></div>
+      <div class="row">
+        <div class="col-md-4 mb-2">
+          <div class="font-weight-bold text-primary mb-2">Necesidad de Reposo y Sueño</div>
+          <div class="d-flex flex-column gap-2">
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Sueno" value="sin_alteracion" @(Model?.Ve_Sueno != null && Model.Ve_Sueno.Contains("sin_alteracion") ? "checked" : "") /><label class="form-check-label">Sin alteración observada</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Sueno" value="discontinuo" @(Model?.Ve_Sueno != null && Model.Ve_Sueno.Contains("discontinuo") ? "checked" : "") /><label class="form-check-label">Sueño discontinuo</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Sueno" value="insomnio" @(Model?.Ve_Sueno != null && Model.Ve_Sueno.Contains("insomnio") ? "checked" : "") /><label class="form-check-label">Insomnio</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Sueno" value="ayuda" @(Model?.Ve_Sueno != null && Model.Ve_Sueno.Contains("ayuda") ? "checked" : "") /><label class="form-check-label">Necesita ayuda/medicación</label></div>
+          </div>
+          <span class="text-danger" asp-validation-for="Ve_Sueno"></span>
+        </div>
+
+        <div class="col-md-4 mb-2">
+          <div class="font-weight-bold text-primary mb-2">Autonomía para Vestirse</div>
+          <div class="d-flex flex-wrap gap-3">
+            <div class="form-check form-check-inline"><input class="form-check-input" type="radio" value="autonomo" asp-for="Ve_Vestirse" /><label class="form-check-label">Autónomo</label></div>
+            <div class="form-check form-check-inline"><input class="form-check-input" type="radio" value="parcial" asp-for="Ve_Vestirse" /><label class="form-check-label">Ayuda parcial</label></div>
+            <div class="form-check form-check-inline"><input class="form-check-input" type="radio" value="total" asp-for="Ve_Vestirse" /><label class="form-check-label">Ayuda total</label></div>
+          </div>
+
+          <div class="font-weight-bold text-primary mt-3 mb-2">Autonomía para Higiene</div>
+          <div class="d-flex flex-wrap gap-3">
+            <div class="form-check form-check-inline"><input class="form-check-input" type="radio" value="autonomo" asp-for="Ve_Higiene" /><label class="form-check-label">Autónomo</label></div>
+            <div class="form-check form-check-inline"><input class="form-check-input" type="radio" value="parcial" asp-for="Ve_Higiene" /><label class="form-check-label">Ayuda parcial</label></div>
+            <div class="form-check form-check-inline"><input class="form-check-input" type="radio" value="total" asp-for="Ve_Higiene" /><label class="form-check-label">Ayuda total</label></div>
+          </div>
+          <span class="text-danger" asp-validation-for="Ve_Vestirse"></span>
+          <span class="text-danger" asp-validation-for="Ve_Higiene"></span>
+        </div>
+
+        <div class="col-md-4 mb-2">
+          <div class="font-weight-bold text-primary mb-2">Estado de Piel y Mucosas</div>
+          <div class="d-flex flex-wrap gap-3">
+            <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="Ve_Piel" value="integra" @(Model?.Ve_Piel != null && Model.Ve_Piel.Contains("integra") ? "checked" : "") /><label class="form-check-label">Integra/hidratada</label></div>
+            <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="Ve_Piel" value="deshidratada" @(Model?.Ve_Piel != null && Model.Ve_Piel.Contains("deshidratada") ? "checked" : "") /><label class="form-check-label">Deshidratada</label></div>
+            <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="Ve_Piel" value="ictericia" @(Model?.Ve_Piel != null && Model.Ve_Piel.Contains("ictericia") ? "checked" : "") /><label class="form-check-label">Ictericia</label></div>
+            <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="Ve_Piel" value="cianosis" @(Model?.Ve_Piel != null && Model.Ve_Piel.Contains("cianosis") ? "checked" : "") /><label class="form-check-label">Cianosis</label></div>
+            <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="Ve_Piel" value="palidez" @(Model?.Ve_Piel != null && Model.Ve_Piel.Contains("palidez") ? "checked" : "") /><label class="form-check-label">Palidez</label></div>
+            <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="Ve_Piel" value="herida" @(Model?.Ve_Piel != null && Model.Ve_Piel.Contains("herida") ? "checked" : "") /><label class="form-check-label">Herida</label></div>
+            <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="Ve_Piel" value="ulceras" @(Model?.Ve_Piel != null && Model.Ve_Piel.Contains("ulceras") ? "checked" : "") /><label class="form-check-label">Úlceras</label></div>
+          </div>
+          <div class="mt-3">
+            <label class="form-label">Ubicación de Herida/Úlcera</label>
+            <input class="form-control" asp-for="Ve_PielUbicacion" placeholder="Sitio de alteración cutánea." />
+            <span class="text-danger" asp-validation-for="Ve_Piel"></span>
+            <span class="text-danger" asp-validation-for="Ve_PielUbicacion"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8. Necesidad de Comunicación -->
+    <div class="oft-card mb-3 p-3 p-md-4">
+      <div class="oft-head"><i class="fas fa-comments"></i><h5 class="mb-0">8. Necesidad de Comunicación</h5></div>
+      <div class="row">
+        <div class="col-md-4 mb-2">
+          <div class="font-weight-bold text-primary mb-2">Lenguaje y Expresión</div>
+          <div class="d-flex flex-column gap-2">
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Lenguaje" value="sin_alteracion" @(Model?.Ve_Lenguaje != null && Model.Ve_Lenguaje.Contains("sin_alteracion") ? "checked" : "") /><label class="form-check-label">Sin alteración observada</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Lenguaje" value="comprension" @(Model?.Ve_Lenguaje != null && Model.Ve_Lenguaje.Contains("comprension") ? "checked" : "") /><label class="form-check-label">Dificultad de comprensión</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Lenguaje" value="expresion" @(Model?.Ve_Lenguaje != null && Model.Ve_Lenguaje.Contains("expresion") ? "checked" : "") /><label class="form-check-label">Dificultad de expresión</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Lenguaje" value="otro_idioma" @(Model?.Ve_Lenguaje != null && Model.Ve_Lenguaje.Contains("otro_idioma") ? "checked" : "") /><label class="form-check-label">Utiliza otro idioma</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Lenguaje" value="incoherente" @(Model?.Ve_Lenguaje != null && Model.Ve_Lenguaje.Contains("incoherente") ? "checked" : "") /><label class="form-check-label">Lenguaje incoherente</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Lenguaje" value="intubado" @(Model?.Ve_Lenguaje != null && Model.Ve_Lenguaje.Contains("intubado") ? "checked" : "") /><label class="form-check-label">Intubado</label></div>
+          </div>
+          <span class="text-danger" asp-validation-for="Ve_Lenguaje"></span>
+        </div>
+
+        <div class="col-md-4 mb-2">
+          <div class="font-weight-bold text-primary mb-2">Visión</div>
+          <div class="d-flex flex-column gap-2">
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Vision" value="sin_alteracion" @(Model?.Ve_Vision != null && Model.Ve_Vision.Contains("sin_alteracion") ? "checked" : "") /><label class="form-check-label">Sin alteración observada</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Vision" value="deficiente" @(Model?.Ve_Vision != null && Model.Ve_Vision.Contains("deficiente") ? "checked" : "") /><label class="form-check-label">Deficiente</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Vision" value="ceguera" @(Model?.Ve_Vision != null && Model.Ve_Vision.Contains("ceguera") ? "checked" : "") /><label class="form-check-label">Ceguera</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Vision" value="lentes" @(Model?.Ve_Vision != null && Model.Ve_Vision.Contains("lentes") ? "checked" : "") /><label class="form-check-label">Utiliza lentes</label></div>
+          </div>
+          <span class="text-danger" asp-validation-for="Ve_Vision"></span>
+        </div>
+
+        <div class="col-md-4 mb-2">
+          <div class="font-weight-bold text-primary mb-2">Audición</div>
+          <div class="d-flex flex-column gap-2">
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Oido" value="sin_alteracion" @(Model?.Ve_Oido != null && Model.Ve_Oido.Contains("sin_alteracion") ? "checked" : "") /><label class="form-check-label">Sin alteración</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Oido" value="deficiente" @(Model?.Ve_Oido != null && Model.Ve_Oido.Contains("deficiente") ? "checked" : "") /><label class="form-check-label">Deficiente</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Oido" value="sordo" @(Model?.Ve_Oido != null && Model.Ve_Oido.Contains("sordo") ? "checked" : "") /><label class="form-check-label">Sordo</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="Ve_Oido" value="protesis" @(Model?.Ve_Oido != null && Model.Ve_Oido.Contains("protesis") ? "checked" : "") /><label class="form-check-label">Prótesis auditiva</label></div>
+          </div>
+          <span class="text-danger" asp-validation-for="Ve_Oido"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9. Seguridad y Factores Psicosociales -->
+    <div class="oft-card mb-3 p-3 p-md-4">
+      <div class="oft-head"><i class="fas fa-shield-alt"></i><h5 class="mb-0">9. Seguridad y Factores Psicosociales</h5></div>
+      <div class="row">
+        <div class="col-md-6 mb-2">
+          <div class="font-weight-bold text-primary mb-2">Necesidad de Seguridad</div>
+          <div class="d-flex flex-wrap gap-3">
+            <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="Ve_Seg" value="autoproteccion" @(Model?.Ve_Seg != null && Model.Ve_Seg.Contains("autoproteccion") ? "checked" : "") /><label class="form-check-label">Capacidad de autoprotección conservada</label></div>
+            <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="Ve_Seg" value="autolesion" @(Model?.Ve_Seg != null && Model.Ve_Seg.Contains("autolesion") ? "checked" : "") /><label class="form-check-label">Riesgo de autolesión</label></div>
+            <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="Ve_Seg" value="caida" @(Model?.Ve_Seg != null && Model.Ve_Seg.Contains("caida") ? "checked" : "") /><label class="form-check-label">Riesgo de caída</label></div>
+            <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="Ve_Seg" value="infeccion" @(Model?.Ve_Seg != null && Model.Ve_Seg.Contains("infeccion") ? "checked" : "") /><label class="form-check-label">Riesgo de infección</label></div>
+            <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="Ve_Seg" value="ulcera" @(Model?.Ve_Seg != null && Model.Ve_Seg.Contains("ulcera") ? "checked" : "") /><label class="form-check-label">Riesgo de úlcera por presión</label></div>
+          </div>
+          <span class="text-danger" asp-validation-for="Ve_Seg"></span>
+        </div>
+
+        <div class="col-md-6 mb-2">
+          <div class="font-weight-bold text-primary mb-2">Creencias y Valores</div>
+          <div class="mb-2">
+            <span class="form-label me-2">Solicita servicios religiosos:</span>
+            <div class="d-inline-block">
+              <div class="form-check form-check-inline"><input class="form-check-input" type="radio" value="si" asp-for="Ve_Religiosos" /><label class="form-check-label">Sí</label></div>
+              <div class="form-check form-check-inline"><input class="form-check-input" type="radio" value="no" asp-for="Ve_Religiosos" /><label class="form-check-label">No</label></div>
+            </div>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Observaciones</label>
+            <input class="form-control" asp-for="Ve_CreenciasObservaciones" placeholder="Detalle observaciones sobre creencias." />
+            <span class="text-danger" asp-validation-for="Ve_CreenciasObservaciones"></span>
+          </div>
+          <div class="mb-2">
+            <span class="form-label me-2">Conoce el motivo del servicio:</span>
+            <div class="d-inline-block">
+              <div class="form-check form-check-inline"><input class="form-check-input" type="radio" value="si" asp-for="Ve_ConoceMotivo" /><label class="form-check-label">Sí</label></div>
+              <div class="form-check form-check-inline"><input class="form-check-input" type="radio" value="no" asp-for="Ve_ConoceMotivo" /><label class="form-check-label">No</label></div>
+            </div>
+          </div>
+          <div>
+            <span class="form-label me-2">Necesita información:</span>
+            <div class="d-inline-block">
+              <div class="form-check form-check-inline"><input class="form-check-input" type="radio" value="si" asp-for="Ve_NecesitaInfo" /><label class="form-check-label">Sí</label></div>
+              <div class="form-check form-check-inline"><input class="form-check-input" type="radio" value="no" asp-for="Ve_NecesitaInfo" /><label class="form-check-label">No</label></div>
+            </div>
+          </div>
+          <span class="text-danger" asp-validation-for="Ve_Religiosos"></span>
+          <span class="text-danger" asp-validation-for="Ve_ConoceMotivo"></span>
+          <span class="text-danger" asp-validation-for="Ve_NecesitaInfo"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10. Medicación y Plan -->
+    <div class="oft-card mb-4 p-3 p-md-4">
+      <div class="oft-head"><i class="fas fa-prescription-bottle"></i><h5 class="mb-0">10. Medicación Actual y Plan Terapéutico</h5></div>
+      <div class="mb-3">
+        <label class="form-label">Medicación Actual del Paciente (Incluir dosis y frecuencia)</label>
+        <textarea class="form-control" rows="3" asp-for="Ve_MedicacionActual" placeholder="Listado de medicamentos, dosis, frecuencia, vía..."></textarea>
+        <span class="text-danger" asp-validation-for="Ve_MedicacionActual"></span>
+      </div>
+      <div>
+        <label class="form-label">Plan Recomendado Terapéutico (Sueroterapia)</label>
+        <textarea class="form-control" rows="3" asp-for="Ve_PlanTerapeutico" placeholder="Indique el plan de sueroterapia a aplicar, recomendaciones y justificación."></textarea>
+        <span class="text-danger" asp-validation-for="Ve_PlanTerapeutico"></span>
+      </div>
+    </div>
+  }
+</div>
+
+  <!-- ====================== HISTÓRICO VALORACIÓN INICIAL (SIEMPRE) ====================== -->
+  @if (_veHist != null )
+  {
+    <div class="mt-4">
+      <h3 class="h5 mb-3 text-secondary">Histórico Valoración Inicial de Enfermería (completo)</h3>
+
+      <div class="accordion" id="veHistAccordion">
+        @foreach (var h in _veHist)
+        {
+          var collapseId = $"veHist-{vidx}";
+          var headingId  = $"veHead-{vidx}";
+          vidx++;
+
+          <div class="card mb-3">
+            <div class="card-header" id="@headingId">
+              <h2 class="mb-0">
+                <button class="btn btn-link collapsed w-100 text-left d-flex justify-content-between align-items-center"
+                        type="button"
+                        data-toggle="collapse"
+                        data-target="#@collapseId"
+                        aria-expanded="false"
+                        aria-controls="@collapseId">
+                  <div class="w-100 d-flex flex-column flex-md-row justify-content-between small">
+                    <div>
+                      <span class="fw-semibold text-dark">Fecha:</span>
+                      @{
+                        DateTime? f = h.Fecha;
+                      }
+                      @(f.HasValue ? f.Value.ToString("dd-MM-yyyy HH:mm") : "Sin definir")
+                    </div>
+                  </div>
+                </button>
+              </h2>
+            </div>
+
+            <div id="@collapseId" class="collapse" aria-labelledby="@headingId" data-parent="#veHistAccordion">
+              <div class="card-body">
+
+                <div class="card border rounded shadow-sm mb-4">
+                  <div class="card-body">
+
+                    <!-- 1) Datos de valoración inicial -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-file-medical"></i><h5 class="mb-0">Datos de valoración inicial</h5></div>
+                      <div class="row">
+                      <div class="col-12 col-md-4 mb-3">
+                        <div class="text-dark text-uppercase"><strong>Motivo de consulta</strong></div>
+                        <div class="text-muted">@Vh(h.Motivo)</div>
+                      </div>
+                        <div class="col-12 col-md-4 mb-3"><div class="text-dark text-uppercase"><strong>Diagnóstico médico (Si aplica)</strong></div><div class="text-muted">@Vh(h.DiagnosticoMedico)</div></div>
+                      <div class="col-12 col-md-4 mb-3">
+                        <div class="text-dark text-uppercase"><strong>Laboratorios a la vista</strong></div>
+                        <div class="text-muted">@Vh(h.Labs)</div>
+                      </div>
+                      </div>
+                    </div>
+
+                    <!-- 2) ¿Cómo se enteró del servicio? -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-bullhorn"></i><h5 class="mb-0">¿Cómo se enteró del servicio?</h5></div>
+                      <div class="text-muted">
+                        @{
+                          var m = h.Medio ?? Array.Empty<string>();
+                        }
+                        @(m.Length == 0 ? "Sin definir" : string.Join(", ", m))
+                      </div>
+                    </div>
+
+                    <!-- 3) Oxigenación y Circulación -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-lungs"></i><h5 class="mb-0">Oxigenación y Circulación</h5></div>
+                      <div class="row">
+                        <div class="col-12 col-md-6 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Sistema Respiratorio</strong></div>
+                          <div class="text-muted">
+                            @{
+                              var r = h.Resp ?? Array.Empty<string>();
+                            }
+                            @(r.Length == 0 ? "Sin definir" : string.Join(", ", r))
+                          </div>
+                        </div>
+                        <div class="col-12 col-md-6 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Sistema Circulatorio</strong></div>
+                          <div class="text-muted">
+                            @{
+                              var c = h.Circ ?? Array.Empty<string>();
+                            }
+                            @(c.Length == 0 ? "Sin definir" : string.Join(", ", c))
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 4) Nutrición -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-utensils"></i><h5 class="mb-0">Necesidad de Nutrición</h5></div>
+                      <div class="row">
+                        <div class="col-12 col-md-6 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Aspectos</strong></div>
+                          <div class="text-muted">
+                            @{
+                              var n = h.Nutricion ?? Array.Empty<string>();
+                            }
+                            @(n.Length == 0 ? "Sin definir" : string.Join(", ", n))
+                          </div>
+                        </div>
+                        <div class="col-12 col-md-6 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Observaciones / Detalles de la dieta</strong></div>
+                          <div class="text-muted">@Vh(h.NutricionObs)</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 5) Eliminación -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-restroom"></i><h5 class="mb-0">Necesidad de Eliminación</h5></div>
+                      <div class="row">
+                        <div class="col-12 col-md-6 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Patrón Urinario</strong></div>
+                          <div class="text-muted">
+                            @{
+                              var u = h.Urinario ?? Array.Empty<string>();
+                            }
+                            @(u.Length == 0 ? "Sin definir" : string.Join(", ", u))
+                          </div>
+                        </div>
+                        <div class="col-12 col-md-6 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Patrón Intestinal</strong></div>
+                          <div class="text-muted">
+                            @{
+                              var ii = h.Intestinal ?? Array.Empty<string>();
+                            }
+                            @(ii.Length == 0 ? "Sin definir" : string.Join(", ", ii))
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 6) Movilización y Conciencia -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-walking"></i><h5 class="mb-0">Movilización y Estado de Conciencia</h5></div>
+                      <div class="row">
+                        <div class="col-12 col-md-6 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Actividad / Movilidad</strong></div>
+                          <div class="text-muted">
+                            @{
+                              var mv = h.Mov ?? Array.Empty<string>();
+                            }
+                            @(mv.Length == 0 ? "Sin definir" : string.Join(", ", mv))
+                          </div>
+                        </div>
+                        <div class="col-12 col-md-6 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Estado de Conciencia</strong></div>
+                          <div class="text-muted">
+                            @{
+                              var cc = h.Conciencia ?? Array.Empty<string>();
+                            }
+                            @(cc.Length == 0 ? "Sin definir" : string.Join(", ", cc))
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 7) Autocuidado y Reposo -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-bed"></i><h5 class="mb-0">Autocuidado y Reposo</h5></div>
+                      <div class="row">
+                        <div class="col-12 col-md-4 mb-3"><div class="text-dark text-uppercase"><strong>Necesidad de Reposo y Sueño</strong></div>
+                          <div class="text-muted">
+                            @{
+                              var s = h.Sueno ?? Array.Empty<string>();
+                            }
+                            @(s.Length == 0 ? "Sin definir" : string.Join(", ", s))
+                          </div>
+                        </div>
+                        <div class="col-12 col-md-4 mb-3"><div class="text-dark text-uppercase"><strong>Autonomía para Vestirse</strong></div><div class="text-muted">@Vh(h.Vestirse)</div></div>
+                        <div class="col-12 col-md-4 mb-3"><div class="text-dark text-uppercase"><strong>Autonomía para Higiene</strong></div><div class="text-muted">@Vh(h.Higiene)</div></div>
+                        <div class="col-12 mb-3"><div class="text-dark text-uppercase"><strong>Estado de Piel y Mucosas</strong></div>
+                          <div class="text-muted">
+                            @{
+                              var piel = h.Piel ?? Array.Empty<string>();
+                            }
+                            @(piel.Length == 0 ? "Sin definir" : string.Join(", ", piel))
+                          </div>
+                        </div>
+                        <div class="col-12 col-md-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Ubicación de Herida/Úlcera</strong></div>
+                          <div class="text-muted">
+                            @Vh(h.PielUbicacion)
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 8) Comunicación -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-comments"></i><h5 class="mb-0">Necesidad de Comunicación</h5></div>
+                      <div class="row">
+                        <div class="col-12 col-md-4 mb-3"><div class="text-dark text-uppercase"><strong>Lenguaje y Expresión</strong></div>
+                          <div class="text-muted">
+                            @{
+                              var lg = h.Lenguaje ?? Array.Empty<string>();
+                            }
+                            @(lg.Length == 0 ? "Sin definir" : string.Join(", ", lg))
+                          </div>
+                        </div>
+                        <div class="col-12 col-md-4 mb-3"><div class="text-dark text-uppercase"><strong>Visión</strong></div>
+                          <div class="text-muted">
+                            @{
+                              var vs = h.Vision ?? Array.Empty<string>();
+                            }
+                            @(vs.Length == 0 ? "Sin definir" : string.Join(", ", vs))
+                          </div>
+                        </div>
+                        <div class="col-12 col-md-4 mb-3"><div class="text-dark text-uppercase"><strong>Audición</strong></div>
+                          <div class="text-muted">
+                            @{
+                              var od = h.Oido ?? Array.Empty<string>();
+                            }
+                            @(od.Length == 0 ? "Sin definir" : string.Join(", ", od))
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 9) Seguridad y Psicosocial -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-shield-alt"></i><h5 class="mb-0">Seguridad y Factores Psicosociales</h5></div>
+                      <div class="row">
+                        <div class="col-12 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Necesidad de Seguridad</strong></div>
+                          <div class="text-muted">
+                            @{
+                              var sg = h.Seg ?? Array.Empty<string>();
+                            }
+                            @(sg.Length == 0 ? "Sin definir" : string.Join(", ", sg))
+                          </div>
+                        </div>
+                        <div class="col-3 col-md-3 mb-3"><div class="text-dark text-uppercase"><strong>Religioso</strong></div><div class="text-muted">@Vh(h.Religiosos)</div></div>
+                        <div class="col-3 col-md-3 mb-3"><div class="text-dark text-uppercase"><strong>Observaciones de creencias</strong></div><div class="text-muted">@Vh(h.CreenciasObservaciones)</div></div>
+                        <div class="col-3 col-md-3 mb-3"><div class="text-dark text-uppercase"><strong>Conoce el motivo del servicio</strong></div><div class="text-muted">@Vh(h.ConoceMotivo)</div></div>
+                        <div class="col-3 col-md-3 mb-3"><div class="text-dark text-uppercase"><strong>¿Necesita información?</strong></div><div class="text-muted">@Vh(h.NecesitaInfo)</div></div>
+                      </div>
+                    </div>
+
+                    <!-- 10) Medicación y Plan -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-prescription-bottle-alt"></i><h5 class="mb-0">Medicación actual y Plan terapéutico</h5></div>
+                      <div class="row">
+                        <div class="col-12 col-md-6 mb-3"><div class="text-dark text-uppercase"><strong>Medicación Actual del Paciente (Incluir dosis y frecuencia)</strong></div><div class="text-muted">@Vh(h.MedicacionActual)</div></div>
+                        <div class="col-12 col-md-6 mb-3"><div class="text-dark text-uppercase"><strong>Plan Recomendado Terapéutico (Sueroterapia)</strong></div><div class="text-muted">@Vh(h.PlanTerapeutico)</div></div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+  else
+  {
+    <div class="mt-4 small text-muted">No hay histórico de valoración inicial para este paciente.</div>
+  }
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

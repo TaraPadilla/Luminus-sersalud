@@ -1,0 +1,197 @@
+@using Database.Shared.Models
+@model PaqueteHospitalizacion
+@{
+    ViewData["Title"] = "Paquete - Detalles";
+}
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body titulo-azul">
+        <div class="form-row">
+            <div class="col-md-5">
+                <h4><b><i class="fas fa-toolbox"></i> Paquete de hospitalizaci&oacute;n</b></h4>
+            </div>
+            <div class="col-md-5">
+                <b>Codigo: </b>@Model.CodigoInterno<br />
+                <b>Nombre: </b>@Model.NombrePaquete<br />
+                <b>Descripcion: </b>@(Model.Descripcion ?? "-")
+            </div>
+            <div class="col-md-2">
+                <a class="btn btn-success text-white" href="/HospitalizacionPaquetes/Modificar?paqueteId=@Model.Id">
+                   <i class="fas fa-edit"></i> Editar paquete
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <!--Productos-->
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Productos</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-12">
+                <table id="tabla-productos-paquete">
+                    <thead>
+                        <tr>
+                            <th>Codigo</th>
+                            <th>Nombre</th>
+                            <th>Unidad</th>
+                            <th>Cantidad</th>
+                            <th>Precio costo</th>
+                            <th>Precio venta</th>
+                            <th>Subtotal</th>
+                            <th>% descuento</th>
+                            <th>Valor total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.DetallePaquetesHospitalizacion != null
+                        && Model.DetallePaquetesHospitalizacion.Count() > 0)
+                        {
+                            @foreach (var elemento in Model.DetallePaquetesHospitalizacion)
+                            {
+                                if (elemento.ProductoId != null)
+                                {
+                                    var producto = elemento.Producto ?? new Producto();
+                                    var unidadVenta = elemento.UnidadMedidaVenta;
+                                    decimal subtotal = elemento.Cantidad * elemento.PrecioValor;
+                                    decimal total = subtotal - (subtotal * ((elemento.DescuentoPorcentaje ?? 0) / 100));
+                                    <tr>
+                                        <td>@producto.CodigoReferencia</td>
+                                        <td>@producto.NombreProducto</td>
+                                        <td>@(unidadVenta != null ? unidadVenta.Nombre : "Unidad")</td>
+                                        <td>@elemento.Cantidad</td>
+                                        <td>@elemento.PrecioCosto</td>
+                                        <td>@elemento.PrecioValor</td>
+                                        <td>@subtotal</td>
+                                        <td>@elemento.DescuentoPorcentaje</td>
+                                        <td>@total</td>
+                                    </tr>
+                                }
+
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!--Servicios-->
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Servicios</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-12">
+                <table id="tabla-servicios-paquete">
+                    <thead>
+                        <tr>
+                            <th>Codigo</th>
+                            <th>Nombre</th>
+                            <th>Cantidad</th>
+                            <th>Precio costo</th>
+                            <th>Precio venta</th>
+                            <th>Subtotal</th>
+                            <th>% descuento</th>
+                            <th>Valor total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.DetallePaquetesHospitalizacion != null
+                        && Model.DetallePaquetesHospitalizacion.Count() > 0)
+                        {
+                            @foreach (var elemento in Model.DetallePaquetesHospitalizacion)
+                            {
+                                if (elemento.ServicioId != null)
+                                {
+                                    decimal subtotal = elemento.Cantidad * elemento.PrecioValor;
+                                    decimal total = subtotal - (subtotal * ((elemento.DescuentoPorcentaje ?? 0) / 100));
+                                    <tr>
+                                        <td>@elemento.Servicio.CodigoInterno</td>
+                                        <td>@elemento.Servicio.NombreServicio</td>
+                                        <td>@elemento.Cantidad</td>
+                                        <td>0</td>
+                                        <td>@elemento.PrecioValor</td>
+                                        <td>@subtotal</td>
+                                        <td>@elemento.DescuentoPorcentaje</td>
+                                        <td>@total</td>
+                                    </tr>
+                                }
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!--Laboratorios-->
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Laboratorios</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-12">
+                <table id="tabla-laboratorios-paquete">
+                    <thead>
+                        <tr>
+                            <th>Codigo</th>
+                            <th>Nombre</th>
+                            <th>Cantidad</th>
+                            <th>Precio costo</th>
+                            <th>Precio venta</th>
+                            <th>Subtotal</th>
+                            <th>% descuento</th>
+                            <th>Valor total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.DetallePaquetesHospitalizacion != null
+                        && Model.DetallePaquetesHospitalizacion.Count() > 0)
+                        {
+                            @foreach (var elemento in Model.DetallePaquetesHospitalizacion)
+                            {
+                                if (elemento.Laboratorio != null)
+                                {
+                                    decimal subtotal = elemento.Cantidad * elemento.PrecioValor;
+                                    decimal total = subtotal - (subtotal * ((elemento.DescuentoPorcentaje ?? 0) / 100));
+                                    <tr>
+                                        <td>@elemento.Laboratorio.Id</td>
+                                        <td>@elemento.Laboratorio.NombreExamen</td>
+                                        <td>@elemento.Cantidad</td>
+                                        <td>0</td>
+                                        <td>@elemento.PrecioValor</td>
+                                        <td>@subtotal</td>
+                                        <td>@elemento.DescuentoPorcentaje</td>
+                                        <td>@total</td>
+                                    </tr>
+                                }
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12 text-right">
+                <h5><b>Precio costo: </b>@Model.PrecioCosto</h5>
+            </div>
+            <div class="col-md-12 text-right">
+                <h5><b>Precio venta: </b>@(Model.Precio ?? 0)</h5>
+            </div>
+            <div class="col-md-12 text-right">
+                <h5><b>Ganancia: </b>@((Model.Precio ?? 0) - Model.PrecioCosto)</h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/ViewModelKo/HospitalizacionPaqueteDetallesVM.js"></script>
+}

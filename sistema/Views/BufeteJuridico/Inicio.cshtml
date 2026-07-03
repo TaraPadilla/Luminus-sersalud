@@ -1,0 +1,95 @@
+﻿@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    ViewData["Title"] = "Bufete juridico - Inicio";
+    // Leer el valor del appsettings.json. 
+    string sufijoLayout = Configuration["Cliente"]; 
+    
+    // Concatenar para formar el nombre del Layout (ejemplo: "_Layout" + "SS")
+    // Si la clave trae el nombre completo (ej. "_LayoutSS"), simplemente asignalo directo.
+    Layout = $"_Layout{sufijoLayout}"; 
+}
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-4 form-row container-item-navegacion">
+                <div class="col-md-12 form-row item-navegacion shadow" data-bind="click:redirigirSociedades">
+                    <div class="col-md-12 icono-opcion-menu sociedades"></div>
+                    <div class="col-md-12 p-1 texto-opcion-menu">
+                        <center><h5><b>Sociedades</b></h5></center>
+                    </div>
+                    <div class="col-md-12">
+                        Información sobre las sociedades registradas
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 form-row container-item-navegacion">
+                <div class="col-md-12 form-row item-navegacion shadow" data-bind="click:redirigirContratos">
+                    <div class="col-md-12 icono-opcion-menu contratos"></div>
+                    <div class="col-md-12 p-1 texto-opcion-menu">
+                        <center><h5><b>Contratos</b></h5></center>
+                    </div>
+                    <div class="col-md-12">
+                        Información sobre los contratos registrados
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 form-row container-item-navegacion">
+                <div class="col-md-12 form-row item-navegacion shadow" data-bind="click:redirigirMarcas">
+                    <div class="col-md-12 icono-opcion-menu marcas"></div>
+                    <div class="col-md-12 p-1 texto-opcion-menu">
+                        <center><h5><b>Marcas</b></h5></center>
+                    </div>
+                    <div class="col-md-12">
+                        Información sobre las marcas registradas
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section css{
+<style>
+    .texto-opcion-menu {
+        padding: 30px !important;
+        color: darkblue;
+    }
+
+    .icono-opcion-menu {
+        height: 295px;
+        background-size: 100%;
+    }
+
+    .sociedades {
+        background-image: url(https://cdn-icons-png.flaticon.com/512/6556/6556391.png);
+    }
+
+    .contratos {
+        background-image: url(https://cdn-icons-png.flaticon.com/512/5663/5663344.png);
+    }
+
+    .marcas {
+        background-image: url(https://cdn-icons-png.flaticon.com/512/180/180758.png);
+    }
+
+    .container-item-navegacion {
+        padding: 40px !important;
+    }
+
+    .item-navegacion {
+        padding: 20px;
+        border-radius: 10px;
+    }
+
+        .item-navegacion:hover {
+            background-color: #f5f5f5;
+            cursor: pointer;
+            transform: scale(1.1);
+        }
+</style>
+}
+
+@section Scripts{
+<script type="text/javascript" src="~/ViewModelKo/BufeteJuridicoInicioVM.js"></script>
+}

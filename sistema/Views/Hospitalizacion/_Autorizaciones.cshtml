@@ -1,0 +1,44 @@
+@model sistema.Models.HospitalizacionDetallesViewModel
+<div class="tab-pane tabs-animation fade show " id="tab-content-historial-autorizaciones" role="tabpanel">
+                <div class="main-card mb-3 card" style="border-radius: 10px">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Autorizaciones</b></h5>
+                            </div>
+                            <div class="col-md-12 text-primary" style="display:none" id="texto-cargando-historial-hospitalizaciones">
+                                Cargando historial de hospitalizaciones...
+                            </div>
+                            <div class="col-md-12 text-danger" style="display:none" id="texto-error-consultar-historial-hospitalizaciones">
+                                Error de conexion.
+                                <a href="#" data-bind="click: consultarHistorialHospitalizaciones">Reintentar</a>
+                            </div>
+                            <div class="col-md-12 table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre del Archivo</th>
+                                            <th>Ver PDF</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!--ko foreach: archivosAutorizaciones-->
+                                        <tr>
+                                            <!-- Muestra el nombre del archivo -->
+                                            <td data-bind="text: ArchivoNombre"></td>
+                                            <!-- Botón para abrir el archivo -->
+                                            <td>
+                                                <a data-bind="attr: { href: ArchivoUrl }" target="_blank" class="btn btn-success">
+                                                    <i class="fas fa-file-pdf"></i> Ver PDF
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <!--/ko-->
+                                    </tbody>
+
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>

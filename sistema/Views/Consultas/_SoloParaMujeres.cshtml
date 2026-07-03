@@ -1,0 +1,69 @@
+@model sistema.Models.ConsultasViewModel
+
+<br />
+
+<div class="border rounded p-3 bg-white shadow-sm mb-3">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+        <h6 class="m-0 font-weight-bold text-primary text-uppercase">
+            <i class="fas fa-female mr-2"></i> Solo para mujeres
+        </h6>
+        <small class="text-muted">
+            <i class="fas fa-info-circle mr-1"></i> Datos complementarios
+        </small>
+    </div>
+
+    <div class="form-row">
+
+        <div class="col-md-4 mb-3">
+            <div class="border rounded p-2">
+                <label class="font-weight-bold mb-1">
+                    &iquest;Est&aacute; usted embarazada?
+                </label>
+                <select asp-for="EstaEmbarazada" class="form-control dato-consulta">
+                    <option value="-">Seleccione...</option>
+                    <option value="SI">SI</option>
+                    <option value="NO">NO</option>
+                    <option value="N/S">N/S</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="border rounded p-2">
+                <label class="font-weight-bold mb-1">
+                    N&uacute;mero de semanas
+                </label>
+                @Html.TextBoxFor(a => a.NumeroSemanasEmbarazo, new
+                {
+                    type = "number",
+                    @class = "form-control dato-consulta"
+                })
+            </div>
+        </div>
+
+        @*MANANTIALES no esta usando este campo*@
+        @* <div class="col-md-4">
+        �Est� usted tomando p�ldoras anticonceptivas o de sustituci�n hormonal?<br>
+        @Html.RadioButtonFor(m => m.TomaPildorasAnticonceptivas, "si") S�<br>
+        @Html.RadioButtonFor(m => m.TomaPildorasAnticonceptivas, "no") No<br>
+        @Html.RadioButtonFor(m => m.TomaPildorasAnticonceptivas, "ns") N/S
+        </div> *@
+
+        <div class="col-md-4 mb-3">
+            <div class="border rounded p-2">
+                <label class="font-weight-bold mb-1">
+                    &iquest;Est&aacute; usted amamantando?
+                </label>
+                <select class="form-control dato-consulta" asp-for="EstaAmamantando">
+                    <option value="-">Seleccione...</option>
+                    <option value="SI">SI</option>
+                    <option value="NO">NO</option>
+                    <option value="N/S">N/S</option>
+                </select>
+            </div>
+        </div>
+
+    </div>
+</div>

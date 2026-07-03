@@ -1,0 +1,174 @@
+@model sistema.Models.ConsultasViewModel
+
+@* @Html.HiddenFor(a => a.CitaId)
+@Html.HiddenFor(a => a.PacienteId)
+@Html.HiddenFor(a => a.ConsultaId)
+@Html.HiddenFor(a => a.PrimeraConsulta)
+@Html.HiddenFor(a => a.HistoriaId)
+@Html.HiddenFor(a => a.ExamenFisicoId) *@
+
+<br />
+
+<div class="border rounded p-3 bg-white shadow-sm mb-3">
+
+    <!-- Header: Revisión por sistemas -->
+    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+        <h6 class="m-0 font-weight-bold text-primary text-uppercase">
+            <i class="fas fa-list-alt mr-2"></i> Revisi&oacute;n por sistemas
+        </h6>
+        <small class="text-muted">
+            <i class="fas fa-notes-medical mr-1"></i> Evaluaci&oacute;n general
+        </small>
+    </div>
+
+    <div class="form-row">
+
+        <div class="col-md-6 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">APARIENCIA GENERAL Y NEUROLOGICO:</div>
+                @Html.TextAreaFor(m => m.RevisionSistemasAparienciaGeneral, new
+
+
+
+                    {
+
+
+
+                        @class = "form-control dato-consulta"
+
+
+
+                    })
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">CABEZA:</div>
+                @Html.TextAreaFor(m => m.RevisionSistemasCabeza, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">OIDOS Y BOCA:</div>
+                @Html.TextAreaFor(m => m.RevisionSistemasOidosBoca, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">CUELLO:</div>
+                @Html.TextAreaFor(m => m.RevisionSistemasCuello, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">TORAX:</div>
+                @Html.TextAreaFor(m => m.RevisionSistemasTorax, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">ABDOMEN:</div>
+                @Html.TextAreaFor(m => m.RevisionSistemasAbdomen, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">DORSO Y EXTREMIDADES:</div>
+                @Html.TextAreaFor(m => m.RevisionSistemasDorsoYExtremidades, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">GENITALES:</div>
+                @Html.TextAreaFor(m => m.RevisionSistemasGenitales, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+
+    </div>
+
+    <div class="mt-3"></div>
+
+    <!-- Header: Historial -->
+    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+        <h6 class="m-0 font-weight-bold text-primary text-uppercase">
+            <i class="fas fa-history mr-2"></i> Revisi&oacute;n por sistemas (historial)
+        </h6>
+    </div>
+
+    <div class="form-row">
+
+        <div class="col-md-12 text-primary texto-cargando-historial mb-2" style="display:none">
+            <i class="fas fa-spinner fa-spin mr-1"></i> Cargando historial...
+        </div>
+
+        <div class="col-md-12 text-danger texto-error-cargando-historial mb-2" style="display:none">
+            <i class="fas fa-exclamation-triangle mr-1"></i>
+            Error de servidor y/o conexion. <a href="#" data-bind="click:consultarHistorialConsultas">Reintentar</a>
+        </div>
+
+        <!--ko foreach:historialConsultas-->
+        <div class="col-md-12 mb-3">
+            <div class="border rounded p-3 bg-white">
+
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="font-weight-bold text-dark">
+                        <i class="fas fa-calendar-alt text-primary mr-1"></i>
+                        Fecha: <span data-bind="text:Fecha"></span>
+                    </div>
+                    <span class="badge badge-light border">
+                        <i class="fas fa-clipboard-check text-primary mr-1"></i> Registro
+                    </span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-2 mb-2">
+                        <div class="font-weight-bold text-dark">APARIENCIA GENERAL Y NEUROLOGICO:</div>
+                        <span class="text-body" data-bind="text:RevisionSistemasAparienciaGeneral"></span>
+                    </div>
+
+                    <div class="col-md-2 mb-2">
+                        <div class="font-weight-bold text-dark">CABEZA:</div>
+                        <span class="text-body" data-bind="text:RevisionSistemasCabeza"></span>
+                    </div>
+
+                    <div class="col-md-2 mb-2">
+                        <div class="font-weight-bold text-dark">OIDOS Y BOCA:</div>
+                        <span class="text-body" data-bind="text:RevisionSistemasOidosBoca"></span>
+                    </div>
+
+                    <div class="col-md-2 mb-2">
+                        <div class="font-weight-bold text-dark">CUELLO:</div>
+                        <span class="text-body" data-bind="text:RevisionSistemasCuello"></span>
+                    </div>
+
+                    <div class="col-md-2 mb-2">
+                        <div class="font-weight-bold text-dark">TORAX:</div>
+                        <span class="text-body" data-bind="text:RevisionSistemasTorax"></span>
+                    </div>
+
+                    <div class="col-md-2 mb-2">
+                        <div class="font-weight-bold text-dark">ABDOMEN:</div>
+                        <span class="text-body" data-bind="text:RevisionSistemasAbdomen"></span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <!--/ko-->
+
+        <!--ko if:historialConsultas().length==0-->
+        <div class="col-md-12 text-muted">
+            <i class="fas fa-info-circle mr-1"></i> No hay registro de consultas anteriores
+        </div>
+        <!--/ko-->
+
+    </div>
+
+</div>

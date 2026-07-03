@@ -1,0 +1,93 @@
+@{
+    ViewData["Title"] = "Modificar Usuario";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+@model sistema.Areas.Identity.Pages.Account.RegisterModel.InputModel
+
+@await Html.PartialAsync("_NuevoUsuarioForm")
+
+
+@section Scripts
+{
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.0.1/js/toastr.js"></script>
+    <script type="text/javascript" src="~/js/moment.min.js"></script>
+    <script type="text/javascript" src="~/js/daterangepicker.js"></script>
+    <script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <script>
+        $(function () {
+        $('.select2').select2({ tags: true });
+
+        $('.select2bs4-user').select2({
+        theme: 'bootstrap4',
+        placeholder: 'Sin asignar',
+        allowClear: true
+        });
+        $('.select2bs4-emp').select2({
+        theme: 'bootstrap4',
+        placeholder: 'Sin asignar',
+        allowClear: true
+        });
+
+        $('#reservationtime').daterangepicker({
+        timePicker: true,
+        timePickerIncrement: 30,
+        locale: { format: 'MM/DD/YYYY hh:mm A' }
+        });
+        });
+
+        // NUEVO: La función de generar QR movida a la vista principal
+        async function generarQR(userId) {
+        const btn = document.getElementById('btnGenerarQR');
+        const container = document.getElementById('qrContainer');
+        const qrDiv = document.getElementById('qrcode');
+
+        // Estado de carga
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Generando...';
+
+        try {
+        // Llamamos a la API que acabamos de crear
+        const response = await fetch(`/api/WebAuthn/GenerateQrToken?userId=${userId}`, {
+        method: 'POST'
+        });
+
+        if (response.ok) {
+        const data = await response.json();
+
+        // Limpiamos cualquier QR anterior
+        qrDiv.innerHTML = "";
+
+        // Mostramos el contenedor
+        container.classList.remove('d-none');
+
+        // Generamos el gráfico del QR
+        new QRCode(qrDiv, {
+        text: data.url,      // Esta es la URL que armamos en el backend
+        width: 250,
+        height: 250,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+        });
+
+        toastr.success("Código QR generado exitosamente.");
+        } else {
+        const err = await response.json();
+        toastr.error(err.message || "Error al generar el código QR.");
+        }
+        } catch (error) {
+        console.error(error);
+        toastr.error("Error de conexión al generar el QR.");
+        } finally {
+        // Restaurar el botón
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-qr-code"></i> Generar QR para el empleado';
+        }
+        }
+    </script>
+}

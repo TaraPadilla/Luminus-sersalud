@@ -1,0 +1,484 @@
+@using sistema.Models
+@model Database.Shared.Models.DevolucionNacional
+
+@{
+    var estadoClase  = DevolucionEstado.ObtenerClaseCSS(Model.Estado);
+    var estadoNombre = DevolucionEstado.ObtenerNombre(Model.Estado);
+}
+
+<style>
+    .detalle-devolucion {
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        color: #1a1a2e;
+    }
+
+    /* ── Header banner ── */
+    .dd-header {
+        background: linear-gradient(135deg, #0f2944 0%, #1a4a7a 60%, #1e6091 100%);
+        border-radius: 10px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: .75rem;
+        box-shadow: 0 4px 20px rgba(15,41,68,.25);
+    }
+
+    .dd-header-left { display: flex; align-items: center; gap: 1rem; }
+
+    .dd-num-badge {
+        background: rgba(255,255,255,.12);
+        border: 1px solid rgba(255,255,255,.25);
+        border-radius: 8px;
+        padding: .4rem .9rem;
+        color: #fff;
+        font-size: .8rem;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+
+    .dd-title {
+        color: #fff;
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin: 0;
+        letter-spacing: -.01em;
+    }
+
+    .dd-subtitle {
+        color: rgba(255,255,255,.65);
+        font-size: .78rem;
+        margin: 0;
+    }
+
+    .dd-estado-pill {
+        padding: .45rem 1.1rem;
+        border-radius: 50px;
+        font-size: .72rem;
+        font-weight: 700;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        border: 2px solid rgba(255,255,255,.3);
+        color: #fff;
+        background: rgba(255,255,255,.15);
+        backdrop-filter: blur(4px);
+    }
+
+    /* ── Section cards ── */
+    .dd-section {
+        background: #fff;
+        border: 1px solid #e8edf3;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        overflow: hidden;
+        box-shadow: 0 1px 6px rgba(0,0,0,.05);
+        transition: box-shadow .2s;
+    }
+
+    .dd-section:hover { box-shadow: 0 4px 16px rgba(0,0,0,.09); }
+
+    .dd-section-header {
+        background: #f7f9fc;
+        border-bottom: 1px solid #e8edf3;
+        padding: .65rem 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: .55rem;
+    }
+
+    .dd-section-icon {
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .7rem;
+        color: #fff;
+        flex-shrink: 0;
+    }
+
+    .dd-section-title {
+        font-size: .72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        color: #4a5568;
+        margin: 0;
+    }
+
+    .dd-section-body { padding: 1rem 1.1rem; }
+
+    /* ── Field items ── */
+    .dd-field-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: .85rem;
+    }
+
+    .dd-field { display: flex; flex-direction: column; gap: .15rem; }
+
+    .dd-field-label {
+        font-size: .67rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .07em;
+        color: #94a3b8;
+    }
+
+    .dd-field-value {
+        font-size: .88rem;
+        font-weight: 600;
+        color: #1e293b;
+        line-height: 1.3;
+    }
+
+    /* ── Personas grid (solicitante / autorizador) ── */
+    .dd-persona-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    @@media (max-width: 576px) { .dd-persona-grid { grid-template-columns: 1fr; } }
+
+    .dd-persona-box {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: .85rem 1rem;
+        background: #f8fafc;
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+    }
+
+    .dd-persona-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .85rem;
+        color: #fff;
+        flex-shrink: 0;
+    }
+
+    .dd-persona-avatar.avatar-solicit  { background: linear-gradient(135deg,#3b82f6,#1d4ed8); }
+    .dd-persona-avatar.avatar-autoriza { background: linear-gradient(135deg,#10b981,#047857); }
+    .dd-persona-avatar.avatar-pending  { background: #e2e8f0; color: #94a3b8; }
+
+    .dd-persona-info { display: flex; flex-direction: column; gap: .1rem; }
+
+    .dd-persona-name {
+        font-size: .85rem;
+        font-weight: 700;
+        color: #1e293b;
+        line-height: 1.2;
+    }
+
+    .dd-persona-role {
+        font-size: .65rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .07em;
+        color: #94a3b8;
+    }
+
+    /* ── Observaciones ── */
+    .dd-obs-box {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-left: 4px solid #f59e0b;
+        border-radius: 8px;
+        padding: .85rem 1rem;
+        font-size: .87rem;
+        color: #78350f;
+        line-height: 1.6;
+    }
+
+    /* ── Products table ── */
+    .dd-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: .83rem;
+    }
+
+    .dd-table thead tr th {
+        background: #f1f5f9;
+        color: #475569;
+        font-size: .68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .07em;
+        padding: .65rem .85rem;
+        border-bottom: 2px solid #e2e8f0;
+        white-space: nowrap;
+    }
+
+    .dd-table tbody tr td {
+        padding: .6rem .85rem;
+        color: #334155;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+    }
+
+    .dd-table tbody tr:last-child td { border-bottom: none; }
+
+    .dd-table tbody tr:hover td { background: #f8fafc; }
+
+    .dd-qty-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #dbeafe;
+        color: #1d4ed8;
+        font-weight: 700;
+        font-size: .8rem;
+        padding: .2rem .65rem;
+        border-radius: 50px;
+        min-width: 40px;
+    }
+
+    .dd-row-num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        background: #e2e8f0;
+        color: #64748b;
+        border-radius: 50%;
+        font-size: .7rem;
+        font-weight: 700;
+    }
+
+    .dd-empty {
+        text-align: center;
+        padding: 2rem;
+        color: #94a3b8;
+        font-size: .85rem;
+    }
+
+    /* ── Icon colors ── */
+    .icon-info    { background: #3b82f6; }
+    .icon-bodega  { background: #8b5cf6; }
+    .icon-ubicacion { background: #10b981; }
+    .icon-solicit { background: #f59e0b; }
+    .icon-autori  { background: #ef4444; }
+    .icon-obs     { background: #f97316; }
+    .icon-prod    { background: #0ea5e9; }
+</style>
+
+<div class="detalle-devolucion">
+
+    <div class="dd-header">
+        <div class="dd-header-left">
+            <div>
+                <span class="dd-num-badge">N° @(Model.NumeroDevolucion?.ToString() ?? "-")</span>
+            </div>
+            <div>
+                <p class="dd-title">Devolución Nacional</p>
+                <p class="dd-subtitle">
+                    @(Model.FechaSolicitud?.ToString("dd/MM/yyyy HH:mm") ?? "-")
+                    &nbsp;·&nbsp; Creado por @(Model.CreadoPor ?? "-")
+                </p>
+            </div>
+        </div>
+        <span class="dd-estado-pill">@estadoNombre</span>
+    </div>
+
+    <div class="dd-section">
+        <div class="dd-section-header">
+            <div class="dd-section-icon icon-info"><i class="fas fa-info"></i></div>
+            <span class="dd-section-title">Información General</span>
+        </div>
+        <div class="dd-section-body">
+            <div class="dd-field-grid">
+                <div class="dd-field">
+                    <span class="dd-field-label">N° Devolución</span>
+                    <span class="dd-field-value">@(Model.NumeroDevolucion?.ToString() ?? "-")</span>
+                </div>
+                <div class="dd-field">
+                    <span class="dd-field-label">Fecha de Solicitud</span>
+                    <span class="dd-field-value">@(Model.FechaSolicitud?.ToString("dd/MM/yyyy HH:mm") ?? "-")</span>
+                </div>
+                <div class="dd-field">
+                    <span class="dd-field-label">Creado Por</span>
+                    <span class="dd-field-value">@(Model.CreadoPor ?? "-")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dd-section">
+        <div class="dd-section-header">
+            <div class="dd-section-icon icon-bodega"><i class="fas fa-warehouse"></i></div>
+            <span class="dd-section-title">Bodega</span>
+        </div>
+        <div class="dd-section-body">
+            <div class="dd-field-grid">
+                <div class="dd-field">
+                    <span class="dd-field-label">Bodega Origen</span>
+                    <span class="dd-field-value">@(Model.BodegaOrigen?.NombreBodega ?? "-")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dd-section">
+        <div class="dd-section-header">
+            <div class="dd-section-icon icon-ubicacion"><i class="fas fa-map-marker-alt"></i></div>
+            <span class="dd-section-title">Ubicación</span>
+        </div>
+        <div class="dd-section-body">
+            <div class="dd-field-grid">
+                <div class="dd-field">
+                    <span class="dd-field-label">Dirección</span>
+                    <span class="dd-field-value">@(Model.Direccion ?? "-")</span>
+                </div>
+                <div class="dd-field">
+                    <span class="dd-field-label">Departamento</span>
+                    <span class="dd-field-value">@(Model.Departamento ?? "-")</span>
+                </div>
+                <div class="dd-field">
+                    <span class="dd-field-label">Unidad / Sección</span>
+                    <span class="dd-field-value">@(Model.UnidadSeccion ?? "-")</span>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.Otros))
+                {
+                    <div class="dd-field">
+                        <span class="dd-field-label">Otros</span>
+                        <span class="dd-field-value">@Model.Otros</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="dd-section">
+        <div class="dd-section-header">
+            <div class="dd-section-icon icon-solicit"><i class="fas fa-users"></i></div>
+            <span class="dd-section-title">Personas</span>
+        </div>
+        <div class="dd-section-body">
+            <div class="dd-persona-grid">
+
+                <div class="dd-persona-box">
+                    <div class="dd-persona-avatar avatar-solicit">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="dd-persona-info">
+                        <span class="dd-persona-name">@(Model.SolicitanteNombre ?? "-")</span>
+                        <span class="dd-persona-role">Solicitante</span>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.AutorizadoPor))
+                {
+                    <div class="dd-persona-box">
+                        <div class="dd-persona-avatar avatar-autoriza">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="dd-persona-info">
+                            <span class="dd-persona-name">@Model.AutorizadoPor</span>
+                            <span class="dd-persona-role">Autorizador</span>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="dd-persona-box" style="opacity:.5;">
+                        <div class="dd-persona-avatar avatar-pending">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="dd-persona-info">
+                            <span class="dd-persona-name" style="color:#94a3b8;">Pendiente</span>
+                            <span class="dd-persona-role">Autorizador</span>
+                        </div>
+                    </div>
+                }
+
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Observaciones))
+    {
+        <div class="dd-section">
+            <div class="dd-section-header">
+                <div class="dd-section-icon icon-obs"><i class="fas fa-comment-alt"></i></div>
+                <span class="dd-section-title">Observaciones</span>
+            </div>
+            <div class="dd-section-body">
+                <div class="dd-obs-box">@Model.Observaciones</div>
+            </div>
+        </div>
+    }
+
+    <div class="dd-section">
+        <div class="dd-section-header">
+            <div class="dd-section-icon icon-prod"><i class="fas fa-boxes"></i></div>
+            <span class="dd-section-title">Productos a Devolver</span>
+            @if (Model.Detalles != null && Model.Detalles.Any())
+            {
+                <span style="margin-left:auto;background:#dbeafe;color:#1d4ed8;font-size:.68rem;font-weight:700;
+                             padding:.2rem .65rem;border-radius:50px;letter-spacing:.04em;">
+                    @Model.Detalles.Count item(s)
+                </span>
+            }
+        </div>
+        <div class="dd-section-body" style="padding: 0;">
+            @if (Model.Detalles != null && Model.Detalles.Any())
+            {
+                <div class="table-responsive">
+                    <table class="dd-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Código</th>
+                                <th>Producto</th>
+                                <th>Unidad</th>
+                                <th class="text-center">Cant. Devuelta</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{ int fila = 1; }
+                            @foreach (var detalle in Model.Detalles)
+                            {
+                                <tr>
+                                    <td><span class="dd-row-num">@fila</span></td>
+                                    <td style="font-family:monospace;font-size:.8rem;color:#64748b;">
+                                        @(detalle.ProductoInventario?.Producto?.CodigoReferencia ?? "-")
+                                    </td>
+                                    <td style="font-weight:600;">
+                                        @(detalle.ProductoInventario?.Producto?.NombreProducto ?? "-")
+                                    </td>
+                                    <td style="color:#64748b;">
+                                        @(detalle.ProductoInventario?.UnidadMedidaVenta?.Nombre ?? "-")
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="dd-qty-chip">@detalle.CantidadDevuelta</span>
+                                    </td>
+                                </tr>
+                                fila++;
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="dd-empty">
+                    <i class="fas fa-box-open fa-2x mb-2 d-block" style="color:#cbd5e1;"></i>
+                    No hay productos registrados.
+                </div>
+            }
+        </div>
+    </div>
+
+</div>

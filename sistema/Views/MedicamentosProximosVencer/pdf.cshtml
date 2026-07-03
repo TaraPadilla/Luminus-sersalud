@@ -1,0 +1,116 @@
+@model List<sistema.Controllers.MedicamentoProximoVencerItemViewModel>
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Listado de medicamentos próximos a vencer";
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Listado de medicamentos próximos a vencer</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11px;
+            margin: 20px;
+            color: #000;
+        }
+
+        .titulo {
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        th, td {
+            border: 1px solid #000;
+            padding: 4px;
+            vertical-align: middle;
+            word-wrap: break-word;
+        }
+
+        th {
+            text-align: center;
+            font-weight: bold;
+            background-color: #f2f2f2;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .col-no { width: 4%; }
+        .col-formulario { width: 8%; }
+        .col-fecha-formulario { width: 8%; }
+        .col-oficio { width: 8%; }
+        .col-fecha { width: 7%; }
+        .col-unidad { width: 12%; }
+        .col-descripcion { width: 18%; }
+        .col-precio-unitario { width: 8%; }
+        .col-precio-total { width: 8%; }
+        .col-fecha-entrega { width: 9%; }
+        .col-fecha-reingreso { width: 10%; }
+        .col-dias { width: 8%; }
+    </style>
+</head>
+<body>
+    <div class="titulo">
+        LISTADO DE MEDICAMENTOS ENVIADOS A CAMBIO VENCIMIENTO, EJECUTANDO LAS CARTAS DE COMPROMISOS CORRESPONDIENTES.
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th class="col-no">No.</th>
+                <th class="col-formulario">No. de Formulario</th>
+                <th class="col-fecha-formulario">Fecha de Formulario</th>
+                <th class="col-oficio">Oficio</th>
+                <th class="col-fecha">Fecha</th>
+                <th class="col-unidad">Unidad</th>
+                <th class="col-descripcion">Descripcion</th>
+                <th class="col-precio-unitario">Precio Unitario</th>
+                <th class="col-precio-total">Precio Total</th>
+                <th class="col-fecha-entrega">Fecha de Entrega al Proveedor</th>
+                <th class="col-fecha-reingreso">Fecha de Recepción de Reingreso</th>
+                <th class="col-dias">Dias que indica la Carta de Compromiso</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="text-center">@item.Numero</td>
+                        <td class="text-center">@item.NumeroFormulario</td>
+                        <td class="text-center">@item.FechaFormularioTexto</td>
+                        <td class="text-center">@item.Oficio</td>
+                        <td class="text-center">@item.FechaTexto</td>
+                        <td>@item.Unidad</td>
+                        <td>@item.Descripcion</td>
+                        <td class="text-right">@item.PrecioUnitario.ToString("N2")</td>
+                        <td class="text-right">@item.PrecioTotal.ToString("N2")</td>
+                        <td class="text-center">@item.FechaEntregaProveedorTexto</td>
+                        <td class="text-center">@item.FechaRecepcionReingresoTexto</td>
+                        <td class="text-center">@item.DiasCartaCompromiso</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</body>
+</html>

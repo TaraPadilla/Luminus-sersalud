@@ -1,0 +1,14 @@
+ CREATE TABLE "HospitalizacionGastosAdministrativos" (
+    "Id"                  SERIAL PRIMARY KEY,
+    "HospitalizacionId"   INTEGER NOT NULL,
+    "PorcentajeAplicado"  NUMERIC(18,4) NOT NULL,
+    "Monto"               NUMERIC(18,2) NOT NULL,
+    "FechaHora"           TIMESTAMP NOT NULL DEFAULT NOW(),
+    CONSTRAINT "FK_GastosAdmin_Hospitalizacion"
+        FOREIGN KEY ("HospitalizacionId")
+        REFERENCES "Hospitalizaciones" ("Id")
+        ON DELETE CASCADE
+);
+
+CREATE INDEX "IX_HospitalizacionGastosAdministrativos_HospitalizacionId"
+    ON "HospitalizacionGastosAdministrativos" ("HospitalizacionId");

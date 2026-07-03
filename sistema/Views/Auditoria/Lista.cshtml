@@ -1,0 +1,80 @@
+﻿@model farmamest.Models.AuditoriaViewModel
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="form-row">
+    
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="col-md-12 text-center">
+                    <h4><b>Listado de Auditorias</b></h4>
+                    <hr />
+                </div>
+                <div class="table-responsive">
+                    <table id="tabla-clinica-medicamentos">
+                        <thead>
+                            <tr>
+                                <th>
+                                    C&oacute;digo
+
+                                </th>
+                                <th>
+                                    Fecha de creaci&oacute;n
+
+                                </th>
+                                <th>
+
+                                    Realizado por:
+
+                                </th>
+                                <th>
+
+                                    Acciones
+
+                                </th>
+
+
+                            </tr>
+                        </thead>
+                        <tbody>
+                                @foreach (var item in Model.Auditorias)
+                                {
+                                    <tr data-id="@item.Id">
+                                        <td>
+                                            @item.Id
+                                        </td>
+                                        <td>
+                                            @item.FechaCreacion
+                                        </td>
+                                        <td>
+                                            @item.PersonaCreacionAuditoria
+                                        </td>
+                                        <td>
+                                            <a class="btn btn-primary"  href="@Url.Action("Detalles","Auditoria",
+                                                new {auditoriaId = @item.Id})" >
+                                                Ver detalle
+                                            </a>
+                                        <a class="btn btn-warning" href="@Url.Action("Modificar","Auditoria", new {AuditoriaId = item.Id})">
+                                                <i class="fa fa-edit"></i>
+                                            </a>
+                                            <button class="btn btn-danger"
+                                                     onclick="eliminarAuditoria(@item.Id)">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </td>
+
+                                    </tr>
+                                }
+                                
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts{
+    <script type="text/javascript" src="~/ViewModelKo/AuditoriaListaVM.js"></script>
+}

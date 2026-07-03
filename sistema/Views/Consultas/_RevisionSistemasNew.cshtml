@@ -1,0 +1,101 @@
+@model sistema.Models.ConsultasViewModel
+
+<br />
+
+<div class="border rounded p-3 bg-white shadow-sm mb-3">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+        <h6 class="m-0 font-weight-bold text-primary text-uppercase">
+            <i class="fas fa-list-alt mr-2"></i> Revisi&oacute;n por Sistemas
+        </h6>
+        <small class="text-muted">
+            <i class="fas fa-notes-medical mr-1"></i> Evaluaci&oacute;n por &aacute;reas
+        </small>
+    </div>
+
+    <div class="form-row">
+
+        <div class="col-md-6 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">Sistema Neurol&oacute;gico:</div>
+                @Html.TextAreaFor(m => m.NewRevisionSistemasNeurologico, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">Sistema Cardiovascular:</div>
+                @Html.TextAreaFor(m => m.NewRevisionSistemasCardiovascular, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">Sistema Respiratorio:</div>
+                @Html.TextAreaFor(m => m.NewRevisionSistemasRespiratorio, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">Gastrointestinal:</div>
+                @Html.TextAreaFor(m => m.NewRevisionSistemasGastrointestinal, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">Sistema Musculoesquel&eacute;tico - Todas las Extremidades:</div>
+                @Html.TextAreaFor(m => m.NewRevisionSistemasMusculoesqueletico, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">Piel y Fanera:</div>
+                @Html.TextAreaFor(m => m.NewRevisionSistemasPielFanera, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">Genitourinario:</div>
+                @Html.TextAreaFor(m => m.NewRevisionSistemasGenitourinario, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+
+    </div>
+
+    <div class="mt-2"></div>
+
+    @* <div class="form-row">
+        <div class="col-12">
+            <h5><b>Examen Físico (historial)</b></h5>
+            <hr>
+        </div>
+        <div class="col-md-12 text-primary texto-cargando-historial" style="display:none">
+            Cargando historial...
+        </div>
+        <div class="col-md-12 text-danger texto-error-cargando-historial" style="display:none">
+            Error de servidor y/o conexión. <a href="#" data-bind="click:consultarHistorialConsultas">Reintentar</a>
+        </div>
+        <!--ko foreach:historialConsultas-->
+        <div class="col-md-12" style="background-color:lightgray"><b>Fecha: </b><span data-bind="text:Fecha"></span>
+        </div>
+        <div class="col-md-2"><b>Sistema Neurológico:</b><br /><span data-bind="text:NewRevisionSistemasNeurologico"></span></div>
+        <div class="col-md-2"><b>Sistema Cardiovascular:</b><br /><span data-bind="text:NewRevisionSistemasCardiovascular"></span></div>
+        <div class="col-md-2"><b>Sistema Respiratorio:</b><br /><span data-bind="text:NewRevisionSistemasRespiratorio"></span></div>
+        <div class="col-md-2"><b>Gastrointestinal:</b><br /><span data-bind="text:NewRevisionSistemasGastrointestinal"></span></div>
+        <div class="col-md-2"><b>Sistema Musculoesquelético:</b><br /><span data-bind="text:NewRevisionSistemasMusculoesqueletico"></span></div>
+        <div class="col-md-2"><b>Piel y Fanera:</b><br /><span data-bind="text:NewRevisionSistemasPielFanera"></span></div>
+        <div class="col-md-2"><b>Genitourinario:</b><br /><span data-bind="text:NewRevisionSistemasGenitourinario"></span></div>
+        <!--/ko-->
+        <!--ko if:historialConsultas().length==0-->
+        <div class="col-md-12">
+            No hay registro de consultas anteriores
+        </div>
+        <!--/ko-->
+    </div> *@
+
+</div>

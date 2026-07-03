@@ -1,0 +1,182 @@
+@using Database.Shared.Enumeraciones
+@using sistema.Models
+
+@model CajaDetallesViewModel
+
+@{
+    decimal totalMonto = 0.00m;
+    decimal totalEfectivo = 0.00m;
+    decimal totalVisa = 0.00m;
+    decimal totalMastercard = 0.00m;
+    decimal totalCheques = 0.00m;
+    decimal totalTransferencia = 0.00m;
+    // decimal totalVisalink = 0.00m;
+    // decimal totalVisanet = 0.00m;
+    decimal totalCredito = 0.00m;
+    decimal totalSeguro = 0.00m;
+}
+
+<div class="form-row">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <h4>Montos</h4>
+                <hr />
+                @if (Model.AmbienteId == (int)AmbienteEnum.Global)
+                {
+                    @if (Model.SucursalId == null)
+                    {
+                        <b>Filtrar por sucursal:</b>
+                        <div class="form-row">
+                            <div class="col-md-2">
+                                <input type="checkbox" class="montos-filtro-sucursal"
+                               id="montos-filtro-sucursal-" checked onchange="aplicarFiltrosMontos()" />
+                                <label for="montos-filtro-sucursal-">TODAS</label>
+                            </div>
+                            @foreach (var sucursal in Model.ListaSucursales)
+                            {
+                                <div class="col-md-2">
+                                    <input type="checkbox" class="montos-filtro-sucursal"
+                               id="montos-filtro-sucursal-@sucursal.Id" checked onchange="aplicarFiltrosMontos()" />
+                                    <label for="montos-filtro-sucursal-@sucursal.Id">@sucursal.NombreSucursal</label>
+                                </div>
+                            }
+                        </div>
+                        <hr />
+                    }
+                    <b>Filtrar por ambiente:</b>
+                    <div class="form-row">
+                        <div class="col-md-2">
+                            <input type="checkbox" class="montos-filtro-ambiente"
+                               id="montos-filtro-ambiente-@((int)AmbienteEnum.Global)"
+                               checked onchange="aplicarFiltrosMontos()" />
+                            <label for="montos-filtro-ambiente-@((int)AmbienteEnum.Global)">Global</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="checkbox" class="montos-filtro-ambiente"
+                               id="montos-filtro-ambiente-@((int)AmbienteEnum.Hospital)"
+                               checked onchange="aplicarFiltrosMontos()" />
+                            <label for="montos-filtro-ambiente-@((int)AmbienteEnum.Hospital)">Hospital</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="checkbox" class="montos-filtro-ambiente"
+                               id="montos-filtro-ambiente-@((int)AmbienteEnum.Farmacia)"
+                               checked onchange="aplicarFiltrosMontos()" />
+                            <label for="montos-filtro-ambiente-@((int)AmbienteEnum.Farmacia)">Farmacia</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="checkbox" class="montos-filtro-ambiente"
+                               id="montos-filtro-ambiente-@((int)AmbienteEnum.Clinica)"
+                               checked onchange="aplicarFiltrosMontos()" />
+                            <label for="montos-filtro-ambiente-@((int)AmbienteEnum.Clinica)">Clinica</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="checkbox" class="montos-filtro-ambiente"
+                               id="montos-filtro-ambiente-@((int)AmbienteEnum.Laboratorio)"
+                               checked onchange="aplicarFiltrosMontos()" />
+                            <label for="montos-filtro-ambiente-@((int)AmbienteEnum.Laboratorio)">Laboratorio</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="checkbox" class="montos-filtro-ambiente"
+                                   id="montos-filtro-ambiente-emergencia"
+                                   checked onchange="aplicarFiltrosMontos()" />
+                            <label for="montos-filtro-ambiente-emergencia">Emergencia</label>
+                        </div>
+                    </div>
+                }
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="table-responsive">
+                            <table class="mb-0 table table-hover ">
+                                <thead>
+                                    <tr>
+                                        <th>Sucursal</th>
+                                        <th>Ambiente</th>
+                                        <th>Efectivo</th>
+                                        <th>Tarjeta VISA</th>
+                                        <th>Tarjeta MasterCard</th>
+                                        <th>Cheques</th>
+                                        <th>Transferencia</th>
+                                        @*Este sistema no utiliza estos dos medios de pago*@
+                                        @* <th>Visa Link</th>
+                                        <th>Visa Net</th> *@
+                                        <th>Seguro</th>
+                                        <th>TOTAL</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.Montos != null && Model.Montos.Count > 0)
+                                    {
+                                        @foreach (var monto in Model.Montos)
+                                        {
+                                            <tr class="montos-reg-sucursal-@monto.SucursalId montos-reg-ambiente-@monto.AmbienteId">
+                                                <td>@monto.SucursalNombre</td>
+                                                <td><span class="badge badge-primary">@monto.AmbienteNombre</span></td>
+                                                <td><span class="montos-valor-efectivo-sucursal-@monto.SucursalId montos-valor-efectivo-ambiente-@monto.AmbienteId">@monto.Efectivo</span></td>
+                                                <td><span class="montos-valor-visa-sucursal-@monto.SucursalId montos-valor-visa-ambiente-@monto.AmbienteId">@monto.Visa</span></td>
+                                                <td><span class="montos-valor-mastercard-sucursal-@monto.SucursalId montos-valor-mastercard-ambiente-@monto.AmbienteId">@monto.MasterCard</span></td>
+                                                <td><span class="montos-valor-cheques-sucursal-@monto.SucursalId montos-valor-cheques-ambiente-@monto.AmbienteId">@monto.Cheques</span></td>
+                                                <td><span class="montos-valor-transferencia-sucursal-@monto.SucursalId montos-transferencia-efectivo-ambiente-@monto.AmbienteId">@monto.Transferencia</span></td>
+                                                @* <td><span class="montos-valor-visalink-sucursal-@monto.SucursalId montos-valor-visalink-ambiente-@monto.AmbienteId">@monto.Visalink</span></td> *@
+                                                @* <td><span class="montos-valor-visanet-sucursal-@monto.SucursalId montos-valor-visanet-ambiente-@monto.AmbienteId">@monto.Visanet</span></td> *@
+                                                <td><span class="montos-valor-seguro-sucursal-@monto.SucursalId montos-valor-seguro-ambiente-@monto.AmbienteId">@monto.Seguro</span></td>
+                                                <td><span class="montos-valor-sucursal-@monto.SucursalId montos-valor-ambiente-@monto.AmbienteId">@monto.Total</span></td>
+                                            </tr>
+
+                                            @if (monto.TotalEmergencia > 0)
+                                            {
+                                                <tr class="montos-reg-sucursal-@monto.SucursalId montos-reg-ambiente-emergencia">
+                                                    <td>@monto.SucursalNombre</td>
+                                                    <td><span class="badge badge-primary">EMERGENCIA</span></td>
+                                                    <td><span class="montos-valor-efectivo-sucursal-@monto.SucursalId montos-valor-efectivo-ambiente-emergencia">@monto.EfectivoEmergencia</span></td>
+                                                    <td><span class="montos-valor-visa-sucursal-@monto.SucursalId montos-valor-visa-ambiente-emergencia">@monto.VisaEmergencia</span></td>
+                                                    <td><span class="montos-valor-mastercard-sucursal-@monto.SucursalId montos-valor-mastercard-ambiente-emergencia">@monto.MasterCardEmergencia</span></td>
+                                                    <td><span class="montos-valor-cheques-sucursal-@monto.SucursalId montos-valor-cheques-ambiente-emergencia">@monto.ChequesEmergencia</span></td>
+                                                    <td><span class="montos-valor-transferencia-sucursal-@monto.SucursalId montos-valor-transferencia-ambiente-emergencia">@monto.TransferenciaEmergencia</span></td>
+                                                    @* <td>Q <span class="montos-valor-visalink-sucursal-@monto.SucursalId montos-valor-visalink-ambiente-emergencia">@monto.VisalinkEmergencia</span></td>
+                                                    <td>Q <span class="montos-valor-visanet-sucursal-@monto.SucursalId montos-valor-visanet-ambiente-emergencia">@monto.VisanetEmergencia</span></td> *@
+                                                    <td><span class="montos-valor-seguro-sucursal-@monto.SucursalId montos-valor-seguro-ambiente-emergencia">@monto.SeguroEmergencia</span></td>
+                                                    <td><span class="montos-valor-sucursal-@monto.SucursalId montos-valor-ambiente-emergencia montos-sumar">@monto.TotalEmergencia</span></td>
+                                                </tr>
+                                            }
+
+                                            totalMonto += monto.Total;
+                                            totalEfectivo += monto.Efectivo;
+                                            totalVisa += monto.Visa;
+                                            totalMastercard += monto.MasterCard;
+                                            totalCheques += monto.Cheques;
+                                            totalTransferencia += monto.Transferencia;
+                                            @* totalVisalink += monto.Visalink; *@
+                                            @* totalVisalink += monto.Visanet; *@
+                                            totalCredito += monto.Seguro;
+                                            totalSeguro += monto.Seguro;
+                                        }
+                                        <tr class="bg-dark text-light font-weight-bolder">
+                                            <td colspan="2">TOTAL</td>
+                                            <td><span id="montos-efectivo-total">@totalEfectivo</span></td>
+                                            <td><span id="montos-visa-total">@totalVisa</span></td>
+                                            <td><span id="montos-mastercard-total">@totalMastercard</span></td>
+                                            <td><span id="montos-cheques-total">@totalCheques</span></td>
+                                            <td><span id="montos-transferencia-total">@totalTransferencia</span></td>
+                                            @* <td><span id="montos-visalink-total">@totalVisalink</span></td> *@
+                                            @* <td><span id="montos-visanet-total">@totalVisanet</span></td> *@
+                                            @* <td><span id="montos-credito-total">@totalCredito</span></td> *@
+                                            <td><span id="montos-seguro-total">@totalSeguro</span></td>
+                                            <td><span id="montos-total">@totalMonto</span></td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td colspan="10">No hay montos registrados</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

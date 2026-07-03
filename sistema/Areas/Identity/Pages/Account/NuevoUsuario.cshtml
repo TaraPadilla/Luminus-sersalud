@@ -1,0 +1,128 @@
+@page
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    ViewData["Title"] = "Registrar nuevo Usuario";
+    // Leer el valor del appsettings.json. 
+    string sufijoLayout = Configuration["Cliente"]; 
+    
+    // Concatenar para formar el nombre del Layout (ejemplo: "_Layout" + "SS")
+    // Si la clave trae el nombre completo (ej. "_LayoutSS"), simplemente asignalo directo.
+    Layout = $"_Layout{sufijoLayout}"; 
+}
+
+@model RegisterModel
+
+<div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="row">
+    <div class="col-md-6">
+       
+        <form asp-route-returnUrl="@Model.ReturnUrl" method="post">
+
+            @Html.ValidationSummary()
+            
+            <hr />
+            @* <div asp-validation-summary="All" class="text-danger"></div> // aqui esta *@
+            <div class="col-md-12">
+                <label >Correo</label>
+                <input asp-for="Input.Email" class="form-control" />
+                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            </div>
+            <div class="col-md-12">
+                <label >Contraseña</label>
+                <input asp-for="Input.Password" class="form-control" />
+                <span asp-validation-for="Input.Password" class="text-danger"></span>
+            </div>
+            <div class="col-md-12">
+                <label >Confirmar contraseña</label>
+                <input asp-for="Input.ConfirmPassword" class="form-control" />
+                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+            </div>
+             <div class="col-md-12">
+                    <label>Persona</label>
+                    <select class="form-control select2bs4-user" style="width: 100%;" asp-for="Input.EmpleadoId"
+                        asp-items="@Model.ListaEmpleados" id="empleadoselect">
+                        <option selected value="">Sin asignar</option>
+                    </select>
+
+                </div>
+                <div class="col-md-12">
+                    <label>Roles</label>
+                    <select class="form-control select2bs4-user" style="width: 100%;" asp-for="Input.RolesId"
+                        asp-items="@Model.ListaRoles" id="roleselect">
+                        <option selected value="">Sin asignar</option>
+                    </select>
+
+                </div>
+                </br>
+            <button type="submit" class="btn btn-primary">Registrar</button>
+        </form>
+    </div>
+    <div class="col-md-6 col-md-offset-2">
+        @* <section>
+            <h4>Use another service to register.</h4>
+            <hr />
+            @{
+                if ((Model.ExternalLogins?.Count ?? 0) == 0)
+                {
+                    <div>
+                        <p>
+                            There are no external authentication services configured. See <a href="https://go.microsoft.com/fwlink/?LinkID=532715">this article</a>
+                            for details on setting up this ASP.NET application to support logging in via external services.
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    <form id="external-account" asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="form-horizontal">
+                        <div>
+                            <p>
+                                @foreach (var provider in Model.ExternalLogins)
+                                {
+                                    <button type="submit" class="btn btn-primary" name="provider" value="@provider.Name" title="Log in using your @provider.DisplayName account">@provider.DisplayName</button>
+                                }
+                            </p>
+                        </div>
+                    </form>
+                }
+            }
+        </section> *@
+    </div>
+</div>
+
+        </div>
+</div>
+
+@section Scripts
+{
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.0.1/js/toastr.js"></script>
+
+<script type="text/javascript" src="~/js/moment.min.js"></script>
+<script type="text/javascript" src="~/js/daterangepicker.js"></script>
+<script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+
+<script>
+    $(function(){
+        $('.select2').select2({
+            tags: true
+        });
+        
+    $('.select2bs4-user').select2({
+      theme: 'bootstrap4',
+      placeholder: 'Sin asignar',
+      allowClear: true   // Shows an X to allow the user to clear the value.
+    });
+
+          $('#reservationtime').daterangepicker({
+                    timePicker: true,
+                    timePickerIncrement: 30,
+                    locale: {
+                        format: 'MM/DD/YYYY hh:mm A'
+                    }
+                });
+    });
+
+
+    
+</script>
+}

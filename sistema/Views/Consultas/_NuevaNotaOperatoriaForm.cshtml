@@ -1,0 +1,26 @@
+@model sistema.Models.ConsultasViewModel
+
+<div class="form-row">
+    <div class="col-md-12 table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <td><b>Nota Operatoria</b></td>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <label class="">Describa la Nota Operatoria</label>
+                        @Html.TextAreaFor(a => a.notaOperatoria, new
+                        {
+                        @class = "form-control",
+                        @placeholder = "Ingrese la nota Operatoria"
+                        })
+                        @Html.ValidationMessageFor(a => a.notaOperatoria, "", new { @class = "text-danger" })
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

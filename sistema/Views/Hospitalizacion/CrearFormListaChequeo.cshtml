@@ -1,0 +1,265 @@
+@model sistema.Models.HospitalizacionHospitalizarViewModel
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Lista de chequeo - Fase de Entrada</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-12" style="padding:16px 20px 20px; background:#f8fafc;">
+
+                @* ── ENCABEZADO DEL PACIENTE ── *@
+                <div style="background:#fff; border-radius:10px; border:1px solid #e2e8f0; padding:14px 18px; margin-bottom:16px;">
+                    <div class="form-row align-items-end">
+                        <div class="col-md-2">
+                            <label style="font-size:0.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;display:block;">Fecha</label>
+                            <input type="date" class="form-control form-control-sm" data-bind="value: listaChequeo.fechaChequeo" />
+                        </div>
+                        <div class="col-md-2">
+                            <label style="font-size:0.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;display:block;">Hora</label>
+                            <input type="time" class="form-control form-control-sm" data-bind="value: listaChequeo.horaChequeo" />
+                        </div>
+                        <div class="col-md-4">
+                            <label style="font-size:0.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;display:block;">Nombre del Paciente</label>
+                            <input type="text" class="form-control form-control-sm" data-bind="value: pacienteNombre, disable: true" />
+                        </div>
+                        <div class="col-md-4">
+                            <label style="font-size:0.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;display:block;">Apellido del Paciente</label>
+                            <input type="text" class="form-control form-control-sm" data-bind="value: listaChequeo.ci_apellidoConfirma" />
+                        </div>
+                    </div>
+                </div>
+
+                @* ── FASE 1: ENTRADA ── *@
+                <div style="border:1px solid #bae6fd; border-radius:10px; margin-bottom:10px; overflow:hidden;">
+                    <div style="background:linear-gradient(135deg,#e0f2fe,#bae6fd); padding:12px 16px; cursor:pointer; display:flex; align-items:center; justify-content:space-between;"
+                         data-toggle="collapse" data-target="#collapse-entrada" aria-expanded="true">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div style="width:32px;height:32px;border-radius:8px;background:#0284c7;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <i class="fas fa-sign-in-alt" style="color:#fff;font-size:0.8rem;"></i>
+                            </div>
+                            <div>
+                                <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#0369a1;">Antes de la inducción de anestesia</div>
+                                <div style="font-size:1rem;font-weight:800;color:#0284c7;line-height:1;">ENTRADA</div>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-down" style="color:#0284c7;transition:transform 0.2s;"></i>
+                    </div>
+                    <div id="collapse-entrada" class="collapse show" style="background:#fff;">
+                        <div style="padding:16px 20px;">
+                            @* Sub-sección: Paciente *@
+                            <p style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #f1f5f9;">El paciente despierto debe confirmar</p>
+
+                            <div class="form-row mb-3">
+                                <div class="col-md-4">
+                                    <label style="font-size:0.78rem;color:#374151;margin-bottom:3px;">Nombre</label>
+                                    <input type="text" class="form-control form-control-sm"
+                                           data-bind="value: listaChequeo.ci_nombreConfirma" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label style="font-size:0.78rem;color:#374151;margin-bottom:3px;">Apellido</label>
+                                    <input type="text" class="form-control form-control-sm"
+                                           data-bind="value: listaChequeo.ci_apellidoConfirma" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label style="font-size:0.78rem;color:#374151;margin-bottom:3px;">Fecha de Nacimiento</label>
+                                    <input type="date" class="form-control form-control-sm"
+                                           data-bind="value: listaChequeo.ci_fechaNacConfirma" />
+                                </div>
+                            </div>
+
+                            <div class="form-row mb-3">
+                                <div class="col-md-8">
+                                    <label style="font-size:0.78rem;color:#374151;margin-bottom:3px;">La operación a la que va a ser sometido</label>
+                                    <input type="text" class="form-control form-control-sm"
+                                           data-bind="value: listaChequeo.ci_operacion" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label style="font-size:0.78rem;color:#374151;margin-bottom:3px;display:block;">Firmó consentimiento informado</label>
+                                    <div style="display:flex;gap:16px;margin-top:4px;">
+                                        <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                            <input type="radio" name="ci_consentimiento" value="SI"
+                                                   data-bind="checked: listaChequeo.ci_consentimiento" /> SÍ
+                                        </label>
+                                        <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                            <input type="radio" name="ci_consentimiento" value="NO"
+                                                   data-bind="checked: listaChequeo.ci_consentimiento" /> NO
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-row mb-3">
+                                <div class="col-md-5">
+                                    <label style="font-size:0.78rem;color:#374151;margin-bottom:3px;display:block;">El sitio a operar</label>
+                                    <div style="display:flex;gap:14px;margin-top:4px;">
+                                        <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                            <input type="radio" name="ci_ladoOperar" value="IZQUIERDO"
+                                                   data-bind="checked: listaChequeo.ci_ladoOperar" /> IZQUIERDO
+                                        </label>
+                                        <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                            <input type="radio" name="ci_ladoOperar" value="DERECHO"
+                                                   data-bind="checked: listaChequeo.ci_ladoOperar" /> DERECHO
+                                        </label>
+                                        <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                            <input type="radio" name="ci_ladoOperar" value="NO APLICA"
+                                                   data-bind="checked: listaChequeo.ci_ladoOperar" /> NO APLICA
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label style="font-size:0.78rem;color:#374151;margin-bottom:3px;display:block;">Sitio del cuerpo marcado</label>
+                                    <div style="display:flex;gap:14px;margin-top:4px;">
+                                        <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                            <input type="radio" name="ci_sitioMarcado" value="SI"
+                                                   data-bind="checked: listaChequeo.ci_sitioMarcado" /> SÍ
+                                        </label>
+                                        <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                            <input type="radio" name="ci_sitioMarcado" value="NO"
+                                                   data-bind="checked: listaChequeo.ci_sitioMarcado" /> NO
+                                        </label>
+                                        <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                            <input type="radio" name="ci_sitioMarcado" value="NO APLICA"
+                                                   data-bind="checked: listaChequeo.ci_sitioMarcado" /> N/A
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label style="font-size:0.78rem;color:#374151;margin-bottom:3px;display:block;">Alergia conocida</label>
+                                    <div style="display:flex;gap:14px;margin-top:4px;">
+                                        <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                            <input type="radio" name="ci_alergia" value="SI"
+                                                   data-bind="checked: listaChequeo.ci_alergia" /> SÍ
+                                        </label>
+                                        <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                            <input type="radio" name="ci_alergia" value="NO"
+                                                   data-bind="checked: listaChequeo.ci_alergia" /> NO
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @* Sub-sección: Anestesiólogo *@
+                            <p style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #f1f5f9;margin-top:4px;">El anestesiólogo debe confirmar</p>
+                            <div class="form-row">
+                                <div class="col-md-4 mb-3">
+                                    <label style="font-size:0.78rem;color:#374151;margin-bottom:3px;display:block;">Evaluación preanestésica</label>
+                                    <div style="display:flex;gap:16px;margin-top:4px;">
+                                        <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                            <input type="radio" name="ci_evalPreanestesica" value="SI"
+                                                   data-bind="checked: listaChequeo.ci_evalPreanestesica" /> SÍ
+                                        </label>
+                                        <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                            <input type="radio" name="ci_evalPreanestesica" value="NO"
+                                                   data-bind="checked: listaChequeo.ci_evalPreanestesica" /> NO
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label style="font-size:0.78rem;color:#374151;margin-bottom:3px;display:block;">Acceso intravenoso permeable</label>
+                                    <div style="display:flex;gap:16px;margin-top:4px;">
+                                        <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                            <input type="radio" name="ci_accesoIV" value="SI"
+                                                   data-bind="checked: listaChequeo.ci_accesoIV" /> SÍ
+                                        </label>
+                                        <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                            <input type="radio" name="ci_accesoIV" value="NO"
+                                                   data-bind="checked: listaChequeo.ci_accesoIV" /> NO
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label style="font-size:0.78rem;color:#374151;margin-bottom:3px;display:block;">Equipo de anestesia funciona bien</label>
+                                    <div style="display:flex;gap:16px;margin-top:4px;">
+                                        <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                            <input type="radio" name="ci_equipoAnestesia" value="SI"
+                                                   data-bind="checked: listaChequeo.ci_equipoAnestesia" /> SÍ
+                                        </label>
+                                        <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                            <input type="radio" name="ci_equipoAnestesia" value="NO"
+                                                   data-bind="checked: listaChequeo.ci_equipoAnestesia" /> NO
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label style="font-size:0.78rem;color:#374151;margin-bottom:3px;display:block;">Todos los medicamentos necesarios</label>
+                                    <div style="display:flex;gap:16px;margin-top:4px;">
+                                        <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                            <input type="radio" name="ci_medicamentos" value="SI"
+                                                   data-bind="checked: listaChequeo.ci_medicamentos" /> SÍ
+                                        </label>
+                                        <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                            <input type="radio" name="ci_medicamentos" value="NO"
+                                                   data-bind="checked: listaChequeo.ci_medicamentos" /> NO
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label style="font-size:0.78rem;color:#374151;margin-bottom:3px;display:block;">Oxímetro de pulso en paciente y funcional</label>
+                                    <div style="display:flex;gap:16px;margin-top:4px;">
+                                        <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                            <input type="radio" name="ci_oximetro" value="SI"
+                                                   data-bind="checked: listaChequeo.ci_oximetro" /> SÍ
+                                        </label>
+                                        <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                            <input type="radio" name="ci_oximetro" value="NO"
+                                                   data-bind="checked: listaChequeo.ci_oximetro" /> NO
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label style="font-size:0.78rem;color:#374151;margin-bottom:3px;display:block;">Equipo de aspiración e intubación adecuado</label>
+                                    <div style="display:flex;gap:16px;margin-top:4px;">
+                                        <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                            <input type="radio" name="ci_equipoAspiracion" value="SI"
+                                                   data-bind="checked: listaChequeo.ci_equipoAspiracion" /> SÍ
+                                        </label>
+                                        <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                            <input type="radio" name="ci_equipoAspiracion" value="NO"
+                                                   data-bind="checked: listaChequeo.ci_equipoAspiracion" /> NO
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-0">
+                                    <label style="font-size:0.78rem;color:#374151;margin-bottom:3px;display:block;">Vía aérea difícil / Riesgo de aspiración</label>
+                                    <div style="display:flex;gap:16px;margin-top:4px;">
+                                        <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                            <input type="radio" name="ci_viaAerea" value="SI"
+                                                   data-bind="checked: listaChequeo.ci_viaAerea" /> SÍ
+                                        </label>
+                                        <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                                            <input type="radio" name="ci_viaAerea" value="NO"
+                                                   data-bind="checked: listaChequeo.ci_viaAerea" /> NO
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="text-right mb-3 mr-3">
+    <button class="btn btn-primary"
+            data-bind="click: guardarListaChequeo, disable: guardando,
+                       text: guardando() ? 'Guardando...' : 'Guardar Lista de Chequeo'">
+        Guardar Lista de Chequeo
+    </button>
+</div>
+
+
+<script type="application/json" id="viewModelData">
+    @Html.Raw(Json.Serialize(new {
+        pacienteNombre          = Model.PacienteNombre,
+        pacienteFechaNacimiento = Model.PacienteFechaNacimiento
+    }))
+</script>
+
+@section Scripts
+{
+<script type="text/javascript" src="~/ViewModelKo/ListaChequeoVM.js"></script>
+}

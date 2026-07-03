@@ -1,0 +1,128 @@
+@model List<sistema.Models.CategoriaRecetaListItemViewModel>
+
+@{
+    ViewData["Title"] = "Gestión de Categorías";
+}
+
+<div class="container-fluid animated fadeIn">
+    
+    @await Html.PartialAsync("_MensajeExito")
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-tags mr-2"></i>Categorías de Recetas
+                </h5>
+                <small class="text-muted text-uppercase" style="letter-spacing: 1px;">Panel Administrativo</small>
+            </div>
+            <a class="btn btn-primary btn-sm shadow-sm px-4" asp-action="Nuevo" asp-controller="CategoriaReceta">
+                <i class="fas fa-plus-circle mr-1"></i> Nueva Categoría
+            </a>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover w-100" id="tabla-categorias-recetas">
+                    <thead class="thead-light">
+                        <tr>
+                            <th class="border-top-0">Nombre</th>
+                            <th class="border-top-0">Descripción</th>
+                            <th class="border-top-0 text-center">Menús Activos</th>
+                            <th class="border-top-0 text-right" style="width:150px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null)
+                        {
+                            foreach (var c in Model)
+                            {
+                                <tr>
+                                    <td class="align-middle font-weight-bold text-dark">@c.Nombre</td>
+                                    @* Se aumentó el tamaño del texto de la descripción *@
+                                    <td class="align-middle text-secondary" style="font-size: 1.05rem;">@c.Descripcion</td>
+                                    <td class="align-middle text-center">
+                                        <span class="badge badge-pill badge-info px-3 py-2">@c.MenusActivos</span>
+                                    </td>
+                                    <td class="align-middle text-right">
+                                        <div class="btn-group" role="group">
+                                            @* Botón Editar con Tooltip *@
+                                            <a class="btn btn-light btn-sm text-warning mx-1 border shadow-sm" 
+                                               data-toggle="tooltip" 
+                                               data-placement="top" 
+                                               title="Editar Categoría"
+                                               asp-action="Modificar"
+                                               asp-controller="CategoriaReceta"
+                                               asp-route-categoriaId="@c.Id">
+                                                <i class="fas fa-edit fa-lg"></i>
+                                            </a>
+
+                                            @* Formulario Eliminar con Tooltip en el botón *@
+                                            <form asp-action="Eliminar"
+                                                  asp-controller="CategoriaReceta"
+                                                  method="post"
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('¿Está seguro de eliminar esta categoría?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="categoriaId" value="@c.Id" />
+                                                <button type="submit" 
+                                                        class="btn btn-light btn-sm text-danger mx-1 border shadow-sm" 
+                                                        data-toggle="tooltip" 
+                                                        data-placement="top" 
+                                                        title="Eliminar Categoría">
+                                                    <i class="fas fa-trash-alt fa-lg"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Inicialización de Tooltips de Bootstrap
+            $('[data-toggle="tooltip"]').tooltip();
+
+            // Configuración de DataTable
+            $('#tabla-categorias-recetas').DataTable({
+                "language": {
+                    "sProcessing":     "Procesando...",
+                    "sLengthMenu":     "Mostrar _MENU_ registros",
+                    "sZeroRecords":    "No se encontraron resultados",
+                    "sEmptyTable":     "Ningún dato disponible en esta tabla",
+                    "sInfo":           "Mostrando _START_ al _END_ de _TOTAL_ registros",
+                    "sInfoEmpty":      "Mostrando 0 al 0 de 0 registros",
+                    "sInfoFiltered":   "(filtrado de _MAX_ registros)",
+                    "sSearch":         "Buscar:",
+                    "oPaginate": {
+                        "sFirst":    "Primero",
+                        "sLast":     "Último",
+                        "sNext":     "Sig.",
+                        "sPrevious": "Ant."
+                    }
+                },
+                "responsive": true,
+                "columnDefs": [
+                    { "orderable": false, "targets": 3 }
+                ],
+                "order": [[0, "asc"]],
+                "drawCallback": function() {
+                    // Reinicializar tooltips cuando la tabla se redibuja (cambio de página)
+                    $('[data-toggle="tooltip"]').tooltip();
+                }
+            });
+
+            if (typeof rememberMe === "function") {
+                rememberMe("categoria-receta");
+            }
+        });
+    </script>
+}

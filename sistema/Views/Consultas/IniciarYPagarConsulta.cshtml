@@ -1,0 +1,20 @@
+﻿@{ ViewData["Title"] = "Iniciar y Pagar Consulta"; }
+
+@await Html.PartialAsync("_MensajeExito")
+
+@await Html.PartialAsync("_ConsultaFormIniciarYPagar")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div>
+            <a href="#" class="btn btn-primary" data-bind="click: registrarConsultaYPagar">
+                Pagar consulta
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <script type="text/javascript" src="~/ViewModelKo/ConsultaVM.js"></script>
+}
+

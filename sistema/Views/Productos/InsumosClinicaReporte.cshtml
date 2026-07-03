@@ -1,0 +1,63 @@
+@using System;
+@using System.Globalization;
+@model sistema.Models.ReportesProductosViewModel
+
+@{
+    Layout = "_HojaLayout";
+}
+
+	<div>
+		<div class="text-center" style="border: 1px black solid;">
+			<h4> Reporte de Insumos </h4>
+			<h6>RED OWL SOFTWARE</h6>
+		</div>
+	</div>
+	<br>
+	<div>
+		<span class="font-weight-bold">FECHA DE EMISI&#211;N </span>
+		<span> @DateTime.Now.ToString("D",CultureInfo.CreateSpecificCulture("Es-GT")).ToUpperInvariant()</span>
+	</div>
+
+	<div>
+		<span class="font-weight-bold">USUARIO QUE LO EMITE </span>
+		<span> @Model.Usuario </span>
+	</div>
+
+    <div>
+		<span class="font-weight-bold"> Lugar </span>
+		<span> Clínica </span>
+	</div>
+<br>
+
+        <table class="table table-bordered">
+                    <thead>
+                    <tr>
+                        <th style="background: #1f4724 !important; color: white;"><span contenteditable>Ref.</span></th>
+                        <th style="background: #1f4724 !important; color: white;"><span contenteditable>Producto</span></th>
+                        <th style="background: #1f4724 !important; color: white;"><span contenteditable>Categoría</span></th>
+                        <th style="background: #1f4724 !important; color: white;"><span contenteditable>Marca</span></th>
+                        <th style="background: #1f4724 !important; color: white;"><span contenteditable>Stock</span></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach(var producto in Model.Productos)
+                        {
+                            var categoria = producto.Categoria == null ? "// sin asignar" : producto.Categoria.NombreCategoria;
+							var marca = producto.Marca == null ? "// sin asignar" : producto.Marca.NombreMarca;
+                        <tr>
+                            <td><span contenteditable>@producto.CodigoReferencia</span></td>
+                            <td><span contenteditable>@producto.NombreProducto</span></td>
+                            <td><span data-prefix>@categoria</span></td>
+                            <td><span data-prefix>@marca</span></td>
+                            <td><span>@producto.Stock</span> </td>
+                        </tr>
+                        }
+                    </tbody>
+        </table>
+
+
+      
+ 
+
+      	
+	

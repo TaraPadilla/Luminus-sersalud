@@ -1,0 +1,466 @@
+@using Database.Shared.Paginacion;
+@model sistema.Models.RealizarExamenLabClinicoViewModel
+
+@{
+    decimal subtotal = 0.00m;
+    decimal total = 0.00m;
+    decimal descuento = 0.00m;
+    var todayDate = DateTime.Now;
+
+    //Roles y permisos
+    var usuarioDesarrollador = User.IsInRole("Desarrollador");
+    var usuarioRadiologia = User.IsInRole("Radiologia");
+    var usuarioAdministrador = User.IsInRole("Administrador");
+    var usuarioSupervisorLaboratorio = User.IsInRole("Supervisor Laboratorio");
+    var usuarioTecnicoLaboratorio = User.IsInRole("Tecnico laboratorio");
+    var usuarioCoordinadorLaboratorio = User.IsInRole("Coordinador Laboratorio");
+}
+
+@{
+    // Asignar objeto paciente para simplificar el acceso
+    var pacienteObj = Model.Examen.Paciente;
+    // Paciente
+    var pacienteNombre = pacienteObj?.Nombre ?? "Sin Asignar";
+    var pacienteDPI = pacienteObj?.Dpi ?? "Sin DPI";
+    var fechaNacimiento = pacienteObj?.FechaNacimiento;
+    var pacienteFechaNacimiento = fechaNacimiento.HasValue ? fechaNacimiento.Value.ToString("dd/MM/yyyy") : "No registrada";
+    
+    // Calcular la edad en base a la fecha de nacimiento, si existe
+    var edad = 0;
+    if (fechaNacimiento.HasValue)
+    {
+        edad = todayDate.Year - fechaNacimiento.Value.Year;
+        if (todayDate.Month < fechaNacimiento.Value.Month || 
+           (todayDate.Month == fechaNacimiento.Value.Month && todayDate.Day < fechaNacimiento.Value.Day))
+        {
+            edad--;
+        }
+    }
+    
+    // Médico: se toma el nombre desde la propiedad del viewmodel (si fue asignada) o de la entidad relacionada
+    var medico = !string.IsNullOrEmpty(Model.NombreMedico)
+                    ? Model.NombreMedico 
+                    : (Model.Examen.Empleado != null ? Model.Examen.Empleado.Nombre : "// sin referencia");
+    
+    // Clínica Referida
+    var clinicaReferida = !string.IsNullOrEmpty(Model.Examen.ClinicaReferida) ? Model.Examen.ClinicaReferida : "Sin Clínica Asignada";
+    
+    // Nombre de la Habitación (proveniente de la propiedad del viewmodel)
+    var nombreHabitacion = !string.IsNullOrEmpty(Model.NombreHabitacion) ? Model.NombreHabitacion : "Sin Habitación";
+    
+    // Nombre del Seguro (proveniente de la propiedad del viewmodel)
+    var nombreSeguro = !string.IsNullOrEmpty(Model.NombreSeguro) ? Model.NombreSeguro : "Sin Seguro";
+}
+
+<ul class="body-tabs body-tabs-layout tabs-animated body-tabs-animated nav">
+    <li class="nav-item">
+        <a role="tab" class="nav-link active" id="tab-0" data-toggle="tab" href="#tab-content-0">
+            <span>Datos</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a role="tab" class="nav-link" id="tab-2" data-toggle="tab" href="#tab-content-2">
+            <span>Examenes a solicitar</span>
+        </a>
+    </li>
+
+</ul>
+
+
+<div class="form-row">
+    <div class="col-md-12">
+        <div class="tab-content">
+            <div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel">
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-6">
+                                <div class="position-relative form-group">
+                                    @if (!ViewBag.MostrarEstado)
+                                    {
+                                        <label class="">Seleccione Paciente</label>
+                                        <a href="/Pacientes/Nuevo" target="_blank" class="btn btn-primary btn-sm">Agregar Nuevo</a>
+                                        <select class="form-control select2bs4" style="width: 100%;" asp-for="Examen.PacienteId"
+                                                asp-items="@Model.ListaPaciente" id="clienteselect">
+                                        </select>
+                                    }
+                                    else
+                                    {
+                                        <div class="container-fluid" style="border-style: ridge;">
+                                            <h5>Paciente: @pacienteNombre</h5>
+                                            <h5>DPI: @pacienteDPI</h5>
+                                            <h5>Fecha de Nacimiento: @pacienteFechaNacimiento</h5>
+                                            <h5>Edad: @(edad == 0 ? "/ No hay registro" : edad.ToString())</h5>
+                                            <h5>Médico: @medico</h5>
+                                            @* <h5>Clínica Referida: @clinicaReferida</h5> *@
+                                            <h5>Habitación: @nombreHabitacion</h5>
+                                            <h5>Seguro: @nombreSeguro</h5>
+                                            <br>
+                                            <a href="@Url.Action("GenerarResultados", "CrearPDF", new { id = Model.Examen.Id })" class="btn btn-danger" target="_blank">
+                                                Generar Resultados
+                                            </a>
+                                            <br>
+                                            <br>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+
+                            @* <div class="col-md-6">
+                            <div class="position-relative form-group">
+                            <label class="">Seleccione Médico</label>
+                            <select class="form-control select2bs4" style="width: 100%;" asp-for="Examen.EmpleadoId"
+                            asp-items="@Model.ListaMedicosDisponibles">
+                            </select>
+                            </div>
+                            </div> *@
+                            @if (!ViewBag.MostrarEstado)
+                            {
+                                <div class="col-md-6">
+                                    <div class="position-relative form-group">
+                                        <label class="">Usuario</label>
+                                        <input type="text" class="form-control" id="empleadoid" value="1" />
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="position-relative form-group">
+                                        <label class="">Nombres</label>
+                                        <input type="text" class="form-control" id="Nombres" />
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="position-relative form-group">
+                                        <label class="">NIT</label>
+                                        <input type="text" class="form-control" id="Nit" />
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12">
+                                    <div class="position-relative form-group">
+                                        <label class="">Direccion</label>
+                                        <input type="text" class="form-control" id="Direccion" />
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="position-relative form-group">
+                                        <label class="">Médico Referido</label>
+                                        @* <input type="text" class="form-control" id=""/> *@
+                                        <select class="form-control select2bs4" style="width: 100%;" asp-for="Examen.MedicosId"
+                                                asp-items="@Model.ListaMedicosDisponibles" id="medicoreferido">
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="position-relative form-group">
+                                        <label class="">Clínica Referida</label>
+                                        @* <input type="text" class="form-control" id="clinicareferida" /> *@
+                                        <select class="form-control select2bs4" style="width: 100%;" asp-for="Examen.ClinicaId"
+                                                asp-items="@Model.ListaClinicasDisponibles" id="clinicareferida">
+                                        </select>
+                                    </div>
+                                </div>
+
+
+                            }
+
+
+                            @* <div class="col-md-6">
+                            <div class="position-relative form-group">
+                            <label class="">Seleccione Examen a Realizar</label>
+                            <select class="form-control select2bs4" style="width: 100%;" asp-for="Examen.ExamenLabClinicoId"
+                            asp-items="@Model.ListaExamenesDisponibles">
+                            </select>
+                            </div>
+                            </div> *@
+
+                            @if (usuarioAdministrador || usuarioTecnicoLaboratorio || usuarioSupervisorLaboratorio || usuarioCoordinadorLaboratorio || usuarioRadiologia)
+                            {
+                                @if (ViewBag.MostrarEstado)
+                                {
+                                    <div class="col-md-12">
+                                        <div class="position-relative form-group">
+                                            <label class="">Cambiar a estado: </label>
+                                            <select class="form-control select2bs4" style="width: 100%;" asp-for="Examen.EstadoExamenId"
+                                                    asp-items="@Model.ListaEstados">
+                                                <option value="" selected> -- sin seleccion -- </option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                }
+                            }
+
+                            @* <div class="col-md-6">
+                            <label class="position-relative form-group">A</label>
+                            @Html.CheckBoxFor(a => a.Examen.TipoA)
+                            <br>
+                            <label class="position-relative form-group">B</label>
+                            @Html.CheckBoxFor(a => a.Examen.TipoB)
+                            <br>
+                            <label class="position-relative form-group">C</label>
+                            @Html.CheckBoxFor(a => a.Examen.TipoC)
+                            </div> *@
+                            @{
+
+                            }
+                        </div>
+                        <br>
+                        @if (usuarioAdministrador || usuarioTecnicoLaboratorio || usuarioSupervisorLaboratorio || usuarioCoordinadorLaboratorio || usuarioRadiologia) 
+                        {
+                            @if (ViewBag.MostrarEstado)
+                            {
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="position-relative form-group">
+                                            <button class="btn btn-primary" type="submit">Guardar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="tab-pane tabs-animation fade show" id="tab-content-2" role="tabpanel">
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+
+                        <div class="table-responsive">
+                            <table class='table table-hover' id="tableventa">
+                                <thead>
+                                    <tr>
+                                        <th>Codigo</th>
+                                        <th>Examen</th>
+                                        <th>Cantidad</th>
+                                        <th>Precio</th>
+                                        <th>  %  </th>
+                                        <th>Subtotal</th>
+                                        <th>Total</th>
+                                        <th>Observaciones</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="contentdetalle">
+    @if (Model.Examen != null)
+    {
+        // Definir el array con los nombres que deseas excluir
+        var nombresExcluidos = new[] 
+        {
+            "Tórax P/A", "Codo AP/lat", "ULTRASONIDO FAST", "Torax A/P", 
+            "Torax AP/ Lateral", "Parrilla Costal Tórax", "Cráneo AP/lat", "Huesos Propios de Nariz", 
+            "Senos Paranasales", "Maxilares", "Orbitas", "Arcos Cigomático", "Abdomen Simple", 
+            "Abdomen Erecto", "Femur AP/lat", "Tibia y Peroné AP/lat", "Rodilla AP/lat", "Tobillo AP/lat", 
+            "Pie AP/lat", "Calcaneo AP/lat", "Cervical Ap/lat", "Dorsal Ap/lat", "Brazo AP/lat", 
+            "Clavícula AP", "Hombro con y Sin Apoyo", "Hombro AP/ Oblicua", "Columna Proyección Dinámicas", 
+            "Spot de Columna", "Columna Dorso Lumbar AP", "Sacro Coxigea Lumbar AP/", "Lumbosacra AP/lat", 
+            "Lumbar AP/lat", "Pierna Ap/Lat", "Muslo Ap/Lat", "Spot de dedo", "Pélvis Posición de Rana", 
+            "Pélvis AP y LAt", "Pélvis AP", "Mano AP/lat", "Muñeca AP/lat", "Antebrazo AP/lat", 
+            "ULTRASONIDO OBSTETRICO", "ULTRASONIDO PELVICO", "ULTRASONIDO ABDOMINAL SUPERIOR", 
+            "ULTRASONIDO ABDOMINAL INFERIOR", "ULTRASONIDO ABDOMINAL TOTAL", "ULTRASONIDO DE CUELLO", 
+            "ULTRASONIDO DE TEJIDOS BLANDOS", "ULTRASONIDO RENAL Y VIAS URINARIAS", 
+            "ULTRASONIDO HIGADO Y VIAS BILIARES", "ULTRASONIDO DE ENDOVAGINAL", "ULTRASONIDO TESTICULAR", 
+            "ULTRASONIDO PROSTATICO", "ULTRASONIDO DE PIE", "ULTRASONIDO GLANDULA PAROTIDA", 
+            "ULTRASONIDO MAMARIO", "ULTRASONIDO FOSA ILEACA IZQ-DERECHA", "ULTRASONIDO DE RODILLA", 
+            "ULTRASONIDO CONTROL PRENATAL", "DOPLER ARTERIAL MIEMBRO INFERIOR", 
+            "ULTRASONIDO ABDOMEN SUPERIOR Y FOSA ILIACA DERECHA", 
+            "ULTRASONIDO ABDOMINAL COMPLETO PEDIATRICO (<2 AÑOS)", 
+            "ULTRASONIDO ABDOMINAL PEDIATRICO (<2 AÑOS)", "ULTRASONIDO PARED ABDOMINAL", 
+            "ULTRASONIDO OBSTETRICO-GEMELAR", "ULTRASONIDO DE ARTICULACIONES", "ULTRASONIDO INGUINAL", 
+            "ULTRASONIDO ENDORECTAL", "ULTRASONIDO DE TIROIDES", "DOPLER ARTERIAL MIEMBRO SUPERIORES", 
+            "ULTRASONIDO PELVICO Y FOSA ILIACA DERECHA", "ULTRASONIDO DE AMBAS RODILLAS", 
+            "ULTRASONIDO PROSTATICO ENDORECTAL", "ULTRASONIDO INGUINO-ESCROTAL", 
+            "ULTRASONIDO TRANSFONTANELAR", "ULTRASONIDO DE CUELLO Y TIROIDES CON DOPPLER", 
+            "ULTRASONIDO DE TEJIDOS BLANDOS CON DOPPLER", "ULTRASONIDO TESTICULAR CON DOPPLER", 
+            "ULTRASONIDO MAMARIO CON DOPPLER", "ULTRASONIDO VENOSO MIEMBRO INFERIOR", 
+            "ULTRASONIDO VENOSO MIEMBRO SUPERIOR"
+        };
+
+        foreach (var item in Model.Examen.DetalleExamenes)
+        {
+            // Condición para no mostrar los exámenes cuyos nombres están en el array de exclusión
+            if (!nombresExcluidos.Contains(item.ExamenLabClinico.NombreExamen))
+            {
+                subtotal += @item.Subtotal;
+                total += @item.Total;
+                descuento += @item.Descuento;
+
+                <tr>
+                    <td>@item.Id</td>
+                    <td>@item.ExamenLabClinico.NombreExamen</td>
+                    <td>@item.Cantidad</td>
+                    <td>@item.PrecioValor</td>
+                    <td>@item.Descuento</td>
+                    <td>@item.Subtotal</td>
+                    <td>@item.Total</td>
+                    <td>@item.Observacion</td>
+                    <td>
+                        @if (ViewBag.MostrarEstado)
+                        {
+                            if (usuarioAdministrador || usuarioDesarrollador || usuarioTecnicoLaboratorio || usuarioSupervisorLaboratorio || usuarioRadiologia)
+                            {
+                                <a href="@Url.Action("ModificarResultadosExamen", "LaboratorioClinico", new { detalleExamenId = @item.Id })" class="btn btn-warning">
+                                    <i class="fa fa-edit"></i>
+                                </a>
+                            }
+                            if (usuarioAdministrador || usuarioDesarrollador || usuarioTecnicoLaboratorio || usuarioSupervisorLaboratorio || usuarioRadiologia || usuarioCoordinadorLaboratorio)
+                            {
+                                <button type="button" class="btn btn-danger ml-2" onclick="uploadNoPrincipalPdf('@item.ExamenLabClinico.NombreExamen')">
+                                    <i class="fa fa-file"></i>
+                                </button>
+                            }
+                        }
+                    </td>
+                    <td style="display: none;" class="idProd">@item.Id</td>
+                </tr>
+            }
+        }
+
+        @if (usuarioAdministrador || usuarioDesarrollador || usuarioTecnicoLaboratorio || usuarioSupervisorLaboratorio || usuarioRadiologia)
+        {
+            <a href="@Url.Action("ModificarTodosResultadosExamen","LaboratorioClinico", new { Id = Model.Id })" class="btn btn-warning">
+                <i class="fa fa-edit"></i>
+                Edición rápida
+            </a>
+        }
+        @if (usuarioAdministrador || usuarioDesarrollador || usuarioTecnicoLaboratorio || usuarioSupervisorLaboratorio || usuarioRadiologia || usuarioCoordinadorLaboratorio)
+        {
+            <button type="button" class="btn btn-info ml-2" data-toggle="collapse" data-target="#pdfCollapse" aria-expanded="false" aria-controls="pdfCollapse">
+                Archivos PDF 
+            </button> 
+        }
+    }
+</tbody>
+
+
+                            </table>
+                        </div>
+
+                        <br />
+                        @if (ViewBag.MostrarEstado)
+                        {
+                            @* <div class="text-right" style="font-size: 25px;">
+                        <span>Subtotal:</span>
+                        Q <span id="subtotal-venta">@subtotal</span>
+                        </div>
+
+                        <div class="text-right"  style="font-size: 25px;">
+                        <span>Descuento:</span>
+                        Q <span id="descuento-venta">@descuento</span>
+                        </div>
+
+                        <div class="text-right" style="font-size: 25px;">
+                        <span>Total:</span>
+                        Q <span id="precio-total-a-pagar">@total</span>
+                        </div>  *@
+                        }
+                        else
+                        {
+                            <div class="text-right" style="font-size: 25px;">
+                                <span>Subtotal:</span>
+                                Q <span id="subtotal-venta">0.00</span>
+                            </div>
+
+                            <div class="text-right" style="font-size: 25px;">
+                                <span>Descuento:</span>
+                                Q <span id="descuento-venta">0.00</span>
+                                @* Q <label id="descuentoventa" contenteditable="true" style="white-space:nowrap; word-wrap: break-word;">0.00</label>  *@
+                            </div>
+
+                            <div class="text-right" style="font-size: 25px;">
+                                <span>Total:</span>
+                                Q <span id="precio-total-a-pagar">0.00</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+
+
+
+        </div>
+    </div>
+
+</div>
+
+
+<div class="collapse" id="pdfCollapse">
+  <div class="card card-body mt-3">
+    <div class="d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Archivos PDF de Hospitalización y Exámenes</h5>
+      <div>
+        <!-- Se añade la propiedad onclick -->
+        <button type="button" class="btn btn-primary" id="uploadBtn" onclick="uploadBtnClicked()">Subir Archivo PDF</button>
+        <small class="text-muted ml-2">Archivo PDF general (todos los exámenes)</small>
+      </div>
+    </div>
+    <div class="table-responsive mt-3">
+      <table class="table table-striped table-hover">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre Examen</th>
+            <th>PDF URL</th>
+            <th>Estado</th>
+            <th>Fecha de Creación</th>
+            <th>Usuario</th>
+            <th>Hospitalización ID</th>
+            <th>Examen ID</th>
+            <th>Principal</th>
+            <th>Eliminar</th>
+          </tr>
+        </thead>
+        <tbody id="pdfTableBody">
+          <!-- Las filas se renderizarán dinámicamente -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Input file oculto para la subida del PDF NO principal -->
+<input type="file" id="fileInputNoPrincipal" style="display: none;" />
+
+<!-- Input file oculto -->
+<input type="file" id="fileInput" style="display: none;" />
+
+<!-- Ejemplo de campos ocultos para hospitalizacionId y examenId -->
+<input type="hidden" id="HospitalizacionId" value="@Model.HospitalizacionId" />
+<input type="hidden" id="ExamenId" value="@Model.ExamenId" />
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentUrl = window.location.href.toLowerCase();
+        const containscategoriaLabClinico = currentUrl.includes('radiologia');
+        
+        if (containscategoriaLabClinico) {
+            const editLinks = document.querySelectorAll('a[href*="ModificarTodosResultadosExamen"]');
+            
+            
+            editLinks.forEach(function(link, index) {
+                const currentHref = link.getAttribute('href');
+                
+                if (!currentHref.includes('radiologia=')) {
+                    const separator = currentHref.includes('?') ? '&' : '?';
+                    
+                    const newHref = currentHref + separator + 'radiologia=true';
+                    
+                    link.setAttribute('href', newHref);
+                    
+                } else {
+                    console.log(`Enlace ${index + 1} ya contiene parámetro radiologia:`, currentHref);
+                }
+            });
+            
+        } else {
+            console.log('ℹ️ No se detectó "radiologia" en la URL, no se modificaron enlaces');
+        }
+    });
+</script>

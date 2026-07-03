@@ -1,0 +1,124 @@
+@using Database.Shared.Enumeraciones
+@using sistema.Models
+@model CajaDetallesViewModel
+
+@{
+    decimal totalCompra = 0.00m;
+}
+
+<div class="form-row">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <h4>Compras</h4>
+                <hr />
+                @if (Model.AmbienteId == (int)AmbienteEnum.Global)
+                {
+                    @if (Model.SucursalId == null)
+                    {
+                        <b>Filtrar por sucursal:</b>
+                        <div class="form-row">
+                            <div class="col-md-2">
+                                <input type="checkbox" class="compras-filtro-sucursal"
+                               id="compras-filtro-sucursal-" checked onchange="aplicarFiltrosCompras()" />
+                                <label for="compras-filtro-sucursal-">TODAS</label>
+                            </div>
+                            @foreach (var sucursal in Model.ListaSucursales)
+                            {
+                                <div class="col-md-2">
+                                    <input type="checkbox" class="compras-filtro-sucursal"
+                               id="compras-filtro-sucursal-@sucursal.Id" checked onchange="aplicarFiltrosCompras()" />
+                                    <label for="compras-filtro-sucursal-@sucursal.Id">@sucursal.NombreSucursal</label>
+                                </div>
+                            }
+                        </div>
+                        <hr />
+                    }
+                    <b>Filtrar por ambiente:</b>
+                    <div class="form-row">
+                        <div class="col-md-2">
+                            <input type="checkbox" class="compras-filtro-ambiente"
+                               id="compras-filtro-ambiente-@((int)AmbienteEnum.Global)"
+                               checked onchange="aplicarFiltrosCompras()" />
+                            <label for="compras-filtro-ambiente-@((int)AmbienteEnum.Global)">Global</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="checkbox" class="compras-filtro-ambiente"
+                               id="compras-filtro-ambiente-@((int)AmbienteEnum.Hospital)"
+                               checked onchange="aplicarFiltrosCompras()" />
+                            <label for="compras-filtro-ambiente-@((int)AmbienteEnum.Hospital)">Hospital</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="checkbox" class="compras-filtro-ambiente"
+                               id="compras-filtro-ambiente-@((int)AmbienteEnum.Farmacia)"
+                               checked onchange="aplicarFiltrosCompras()" />
+                            <label for="compras-filtro-ambiente-@((int)AmbienteEnum.Farmacia)">Farmacia</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="checkbox" class="compras-filtro-ambiente"
+                               id="compras-filtro-ambiente-@((int)AmbienteEnum.Clinica)"
+                               checked onchange="aplicarFiltrosCompras()" />
+                            <label for="compras-filtro-ambiente-@((int)AmbienteEnum.Clinica)">Clinica</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="checkbox" class="compras-filtro-ambiente"
+                               id="compras-filtro-ambiente-@((int)AmbienteEnum.Laboratorio)"
+                               checked onchange="aplicarFiltrosCompras()" />
+                            <label for="compras-filtro-ambiente-@((int)AmbienteEnum.Laboratorio)">Laboratorio</label>
+                        </div>
+                    </div>
+                }
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="table-responsive">
+                            <table class="mb-0 table table-hover ">
+                                <thead>
+                                    <tr>
+                                        <th>Sucursal</th>
+                                        <th>Ambiente</th>
+                                        <th>Fecha Compra</th>
+                                        <th>Comprobante</th>
+                                        <th>Descripción</th>
+                                        <th>Proveedor</th>
+                                        <th>Empleado</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.Compras == null || Model.Compras.Count == 0)
+                                    {
+                                        <tr>
+                                            <td colspan="8">No hay compras registradas</td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var compra in Model.Compras)
+                                        {
+                                            <tr class="compras-reg-sucursal-@compra.SucursalId compras-reg-ambiente-@compra.AmbienteId">
+                                                <td>@compra.SucursalNombre</td>
+                                                <td><span class="badge badge-primary">@compra.AmbienteNombre</span></td>
+                                                <td>@compra.FechaCompra</td>
+                                                <td>@compra.Comprobante</td>
+                                                <td>@compra.Descripcion</td>
+                                                <td>@compra.Proveedor</td>
+                                                <td>@compra.Empleado</td>
+                                                <td>Q <span class="compras-valor-sucursal-@compra.SucursalId compras-valor-ambiente-@compra.AmbienteId">@compra.Total</span></td>
+                                               </tr>
+
+                                            totalCompra += @compra.Total;
+                                        }
+                                        <tr class="bg-dark text-light font-weight-bolder">
+                                            <td colspan="7">TOTAL</td>
+                                            <td>Q <span id="compras-total">@totalCompra</span></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

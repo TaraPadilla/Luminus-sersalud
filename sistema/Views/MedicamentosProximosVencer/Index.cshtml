@@ -1,0 +1,103 @@
+@model List<sistema.Controllers.MedicamentoProximoVencerItemViewModel>
+
+@{
+    ViewData["Title"] = "Listado de medicamentos próximos a vencer";
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12">
+            <h3 class="mb-0">Listado de medicamentos próximos a vencer</h3>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <strong>
+                        LISTADO DE MEDICAMENTOS ENVIADOS A CAMBIO VENCIMIENTO, EJECUTANDO LAS CARTAS DE COMPROMISOS CORRESPONDIENTES.
+                    </strong>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <a asp-controller="MedicamentosProximosVencer"
+                           asp-action="ExportarExcel"
+                           class="btn btn-success mr-2">
+                            Exportar Excel
+                        </a>
+
+                        <a asp-controller="MedicamentosProximosVencer"
+                           asp-action="ExportarPdf"
+                           class="btn btn-danger"
+                           target="_blank">
+                            Exportar PDF
+                        </a>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table id="tablaMedicamentosProximosVencer" class="table table-bordered table-striped table-sm w-100">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>No.</th>
+                                    <th>No. de Formulario</th>
+                                    <th>Fecha de Formulario</th>
+                                    <th>Oficio</th>
+                                    <th>Fecha</th>
+                                    <th>Unidad</th>
+                                    <th>Descripcion</th>
+                                    <th>Precio Unitario</th>
+                                    <th>Precio Total</th>
+                                    <th>Fecha de Entrega al Proveedor</th>
+                                    <th>Fecha de Recepción de Reingreso</th>
+                                    <th>Dias que indica la Carta de Compromiso</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model != null && Model.Any())
+                                {
+                                    foreach (var item in Model)
+                                    {
+                                        <tr>
+                                            <td>@item.Numero</td>
+                                            <td>@item.NumeroFormulario</td>
+                                            <td>@item.FechaFormularioTexto</td>
+                                            <td>@item.Oficio</td>
+                                            <td>@item.FechaTexto</td>
+                                            <td>@item.Unidad</td>
+                                            <td>@item.Descripcion</td>
+                                            <td>@item.PrecioUnitario.ToString("N2")</td>
+                                            <td>@item.PrecioTotal.ToString("N2")</td>
+                                            <td>@item.FechaEntregaProveedorTexto</td>
+                                            <td>@item.FechaRecepcionReingresoTexto</td>
+                                            <td>@item.DiasCartaCompromiso</td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#tablaMedicamentosProximosVencer').DataTable({
+                responsive: true,
+                searching: true,
+                paging: true,
+                ordering: false,
+                info: true,
+                lengthChange: true,
+                pageLength: 10,
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.10.21/i18n/Spanish.json'
+                }
+            });
+        });
+    </script>
+}

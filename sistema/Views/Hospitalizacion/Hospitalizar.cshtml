@@ -1,0 +1,34 @@
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    // Leer el valor del appsettings.json. 
+    string sufijoLayout = Configuration["Cliente"]; 
+    
+    // Concatenar para formar el nombre del Layout (ejemplo: "_Layout" + "SS")
+    // Si la clave trae el nombre completo (ej. "_LayoutSS"), simplemente asignalo directo.
+    Layout = $"_Layout{sufijoLayout}";
+    ViewData["Title"] = "Hospitalizar";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+
+
+@await Html.PartialAsync("_HospitalizarForm")
+
+
+@section Scripts
+{
+
+<!--JS Vista (depende de knockout)-->
+<script type="text/javascript" src="~/ViewModelKo/HospitalizacionHospitalizarVM.js"></script>
+
+<script>
+    let fechaEntrada='@DateTime.Today.ToString("dd/MM/yyyy hh:mm tt")';
+    let fechaSalida='@DateTime.Today.ToString("dd/MM/yyyy hh:mm tt")';
+</script>
+
+}
+
+@section css{
+<link href="~/css/daterangepicker.css" rel="stylesheet">
+}

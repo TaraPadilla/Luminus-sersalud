@@ -1,0 +1,159 @@
+@model sistema.Models.ConsultasViewModel
+@Html.HiddenFor(a => a.CitaId)
+@Html.HiddenFor(a => a.PacienteId)
+@Html.HiddenFor(a => a.ConsultaId)
+@Html.HiddenFor(a => a.PrimeraConsulta)
+@Html.HiddenFor(a => a.HistoriaId)
+@Html.HiddenFor(a => a.ExamenFisicoId)
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div id="tabs">
+            <ul>
+                <li><a href="#tab-datos-paciente">Datos del paciente</a></li>
+   
+                 <li><a href="#tab-medico">Médico</a></li>
+                
+                 
+            </ul>
+
+ 
+
+
+
+            <div id="tab-datos-paciente">
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+
+                        <div class="main-card mb-3 card">
+                            <div class="card-body">
+                                <div class="form-row">
+
+
+
+                                    <div class="col-md-4">
+                                        <div class="position-relative form-group">
+                                            <label class="">Nivel Prioridad</label>
+                                            @if (Model.NivelPrioridadCita == "BAJO"){@Html.TextBoxFor(m => m.NivelPrioridadCita, new { @class = "form-control ", @readonly = true, @Style = "Background:#f7b922; Color:black;" })}
+                                            else if (Model.NivelPrioridadCita == "MEDIO") { @Html.TextBoxFor(m => m.NivelPrioridadCita, new { @class = "form-control ", @readonly = true, @Style = "Background:#88F514; Color:black;" })}
+                                            else if (Model.NivelPrioridadCita == "ALTO") { @Html.TextBoxFor(m => m.NivelPrioridadCita, new { @class = "form-control ", @readonly = true, @Style = "Background:#F51414; Color:black;" })}
+
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <div class="position-relative form-group">
+                                            <label class="">No Turno</label>
+                                            @Html.TextBoxFor(a => a.NumeroTurno, new { @class = "form-control", @readonly=true, @Style= "Background:#2fb9e7; Color:white;" })
+ 
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="position-relative form-group">
+                                            <label class="">Estado del Turno</label>
+                                            <select asp-for="EstadoTurno" class="form-control">
+                                                <option value="ACTIVO">ACTIVO</option>
+                                                <option value="PENDIENTE">PENDIENTE</option>
+                                                <option value="ENCURSO">EN CURSO</option>
+                                                <option value="FINALIZADO">FINALIZADO</option>
+                                            </select>
+
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="main-card mb-3 card">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-12">
+                                        <h5><b>Datos personales</b></h5>
+                                        <hr>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <b>Nombre: </b>@Model.PacienteNombre<br />
+                                        <b>NIT: </b>@Model.PacienteNit<br />
+                                        <b>Dirección: </b>@Model.PacienteDireccion<br />
+                                        <b>Alias: </b>@Model.PacienteAlias<br />
+                                        <b>Sexo: </b>@(Model.PacienteSexo??"-")<br />
+                                        <b>Fecha de nacimiento: </b>@Model.PacienteFechaNacimiento<br />
+                                        <b>Edad: </b>@Model.PacienteEdad<br />
+                                        <b>Nivel educativo completado: </b>@Model.PacienteNivelEducativoCompletado<br />
+                                        <b>Teléfono: </b>@Model.PacienteTelefono<br />
+                                        <b>Departamento de residencia: </b>@Model.PacienteDepartamentoId <br />
+                                        <b>Municipio de residencia: </b>@Model.PacienteMunicipioId<br />
+                                        <b>Celular: </b>@Model.PacienteCelular <br />
+
+                                        <b>Seguro EPSS: </b>@Model.PacienteSeguroEPSS<br />
+                                        @*<b>ConsultaID: </b>@Model.ConsultaId<br />*@
+                                        <input type="hidden" class="form-control" asp-for="@Model.ConsultaId" id="ConsultaId" name="ConsultaId" readonly="readonly">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+
+
+                    </div>
+                </div>
+
+              
+            </div>
+        
+           
+            <div id="tab-medico">
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Historia clínica</b></h5>
+                                <hr />
+                            </div>
+                            <div class="col-md-12">
+                                Historia del problema<br />
+                                @Html.TextAreaFor(m => m.HistoriaProblema, new { @class = "form-control" })
+                            </div>
+                            <div class="col-md-12">
+                                Síntomas<br />
+                                @Html.TextAreaFor(m => m.Sintomas, new { @class = "form-control" })
+                            </div>
+                            <div class="col-md-12">
+                                Diagnóstico<br />
+                                @Html.TextAreaFor(m => m.Diagnostico, new { @class = "form-control" })
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @await Html.PartialAsync("_ExamenFisicoForm")
+
+
+                <div class="d-none"> @*estos estan ocultos ya que no se usan*@
+                    @await Html.PartialAsync("_ApnpConsultaForm")
+                    @await Html.PartialAsync("_CageConsultaForm")
+                    @await Html.PartialAsync("_PadecimientoActualForm")
+                    @await Html.PartialAsync("_UsoActualMedicamentosForm")
+                    @await Html.PartialAsync("_HistoriaMedicamentosAnalgesicosForm")
+                    @await Html.PartialAsync("_OtrosSintomasForm")
+                    @await Html.PartialAsync("_ExamenCognoscitivoForm")
+                    @await Html.PartialAsync("_DiagnosticoForm")
+                </div>
+
+
+
+
+
+            </div>
+             
+          
+          
+            
+          
+       
+          
+
+            
+        </div>
+    </div>
+</div>

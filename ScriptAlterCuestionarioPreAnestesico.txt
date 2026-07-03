@@ -1,0 +1,18 @@
+ALTER TABLE public."CuestionariosPreAnestesicos"
+    ADD COLUMN "PA_TransfusionCual" varchar(300) NULL,
+    ADD COLUMN "PA_AsmaCual" varchar(300) NULL,
+    ADD COLUMN "PA_PulmonesCual" varchar(300) NULL,
+    ADD COLUMN "PA_CorazonCual" varchar(300) NULL,
+    ADD COLUMN "PA_AtaqueCardiacoCual" varchar(300) NULL,
+    ADD COLUMN "PA_AnginaCual" varchar(300) NULL,
+    ADD COLUMN "PA_SoploCual" varchar(300) NULL,
+    ADD COLUMN "PA_PresionCual" varchar(300) NULL,
+    ADD COLUMN "PA_HigadoCual" varchar(300) NULL,
+    ADD COLUMN "PA_RinonesCual" varchar(300) NULL,
+    ADD COLUMN "PA_DiabetesCual" varchar(300) NULL,
+    ADD COLUMN "PA_EpilepsiaCual" varchar(300) NULL,
+    ADD COLUMN "PA_DerrameCual" varchar(300) NULL,
+    ADD COLUMN "PA_TiroidesCual" varchar(300) NULL,
+    ADD COLUMN "PA_AnestesicoCual" varchar(300) NULL,
+    ADD COLUMN "PA_AceptaTransfusionCual" varchar(300) NULL;
+    ADD COLUMN "PA_EmbarazoCual" varchar(300) NULL;

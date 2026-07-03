@@ -1,0 +1,29 @@
+﻿@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    // Leer el valor del appsettings.json. 
+    string sufijoLayout = Configuration["Cliente"]; 
+    
+    // Concatenar para formar el nombre del Layout (ejemplo: "_Layout" + "SS")
+    // Si la clave trae el nombre completo (ej. "_LayoutSS"), simplemente asignalo directo.
+    Layout = $"_Layout{sufijoLayout}"; 
+
+    ViewData["Title"] = "Nueva sociedad";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <center><h4><b>Nueva sociedad</b></h4></center>
+    </div>
+</div>
+
+@await Html.PartialAsync("_SociedadForm")
+
+@section css{
+
+}
+
+@section Scripts{
+
+}

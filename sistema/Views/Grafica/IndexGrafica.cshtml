@@ -1,0 +1,624 @@
+﻿@using Database.Shared.Paginacion;
+@model sistema.Models.GraficaBaseViewModel
+@{
+    ViewData["Title"] = "Inicio Graficas";
+}
+
+
+
+@section css {
+    <style>
+        .app-main {
+            @* background-image: url("/assets/images/cubbas.png"); *@ background-size: cover;
+        }
+
+        .logoprincipal img {
+            width: 350px;
+            display: block;
+            margin: auto;
+        }
+
+        .logoprincipal {
+            width: 100%;
+        }
+
+        @@media screen and (max-width: 620px) {
+            .logoprincipal img {
+                width: 250px;
+                display: block;
+                margin: auto;
+            }
+        }
+    </style>
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <h4><b>Gráficas estadísticas</b></h4>
+        </div>
+        @*  <div class="row">
+        <div class="col-md-4">
+        <div>
+        <label>Rango de fechas: </label>
+        </div>
+        <div class="btn-group">
+        <a id="enlace-ventas" href="#tab-ventas" onclick="mostrarContenido('tab-ventas')" class="btn btn-primary btn-sm form-inline" style="margin-right:1em; color: white">Ventas</a>
+        <a href="#tab-compras" onclick="mostrarContenido('tab-compras')" class="btn btn-primary btn-sm form-inline" style="margin-right:1em; color: white;"> Compras </a>
+        <a href="#tab-productos" onclick="mostrarContenido('tab-productos')" class="btn btn-primary btn-sm form-inline" style="margin-right:1em; color: white;"> Productos </a>
+        <a href="#tab-servicios" onclick="mostrarContenido('tab-servicios')" class="btn btn-primary btn-sm form-inline" style="margin-right:1em; color: white;"> Servicios </a>
+        </div>
+        </div>
+        </div> *@
+
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xl-4 col-md-6">
+        <div class="card bg-success text-white mb-4">
+            <div class="card-body">
+                <div class="text-white">
+                    General
+                    <i class="fas fa-money-bill-wave" style="font-size: 24px;"></i>
+                </div>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a id="enlace-general" class="small text-white stretched-link" href="#tab-general"
+                    onclick="mostrarContenido('tab-general')">Ver Detalles</a>
+                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-6">
+        <div class="card bg-primary text-white mb-4">
+            <div class="card-body">
+                <div class="text-white">
+                    Ventas
+                    <i class="fas fa-money-bill-wave" style="font-size: 24px;"></i>
+                </div>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a id="enlace-ventas" class="small text-white stretched-link" href="#tab-ventas"
+                    onclick="mostrarContenido('tab-ventas')">Ver Detalles</a>
+                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-6">
+        <div class="card bg-warning text-white mb-4">
+            <div class="card-body">
+                <div class="text-white">
+                    Compras
+                    <i class="fas fa-cash-register" style="font-size: 24px;"></i>
+                </div>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a class="small text-white stretched-link" href="#tab-compras"
+                    onclick="mostrarContenido('tab-compras')">Ver Detalles</a>
+                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-6">
+        <div class="card bg-success text-white mb-4">
+            <div class="card-body">
+                <div class="text-white">
+                    Productos
+                    <i class="fas fa-pills" style="font-size: 24px;"></i>
+                </div>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a class="small text-white stretched-link" href="#tab-productos"
+                    onclick="mostrarContenido('tab-productos')">Ver Detalles</a>
+                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-6">
+        <div class="card bg-danger text-white mb-4">
+            <div class="card-body">
+                <div class="text-white">
+                    Servicios
+                    <i class="fas fa-stethoscope" style=" font-size: 24px;"></i>
+                </div>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a class="small text-white stretched-link" href="#tab-servicios"
+                    onclick="mostrarContenido('tab-servicios')">Ver Detalles</a>
+                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="contenedor-tablas">
+
+    <div class="contenedor" id="contenido-tab-general" style="display: none;">
+        <div id="subtabs-general">
+            <ul>
+                <li>
+                    <a href="#subtab-general-ventas-compras-ganancias">
+                        Ventas - Compras - Ganancias
+                    </a>
+                </li>
+            </ul>
+            <div id="subtab-general-ventas-compras-ganancias">
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                Año:
+                                <select class="form-control" asp-for="TabGeneralVentasComprasGananciasAnnio"
+                                    asp-items="Model.Annios">
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <div id="tab-general-grafica-ventas-compras-ganancias"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="contenedor" id="contenido-tab-ventas" style="display: none;">
+        <div id="subtabs-ventas">
+            <ul>
+                <li><a href="#subtab-ventas-ventas-generales">Ventas generales</a></li>
+                <li><a href="#subtab-ventas-montos-pagos">Montos de pagos</a></li>
+                <li><a href="#subtab-ventas-ingresos">Ingresos</a></li>
+                <li><a href="#subtab-ventas-ingresos-venta">Ingresos ventas</a></li>
+                <li><a href="#subtab-ventas-tendencias-ventas">Tendencias de ventas</a></li>
+                <li><a href="#subtab-ventas-ventas-rango-fecha">Ventas por rango de fecha</a></li>
+                <li><a href="#subtab-ventas-top-10-productos">Top 10 productos</a></li>
+                <li><a href="#subtab-ventas-ventas-doctor">Venta por medico</a></li>
+            </ul>
+            <div id="subtab-ventas-ventas-generales">
+                <div class="col-xl-12">
+                    <div class="main-card mb-3">
+                        <div class="card-header">
+                            <i class="fas fa-chart-bar me-1" style="margin-right:2px"> </i>
+                            Ventas Generales
+                        </div>
+                        <br />
+                        <div id="graficaMesSemDia"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="subtab-ventas-montos-pagos">
+                <div class="col-xl-12">
+                    <div class="main-card mb-3">
+                        <div class="card-header">
+                            <i class="fas fa-chart-bar me-1" style="margin-right:2px"> </i>
+                            Montos de pagos
+                        </div>
+                        <br />
+                        <div id="graficaTiposPagos"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="subtab-ventas-ingresos">
+                <div class="col-xl-12">
+                    <div class="main-card mb-3">
+                        <div class="card-header">
+                            <i class="fas fa-chart-bar me-1" style="margin-right:2px"> </i>
+                            Ingresos
+                        </div>
+                        <br />
+                        <div id="graficaIngresos"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="subtab-ventas-ingresos-venta">
+                <div class="col-xl-12">
+                    <div class="main-card mb-3">
+                        <div class="card-header">
+                            <i class="fas fa-chart-bar me-1" style="margin-right:2px"> </i>
+                            Ingresos venta
+                        </div>
+                        <br />
+                        <div id="graficaIngresosVentas"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="subtab-ventas-tendencias-ventas">
+                <div class="col-xl-12">
+                    <div class="main-card mb-3">
+                        <div class="card-header">
+                            <i class="fas fa-chart-line me-1" style="margin-right:2px"> </i>
+                            Tendencias de ventas
+                        </div>
+                        <br />
+                        <div id="graficaTendencias"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="subtab-ventas-ventas-rango-fecha">
+                <div class="col-xl-12">
+                    <div class="main-card mb-3">
+
+                        <div class="card-header">
+                            <i class="fas fa-chart-bar fa-lg " style="margin-right:2px"> </i>
+                            Ventas por rango de Fecha o Año
+                        </div>
+
+                        <div class="card-body" style="background-color:white">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label>Rango de fechas: </label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control float-right" id="fechaRangoVentas"
+                                            name="fecha">
+                                    </div>
+                                </div>
+
+
+                            </div>
+
+                        </div>
+                        <br />
+
+                        <div id="graficaFechaRango"></div>
+
+
+                        <div class="row mb-5">
+                            <div class="col-md-3">
+                                <label>Año</label>
+                                @{
+                                    List<int> anios = new List<int>();
+                                    int anioActual = DateTime.Now.Year;
+                                    for (int anio = anioActual - 7; anio <= anioActual; anio++)
+                                    {
+                                        anios.Add(anio);
+                                    }
+                                    anios = anios.OrderByDescending(a => a).ToList();
+                                }
+
+                                <select id="anio" class="form-control">
+                                    <option value="">Selecciona un año</option>
+                                    @foreach (int anio in anios)
+                                    {
+                                        <option value="@anio">@anio</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="graficaAnnio"></div>
+
+                    </div>
+                </div>
+            </div>
+            <div id="subtab-ventas-top-10-productos">
+                <div class="col-xl-12">
+                    <div class="main-card mb-3">
+                        <div class="card-header">
+                            <i class="fas fa-chart-bar me-1" style="margin-right:2px"> </i>
+                            Ventas Top 10 productos servicios solicitudes
+                        </div>
+                        <br />
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label>Rango de fechas (Top 10 Productos): </label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control float-right" id="fechaRangoTop10"
+                                        name="fechaRangoTop10">
+                                </div>
+                            </div>
+                        </div>
+                        <div id="ventasTop"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="subtab-ventas-ventas-doctor">
+                <div class="col-xl-12">
+                    <div class="main-card mb-3">
+                        <div class="card-header">
+                            <i class="fas fa-chart-bar me-1" style="margin-right:2px"> </i>
+                            Total de Ingresos en Bruto Doctores
+                        </div>
+                        <br />
+                        <div id="ventasPorDotor"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="contenedor" id="contenido-tab-compras" style="display: none;">
+        <div class="col-xl-12">
+            <div class="main-card mb-3">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-1" style="margin-right:2px"> </i>
+                    Compras Generales
+                </div>
+                <br />
+                <div id="graficaCompras"></div>
+            </div>
+        </div>
+        <div class="col-xl-12">
+            <div class="main-card mb-3">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-1" style="margin-right:2px"> </i>
+                    Egresos
+                </div>
+                <br />
+                <div id="graficaGastos"></div>
+            </div>
+        </div>
+        <div class="col-xl-12">
+            <div class="main-card mb-3">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-1" style="margin-right:2px"> </i>
+                    Egresos y Compras
+                </div>
+                <br />
+                <div id="graficaGastosCompras"></div>
+            </div>
+        </div>
+        <div class="col-xl-12">
+            <div class="main-card mb-3">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-1" style="margin-right:2px"> </i>
+                    Costo Operativo
+                </div>
+                <br />
+                <div id="graficaCostoOperativo"></div>
+
+            </div>
+
+        </div>
+
+        <div class="col-xl-12">
+            <div class="row">
+                <div class="col-xl-6">
+                    <div class=" main-card mb-3">
+                        <div class="card-header">
+                            <i class="fas fa-chart-bar me-1" style="margin-right: 2px;"></i>
+                            Compras Proveedor
+                        </div>
+                        <br />
+                        <div id="graficaComprasProveedor"></div>
+                    </div>
+                </div>
+
+                <div class="col-xl-6">
+                    <div class="main-card mb-3">
+                        <div class="card-header">
+                            <i class="fas fa-chart-pie me-1" style="margin-right: 2px;"></i>
+                            Porcentaje Compras Proveedor
+                        </div>
+                        <br />
+                        <div id="graficaComprasProveedorPastel"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="contenedor" id="contenido-tab-productos" style="display: none;">
+        <div id="subtabs-productos">
+            <ul>
+                <li><a href="#subtab-productos-ventas-mensuales-producto">Ventas mensuales de producto</a></li>
+                <li><a href="#subtab-productos-comparacion-precios-proveedor">Comparacion de precios por proveedor</a>
+                </li>
+                <li><a href="#subtab-productos-mas-vendidos" data-bind="click:tabProductosMasVendidos">Más vendidos</a>
+                </li>
+                <li><a href="#subtab-productos-menos-vendidos" data-bind="click:tabProductosMenosVendidos">Menos
+                        vendidos</a></li>
+            </ul>
+            <div id="subtab-productos-ventas-mensuales-producto">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-1" style="margin-right: 2px;"></i>
+                    Ventas mensuales de producto
+                </div>
+                <div class="card-body" style="background-color:white">
+                    <div class="form-row">
+                        <div class="col-md-5">
+                            Producto<br />
+                            <select
+                                data-bind="options:productosExistentes,value:productoSeleccionadoVentasMensuales,optionsText:'ProductoNombre'"
+                                class="form-control select2bs4">
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            Año<br />
+                            <select id="annio-producto-ventas-mensuales" class="form-control">
+                                @foreach (int anio in anios)
+                                {
+                                    <option value="@anio">@anio</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label style="color:white">Consultar</label>
+                            <button data-bind="click:tabProductosVentasMensuales" class="btn btn-primary">
+                                Consultar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <div id="graficaProductoVentas"></div>
+            </div>
+            <div id="subtab-productos-comparacion-precios-proveedor">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-1" style="margin-right: 2px;"></i>
+                    Comparacion de precios por proveedor
+                </div>
+                <div class="card-body" style="background-color:white">
+                    <div class="form-row">
+                        <div class="col-md-10">
+                            <label>Producto</label>
+                            <select class="form-control select2bs4" data-bind="options:productosExistentes,optionsText:'ProductoNombre'
+                                ,value:productoSeleccionadoComparacionPrecios">
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <span style="color:white">Consultar</span>
+                            <button data-bind="click:tabProductosComparacionPreciosProveedor"
+                                class="btn btn-primary">Consultar</button>
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <div id="graficaProductoProveedor"></div>
+            </div>
+            <div id="subtab-productos-mas-vendidos">
+                <div class="card-header">
+                    <i class="fas fa-chart-pie me-1" style="margin-right: 2px;"></i>
+                    Distribucion de los 10 productos mas vendidos
+                </div>
+                <br />
+                <div id="graficaProductosMas"></div>
+            </div>
+            <div id="subtab-productos-menos-vendidos">
+                <div class="card-header">
+                    <i class="fas fa-chart-pie me-1" style="margin-right: 2px;"></i>
+                    Distribucion de los 10 productos menos vendidos
+                </div>
+                <br />
+                <div id="graficaProductosMenos"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="contenedor" id="contenido-tab-servicios" style="display: none;">
+        <div class="col-xl-12">
+            <div class="main-card mb-3">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-1" style="margin-right:2px"> </i>
+                    Ingresos Generales Por Lineas de servicios
+                </div>
+                <br />
+                <div id="GraficoIngresosPorLinea"></div>
+
+            </div>
+        </div>
+
+        <div class="col-xl-12">
+            <div class="main-card mb-3">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-1" style="margin-right:2px"> </i>
+                    Número de Estudios IGSS
+                </div>
+                <br />
+                <div id="GraficoNumerodeExamenes"></div>
+            </div>
+
+            <div class="col-xl-12">
+                <div class="row">
+                    <div class="col-xl-6">
+                        <div class=" main-card mb-3">
+                            <div class="card-header">
+                                <i class="fas fa-chart-bar me-1" style="margin-right: 2px;"></i>
+                                Pacientes atendidos por Servicio
+                            </div>
+                            <br />
+                            <div id="graficaServiciosGeneral"></div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-6">
+                        <div class="main-card mb-3">
+                            <div class="card-header">
+                                <i class="fas fa-chart-pie me-1" style="margin-right: 2px;"></i>
+                                Porcentaje de Pacientes atendidos por Servicio
+                            </div>
+                            <br />
+                            <div id="graficaServiciosGeneral%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+
+
+
+@section Scripts {
+
+    <script type="text/javascript" src="~/js/moment.min.js"></script>
+    <script type="text/javascript" src="~/js/daterangepicker.js"></script>
+    <script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+
+    <script type="text/javascript" src="~/ViewModelKo/GraficaVM.js"></script>
+
+
+
+    <script type="text/javascript" src="~/lib/highcharts/highcharts.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/highcharts-more.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/highcharts-3d.js"></script>
+
+    <script type="text/javascript" src="~/lib/highcharts/modules/data.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/drilldown.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/exporting.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/export-data.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/accessibility.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/no-data-to-display.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/debugger.js"></script>
+
+    <script type="text/javascript" src="~/lib/highcharts/modules/stock.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/maps/modules/map.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/gantt.js"></script>
+
+    <script type="text/javascript" src="~/lib/highcharts/modules/heatmap.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/treemap.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/treegraph.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/tilemap.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/sunburst.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/sankey.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/arc-diagram.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/dependency-wheel.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/organization.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/networkgraph.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/venn.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/wordcloud.js"></script>
+
+    <script type="text/javascript" src="~/lib/highcharts/modules/histogram-bellcurve.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/pareto.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/timeline.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/xrange.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/bullet.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/funnel.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/funnel3d.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/pyramid3d.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/cylinder.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/item-series.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/solid-gauge.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/variable-pie.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/variwide.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/vector.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/windbarb.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/streamgraph.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/dumbbell.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/lollipop.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/dotplot.js"></script>
+
+    <script type="text/javascript" src="~/lib/highcharts/modules/annotations-advanced.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/draggable-points.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/static-scale.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/broken-axis.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/parallel-coordinates.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/series-label.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/pattern-fill.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/marker-clusters.js"></script>
+
+    <script type="text/javascript" src="~/lib/highcharts/modules/price-indicator.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/stock-tools.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/drag-panes.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/hollowcandlestick.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/heikinashi.js"></script>
+    <script type="text/javascript" src="~/lib/highcharts/modules/sonification.js"></script>
+}

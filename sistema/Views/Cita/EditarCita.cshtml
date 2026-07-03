@@ -1,0 +1,118 @@
+@using sistema.Models
+@model CitaViewModel
+@{
+    ViewData["Title"] = "Editar cita";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-12">
+                <a asp-action="Lista" asp-controller="Cita" class="btn btn-danger">
+                    <i class="fas fa-list"></i> &nbsp; Lista de citas
+                </a>
+
+                <a asp-action="CalendarioLineal" asp-controller="Cita" class="btn btn-danger"
+                       asp-route-buscar="@Model.FechaHora.ToString("yyyy-MM-dd")">
+                    <i class="fas fa-calendar-alt"></i> &nbsp; Regresar calendario
+                    @Model.FechaHora.ToString("yyyy-MM-dd")
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (User.IsInRole("CirugiaPlastica"))
+{
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="border mb-4 rounded" style="overflow: hidden;">
+                <div class="p-3" style="background-color: #fff9e6;">
+                    <h4 class="fw-bold mb-0">Ajuste de Fecha y Hora <i class="fas fa-clock"></i></h4>
+                </div>
+                <div class="p-3">
+                    <div class="row g-3">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label"><strong>Día</strong></label>
+                            <input type="date" class="form-control" id="Dia"
+                                   value="@Model.FechaHora.Date.ToString("yyyy-MM-dd")">
+                        </div>
+                        <div class="col-md-5 mb-3">
+                            <label class="form-label"><strong>Hora</strong></label>
+                            <select class="form-control" id="Hora">
+                                <option value="@Model.Hora">@Model.Hora</option>
+                                @foreach (var hora in Model.Horas)
+                                {
+                                    if (hora != Model.Hora)
+                                    {
+                                        <option value="@hora">@hora</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@await Html.PartialAsync("_CitaForm")
+
+@if (User.IsInRole("CirugiaPlastica"))
+{
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-12">
+                    <button class="btn btn-primary" data-bind="click:editarCitaCP">
+                        <i class="fas fa-save"></i> &nbsp; Editar cita
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-12">
+                    <button class="btn btn-primary" data-bind="click:editarCita">
+                        <i class="fas fa-save"></i> &nbsp; Editar cita
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+@section Scripts {
+    <script src="~/ViewModelKo/CitaVM.js"></script>
+
+    <script>
+        // Bootstrap 4.3 tooltips
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip();
+        });
+
+        // 1) Mandamos el modelo del servidor a JS
+        var serverModel = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model));
+
+
+
+        // 2) Iniciamos KO
+        var citaVm = new CitaVM(serverModel);
+        ko.applyBindings(citaVm);
+
+        if (typeof citaVm !== 'undefined' && citaVm.cargarEquipoQuirurgico) {
+            citaVm.cargarEquipoQuirurgico(serverModel);
+        } else {
+            console.error("citaVm no está disponible o no tiene el método cargarEquipoQuirurgico");
+        }
+    </script>
+}

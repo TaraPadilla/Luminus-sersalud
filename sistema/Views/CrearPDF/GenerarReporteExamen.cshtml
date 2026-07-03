@@ -1,0 +1,174 @@
+@model Database.Shared.Models.Examen
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Examenes de laboratorio";
+
+  // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    var paciente = Model.Paciente == null ? "-" : Model.Paciente.Nombre;
+    var nit = Model.Paciente == null ? "-" : Model.Paciente.Nit;
+    var direccion = Model.Paciente == null ? "-" : Model.Paciente.Direccion;
+    var fechaVenta = Model.Ventas.FirstOrDefault() == null
+        ? "-"
+        : Model.Ventas.FirstOrDefault().FechaVenta.ToString("dd/MM/yyyy HH:mm");
+}
+
+<style>
+    .report-container {
+        margin-top: 10px;
+        font-size: 12px;
+    }
+
+    .report-title {
+        text-align: center;
+        font-weight: bold;
+        font-size: 16px;
+        color: #0d0e36;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+
+    .report-subtitle {
+        text-align: center;
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    .report-table-title-row th {
+        background-color: #f3f4ff;
+        border-left: 3px solid #0d0e36;
+        color: #0d0e36;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: bold;
+        font-size: 12px;
+        text-align: left;
+        padding: 6px 8px;
+    }
+
+    .report-table-header-row th {
+        background-color: #eef2ff;
+        color: #0d0e36;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 11px;
+        text-align: center;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table td {
+        font-size: 12px;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+        vertical-align: top;
+    }
+
+    .report-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .keep-with-next {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        -webkit-column-break-inside: avoid;
+        -webkit-region-break-inside: avoid;
+    }
+
+    .totals-container {
+        margin-top: 10px;
+        text-align: right;
+        border-top: 1px solid #e1e4ea;
+        padding-top: 8px;
+        font-size: 12px;
+    }
+
+    .totals-row {
+        margin-top: 2px;
+    }
+
+    .totals-label {
+        font-weight: bold;
+        margin-left: 0.5em;
+    }
+</style>
+
+<div class="report-container">
+    <!-- Encabezado -->
+    <div class="report-title">
+        REPORTE - @ViewData["Title"]
+    </div>
+
+    <!-- Datos del paciente -->
+    <table class="report-table keep-with-next">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="2">Datos del paciente</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><b>Nombre</b><br />@paciente</td>
+                <td><b>NIT</b><br />@nit</td>
+            </tr>
+            <tr>
+                <td><b>Dirección</b><br />@direccion</td>
+                <td><b>Fecha venta</b><br />@fechaVenta</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Detalle de exámenes -->
+    <table class="report-table keep-with-next">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="3">Exámenes de laboratorio</th>
+            </tr>
+            <tr class="report-table-header-row">
+                <th style="width: 10%;">Cantidad</th>
+                <th style="width: 70%;">Descripción</th>
+                <th style="width: 20%;">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.DetalleExamenes)
+            {
+                <tr>
+                    <td style="text-align: center;">@item.Cantidad</td>
+                    <td>@item.ExamenLabClinico.NombreExamen</td>
+                    <td style="text-align: right;">Q @item.Total.ToString("0.00")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Totales -->
+    <div class="totals-container">
+        <div class="totals-row">
+            <span class="totals-label">Subtotal:</span>
+            Q @Model.DetalleExamenes.Sum(a => a.Subtotal)
+        </div>
+        <div class="totals-row">
+            <span class="totals-label">Descuento:</span>
+            Q @Model.DetalleExamenes.Sum(a => a.Descuento)
+        </div>
+        <div class="totals-row">
+            <span class="totals-label">Total:</span>
+            Q @Model.DetalleExamenes.Sum(a => a.Total)
+        </div>
+    </div>
+</div>

@@ -1,0 +1,191 @@
+@model sistema.Models.CotizacionBaseViewModel
+
+ @{
+     int porc = 0;
+ }   
+         @if(Model.Cotizacion.Id != 0){
+             <a href="@Url.Action("Cotizacion","CrearPDF", new {id = @Model.Cotizacion.Id})" class="btn btn-danger">
+             <i class="fas fa-file-pdf"></i> Generar Pdf
+             </a>
+         }
+         <br><br>
+
+             <div class="input-group">
+             <div class="input-group-prepend">
+                 <button onclick="BuscarProductoServicio()"  class="btn btn-success">Agregar</button>
+             </div>
+
+             @* <div class="input-group-prepend">
+                 <button onclick="BuscarProducto()"  class="btn btn-success">Buscar</button>
+             </div> *@
+
+             <select class="form-control select2bs4" style="width: 80%;" id="buscarcotitxt">
+                 @foreach (var item in Model.ListaProductos)
+                 {
+                     <option value="@item.CodigoReferencia">@item.ProductoYCodigoDeBarras</option>    
+                 }
+             </select>
+
+             @*<input type="text" name="buscar" id="buscarcotitxt" class="form-control"
+                                             placeholder="Buscar Producto...">*@
+
+         </div>
+          <br />
+                    <div class="main-card mb-3 card">
+
+                             <div class="card-body">
+
+                                 <div class="form-row">
+                                     <div class="col-md-6">
+                                         <div class="position-relative form-group"><label class="">No. Dias Validos</label>
+                                             @* <input placeholder="Descripción Producto" class="form-control"> *@
+                                             @Html.TextBoxFor(a => a.Cotizacion.NoComprobante, new
+                                                                            {type="number", @class="form-control",@id="diasvalidos", @placeholder="Dias Validos" })
+                                             @Html.ValidationMessageFor(a => a.Cotizacion.NoComprobante, "", new { @class =
+                                                                                "text-danger"})
+                                         </div>
+                                     </div>
+                                     <div class="col-md-6">
+                                         <div class="position-relative form-group"><label class="">Direccion</label>
+                                              @Html.TextBoxFor(a => a.Cotizacion.Direccion, new {@class="form-control",@id="direccioncoti", @placeholder="Direccion" })
+                                             @Html.ValidationMessageFor(a => a.Cotizacion.Direccion, "", new { @class =
+                                                                                "text-danger"})
+
+                                         </div>
+                                     </div>
+                                     @* <div class="col-md-6">
+                                         <div class="position-relative form-group"><label class="">Codigo Del Vendedor</label>
+                                             @* <input placeholder="Descripción Producto" class="form-control"> *@
+                                             @* @Html.TextBoxFor(a => a.Empleado, new
+                                                                            {@class="form-control",@id="empleadoid", @placeholder="Codigo Empleado"})
+                                             @Html.ValidationMessageFor(a => a.Venta.EmpleadoId, "", new { @class =
+                                                                                "text-danger"})
+                                         </div>
+                                     </div>  *@
+
+                                 </div>
+                                 <div class="form-row">
+                                     <div class="col-md-6">
+                                         <label>Cliente</label>
+                                          @Html.TextBoxFor(a => a.Cotizacion.Cliente, new {@class="form-control",@id="clientecoti", @placeholder="Nombre Cliente" })
+                                             @Html.ValidationMessageFor(a => a.Cotizacion.Cliente, "", new { @class =
+                                                                                "text-danger"})
+
+                                     </div>
+                                     <div class="col-md-6">
+                                         <div class="position-relative form-group"><label class="">Nit</label>
+                                             @* <input placeholder="Descripción Producto" class="form-control"> *@
+                                             @Html.TextBoxFor(a => a.Cotizacion.Nit, new {@class="form-control",@id="nitcoti",
+                                                                                @placeholder="Nit"})
+                                             @Html.ValidationMessageFor(a => a.Cotizacion.Nit, "", new { @class =
+                                                                                "text-danger"})
+                                         </div>
+                                     </div>
+                                     <div class="col-md-12">
+                                         <div class="position-relative form-group"><label class="">Codigo Del Vendedor</label>
+                                             @* <input placeholder="Descripción Producto" class="form-control"> *@
+                                             @Html.TextBoxFor(a => a.Cotizacion.Empleado, new
+                                                                            {@class="form-control",@id="empleadoidcoti", @placeholder="Codigo Empleado"})
+                                             @Html.ValidationMessageFor(a => a.Cotizacion.Empleado, "", new { @class =
+                                                                                "text-danger"})
+                                         </div>
+                                     </div>
+                                 </div>
+
+
+
+                             </div>
+
+
+
+                         </div>
+
+
+                 <div class="main-card mb-3 card">
+
+                     <div class="card-body">
+                         <div class="table-responsive">
+                             <table class='table table-hover' id="tableventa">
+                                 <thead>
+                                     <tr>
+
+                                         <th>Nombre Producto</th>
+                                         <th>Cantidad</th>
+                                         <th>Precio</th>
+                                          <th>  %  </th>
+                                         <th>Descuento</th>
+                                         <th>Subtotal</th>
+                                         <th>Total</th>
+                                         <th>Acciones</th>
+                                     </tr>
+                                 </thead>
+                                 <tbody id="contentdetallecot">
+
+                                      @if(Model != null)
+                                     {
+                                         foreach (var item in Model.Cotizacion.DetalleCotizacion)
+                                         {
+                                             if(item.Descuento == 0 || item.Subtotal == 0){
+                                                 porc = 0;
+                                             }
+                                             else 
+                                             {
+                                                 porc = Convert.ToInt32((item.Descuento / item.Subtotal) * 100);
+                                             }
+
+
+                                         <tr>
+
+                                         <td>
+                                             @if(item.ProductoId == null)
+                                             {
+                                                 @item.Servicio.NombreServicio
+                                             }
+                                             else
+                                             {
+                                                 @item.Producto.NombreProducto
+                                             }
+
+                                         </td>
+                                         <td>@item.Cantidad</td>
+                                         <td>@item.Precio</td>
+                                         <td>@porc</td>
+                                         <td class="desc-t" >@item.Descuento</td>
+                                         <td class="subtotal-t">@item.Subtotal</td>
+                                         <td class="total-t">@item.Total</td>
+                                         <td><button  type="button"  class="btn btn-danger btn-sm" onclick="eliminarFila(this,@item.Precio)">Quitar</button></td>
+                                         <td style="display: none;" class="idProd">@item.Id</td>
+                                     </tr>
+                                     }
+                                     }
+
+                                 </tbody>
+
+                             </table>
+
+
+                         </div>
+
+                             <br/>
+
+                             <div class="text-right" style="font-size: 25px;">
+                                 <span>Subtotal:</span> 
+                             Q <span id="subtotal-venta-cot">0.00</span> 
+                             </div> 
+
+                             <div class="text-right"  style="font-size: 25px;">
+                                  <span>Descuento:</span> 
+                                  Q <span id="descuento-venta-cot">0.00</span>           
+                             @* Q <label id="descuentoventa" contenteditable="true" style="white-space:nowrap; word-wrap: break-word;">0.00</label>  *@
+                             </div> 
+
+                             <div class="text-right" style="font-size: 25px;">
+                                 <span>Total:</span> 
+                             Q <span id="precio-total-a-pagar-cot">0.00</span> 
+                             </div> 
+
+
+                         @* <h1>Detalle de la venta</h1> *@
+
+                     </div>
+                 </div> 

@@ -1,0 +1,18 @@
+-- Crear la tabla ContactosEmergencia
+CREATE TABLE IF NOT EXISTS public."ContactosEmergencia" (
+    -- Definición de columnas
+    "Id" SERIAL, 
+    "ConsentimientoHospiId" INT4,
+    "Nombre" VARCHAR(200),
+    "Telefono" VARCHAR(50),
+    "Parentesco" VARCHAR(100),
+
+    -- Restricción de Clave Primaria (Primary Key)
+    CONSTRAINT "ContactosEmergencia_pkey" PRIMARY KEY ("Id"),
+
+    -- Restricción de Clave Foránea (Foreign Key)
+    CONSTRAINT fk_contactoemergencia_consentimientohospi 
+        FOREIGN KEY ("ConsentimientoHospiId") 
+        REFERENCES public."ConsentimientoHospi" ("Id") 
+        ON DELETE CASCADE
+);

@@ -1,0 +1,101 @@
+@using Database.Shared.Paginacion;
+@model PaginacionList<Database.Shared.Models.Gasto>
+
+@{
+    ViewData["Title"] = "Lista Gastos";
+}
+<div class="app-page-title">
+    <div class="page-title-wrapper">
+
+        <div class="page-title-heading">
+            <div class="page-title-icon">
+                <i class="pe-7s-graph text-success">
+                </i>
+            </div>
+            <div>
+                <div class="page-title-subheading">Listado de Gastos
+                    etc.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@await Html.PartialAsync("_MensajeExito")
+
+<br />
+<form asp-action="Lista" method="get">
+    <div class="col-md-6">
+    <a href="@Url.Action("GastosPdf","CrearPDF")" class="btn btn-primary">
+        Generar Pdf
+    </a>
+</div>
+    <div class="col-md-12">
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <input type="submit" value="Buscar" class="btn btn-success"></input>
+            </div>
+            <input type="text" name="buscar" value="@ViewData["CurrentFilter"]" class="form-control"
+                placeholder="Buscar Producto...">
+        </div>
+    </div>
+</form>
+<br />
+
+
+
+
+<div class="form-row">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="mb-0 table table-hover ">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Nombre Gasto</th>
+                                <th>Costo</th>
+                                <th>Descripcion</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>@item.Fecha</td>
+                                    <td>@item.NombreGasto</td>
+                                    <td>@item.Costo</td>
+                                    <td>@item.Descripcion</td>
+                                    <td>
+                                        <a href="@Url.Action("Modificar","Gasto", new {id = @item.Id})"
+                                            class="btn btn-warning">
+                                            Modificar
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@{
+    var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+}
+
+<br />
+<a asp-action="Lista" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@(Model.PageIndex - 1)"
+    asp-route-currentFilter="@ViewData["CurrentFilter"]" class="btn btn-danger btn-sm @prevDisabled">
+    Anterior
+</a>
+<a asp-action="Lista" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@(Model.PageIndex + 1)"
+    asp-route-currentFilter="@ViewData["CurrentFilter"]" class="btn btn-danger btn-sm @nextDisabled" class="">
+    Siguiente
+</a>

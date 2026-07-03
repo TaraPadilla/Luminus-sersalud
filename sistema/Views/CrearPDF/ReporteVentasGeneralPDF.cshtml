@@ -1,0 +1,694 @@
+@model sistema.Models.ReporteVentasGeneralViewModel
+@using System.Linq
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #1a1a1a; background: #fff; }
+
+/* ── Encabezado ── */
+.doc-header { display: flex; justify-content: space-between; align-items: flex-start;
+    border-bottom: 2.5px solid #2c5f8a; padding-bottom: 8px; margin-bottom: 10px; }
+.doc-header .titulo { font-size: 15px; font-weight: bold; color: #2c5f8a; }
+.doc-header .subtitulo { font-size: 9px; color: #555; margin-top: 2px; }
+.doc-header .meta { text-align: right; font-size: 8.5px; color: #666; line-height: 1.6; }
+
+/* ── Filtros ── */
+.filtros-box { background: #f0f5fa; border: 1px solid #c5d8ea; border-radius: 4px;
+    padding: 5px 10px; margin-bottom: 12px; font-size: 8.5px; color: #333;
+    display: flex; gap: 20px; flex-wrap: wrap; }
+.filtros-box strong { color: #2c5f8a; }
+
+/* ── Bloque de ambiente ── */
+.ambiente-bloque { margin-bottom: 20px; }
+.ambiente-titulo { background: #2c5f8a; color: #fff; font-size: 11px; font-weight: bold;
+    padding: 5px 10px; border-radius: 3px 3px 0 0; letter-spacing: 0.4px; }
+.ambiente-titulo .badge { font-size: 8.5px; font-weight: normal; opacity: 0.85; margin-left: 8px; }
+
+/* ── Tabla de ventas ── */
+table.t-ventas { width: 100%; border-collapse: collapse; font-size: 8.5px; }
+table.t-ventas thead tr { background: #d6e4f0; color: #1a3a52; }
+table.t-ventas thead th { padding: 4px 5px; text-align: left; border-bottom: 1px solid #a0bdd1; white-space: nowrap; }
+table.t-ventas thead th.r { text-align: right; }
+table.t-ventas tbody tr:nth-child(even) { background: #f7fafd; }
+table.t-ventas tbody td { padding: 3px 5px; border-bottom: 1px solid #e3edf5; vertical-align: top; }
+table.t-ventas tbody td.r { text-align: right; white-space: nowrap; }
+table.t-ventas tbody td.m { color: #888; font-style: italic; }
+
+/* ── Fila de subtotales por categoría (dentro de la tabla) ── */
+table.t-ventas tr.sub-cat td {
+    background: #eaf4fb !important;
+    font-size: 8px;
+    color: #2c5f8a;
+    border-top: 1px dashed #a0bdd1 !important;
+    padding: 2px 5px;
+    font-style: italic;
+}
+table.t-ventas tr.sub-cat td.r { text-align: right; }
+
+/* ── Fila de subtotal del ambiente ── */
+table.t-ventas tr.total-amb td {
+    background: #d6e4f0 !important;
+    font-weight: bold;
+    border-top: 2px solid #2c5f8a !important;
+    font-size: 9px;
+}
+table.t-ventas tr.total-amb td.r { text-align: right; }
+
+/* ── Resumen formas de pago ── */
+.fp-resumen { display: flex; flex-wrap: wrap; gap: 5px; padding: 5px 8px;
+    background: #f0f5fa; border: 1px solid #c5d8ea; border-top: none;
+    border-radius: 0 0 3px 3px; font-size: 8.5px; }
+.fp-item { background: #fff; border: 1px solid #b8d1e4; border-radius: 3px;
+    padding: 2px 7px; white-space: nowrap; }
+.fp-item strong { color: #2c5f8a; }
+
+/* ── Resumen global consolidado ── */
+.resumen-global { margin-top: 20px; page-break-inside: avoid; }
+.resumen-titulo { font-size: 11px; font-weight: bold; color: #2c5f8a;
+    border-bottom: 2px solid #2c5f8a; padding-bottom: 4px; margin-bottom: 8px; }
+
+table.t-resumen { width: 100%; border-collapse: collapse; font-size: 9.5px; }
+table.t-resumen thead tr { background: #2c5f8a; color: #fff; }
+table.t-resumen thead th { padding: 5px 8px; text-align: left; }
+table.t-resumen thead th.r { text-align: right; }
+table.t-resumen tbody tr:nth-child(even) { background: #f0f5fa; }
+table.t-resumen tbody td { padding: 4px 8px; border-bottom: 1px solid #dde; }
+table.t-resumen tbody td.r { text-align: right; }
+table.t-resumen tfoot tr { background: #1a3a52; color: #fff; font-weight: bold; }
+table.t-resumen tfoot td { padding: 5px 8px; }
+table.t-resumen tfoot td.r { text-align: right; }
+
+/* ── Categorías – resumen visual (chips) ── */
+.cat-chips { display: flex; gap: 6px; flex-wrap: wrap; padding: 4px 8px;
+    background: #f7fafd; border: 1px solid #c5d8ea; border-top: none; font-size: 8px; }
+.chip { border-radius: 3px; padding: 2px 8px; white-space: nowrap; }
+.chip-prod { background: #e8f5e9; border: 1px solid #a5d6a7; color: #2e7d32; }
+.chip-serv { background: #e3f2fd; border: 1px solid #90caf9; color: #1565c0; }
+.chip-exam { background: #fff3e0; border: 1px solid #ffcc80; color: #e65100; }
+.chip-hosp { background: #fce4ec; border: 1px solid #f48fb1; color: #880e4f; }
+
+/* ── Tabla de ítems detallados (modo descripción) ── */
+table.t-items { width: 100%; border-collapse: collapse; font-size: 7.5px; margin-top: 4px; }
+table.t-items thead tr { background: #e8f1f8; color: #1a3a52; }
+table.t-items thead th { padding: 3px 5px; text-align: left; border-bottom: 1px solid #b0cce0; white-space: nowrap; }
+table.t-items thead th.r { text-align: right; }
+table.t-items tbody tr:nth-child(even) { background: #f9fbfd; }
+table.t-items tbody td { padding: 2px 5px; border-bottom: 1px solid #e8f0f6; }
+table.t-items tbody td.r { text-align: right; white-space: nowrap; }
+.items-titulo { font-size: 7.5px; font-weight: bold; color: #2c5f8a; background: #eaf3fa;
+    padding: 2px 6px; border-top: 1px dashed #a0bdd1; border-bottom: 1px dashed #a0bdd1;
+    margin: 3px 0 0 0; }
+.cat-badge { display: inline-block; border-radius: 2px; padding: 0 4px; font-size: 7px; }
+.cat-prod  { background: #e8f5e9; color: #2e7d32; }
+.cat-serv  { background: #e3f2fd; color: #1565c0; }
+.cat-exam  { background: #fff3e0; color: #e65100; }
+.cat-hosp  { background: #fce4ec; color: #880e4f; }
+
+/* ── Consolidado global de formas de pago ── */
+.fp-global { margin-top: 14px; page-break-inside: avoid; }
+.fp-global-titulo { font-size: 11px; font-weight: bold; color: #2c5f8a;
+    border-bottom: 2px solid #2c5f8a; padding-bottom: 4px; margin-bottom: 8px; }
+table.t-fp-global { width: 60%; border-collapse: collapse; font-size: 9.5px; }
+table.t-fp-global thead tr { background: #2c5f8a; color: #fff; }
+table.t-fp-global thead th { padding: 5px 10px; text-align: left; }
+table.t-fp-global thead th.r { text-align: right; }
+table.t-fp-global tbody tr:nth-child(even) { background: #f0f5fa; }
+table.t-fp-global tbody td { padding: 4px 10px; border-bottom: 1px solid #dde; }
+table.t-fp-global tbody td.r { text-align: right; font-weight: bold; color: #1a3a52; }
+table.t-fp-global tfoot tr { background: #1a3a52; color: #fff; font-weight: bold; }
+table.t-fp-global tfoot td { padding: 5px 10px; }
+
+table.t-fp-global tfoot td.r { text-align: right; }
+
+.doc-footer {
+    font-size: 8px;
+    color: #888;
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+    padding-top: 8px;
+    border-top: 1px solid #ccc;
+}
+/* ── Utilidades ── */
+.fw { font-weight: bold; }
+.red { color: #c0392b; }
+.green { color: #27ae60; }
+.muted { color: #888; }
+
+
+/* ── Consolidado de Médicos ── */
+.medicos-consolidado {
+    margin-top: 20px;
+    page-break-inside: avoid;
+}
+.medicos-titulo {
+    font-size: 11px;
+    font-weight: bold;
+    color: #2c5f8a;
+    border-bottom: 2px solid #2c5f8a;
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+}
+table.t-medicos {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9px;
+}
+table.t-medicos thead tr {
+    background: #2c5f8a;
+    color: #fff;
+}
+table.t-medicos thead th {
+    padding: 5px 6px;
+    text-align: left;
+}
+table.t-medicos thead th.r {
+    text-align: right;
+}
+table.t-medicos tbody tr:nth-child(even) {
+    background: #f0f5fa;
+}
+table.t-medicos tbody td {
+    padding: 4px 6px;
+    border-bottom: 1px solid #dde;
+}
+table.t-medicos tbody td.r {
+    text-align: right;
+}
+table.t-medicos tfoot tr {
+    background: #1a3a52;
+    color: #fff;
+    font-weight: bold;
+}
+table.t-medicos tfoot td {
+    padding: 5px 6px;
+}
+table.t-medicos tfoot td.r {
+    text-align: right;
+}
+
+
+
+table.t-items-consolidado {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9px;
+    margin-top: 8px;
+}
+table.t-items-consolidado thead tr {
+    background: #2c5f8a;
+    color: #fff;
+}
+table.t-items-consolidado thead th {
+    padding: 5px 8px;
+    text-align: left;
+}
+table.t-items-consolidado thead th.r,
+table.t-items-consolidado tbody td.r,
+table.t-items-consolidado tfoot td.r {
+    text-align: right;
+}
+table.t-items-consolidado tbody tr:nth-child(even) {
+    background: #f0f5fa;
+}
+table.t-items-consolidado tbody td {
+    padding: 4px 8px;
+    border-bottom: 1px solid #dde;
+}
+table.t-items-consolidado tfoot tr {
+    background: #1a3a52;
+    color: #fff;
+    font-weight: bold;
+}
+table.t-items-consolidado tfoot td {
+    padding: 5px 8px;
+}
+</style>
+</head>
+<body>
+
+<div class="doc-header">
+    <div>
+        <div class="titulo">Reporte General de Ventas</div>
+        <div class="subtitulo">Desglose por ambiente y categoría de ítem</div>
+    </div>
+    <div class="meta">
+        Generado: @Model.FechaGeneracion.ToString("dd/MM/yyyy HH:mm")<br/>
+        Usuario: @Model.UsuarioGenera<br/>
+        Período: @Model.RangoFechasTexto
+    </div>
+</div>
+
+<div class="filtros-box">
+    <span><strong>Desde:</strong> @Model.Desde.ToString("dd/MM/yyyy")</span>
+    <span><strong>Hasta:</strong> @Model.Hasta.ToString("dd/MM/yyyy")</span>
+    <span><strong>Ambiente:</strong>
+        @(Model.AmbienteIdFiltro.HasValue
+            ? (Model.Ambientes.FirstOrDefault()?.AmbienteNombre ?? "—")
+            : "Todos")</span>
+    @if (!string.IsNullOrEmpty(Model.EmpleadoNombre))
+    {
+        <span><strong>Empleado:</strong> @Model.EmpleadoNombre</span>
+    }
+    <span><strong>Transacciones:</strong> @Model.TotalGlobalTransacciones</span>
+    <span><strong>Total neto:</strong> Q. @Model.TotalGlobalNeto.ToString("N2")</span>
+</div>
+
+@foreach (var ambiente in Model.Ambientes)
+{
+    <div class="ambiente-bloque">
+
+        <div class="ambiente-titulo">
+            @ambiente.AmbienteNombre
+            <span class="badge">(@ambiente.CantidadVentas venta@(ambiente.CantidadVentas != 1 ? "s" : ""))</span>
+        </div>
+
+        <table class="t-ventas">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Fecha</th>
+                    <th>Comprobante</th>
+                    <th>Cliente / Paciente</th>
+                    <th>NIT</th>
+                    <th>Empleado Registra</th>
+                    <th>Médicos Asignados</th>
+                    <th class="r">Productos</th>
+                    <th class="r">Servicios</th>
+                    <th class="r">Exámenes</th>
+                    <th class="r">Hospital</th>
+                    <th class="r">Descuento</th>
+                    <th class="r">Total Neto</th>
+                    <th>Pago</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{ int fila = 1; }
+                @foreach (var v in ambiente.Ventas)
+                {
+                    int colspanDetalle = 14;
+                    <tr>
+                        <td class="muted">@fila</td>
+                        <td>@v.FechaVenta.ToString("dd/MM/yy HH:mm")</td>
+                        <td>@v.NumeroComprobante</td>
+                        <td>@v.ClienteNombre</td>
+                        <td class="m">@v.ClienteNit</td>
+                        <td>@v.EmpleadoNombre</td>
+                        <td style="font-size:7.5px; line-height:1.5;">
+                            @if (v.MedicosAsignados != null && v.MedicosAsignados.Any())
+                            {
+                                @foreach (var med in v.MedicosAsignados)
+                                {
+                                    <span style="display:block;">
+                                        <span style="background:@(med.Rol=="Tratante"?"#e3f2fd":med.Rol=="Anestesista"?"#f3e5f5":"#e8f5e9"); color:@(med.Rol=="Tratante"?"#1565c0":med.Rol=="Anestesista"?"#6a1b9a":"#2e7d32"); border-radius:2px; padding:0 3px; font-size:7px;">@med.Rol</span>
+                                        @med.Nombre@(string.IsNullOrEmpty(med.Especialidad) ? "" : $" ({med.Especialidad})")
+                                    </span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="muted">—</span>
+                            }
+                        </td>
+                        <td class="r @(v.SubtotalProductos > 0 ? "fw" : "muted")">
+                            @(v.SubtotalProductos > 0 ? $"Q. {v.SubtotalProductos:N2}" : "—")
+                        </td>
+                        <td class="r @(v.SubtotalServicios > 0 ? "fw" : "muted")">
+                            @(v.SubtotalServicios > 0 ? $"Q. {v.SubtotalServicios:N2}" : "—")
+                        </td>
+                        <td class="r @(v.SubtotalExamenes > 0 ? "fw" : "muted")">
+                            @(v.SubtotalExamenes > 0 ? $"Q. {v.SubtotalExamenes:N2}" : "—")
+                        </td>
+                        <td class="r @(v.SubtotalHospital > 0 ? "fw" : "muted")">
+                            @(v.SubtotalHospital > 0 ? $"Q. {v.SubtotalHospital:N2}" : "—")
+                        </td>
+                        <td class="r @(v.TotalDescuento > 0 ? "red" : "muted")">
+                            @(v.TotalDescuento > 0 ? $"Q. {v.TotalDescuento:N2}" : "—")
+                        </td>
+                        <td class="r fw green">Q. @v.MontoNeto.ToString("N2")</td>
+                        <td class="m">@v.FormasPagoResumen</td>
+                    </tr>
+                    @if (Model.MostrarDetalle && v.DetalleItems != null && v.DetalleItems.Any())
+                    {
+                        <tr>
+                            <td colspan="@colspanDetalle" style="padding:0; background:#f4f9fe;">
+                                <div class="items-titulo">&#9656; Detalle de ítems — @v.NumeroComprobante</div>
+                                <table class="t-items">
+                                    <thead>
+                                        <tr>
+                                            <th>Descripción</th>
+                                            <th>Categoría</th>
+                                            <th class="r">Cant.</th>
+                                            <th class="r">P. Unit.</th>
+                                            <th class="r">Descuento</th>
+                                            <th class="r">Subtotal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in v.DetalleItems)
+                                        {
+                                            string catClass = item.Categoria == "Producto" ? "cat-prod"
+                                                            : item.Categoria == "Servicio"  ? "cat-serv"
+                                                            : item.Categoria == "Examen/Lab" ? "cat-exam"
+                                                            : "cat-hosp";
+                                            <tr>
+                                                <td>@item.Descripcion</td>
+                                                <td><span class="cat-badge @catClass">@item.Categoria</span></td>
+                                                <td class="r">@item.Cantidad.ToString("N0")</td>
+                                                <td class="r">Q. @item.PrecioUnit.ToString("N2")</td>
+                                                <td class="r @(item.Descuento > 0 ? "red" : "muted")">
+                                                    @(item.Descuento > 0 ? $"Q. {item.Descuento:N2}" : "—")
+                                                </td>
+                                                <td class="r fw">Q. @item.Subtotal.ToString("N2")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    }
+                    fila++;
+                }
+
+                <tr class="sub-cat">
+                    <td colspan="7" class="r fw">Subtotales por categoría →</td>
+                    <td class="r">@(ambiente.TotalProductos > 0 ? $"Q. {ambiente.TotalProductos:N2}" : "—")</td>
+                    <td class="r">@(ambiente.TotalServicios > 0 ? $"Q. {ambiente.TotalServicios:N2}" : "—")</td>
+                    <td class="r">@(ambiente.TotalExamenes  > 0 ? $"Q. {ambiente.TotalExamenes:N2}"  : "—")</td>
+                    <td class="r">@(ambiente.TotalHospital  > 0 ? $"Q. {ambiente.TotalHospital:N2}"  : "—")</td>
+                    <td class="r red">@(ambiente.TotalDescuentos > 0 ? $"Q. {ambiente.TotalDescuentos:N2}" : "—")</td>
+                    <td class="r green fw">Q. @ambiente.TotalNeto.ToString("N2")</td>
+                    <td></td>
+                </tr>
+
+                <tr class="total-amb">
+                    <td colspan="7" class="r">
+                        Total @ambiente.AmbienteNombre (@ambiente.CantidadVentas transacciones):
+                    </td>
+                    <td colspan="5"></td>
+                    <td class="r green">Q. @ambiente.TotalNeto.ToString("N2")</td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="cat-chips">
+            @if (ambiente.TotalProductos > 0)
+            {
+                <span class="chip chip-prod">Productos: <strong>Q. @ambiente.TotalProductos.ToString("N2")</strong></span>
+            }
+            @if (ambiente.TotalServicios > 0)
+            {
+                <span class="chip chip-serv">Servicios: <strong>Q. @ambiente.TotalServicios.ToString("N2")</strong></span>
+            }
+            @if (ambiente.TotalExamenes > 0)
+            {
+                <span class="chip chip-exam">Exámenes: <strong>Q. @ambiente.TotalExamenes.ToString("N2")</strong></span>
+            }
+            @if (ambiente.TotalHospital > 0)
+            {
+                <span class="chip chip-hosp">Hospital: <strong>Q. @ambiente.TotalHospital.ToString("N2")</strong></span>
+            }
+        </div>
+
+        @if (ambiente.ResumenFormasPago.Any())
+        {
+            <div class="fp-resumen">
+                <span style="color:#555; margin-right:4px;">Formas de pago:</span>
+                @foreach (var fp in ambiente.ResumenFormasPago)
+                {
+                    <span class="fp-item">@fp.FormaPago: <strong>Q. @fp.Total.ToString("N2")</strong></span>
+                }
+            </div>
+        }
+
+    </div>
+}
+
+@if (Model.Ambientes.Count > 1)
+{
+    <div class="resumen-global">
+        <div class="resumen-titulo">Resumen Consolidado por Ambiente</div>
+        <table class="t-resumen">
+            <thead>
+                <tr>
+                    <th>Ambiente</th>
+                    <th class="r">Transacc.</th>
+                    <th class="r">Productos</th>
+                    <th class="r">Servicios</th>
+                    <th class="r">Exámenes</th>
+                    <th class="r">Hospital</th>
+                    <th class="r">Descuentos</th>
+                    <th class="r">Total Facturado</th>
+                    <th class="r">Total Cobrado</th>
+                    <th class="r">% Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var amb in Model.Ambientes)
+                {
+                    decimal pct = Model.TotalGlobalNeto > 0
+                        ? Math.Round(amb.TotalNeto / Model.TotalGlobalNeto * 100, 1)
+                        : 0;
+                    <tr>
+                        <td class="fw">@amb.AmbienteNombre</td>
+                        <td class="r">@amb.CantidadVentas</td>
+                        <td class="r">@(amb.TotalProductos > 0 ? $"Q. {amb.TotalProductos:N2}" : "—")</td>
+                        <td class="r">@(amb.TotalServicios > 0 ? $"Q. {amb.TotalServicios:N2}" : "—")</td>
+                        <td class="r">@(amb.TotalExamenes  > 0 ? $"Q. {amb.TotalExamenes:N2}"  : "—")</td>
+                        <td class="r">@(amb.TotalHospital  > 0 ? $"Q. {amb.TotalHospital:N2}"  : "—")</td>
+                        <td class="r red">@(amb.TotalDescuentos > 0 ? $"Q. {amb.TotalDescuentos:N2}" : "—")</td>
+                        <td class="r fw green">Q. @amb.TotalNeto.ToString("N2")</td>
+                        <td class="r fw">Q. @amb.TotalCobrado.ToString("N2")</td>
+                        <td class="r">@pct %</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td class="fw">TOTAL GENERAL</td>
+                    <td class="r">@Model.TotalGlobalTransacciones</td>
+                    <td class="r">@(Model.TotalGlobalProductos > 0 ? $"Q. {Model.TotalGlobalProductos:N2}" : "—")</td>
+                    <td class="r">@(Model.TotalGlobalServicios > 0 ? $"Q. {Model.TotalGlobalServicios:N2}" : "—")</td>
+                    <td class="r">@(Model.TotalGlobalExamenes  > 0 ? $"Q. {Model.TotalGlobalExamenes:N2}"  : "—")</td>
+                    <td class="r">@(Model.TotalGlobalHospital  > 0 ? $"Q. {Model.TotalGlobalHospital:N2}"  : "—")</td>
+                    <td class="r">@(Model.TotalGlobalDescuentos > 0 ? $"Q. {Model.TotalGlobalDescuentos:N2}" : "—")</td>
+                    <td class="r">Q. @Model.TotalGlobalNeto.ToString("N2")</td>
+                    <td class="r">Q. @Model.TotalGlobalCobrado.ToString("N2")</td>
+                    <td class="r">100 %</td>
+                </tr>
+            </tfoot>
+        </table>
+        <div style="font-size:7.5px; color:#888; margin-top:3px; font-style:italic;">
+            * <strong>Total Facturado</strong>: suma de ítems facturados (puede incluir saldos pendientes en cuentas por cobrar).
+            &nbsp;|&nbsp; <strong>Total Cobrado</strong>: pagos efectivamente recibidos en caja. La diferencia corresponde a cuentas por cobrar pendientes.
+        </div>
+    </div>
+}
+
+@* ── Consolidado global de formas de pago (todos los ambientes) ── *@
+@if (Model.TotalGlobalFormasPago != null && Model.TotalGlobalFormasPago.Any())
+{
+    <div class="fp-global">
+        <div class="fp-global-titulo">Consolidado Global — Totales por Forma de Pago (Todos los Ambientes)</div>
+        <table class="t-fp-global">
+            <thead>
+                <tr>
+                    <th>Forma de Pago</th>
+                    <th class="r">Total Recaudado</th>
+                    <th class="r">% del Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var fp in Model.TotalGlobalFormasPago)
+                {
+                    decimal pctFP = Model.TotalGlobalNeto > 0
+                        ? Math.Round(fp.Total / Model.TotalGlobalNeto * 100, 1)
+                        : 0;
+                    <tr>
+                        <td>@fp.FormaPago</td>
+                        <td class="r">Q. @fp.Total.ToString("N2")</td>
+                        <td class="r">@pctFP %</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td>TOTAL</td>
+                    <td class="r">Q. @Model.TotalGlobalFormasPago.Sum(f => f.Total).ToString("N2")</td>
+                    <td class="r">100 %</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+}
+
+@if (Model.MostrarConsolidadoMedicos && Model.ConsolidadoMedicos != null && Model.ConsolidadoMedicos.Any())
+{
+    <div class="medicos-consolidado">
+        <div class="medicos-titulo">Consolidado por Médico (Ventas asociadas)</div>
+        <table class="t-medicos">
+            <thead>
+                <tr>
+                    <th>Médico</th>
+                    <th class="r">Ventas</th>
+                    <th class="r">Citas</th>
+                    <th class="r">Hospit.</th>
+                    <th class="r">C. Externa</th>
+                    <th class="r">Sala Op.</th>
+                    <th class="r">Productos</th>
+                    <th class="r">Servicios</th>
+                    <th class="r">Exámenes</th>
+                    <th class="r">Hospital</th>
+                    <th class="r">Descuentos</th>
+                    <th class="r">Total Neto</th>
+                    <th class="r">% Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var med in Model.ConsolidadoMedicos)
+                {
+                    decimal pctMed = Model.TotalGlobalNeto > 0
+                        ? Math.Round(med.TotalNeto / Model.TotalGlobalNeto * 100, 1)
+                        : 0;
+                    <tr>
+                        <td class="fw">@med.MedicoNombre</td>
+                        <td class="r">@med.CantidadVentas</td>
+                        <td class="r">@(med.CantidadCitas > 0 ? med.CantidadCitas.ToString() : "—")</td>
+                        <td class="r">@(med.CantidadHospitalizaciones > 0 ? med.CantidadHospitalizaciones.ToString() : "—")</td>
+                        <td class="r">@(med.CantidadConsultaExterna > 0 ? med.CantidadConsultaExterna.ToString() : "—")</td>
+                        <td class="r">@(med.CantidadSalaOperaciones > 0 ? med.CantidadSalaOperaciones.ToString() : "—")</td>
+                        <td class="r">@(med.TotalProductos > 0 ? $"Q. {med.TotalProductos:N2}" : "—")</td>
+                        <td class="r">@(med.TotalServicios > 0 ? $"Q. {med.TotalServicios:N2}" : "—")</td>
+                        <td class="r">@(med.TotalExamenes > 0 ? $"Q. {med.TotalExamenes:N2}" : "—")</td>
+                        <td class="r">@(med.TotalHospital > 0 ? $"Q. {med.TotalHospital:N2}" : "—")</td>
+                        <td class="r red">@(med.TotalDescuentos > 0 ? $"Q. {med.TotalDescuentos:N2}" : "—")</td>
+                        <td class="r fw green">Q. @med.TotalNeto.ToString("N2")</td>
+                        <td class="r">@pctMed %</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td class="fw">TOTAL GENERAL</td>
+                    <td class="r">@Model.ConsolidadoMedicos.Sum(m => m.CantidadVentas)</td>
+                    <td class="r">@Model.ConsolidadoMedicos.Sum(m => m.CantidadCitas)</td>
+                    <td class="r">@Model.ConsolidadoMedicos.Sum(m => m.CantidadHospitalizaciones)</td>
+                    <td class="r">@Model.ConsolidadoMedicos.Sum(m => m.CantidadConsultaExterna)</td>
+                    <td class="r">@Model.ConsolidadoMedicos.Sum(m => m.CantidadSalaOperaciones)</td>
+                    <td class="r">Q. @Model.ConsolidadoMedicos.Sum(m => m.TotalProductos).ToString("N2")</td>
+                    <td class="r">Q. @Model.ConsolidadoMedicos.Sum(m => m.TotalServicios).ToString("N2")</td>
+                    <td class="r">Q. @Model.ConsolidadoMedicos.Sum(m => m.TotalExamenes).ToString("N2")</td>
+                    <td class="r">Q. @Model.ConsolidadoMedicos.Sum(m => m.TotalHospital).ToString("N2")</td>
+                    <td class="r">Q. @Model.ConsolidadoMedicos.Sum(m => m.TotalDescuentos).ToString("N2")</td>
+                    <td class="r">Q. @Model.ConsolidadoMedicos.Sum(m => m.TotalNeto).ToString("N2")</td>
+                    <td class="r">100 %</td>
+                </tr>
+            </tfoot>
+        </table>
+        <div style="font-size:7.5px; color:#888; margin-top:3px; font-style:italic;">
+            * Los importes se asignan al médico responsable de la venta. Los médicos secundarios solo suman al conteo de ventas.
+        </div>
+    </div>
+}
+
+
+
+@if (Model.ItemsConsolidados != null && Model.ItemsConsolidados.Any())
+{
+    <div class="resumen-global" style="margin-top: 25px;">
+        <div class="resumen-titulo">Consolidado de Ítems (Productos, Servicios, Exámenes, Paquetes, etc.)</div>
+        <table class="t-items-consolidado">
+            <thead>
+                <tr>
+                    <th>Categoría</th>
+                    <th>Nombre del Ítem</th>
+                    <th class="r">Cantidad</th>
+                    <th class="r">Costo Unitario (Q.)</th>
+                    <th class="r">Costo Total (Q.)</th>
+                    <th class="r">Total Venta (Q.)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.ItemsConsolidados.OrderBy(i => i.Categoria).ThenBy(i => i.Nombre))
+                {
+                    <tr>
+                        <td>@item.Categoria</td>
+                        <td>@item.Nombre</td>
+                        <td class="r">@item.Cantidad.ToString("N2")</td>
+                        <td class="r">@(item.CostoUnitario.HasValue ? item.CostoUnitario.Value.ToString("N2") : "—")</td>
+                        <td class="r">@(item.CostoTotal > 0 ? item.CostoTotal.ToString("N2") : "—")</td>
+                        <td class="r">@item.Total.ToString("N2")</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr style="background:#1a3a52; color:#fff;">
+                    <td colspan="5" class="fw r">TOTAL GENERAL ÍTEMS:</td>
+                    <td class="r">@Model.ItemsConsolidados.Sum(i => i.Total).ToString("N2")</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+}
+
+
+@if (Model.ItemsConsolidados != null && Model.ItemsConsolidados.Any())
+{
+    // Agrupar por categoría
+    var categorias = Model.ItemsConsolidados.GroupBy(i => i.Categoria).OrderBy(g => g.Key);
+
+    foreach (var grupo in categorias)
+    {
+        <div class="resumen-global" style="margin-top: 25px;">
+            <div class="resumen-titulo">Consolidado por Categoría: @grupo.Key</div>
+            <table class="t-items-consolidado">
+                <thead>
+                    <tr>
+                        <th>Nombre del Ítem</th>
+                        <th class="r">Cantidad</th>
+                        <th class="r">Costo Unitario (Q.)</th>
+                        <th class="r">Costo Total (Q.)</th>
+                        <th class="r">Total Venta (Q.)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in grupo.OrderBy(i => i.Nombre))
+                    {
+                        <tr>
+                            <td>@item.Nombre</td>
+                            <td class="r">@item.Cantidad.ToString("N2")</td>
+                            <td class="r">@(item.CostoUnitario.HasValue ? item.CostoUnitario.Value.ToString("N2") : "—")</td>
+                            <td class="r">@(item.CostoTotal > 0 ? item.CostoTotal.ToString("N2") : "—")</td>
+                            <td class="r">@item.Total.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr style="background:#1a3a52; color:#fff;">
+                        <td class="fw r">TOTAL @grupo.Key.ToUpper():</td>
+                        <td class="r">@grupo.Sum(i => i.Cantidad).ToString("N2")</td>
+                        <td class="r">—</td>
+                        <td class="r">@grupo.Sum(i => i.CostoTotal).ToString("N2")</td>
+                        <td class="r">@grupo.Sum(i => i.Total).ToString("N2")</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    }
+}
+
+<div class="doc-footer">
+    <span>Generado por: @Model.UsuarioGenera</span>
+    <span>@Model.FechaGeneracion.ToString("dd/MM/yyyy HH:mm:ss")</span>
+    <span>Período: @Model.RangoFechasTexto</span>
+</div>
+
+</body>
+</html>

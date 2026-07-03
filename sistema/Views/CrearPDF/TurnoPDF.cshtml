@@ -1,0 +1,120 @@
+﻿@model Database.Shared.Models.Citas
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Turno de consulta";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+}
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: Arial, sans-serif;
+        color: #1f1f1f;
+        font-size: 14px;
+    }
+
+    .ticket-container {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        margin-top: 10px;
+    }
+
+    .receipt {
+        background: white;
+        padding: 16px;
+        width: 58mm; /* Formato ticket */
+        border-radius: 6px;
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+
+    .divider {
+        border-bottom: 1px dashed #1f1f1f;
+        margin: 8px 0;
+    }
+
+    .bold {
+        font-weight: bold;
+    }
+
+    .turno {
+        font-size: 32px;
+        margin: 8px 0;
+        color: #333;
+    }
+
+    .transactionDetails {
+        margin: 12px 0;
+    }
+
+    .text-body {
+        margin-bottom: 6px;
+        text-align: left;
+    }
+
+    .feedback {
+        margin-top: 12px;
+        text-align: center;
+    }
+
+    .break {
+        margin: 3px 0;
+        font-size: 13px;
+        font-weight: bold;
+    }
+
+    .header-fecha {
+        text-align: right;
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+</style>
+
+<div class="header-fecha">
+    <strong>Fecha y hora de emisión:</strong> @fecha.ToString("dd/MM/yyyy HH:mm")
+</div>
+
+<div class="ticket-container">
+    <div class="receipt">
+
+        <div class="divider"></div>
+
+        <div class="text-center bold">Turno:</div>
+        <h2 class="turno text-center">@Model.NumeroTurno</h2>
+
+        <div class="divider"></div>
+
+        <div class="transactionDetails">
+            <div class="text-body">
+                <strong>PACIENTE:</strong> @Model.Paciente?.Nombre
+            </div>
+            <div class="text-body">
+                <strong>ESPECIALIDAD:</strong> @Model.Especialidad?.NombreEspecialidad
+            </div>
+            <div class="text-body">
+                <strong>MÉDICO:</strong> @Model.Empleado?.Nombre
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="feedback">
+            <div class="break">ES UN GUSTO ATENDERLE</div>
+            <div class="break">***********************</div>
+        </div>
+    </div>
+</div>

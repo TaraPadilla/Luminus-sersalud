@@ -1,0 +1,482 @@
+@model sistema.Models.CitaViewModel
+@Html.HiddenFor(a => a.CitaId)
+@Html.HiddenFor(m => m.PacienteId, new { 
+  data_bind = "value: pacienteSeleccionado() && pacienteSeleccionado().Id" 
+})
+
+@Html.HiddenFor(a => a.EstadoCita)
+@Html.HiddenFor(a => a.FechaHora)
+
+<div class="main-card mb-3 card">
+    <div class="card-body" style="background-color:darkred;color:white">
+        <h4><b>Fecha y hora: @Model.FechaHora</b></h4>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>PACIENTE</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-6">
+                <label>Seleccione paciente:</label>
+                <select class="form-control select2bs4" id="selectPaciente" style="width: 100%;" data-bind="options: pacientes, optionsText: 'NombreConDpi', value: pacienteSeleccionado, optionsCaption: 'Seleccionar paciente'">
+                </select>
+
+
+            </div>
+            <div class="col-md-6">
+                <label>Nombre del paciente</label>
+                @Html.TextBoxFor(a => a.PacienteNombre, new { type = "text", @class = "form-control", @placeholder = "Encargado" })
+            </div>
+            <div class="col-md-3">
+                <div class="position-relative form-group">
+                    <label><span class="text-danger">*Si es menor de edad</span> </label>
+                    @Html.TextBoxFor(a => a.NombreEncargado, new { type = "text", @class = "form-control", @placeholder = "Encargado" })
+                </div>
+            </div>
+                        <div class="col-md-3">
+                <div class="position-relative form-group">
+                    <label><span class="text-danger">*Si es menor de edad</span> </label>
+                    @Html.TextBoxFor(a => a.DPIEncargado, new { type = "text", @class = "form-control", @placeholder = "DPI Encargado" })
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label> Nivel de Atencion <span class="text-danger">*</span> </label>
+                <select class="form-control" asp-for="@Model.NivelPrioridadCita" style="width: 100%;">
+                    <option value="BAJO"> BAJO </option>
+                    <option value="MEDIO"> MEDIO </option>
+                    <option value="ALTO"> ALTO </option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label>F Publicidad<span class="text-danger"></span> </label>
+                <select class="form-control" asp-for="@Model.Publicidad" style="width: 100%;">
+                    <option value="PASE POR LA CLÍNICA Y DECIDÍ ENTRAR "> PASE POR LA CLÍNICA Y DECIDÍ ENTRAR  </option>
+                    <option value="FACEBOOK "> FACEBOOK  </option>
+                    <option value="PACIENTE FRECUENTE"> PACIENTE FRECUENTE</option>
+                    <option value="REFERIDO POR VECINO/AMIGO /FAMILIAR"> REFERIDO POR VECINO/AMIGO /FAMILIAR</option>
+                    <option value="OTRAS REDES SOCIALES"> OTRAS REDES SOCIALES</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label>No. DPI</label>
+                @Html.TextBoxFor(a => a.dpiPacienteSeleccionado, new { type = "text", @class = "form-control", @placeholder = "", @value = " " })
+            </div>
+            <div class="col-md-3">
+                <div class="position-relative form-group">
+                    <label>Sexo</label>
+                    <select class="form-control" asp-for="@Model.SexoId" style="width: 100%;">
+                        <option value="">Seleccione...</option>
+                        <option value="1"> Masculino </option>
+                        <option value="2"> Femenino </option>
+                        <option value="3"> Otro </option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="position-relative form-group">
+                    <label>Telefono</label>
+                    @Html.TextBoxFor(a => a.Telefono, new { type = "text", @class = "form-control", @placeholder = "" })
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="position-relative form-group">
+                    <label>Correo</label>
+                    @Html.TextBoxFor(a => a.Correo, new { type = "text", @class = "form-control", @placeholder = "" })
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label>Fecha de nacimiento</label>
+                @Html.TextBoxFor(a => a.FechaNacimiento, "{0:yyyy-MM-dd}", new
+                    {
+                        @class = "form-control",
+                        @type = "date",
+                        @onchange = "getEdad()",
+                        @onkeyup = "getEdad()"
+                    })
+                @*@Html.TextBoxFor(a => a.NombreEncargado, new { type = "text", @class = "form-control", @placeholder = "Encargado" })*@
+            </div>
+            <div class="col-md-3">
+                    <div class="position-relative form-group">
+                        <label>Edad</label>
+                        @Html.TextBoxFor(a => a.PacienteEdad, new
+                        {
+                            type = "text",  // Cambiado de "number" a "text"
+                            @class = "form-control",
+                            @placeholder = "Edad",
+                            @readonly = "true"
+                        })
+                    </div>
+            </div>
+            <div class="col-md-3">
+                <div class="position-relative form-group">
+                    <label>Dirección</label>
+                    @Html.TextBoxFor(a => a.Direccion, new { @class = "form-control", @placeholder = "" })<br />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="position-relative form-group">
+                    <label>Etnia %%%</label>
+                    <select class="form-control" asp-for="@Model.EtniaPaciente">
+                        <option value="">Seleccione...</option>
+                        <option value="Maya">Maya</option>
+                        <option value="Mestizo">Mestizo</option>
+                        <option value="Ladino">Ladino</option>
+                        <option value="Xinca">Xinca</option>
+                        <option value="Garifuna">Garifuna</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="position-relative form-group">
+                    <label>Origen</label>
+                    @Html.TextBoxFor(a => a.OrigenPaciente, new { @class = "form-control", @placeholder = "" })<br />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label>Departamento</label>
+               <select asp-for="DepartamentoId"
+                    id="departamentoSeleccionado"
+                    class="form-control select2bs4"
+                    data-bind="
+                    options: departamentosExistentes,
+                    optionsText: 'DepartamentoNombreMostrar',
+                    optionsValue: 'Id',
+                    value: departamentoSeleccionado,
+                    optionsCaption: 'Seleccione...'">
+        </select>
+<!-- campo oculto ligado al observable -->
+            @Html.HiddenFor(m => m.DepartamentoId,
+                new { data_bind = "value: departamentoSeleccionado" })
+
+            </div>
+            <div class="col-md-3">
+                <label>Municipio</label>
+              <select asp-for="MunicipioId"
+                id="municipioSeleccionado"
+                class="form-control select2bs4"
+                data-bind="
+                options: municipiosExistentes,
+                optionsText: 'MunicipioNombreMostrar',
+                optionsValue: 'Id',
+                value: municipioSeleccionado,
+                optionsCaption: 'Seleccione...'">
+        </select>
+        @Html.HiddenFor(m => m.MunicipioId,
+            new { data_bind = "value: municipioSeleccionado" })
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>DATOS DE CONSULTA</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-3">
+                <div class="position-relative form-group">
+                    <label>Especialidad</label>
+                    <select class="form-control select2bs4" style="width: 100%;" asp-for="EspecialidadId"
+                            asp-items="@Model.EspecialidadSelectListItem">
+                        <option disabled selected>--- SELECCIONE ---</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="position-relative form-group">
+                    <label>Sucursal</label>
+                    <select class="form-control" asp-for="SucursalId"
+                            asp-items="@Model.SucursalesSelectListItem" disabled>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="position-relative form-group">
+                    @* <label> Médico </label> *@
+                    <label>Profesional</label>
+                    <select class="form-control select2bs4 " style="width: 100%;"
+                            asp-for="EmpleadoId" asp-items="@Model.DoctoresSelectListItem">
+                        <option disabled selected>--- Sin Asignar ---</option>
+                    </select>
+                    <div id="msgConflictoEmpleado" class="text-danger small" style="display:none; margin-top:4px;"></div>
+                </div>
+            </div>
+            <div class="col-md-1">
+                <div class="position-relative form-group">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-primary form-control" data-bind="click:generarTurno">
+                        Generar Turno
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <label>&nbsp;</label>
+                    @*<input type="text" class="form-control" id="noTurno" name="noTurno" readonly />*@
+                    @Html.TextBoxFor(a => a.NumeroTurno, new { type = "text", @class = "form-control", @placeholder = "", @readonly = true })
+                </div>
+            </div>
+           <div class="col-md-12">
+    <div class="position-relative form-group">
+        <label class="">Motivo <span class="text-danger">*</span></label>
+        @Html.TextAreaFor(a => a.Motivo, 5, 500, new {
+            @class = "form-control",
+            @placeholder = "Descripción del motivo",
+            @required = "required"    // activa validación HTML5 en cliente
+        })
+        @Html.ValidationMessageFor(a => a.Motivo, "", new { @class = "text-danger" })
+    </div>
+</div>
+
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>TIPO DE ATENCIÓN</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-3">
+                <label>Tipo de atencion</label>
+                <select class="form-control" asp-for="CitaTipoAtencion">
+                    <option value="PRIVADO">Privado</option>
+                    <option value="IGSS">Igss</option>
+                    <option value="SEGURO">Seguro</option>
+                </select>
+            </div>
+            <!--ko if:citaTipoAtencion() == 'IGSS'-->
+            <div class="col-md-9">
+                <label>No. Afiliacion IGSS</label>
+                @Html.TextBoxFor(a => a.no_IGGS, new { type = "text", @class = "form-control", @placeholder = "" })
+            </div>
+            <!--/ko-->
+            <!--ko if:citaTipoAtencion() == 'SEGURO'-->
+            <div class="col-md-5">
+                <label>Codigo de seguro</label>
+                @Html.TextBoxFor(a => a.CodigoCita, new { @class = "form-control", @placeholder = "Codigo de seguro" })
+            </div>
+            <div class="col-md-4">
+                <label>Autorizacion</label>
+                @Html.TextBoxFor(a => a.CodigoAutorizacion, new { @class = "form-control", @placeholder = "Autorizacion" })
+            </div>
+            <!--/ko-->
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>SERVICIOS</b></h5>
+                <hr />
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="col-md-12">
+                <label><b>Agregar servicio:</b></label>
+            </div>
+        </div>
+        <div class="form-row">
+            @* <div class="col-md-3">
+            <label>Nombre:</label>
+            <input class="form-control" data-bind="value: nombreServicioBuscar" id="nombre-servicio-buscar" placeholder="Nombre servicio" />
+            </div> *@
+            <div class="col-md-7">
+                <label>Servicio</label>
+                <select class="form-control select2bs4" data-bind="options:serviciosExistentes,
+                                           optionsText:'ServicioNombreMostrar',
+                                            value: servicioAgregarSeleccionado">
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label>Precio</label>
+                <select data-bind="options:preciosServicioSeleccionado,
+                                            value: precioServicioAgregarSeleccionado,
+                                            optionsText:'PrecioNombreMostrar'"
+                        class="form-control">
+                </select>
+            </div>
+            <div class="col-md-1">
+                <label>&nbsp;</label>
+                <button class="btn btn-primary form-control" data-bind="click:agregarServicio">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="col-md-12">
+                <hr />
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nombre del servicio</th>
+                            <th>Tipo de precio</th>
+                            <th>Valor</th>
+                            <!--ko if:citaTipoAtencion() == 'SEGURO'-->
+                            <th>Valor Cubierto seguro</th>
+                            <th>Valor Copago</th>
+                            <!--/ko-->
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!--ko foreach: serviciosAgregados-->
+                        <tr>
+                            <td data-bind="text:ServicioNombre"></td>
+                            <td data-bind="text:PrecioNombre"></td>
+                            <td>
+                                <!--ko if:$root.citaTipoAtencion() == 'SEGURO'-->
+                                <input class="form-control"
+                                       data-bind="value:PrecioValor,event:{change:$root.actualizarTotales}" />
+                                <!--/ko-->
+                                <!--ko ifnot:$root.citaTipoAtencion() == 'SEGURO'-->
+                                <span data-bind="text:PrecioValor"></span>
+                                <!--/ko-->
+                            </td>
+                            <!--ko if:$root.citaTipoAtencion() == 'SEGURO'-->
+                            <td>
+                                <input class="form-control"
+                                       data-bind="value:PrecioValorCubiertoSeguro,event:{change:$root.actualizarTotales}" />
+                            </td>
+                            <td data-bind="text:PrecioValorCopago"></td>
+                            <!--/ko-->
+                            <td>
+                                <button class="btn btn-danger" data-bind="click:$root.quitarServicio">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <!--/ko-->
+                        <!--ko if:serviciosAgregados().length==0-->
+                        <tr>
+                            <td colspan="3">
+                                <i>No hay servicios agregados</i>
+                            </td>
+                        </tr>
+                        <!--/ko-->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="position-relative form-group">
+            <h5><b>EXAMENES</b></h5>
+            <hr />
+            <div class="form-row">
+                @*  <div class="col-md-3">
+                <label>Nombre o Código:</label>
+                <input class="form-control" data-bind="value: nombreCodigoExamenBuscar" id="nombre-codigo-examen-buscar" placeholder="Nombre o código" />
+                </div> *@
+                <div class="col-md-7">
+                    <label>Examenes</label>
+                    <select class="form-control select2bs4" data-bind="options:examenesExistentes,
+                                              optionsText: 'ExamenNombreMostrar',
+                                             value: examenSeleccionado">
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label>Precio:</label>
+                    <select class="form-control"
+                            data-bind="options: preciosExamen,
+                            optionsText: 'PrecioNombreMostrar',
+                            value: precioSeleccionadoExamen"></select>
+                </div>
+                <div class="col-md-1">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-primary form-control" data-bind="click:agregarExamen">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="col-md-12 text-primary" style="display:none" id="texto-cargando-examenes-agregados">
+                    Cargando examenes agregados...
+                </div>
+                <div class="col-md-12 text-danger" style="display:none" id="texto-error-consultar-examenes-agregados">
+                    Error de conexion.
+                    <a href="#" data-bind="click:consultarExamenesAgregadosCita">Reintentar</a>
+                </div>
+                <div class="col-md-12">
+                    <hr />
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Precio</th>
+                                <!--ko if:citaTipoAtencion() == 'SEGURO'-->
+                                <th>Valor Cubierto seguro</th>
+                                <th>Valor Copago</th>
+                                <!--/ko-->
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!--ko foreach: examenesAgregados-->
+                            <tr>
+                                <td data-bind="text:ExamenNombre"></td>
+                                <td>
+                                    <input class="form-control" 
+                                    data-bind="value:PrecioValor,event:{change:$root.actualizarTotales}" />
+                                </td>
+                                <!--ko if:$root.citaTipoAtencion() == 'SEGURO'-->
+                                <td>
+                                    <input class="form-control" 
+                                    data-bind="value:PrecioValorCubiertoSeguro,event:{change:$root.actualizarTotales}" />
+                                </td>
+                                <td data-bind="text:PrecioValorCopago"></td>
+                                <!--/ko-->
+                                <td>
+                                    <button class="btn btn-danger" data-bind="click:$root.quitarExamen">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <!--/ko-->
+                            <!--ko if:examenesAgregados().length==0-->
+                            <tr>
+                                <td colspan="3">
+                                    <i>No hay examenes agregados</i>
+                                </td>
+                            </tr>
+                            <!--/ko-->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div title="Confirmar" style="display:none" id="mdl-confirmacion">
+    <span data-bind="html:txtModalConfirmacion"></span>
+</div>
+<div title="Respuesta" style="display:none" id="mdl-respuesta">
+    <span data-bind="html:txtModalRespuesta"></span>
+</div>
+@* @section Scripts {
+    
+  <script type="text/javascript">
+    // 1) Serializamos el ViewModel de Razor a un objeto JS
+    var serverModel = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model));
+
+    // 2) Inicializamos tu CitaVM pasándole esos datos
+    var citaVm = new CitaVM(serverModel);
+    ko.applyBindings(citaVm);
+  </script>
+} *@

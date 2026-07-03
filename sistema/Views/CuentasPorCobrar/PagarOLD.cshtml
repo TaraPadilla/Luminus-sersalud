@@ -1,0 +1,1440 @@
+@model sistema.Models.CuentasPorCobrarPagarViewModel;
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    // Leer el valor del appsettings.json. 
+    string sufijoLayout = Configuration["Cliente"]; 
+    
+    // Concatenar para formar el nombre del Layout (ejemplo: "_Layout" + "SS")
+    // Si la clave trae el nombre completo (ej. "_LayoutSS"), simplemente asignalo directo.
+    Layout = $"_Layout{sufijoLayout}"; 
+    
+    ViewData["Title"] = "Pagar cuenta";
+}
+@Html.HiddenFor(c => c.CuentaId)
+@Html.HiddenFor(c => c.PacienteId)
+@Html.HiddenFor(c => c.ResponsableNit)
+@Html.HiddenFor(c => c.ResponsableNombre)
+@Html.HiddenFor(c => c.ResponsableDireccion)
+@Html.HiddenFor(c => c.ResponsableCorreo)
+
+@await Html.PartialAsync("_MensajeExito")
+
+
+
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12 text-center">
+                <h4><b>Pagar cuenta</b></h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="display: none" id="info-paciente-estado-cuenta">
+    <h5><b>Información del Paciente</b></h5>
+    <div class="datos-paciente">
+        <p><strong>Nombre:</strong> <span data-paciente="nombre">@Model.PacienteNombre</span></p>
+        <p><strong>Teléfono:</strong> <span data-paciente="telefono">@Model.PacienteTelefono</span></p>
+        <p><strong>Celular:</strong> <span data-paciente="celular">@Model.PacienteCelular</span></p>
+        <p><strong>Dirección:</strong> <span data-paciente="direccion">@Model.PacienteDireccion</span></p>
+        <p><strong>NIT:</strong> <span data-paciente="nit">@Model.PacienteNit</span></p>
+        <p><strong>DPI:</strong> <span data-paciente="dpi">@Model.PacienteDpi</span></p>
+        <p><strong>Fecha Nacimiento:</strong> <span
+                data-paciente="fechaNacimiento">@Model.PacienteFechaNacimiento</span></p>
+        <p><strong>Edad:</strong> <span data-paciente="edad">@Model.PacienteEdad</span></p>
+        <p><strong>Sexo:</strong> <span data-paciente="sexo">@Model.PacienteSexo</span></p>
+    </div>
+
+    <h5><b>Información de Hospitalización</b></h5>
+    <div class="datos-hospitalizacion">
+        <p><strong>Fecha de Inicio de Hospitalización:</strong> <span
+                data-hospitalizacion="fechaInicio">@Model.FechaInicioHops</span></p>
+        <p><strong>Médico Responsable:</strong> <span data-hospitalizacion="medicoResponsable">@Model.MedicoHops</span>
+        </p>
+        <p><strong>Nombre del Seguro:</strong> <span data-hospitalizacion="nombreSeguro">@Model.NombreDelSeguro</span>
+        </p>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <div id="tabs-datos-cuenta">
+                    <ul>
+                        <li><a href="#tab-paciente">General</a></li>
+                        @* <li><a href="#tab-hospitalizaciones">Hospitalizaciones</a></li> *@
+                        <li><a href="#tab-productos">Detalles</a></li> <!-- Se renombró a "Productos" -->
+                        @* <li><a href="#tab-general">General</a></li> *@
+                    </ul>
+                    @* Toda esta info del paciente debe ir en Estado de Cuenta *@
+                    <div id="tab-paciente">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <button class="btn btn-primary" data-bind="click:verInformacionPaciente">
+                                    <i class="fas fa-external-link-alt"></i>&nbsp;
+                                    Ver informaci&oacute;n del paciente
+                                </button>
+                                <br /><br />
+                            </div>
+                            <div class="col-md-3">
+                                @Html.HiddenFor(m => m.PacienteNombre)
+                                <b>Nombre del responsable</b><br />
+                                @Model.ResponsableNombre
+                            </div>
+                            <div class="col-md-3">
+                                @Html.HiddenFor(m => m.PacienteNit)
+                                <b>Nit/Dpi del responsable</b><br />
+                                @Model.ResponsableNit
+                            </div>
+                            <div class="col-md-3">
+                                <b>Direcci&oacute;n del responsable</b><br />
+                                @Model.ResponsableDireccion
+                            </div>
+                            <div class="col-md-3">
+                                <b>Correo del responsable</b><br />
+                                @Model.ResponsableCorreo
+                            </div>
+                        </div>
+                    </div>
+                    @* <div id="tab-hospitalizaciones">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                Hospitalizaciones
+                            </div>
+                        </div>
+                    </div> *@
+
+
+                    <div id="tab-productos" class="container-fluid p-0">
+                        @* Esta info de la habitacion debe ir dentro de estado de cuenta *@
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0 text-primary font-weight-bold">Datos de la Habitación</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-12">
+                                        <div class="row">
+                                            <div class="col-md-3 mb-2">
+                                                @* <p><b>ID:</b> @Model.Habitacion?.Id</p> *@
+                                                <label class="font-weight-bolder mb-0">Número</label>
+                                                <div class="font-weight-bold">@Model.Habitacion?.NombreHabitacion</div>
+                                            </div>
+                                            <div class="col-md-3 mb-2">
+                                                <label class="font-weight-bolder mb-0">Categoría</label>
+                                                <div class="font-weight-bold">
+                                                    @Model.Habitacion?.NombreCategoriaHabitacion</div>
+                                            </div>
+                                            <div class="col-md-3 mb-2">
+                                                <label class="font-weight-bolder mb-0">Tarifa</label>
+                                                <div class="font-weight-bold text-success">Q
+                                                    @Model.Habitacion?.CostoTotal</div>
+                                            </div>
+                                            <div class="col-md-3 mb-2">
+                                                <label class="font-weight-bolder mb-0">Seguro</label>
+                                                <div class="font-weight-bold">@Model.SeguroNombre</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <input type="hidden" id="NumeroHabitacion" value="@Model.Habitacion?.NombreHabitacion" />
+                        <input type="hidden" id="CategoriaHabitacion"
+                            value="@Model.Habitacion?.NombreCategoriaHabitacion" />
+                        <input type="hidden" id="TarifaHabitacion" value="@Model.Habitacion?.CostoTotal" />
+
+                        @* FIX: evitar ID duplicado con @Html.HiddenFor(m => m.PacienteNombre) *@
+                        <input type="hidden" id="PacienteNombreAdmision" value="@Model.PacienteNombreAdmision" />
+
+                        <input type="hidden" id="AdmisionId" value="@Model.AdmisionId" />
+        @{
+            // IDs de los productos que son exámenes (para marcarlos con 100% descuento por defecto)
+            var idsExamenes = Model.Productos?
+                .Where(p => {
+                    var prop = p.GetType().GetProperty("EsExamen");
+                    return prop != null && (bool)(prop.GetValue(p) ?? false);
+                })
+                .Select(p => p.Id)
+                .ToList() ?? new System.Collections.Generic.List<int>();
+        }
+        <script>
+            window._idsExamenes = [@Html.Raw(string.Join(",", idsExamenes))];
+        </script>
+
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header bg-white">
+                                <h5 class="mb-0 font-weight-bold">Detalle de Cargos</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="form-row">
+                                    <div class="col-md-12">
+                                        @* Esta es la tabla que se usa para crear el Estado de Cuenta *@
+                                        <table class="table table-hover" style="display: none;">
+                                            <thead>
+                                                <tr>
+                                                    <th>Fecha</th>
+                                                    <th>Item</th>
+                                                    <th>Tipo de Item</th>
+                                                    <th>Cantidad</th>
+                                                    <th>Precio Unitario</th>
+                                                    <th>Subtotal</th>
+                                                    <th>Acción</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @if (Model.Productos?.Count > 0)
+                                                {
+                                                    @foreach (var producto in Model.Productos)
+                                                    {
+                                                        <tr>
+                                                            <td>@producto.FechaAplicacion</td>
+                                                            <td>@producto.Nombre</td>
+                                                            <td>@producto.Tipo</td>
+                                                            <td>@producto.Cantidad</td>
+                                                            <td>Q @producto.PrecioUnitario</td>
+                                                            <td>Q @producto.Subtotal</td>
+
+                                                            <td>
+                                                                <button class="btn btn-warning btn-sm excluir-producto"
+                                                                    data-nombre="@producto.Nombre"
+                                                                    data-cantidad="@producto.Cantidad"
+                                                                    data-precio="@producto.PrecioUnitario">
+                                                                    Excluir
+                                                                </button>
+                                                            </td>
+                                                            <td style="display: none;">@producto.Tipo</td>
+
+                                                        </tr>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <tr>
+                                                        <td colspan="5" class="text-center">No hay productos aplicados
+                                                            registrados.
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+
+                                        <div class="table-responsive">
+                                            <table class="table table-hover table-bordered mb-0">
+                                                <thead class="thead-light">
+                                                    <tr>
+                                                        <th>Rubro</th>
+                                                        <th>Item</th>
+                                                        <th>Cantidad</th>
+                                                        <th>Precio Unitario</th>
+                                                        <th>Subtotal</th>
+                                                        <th style="min-width:180px">Desc% / Cargo</th>
+                                                        <th>Acción</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="productos-body">
+                                                    @if (Model.Paquetes?.Count > 0)
+                                                    {
+                                                        @foreach (var paquete in Model.Paquetes)
+                                                        {
+                                                            <tr data-esexamen="false" data-descpct="0">
+                                                                <td>@paquete.Tipo</td>
+                                                                <td>@paquete.Nombre</td>
+                                                                <td>1</td>
+                                                                <td>Q @paquete.Precio</td>
+                                                                <td class="celda-subtotal">Q @paquete.Precio</td>
+                                                                <td></td>
+                                                                <td>
+                                                                    <button class="btn btn-secondary btn-sm" disabled>
+                                                                        No excluible
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    }
+                                                    @if (Model.Ambulancias?.Count > 0)
+                                                    {
+                                                        @foreach (var amb in Model.Ambulancias)
+                                                        {
+                                                            <tr data-esexamen="false" data-descpct="0">
+                                                                <td>Ambulancia</td>
+                                                                <td>Ambulancia - @amb.TipoTraslado</td>
+                                                                <td>1</td>
+                                                                <td>Q @amb.Precio</td>
+                                                                <td class="celda-subtotal">Q @amb.Precio</td>
+                                                                <td></td>
+                                                                <td>
+                                                                    <button class="btn btn-secondary btn-sm" disabled>
+                                                                        No excluible
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    }
+
+
+                                                    @if (Model.Productos?.Count > 0)
+                                                    {
+                                                        @foreach (var producto in Model.Productos)
+                                                        {
+                                                            @* EsExamen se detecta en JS por data-tipo; aquí marcamos con data-tipo *@
+                                                            <tr data-tipo="@producto.Tipo" data-descpct="0">
+                                                                <td>@producto.Tipo</td>
+                                                                <td>@producto.Nombre</td>
+                                                                <td>@producto.Cantidad</td>
+                                                                <td>Q @producto.PrecioUnitario</td>
+                                                                <td class="celda-subtotal">Q @producto.Subtotal</td>
+                                                                <td></td>
+                                                                <td>
+                                                                    <button class="btn btn-warning btn-sm excluir-producto"
+                                                                        data-nombre="@producto.Nombre"
+                                                                        data-cantidad="@producto.Cantidad"
+                                                                        data-precio="@producto.PrecioUnitario">
+                                                                        Excluir
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <tr>
+                                                            <td colspan="6" class="text-center py-3">No hay productos
+                                                                aplicados registrados.
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                                @{
+                                                    decimal totalPaquetes = Math.Round(Model.Paquetes?.Sum(p => p.Precio) ??
+                                                    0m, 2);
+                                                    decimal totalAmbulancias = Math.Round(Model.Ambulancias?.Sum(a =>
+                                                    a.Precio) ?? 0m, 2);
+                                                    decimal totalProductos = Math.Round(Model.Productos?.Sum(p =>
+                                                    p.Subtotal) ?? 0m, 2);
+
+                                                    decimal totalTabla = Math.Round(totalPaquetes + totalAmbulancias +
+                                                    totalProductos, 2);
+                                                }
+                                                <tfoot>
+                                                    <tr>
+                                                        <th colspan="4" class="text-right">Total:</th>
+                                                        <th colspan="3">Q @totalTabla.ToString("N2")</th>
+                                                    </tr>
+                                                </tfoot>
+                                            </table>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card shadow-sm mb-4 border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="mb-0 font-weight-bold">Exclusiones</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="form-row">
+                                    <div class="col-md-12">
+                                        <div class="form-row">
+                                            <div class="col-md-12">
+                                                @* Esta data de los excluidos tambien debe ir en estado de cuenta *@
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover mb-0" id="tabla-exclusiones">
+                                                        <thead class="thead-light">
+                                                            <tr>
+                                                                <th>Item</th>
+                                                                <th>Cantidad</th>
+                                                                <th>Precio Unitario</th>
+                                                                <th>Subtotal</th>
+                                                                <th>Acción</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="exclusiones-body">
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @* <p><b>Total Exclusiones: </b><span id="total-exclusiones">Q 0.00</span></p> *@
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0 font-weight-bold">Honorarios Médicos</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-row align-items-end mb-3">
+                                    <div class="col-md-6">
+                                        <label>Médico</label>
+                                        @Html.DropDownList("DoctorId", Model.DoctoresSelectListItem, "-- Seleccione médico --", 
+                                            new { @class = "form-control", data_bind = "value: medicoSeleccionado" })
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label>Monto</label>
+                                        <input type="number" class="form-control" data-bind="value: montoHonorarioNuevo" placeholder="0.00" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="button" class="btn btn-primary btn-block" data-bind="click: agregarHonorarioBD">
+                                            <i class="fa fa-plus"></i> Agregar
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <table class="table table-sm table-striped" id="tabla-honorarios">
+                                    <thead>
+                                        <tr>
+                                            <th>Médico</th>
+                                            <th class="text-right">Monto</th>
+                                            <th class="text-center">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody data-bind="foreach: honorariosLista">
+                                        <tr>
+                                            <td data-bind="text: NombreMedico"></td>
+                                            <td class="text-right">Q <span data-bind="text: Monto.toFixed(2)"></span></td>
+                                            <td class="text-center">
+                                                <button type="button" class="btn btn-danger btn-sm" data-bind="click: $parent.eliminarHonorarioBD">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div id="tab-general" style="display: none;">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                @Html.HiddenFor(m => m.Valor)
+                                <label><b>Valor</b></label><br />
+                                @Model.Valor
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <label><b>Observaciones</b></label><br />
+                                @Model.Observaciones
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card" style="display: none;">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Facturaci&oacute;n</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-3">
+                <label>No. de comprobante</label>
+                @Html.TextBoxFor(m => m.NoComprobante, new { @class = "form-control", @placeholder = "Numero de                comprobante" })
+            </div>
+            <div class="col-md-3">
+                <label>C&oacute;digo de vendedor</label>
+                @Html.TextBoxFor(m => m.EmpleadoId, new { @class = "form-control", @placeholder = "Codigo de vendedor" })
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    @* Toda la data de pagos tambien debe ir en el estado de cuenta *@
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Pagos</b></h5>
+                <hr />
+            </div>
+        </div>
+        <br>
+        @* <div class="form-row">
+            <div class="col-md-3">
+                <label>Total de cuenta</label>
+                <input type="number" class="form-control" id="totalDeLaCuenta" min="0" step="0.01" readonly>
+            </div>
+            <div class="col-md-3">
+                <label>Aseguradora</label>
+                <input type="number" class="form-control" id="totalAseguradora" min="0" step="0.01" readonly>
+            </div>
+            <div class="col-md-3">
+                <label>Total No Elegibles</label>
+                <input type="number" class="form-control" id="totalNoElegibles" min="0" step="0.01" readonly>
+            </div>
+            <div class="col-md-3">
+                <label>Deducibles</label>
+                <input type="number" class="form-control" id="totalDeducibles" min="0" step="0.01">
+            </div>
+        </div> *@
+        <!-- DESPUÉS — agrega los campos de descuento después del totalDeLaCuenta -->
+<div class="form-row">
+    <div class="col-md-3">
+        <label>Total de cuenta</label>
+        <input type="number" class="form-control" id="totalDeLaCuenta" min="0" step="0.01" readonly>
+    </div>
+    <div class="col-md-3">
+        <label>Aseguradora</label>
+        <input type="number" class="form-control" id="totalAseguradora" min="0" step="0.01" readonly>
+    </div>
+    <div class="col-md-3">
+        <label>Total No Elegibles</label>
+        <input type="number" class="form-control" id="totalNoElegibles" min="0" step="0.01" readonly>
+    </div>
+    <div class="col-md-3">
+        <label>Deducibles</label>
+        <input type="number" class="form-control" id="totalDeducibles" min="0" step="0.01">
+    </div>
+</div>
+<br>
+<div class="form-row align-items-end">
+    <div class="col-md-3">
+        <label>% Descuento</label>
+        <div class="input-group">
+            <input type="number" class="form-control" id="porcentajeDescuento"
+                   min="0" max="100" step="0.01" placeholder="0.00"
+                   oninput="window.actualizarDescuento('porcentaje')">
+            <div class="input-group-append">
+                <span class="input-group-text">%</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <label>Monto Descuento</label>
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <span class="input-group-text">Q</span>
+            </div>
+            <input type="number" class="form-control" id="montoDescuento"
+                   min="0" step="0.01" placeholder="0.00"
+                   oninput="window.actualizarDescuento('monto')">
+        </div>
+    </div>
+    <div class="col-md-3">
+        <label>Total con Descuento</label>
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <span class="input-group-text">Q</span>
+            </div>
+            <input type="number" class="form-control" id="totalConDescuento"
+                   min="0" step="0.01" readonly
+                   style="background-color:#e8f5e9; font-weight:bold;">
+        </div>
+    </div>
+    <div class="col-md-3 d-flex align-items-end">
+        <button type="button" class="btn btn-outline-secondary btn-block"
+                onclick="window.limpiarDescuento()">
+            <i class="fa fa-times"></i> Limpiar descuento
+        </button>
+    </div>
+</div>
+        <br>
+        <div class="form-row">
+            <div class="col-md-3">
+                <label>Porcentaje Coaseguro</label>
+                <input type="number" class="form-control" id="porcentajeCoaseguro" min="0" step="0.01">
+            </div>
+            <div class="col-md-3">
+                <label>Coaseguro</label>
+                <input type="number" class="form-control" id="valorCoaseguro" min="0" step="0.01" readonly>
+            </div>
+            <div class="col-md-3">
+                <label>Copago</label>
+                <input type="number" class="form-control" id="valorCopago" min="0" step="0.01">
+            </div>
+            <div class="col-md-3">
+                <label>Iva Ocasional</label>
+                <input type="number" class="form-control" id="valorIVA" min="0" step="0.01">
+            </div>
+        </div>
+        <br><br>
+        <div class="form-row">
+            <div class="col-md-4">
+                <label>Pago de Paciente</label>
+                <input type="number" class="form-control" id="pagoPaciente" min="0" step="0.01" readonly>
+            </div>
+            <div class="col-md-4">
+                <label>Pago de Seguro</label>
+                <input type="number" class="form-control" id="pagoSeguro" min="0" step="0.01" readonly>
+            </div>
+        </div>
+        <br>
+        <div class="form-row">
+
+            <div class="col-md-4">
+                <label>Forma de pago</label>
+                <select class="form-control" asp-for="@Model.FormaPagoId" asp-items="@Model.FormaPagoSelectListItems">
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="">Moneda</label>
+                <select class="form-control" asp-for="@Model.MonedaId" asp-items="@Model.MonedaSelectListItems">
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="">Monto</label>
+                <input class="form-control" data-bind="value:montoPagoAgregar" />
+            </div>
+            <div class="col-md-1">
+                <br />
+                <button class="btn btn-primary" data-bind="click:agregarPago">
+                    Agregar
+                </button>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="col-md-12">
+                <hr />
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Forma de pago</th>
+                            <th>Moneda</th>
+                            <th>Valor</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!--ko foreach: pagos-->
+                        <tr>
+                            <td data-bind="text:FormaPago"></td>
+                            <td data-bind="text:Moneda"></td>
+                            <td data-bind="text:Monto"></td>
+                            <td>
+                                <!--ko if:Nuevo-->
+                                <button class="btn btn-danger" data-bind="click:$root.eliminarPago">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                                <!--/ko-->
+                            </td>
+                        </tr>
+                        <!--/ko-->
+                        <tr class="fila-total">
+                            <td colspan="2"><b>Monto recibido</b></td>
+                            <td><b>Q <span data-bind="text:totalPagos"></span></b></td>
+                            <td></td>
+                        </tr>
+                        <tr class="fila-total">
+                            <td colspan="2"><b>Total a pagar</b></td>
+                            <td><b>Q <span data-bind="text:saldoPagos"></span></b></td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <button type="button" class="btn btn-danger" onclick="window.history.back();">Cancelar</button>
+                <button class="btn btn-primary" data-bind="click:pagarCuenta">Pagar</button>
+                <button class="btn btn-warning" id="btnEstadoCuenta">
+                    <i class="fa fa-external-link-alt"></i> Estado de cuenta
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section css {
+    <style>
+        .fila-total {
+            background-color: #f5f5f5;
+        }
+        #productos-body .input-desc-pct,
+        #productos-body .input-cargo {
+            font-size: 0.8rem;
+        }
+        #productos-body .celda-subtotal {
+            color: #155724;
+        }
+        /* Examen: resaltar con fondo suave para indicar descuento automático */
+        #productos-body tr[data-tipo] td {
+            /* base */
+        }
+    </style>
+}
+
+@section Scripts {
+    <script src="~/ViewModelKo/CuentasPorCobrarPagarVM.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            let exclusiones = [];
+            let productos = [];
+
+            // IDs de exámenes inyectados desde el servidor
+            const idsExamenes = window._idsExamenes || [];
+
+            function esFilaExamen(row) {
+                // Un item es examen si su índice de producto corresponde a un id de examen
+                // Lo detectamos por el dataset.esexamen="true" que ponemos en el Razor,
+                // o si el tipo del row no está en los tipos conocidos de no-examen
+                const tipo = (row.dataset.tipo || "").toLowerCase();
+                const noExamenTypes = ["medicamentos","insumos médicos","equipos médicos","servicio","dietas","depósitos (resta)","emergencia","paquete de hospitalización","ambulancia"];
+                if (noExamenTypes.some(t => tipo.includes(t))) return false;
+                // Si tiene data-tipo y NO es un tipo conocido de producto/servicio, es examen
+                if (row.dataset.tipo) return true;
+                return false;
+            }
+
+ const SALDO_BASE_BD = parseFloat($("#Valor").val()) || 0;
+
+let TOTAL_BRUTO_ORIGINAL = 0;
+
+function cargarProductosIniciales() {
+    productos = Array.from(document.querySelectorAll("#productos-body tr")).map((row, idx) => {
+        if (row.children.length >= 6) {
+            const rubro = row.children[0].textContent.trim();
+            const item = row.children[1].textContent.trim();
+            const cantidad = parseInt(row.children[2].textContent.trim(), 10) || 0;
+            const precioTexto = row.children[3].textContent.trim().replace("Q", "").replace(",", ".");
+            const precioUnitario = parseFloat(precioTexto) || 0;
+            const esExamen = esFilaExamen(row);
+            const descuentoPct = esExamen ? 100 : 0;
+            const cargoAdicional = 0;
+
+            return {
+                tipo: rubro,
+                nombre: item,
+                cantidad: cantidad,
+                precioUnitario: precioUnitario,
+                precioOriginal: precioUnitario,
+                esExamen: esExamen,
+                descuentoPct: descuentoPct,
+                cargoAdicional: cargoAdicional
+            };
+        }
+        return null;
+    }).filter(x => x !== null);
+
+    TOTAL_BRUTO_ORIGINAL = productos.reduce((sum, p) => {
+        return sum + (p.cantidad * p.precioOriginal);
+    }, 0);
+
+    document.querySelectorAll("#productos-body tr").forEach(row => {
+        const btn = row.querySelector("button");
+        if (btn && btn.textContent.trim() === "No excluible") {
+            const precioTexto = row.children[3]?.textContent.trim().replace("Q","").replace(",",".");
+            TOTAL_BRUTO_ORIGINAL += parseFloat(precioTexto) || 0;
+        }
+    });
+
+    console.log("[INIT] SALDO_BASE_BD:", SALDO_BASE_BD, "| TOTAL_BRUTO_ORIGINAL:", TOTAL_BRUTO_ORIGINAL);
+
+    actualizarTablaProductos();
+}
+
+            function calcularSubtotalProducto(p) {
+                const bruto = p.cantidad * p.precioUnitario;
+                const descuento = bruto * (p.descuentoPct || 0) / 100;
+                const cargo = parseFloat(p.cargoAdicional) || 0;
+                return Math.max(bruto - descuento + cargo, 0);
+            }
+
+            function actualizarTablaProductos() {
+                let tbody = document.getElementById("productos-body");
+                tbody.innerHTML = "";
+
+                productos.forEach((producto, index) => {
+                    let row = document.createElement("tr");
+                    let tipoLower = (producto.tipo || "").toLowerCase();
+                    const noExcluible = tipoLower.includes("paquete") || tipoLower === "ambulancia";
+
+                    let accionHtml = noExcluible
+                        ? `<button class="btn btn-secondary btn-sm" disabled>No excluible</button>`
+                        : `<button class="btn btn-warning btn-sm excluir-producto" data-index="${index}">Excluir</button>`;
+
+                    const subtotal = calcularSubtotalProducto(producto);
+                    const descPct = producto.descuentoPct || 0;
+                    const cargo = producto.cargoAdicional || 0;
+
+                    // Badge de tipo de item para la columna
+                    let badgeDesc = '';
+                    if (descPct > 0) badgeDesc += `<span class="badge badge-warning mr-1">-${descPct}%</span>`;
+                    if (cargo > 0)   badgeDesc += `<span class="badge badge-info">+Q${parseFloat(cargo).toFixed(2)}</span>`;
+
+                    row.innerHTML = `
+                        <td>${producto.tipo}</td>
+                        <td>${producto.nombre}</td>
+                        <td>${producto.cantidad}</td>
+                        <td>Q ${producto.precioUnitario.toFixed(2)}</td>
+                        <td class="celda-subtotal font-weight-bold">Q ${subtotal.toFixed(2)}</td>
+                        <td>
+                            <div class="d-flex align-items-center" style="gap:4px; min-width:200px;">
+                                <div class="input-group input-group-sm" style="width:90px;" title="Descuento %">
+                                    <input type="number" class="form-control form-control-sm input-desc-pct"
+                                           min="0" max="100" step="0.01" value="${descPct}"
+                                           data-index="${index}" placeholder="0"
+                                           style="padding:2px 4px;">
+                                    <div class="input-group-append"><span class="input-group-text" style="padding:2px 6px;">%</span></div>
+                                </div>
+                                <div class="input-group input-group-sm" style="width:95px;" title="Cargo adicional">
+                                    <div class="input-group-prepend"><span class="input-group-text" style="padding:2px 6px;">+Q</span></div>
+                                    <input type="number" class="form-control form-control-sm input-cargo"
+                                           min="0" step="0.01" value="${cargo > 0 ? cargo : ''}"
+                                           data-index="${index}" placeholder="0"
+                                           style="padding:2px 4px;">
+                                </div>
+                            </div>
+                        </td>
+                        <td>${accionHtml}</td>
+                    `;
+
+                    tbody.appendChild(row);
+                });
+
+                // Eventos para los inputs de desc% y cargo
+                tbody.querySelectorAll(".input-desc-pct").forEach(input => {
+                    input.addEventListener("input", function() {
+                        const idx = parseInt(this.dataset.index);
+                        productos[idx].descuentoPct = parseFloat(this.value) || 0;
+                        actualizarFilaSubtotal(idx);
+                        actualizarTotalCuenta();
+                    });
+                });
+                tbody.querySelectorAll(".input-cargo").forEach(input => {
+                    input.addEventListener("input", function() {
+                        const idx = parseInt(this.dataset.index);
+                        productos[idx].cargoAdicional = parseFloat(this.value) || 0;
+                        actualizarFilaSubtotal(idx);
+                        actualizarTotalCuenta();
+                    });
+                });
+
+                actualizarTotalCuenta();
+            }
+
+            function actualizarFilaSubtotal(idx) {
+                const filas = document.querySelectorAll("#productos-body tr");
+                if (!filas[idx]) return;
+                const celda = filas[idx].querySelector(".celda-subtotal");
+                if (celda) {
+                    const subtotal = calcularSubtotalProducto(productos[idx]);
+                    celda.textContent = "Q " + subtotal.toFixed(2);
+                }
+            }
+
+
+            @* function actualizarTotalCuenta() {
+                let totalProductos = productos.reduce((total, producto) => {
+                    return total + (producto.cantidad * producto.precioUnitario);
+                }, 0);
+
+                let totalHonorarios = Array.from(document.querySelectorAll(".honorario-medico"))
+                    .map(input => parseFloat(input.value) || 0)
+                    .reduce((total, valor) => total + valor, 0);
+                let tarifaHabitacion = parseFloat($("#TarifaHabitacion").val()) || 0;
+                let totalCuenta = totalProductos + totalHonorarios + tarifaHabitacion;
+                document.getElementById("totalDeLaCuenta").value = totalCuenta.toFixed(2);
+                actualizarTotalAseguradora(); // Se actualiza el total aseguradora
+            } *@
+
+            function inicializarTotales() {
+    const saldoRealBD = parseFloat($("#Valor").val()) || 0;
+    
+    document.getElementById("totalDeLaCuenta").value = saldoRealBD.toFixed(2);
+    
+    actualizarTotalAseguradora();
+    cuentaPagarVm.actualizarTotales();
+}
+
+function actualizarTotalCuenta() {
+
+    let totalBrutoActual = productos.reduce((total, producto) => {
+        return total + calcularSubtotalProducto(producto);
+    }, 0);
+
+    // Sumar honorarios (siempre van al total)
+    let totalHonorarios = 0;
+    if (typeof cuentaPagarVm !== 'undefined' && cuentaPagarVm.honorariosLista) {
+        totalHonorarios = cuentaPagarVm.honorariosLista().reduce((total, item) => {
+            return total + (parseFloat(item.Monto) || 0);
+        }, 0);
+    }
+
+    // Sumar paquetes y ambulancias (no excluibles, precio fijo)
+    let totalNoExcluibles = 0;
+    document.querySelectorAll("#productos-body tr").forEach(row => {
+        const btn = row.querySelector("button.btn-secondary");
+        if (btn && btn.disabled) {
+            const celdaSubtotal = row.querySelector(".celda-subtotal");
+            if (celdaSubtotal) {
+                totalNoExcluibles += parseFloat(
+                    celdaSubtotal.textContent.replace("Q","").trim()
+                ) || 0;
+            }
+        }
+    });
+
+    totalBrutoActual += totalHonorarios;
+
+    const diferencia = TOTAL_BRUTO_ORIGINAL - totalBrutoActual;
+
+    const saldoAjustado = Math.max(SALDO_BASE_BD - diferencia, 0);
+
+    console.log("[actualizarTotalCuenta]", {
+        SALDO_BASE_BD,
+        TOTAL_BRUTO_ORIGINAL,
+        totalBrutoActual,
+        totalHonorarios,
+        diferencia,
+        saldoAjustado
+    });
+
+    // 4. Actualizar el campo visible
+    document.getElementById("totalDeLaCuenta").value = saldoAjustado.toFixed(2);
+
+    actualizarTotalAseguradora();
+}
+
+            // [NUEVO]: Exponer la función al contexto global para que el ViewModel de Knockout pueda acceder a ella
+            window.actualizarTotalCuenta = actualizarTotalCuenta;
+
+
+           function actualizarTotalAseguradora() {
+    const totalCuenta = parseFloat(document.getElementById("totalDeLaCuenta").value) || 0;
+    const totalNoElegibles = parseFloat(document.getElementById("totalNoElegibles").value) || 0;
+
+    // Aseguradora solo cubre hasta el saldo pendiente
+    const totalAseguradora = Math.max(totalCuenta - totalNoElegibles, 0);
+    document.getElementById("totalAseguradora").value = totalAseguradora.toFixed(2);
+
+    actualizarCoaseguro();
+}
+
+            function actualizarCoaseguro() {
+                let porcentajeCoaseguro = parseFloat(document.getElementById("porcentajeCoaseguro").value) || 0;
+                let totalAseguradora = parseFloat(document.getElementById("totalAseguradora").value) || 0;
+
+                let coaseguro = (porcentajeCoaseguro / 100) * totalAseguradora;
+                document.getElementById("valorCoaseguro").value = coaseguro.toFixed(2);
+                actualizarPagoPaciente(); // Se actualiza el pago del paciente después del coaseguro
+                cuentaPagarVm.actualizarTotales();
+            }
+
+            function actualizarPagoSeguro() {
+                let totalAseguradora = parseFloat(document.getElementById("totalAseguradora").value) || 0;
+                let pagoPaciente = parseFloat(document.getElementById("pagoPaciente").value) || 0;
+
+                let pagoSeguro = Math.max(totalAseguradora - pagoPaciente, 0);
+                document.getElementById("pagoSeguro").value = pagoSeguro.toFixed(2);
+                cuentaPagarVm.actualizarTotales();
+            }
+
+            document.getElementById("totalAseguradora").addEventListener("input", actualizarPagoSeguro);
+            document.getElementById("pagoPaciente").addEventListener("input", actualizarPagoSeguro);
+
+            document.getElementById("porcentajeCoaseguro").addEventListener("input", actualizarCoaseguro);
+            document.getElementById("totalAseguradora").addEventListener("input", actualizarCoaseguro);
+
+            function actualizarTablaExclusiones() {
+                let tbody = document.getElementById("exclusiones-body");
+                tbody.innerHTML = "";
+                let totalExclusiones = 0;
+
+                exclusiones.forEach((exclusion, index) => {
+                    let subtotal = exclusion.cantidad * exclusion.precioUnitario;
+                    totalExclusiones += subtotal;
+
+                    let row = document.createElement("tr");
+                    row.innerHTML = `
+                                                                <td>${exclusion.nombre}</td>
+                                                                <td>${exclusion.cantidad}</td>
+                                                                <td>Q ${exclusion.precioUnitario.toFixed(2)}</td>
+                                                                <td>Q ${subtotal.toFixed(2)}</td>
+                                                                <td>
+                                                                    <button class="btn btn-success btn-sm reintegrar-producto" data-index="${index}">
+                                                                        Reintegrar
+                                                                    </button>
+                                                                </td>
+                                                            `;
+                    tbody.appendChild(row);
+                });
+
+                document.getElementById("totalNoElegibles").value = totalExclusiones.toFixed(2);
+            }
+
+            document.getElementById("totalNoElegibles").addEventListener("input", actualizarTotalAseguradora);
+            document.getElementById("totalDeLaCuenta").addEventListener("input", actualizarTotalAseguradora);
+
+function actualizarPagoPaciente() {
+    const totalCuenta = parseFloat(document.getElementById("totalDeLaCuenta").value) || 0;
+    const montoDesc = parseFloat($("#montoDescuento").val()) || 0;
+    const totalConDesc = Math.max(totalCuenta - montoDesc, 0);
+
+    const deducible = parseFloat(document.getElementById("totalDeducibles").value) || 0;
+    const coaseguro = parseFloat(document.getElementById("valorCoaseguro").value) || 0;
+    const copago = parseFloat(document.getElementById("valorCopago").value) || 0;
+    const iva = parseFloat(document.getElementById("valorIVA").value) || 0;
+
+    let pagoPaciente = totalConDesc + deducible + coaseguro + copago + iva;
+    pagoPaciente = Math.max(pagoPaciente, 0);
+
+    document.getElementById("pagoPaciente").value = pagoPaciente.toFixed(2);
+    actualizarPagoSeguro();
+}
+
+            document.getElementById("totalNoElegibles").addEventListener("input", actualizarPagoPaciente);
+            document.getElementById("totalDeducibles").addEventListener("input", actualizarPagoPaciente);
+            document.getElementById("valorCoaseguro").addEventListener("input", actualizarPagoPaciente);
+            document.getElementById("valorCopago").addEventListener("input", actualizarPagoPaciente);
+            document.getElementById("valorIVA").addEventListener("input", actualizarPagoPaciente);
+
+            document.getElementById("productos-body").addEventListener("click", async function (event) {
+                if (event.target.classList.contains("excluir-producto")) {
+                    let row = event.target.closest("tr");
+                    let rubro = row.children[0].textContent.trim(); // Rubro
+                    let nombreProducto = row.children[1].textContent.trim(); // Item
+                    let cantidad = parseInt(row.children[2].textContent.trim(), 10) || 0;
+
+                    let precioUnitario = parseFloat(
+                        row.children[3].textContent.trim().replace("Q", "").replace(",", ".")
+                    ) || 0;
+
+                    let tipoProducto = rubro; // mantengo "tipo" como rubro (igual que en cargarProductosIniciales)
+
+                    if (productoIndex !== -1) {
+                        let producto = productos[productoIndex];
+
+                        // console.log(`Tipo detectado: ${tipoProducto}`);
+
+                        let seguroNombre = "SIN SEGURO";
+
+                        // Obtener precio por seguro
+                        let precioSeguro = await obtenerPrecioPorSeguro(tipoProducto, producto.nombre, seguroNombre);
+
+                        if (precioSeguro === null) {
+                            return;
+                        }
+
+                        // Actualizar el precio unitario con el del seguro
+                        producto.precioUnitario = precioSeguro;
+
+                        // Mover el producto a la tabla de exclusiones
+                        productos.splice(productoIndex, 1);
+                        exclusiones.push(producto);
+                        actualizarTablaProductos();
+                        actualizarTablaExclusiones();
+                        actualizarTotalCuenta();
+                        cuentaPagarVm.actualizarTotales();
+                    }
+                }
+            });
+
+            @* document.getElementById("tabla-honorarios").addEventListener("input", function (event) {
+                if (event.target.classList.contains("honorario-medico")) {
+                    actualizarTotalCuenta();
+                }
+            }); *@
+
+            cargarProductosIniciales();
+
+            document.getElementById("exclusiones-body").addEventListener("click", function (event) {
+                if (event.target.classList.contains("reintegrar-producto")) {
+                    let index = event.target.getAttribute("data-index");
+                    let producto = exclusiones.splice(index, 1)[0];
+
+                    // Restaurar su precio unitario original
+                    producto.precioUnitario = producto.precioOriginal;
+
+                    productos.push(producto);
+                    actualizarTablaProductos();
+                    actualizarTablaExclusiones();
+                    actualizarPagoPaciente();
+
+                    cuentaPagarVm.actualizarTotales();
+                }
+            });
+
+            cargarProductosIniciales();
+        });
+
+        // Función para obtener el precio del seguro desde el servidor
+        async function obtenerPrecioPorSeguro(tipo, nombreProducto, seguroNombre) {
+            try {
+                let response = await fetch(`/Precios/ObtenerPrecioPorSeguro?tipo=${encodeURIComponent(tipo)}&nombre=${encodeURIComponent(nombreProducto)}&seguro=${encodeURIComponent(seguroNombre)}`);
+                let data = await response.json();
+
+                if (data.exitoso && data.precio) {
+                    return parseFloat(data.precio);
+                } else {
+                    alert(`No se encontró precio para ${nombreProducto} con el seguro ${seguroNombre}. No se puede excluir.`);
+                    return null; // No permite la exclusión
+                }
+            } catch (error) {
+                console.error("Error al obtener el precio del seguro:", error);
+                return null;
+            }
+        }
+    </script>
+
+    <script>
+        document.getElementById("btnMostrarFila").addEventListener("click", function () {
+            // Recorremos las filas de la tabla de la 1 a la 25
+            for (var i = 1; i <= 25; i++) {
+                var fila = document.getElementById("fila" + i);
+                // Si se encuentra la primera fila oculta, se muestra y se sale del bucle
+                if (fila && fila.style.display === "none") {
+                    fila.style.display = "table-row";
+                    break;
+                }
+            }
+
+            // Verificar si aún quedan filas ocultas
+            var quedanOcultas = false;
+            for (var i = 1; i <= 25; i++) {
+                var fila = document.getElementById("fila" + i);
+                if (fila && fila.style.display === "none") {
+                    quedanOcultas = true;
+                    break;
+                }
+            }
+            // Si ya no quedan filas ocultas, se oculta el botón
+            if (!quedanOcultas) {
+                this.style.display = "none";
+            }
+        });
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Función para recopilar los datos del estado de cuenta
+            const recopilarDatosEstadoCuenta = () => {
+                console.log("Generando Estado de Cuenta...");
+
+                // 1. Datos del Responsable
+                const responsable = {
+                    nombre: document.querySelector("input[name='ResponsableNombre']").value,
+                    nit: document.querySelector("input[name='ResponsableNit']").value,
+                    direccion: "@Model.ResponsableDireccion",
+                    correo: "@Model.ResponsableCorreo"
+                };
+
+                // 2. Datos de la Habitación
+                const habitacion = {
+                    numero: document.getElementById("NumeroHabitacion").value,
+                    categoria: document.getElementById("CategoriaHabitacion").value,
+                    tarifa: parseFloat(document.getElementById("TarifaHabitacion").value || 0),
+                    seguro: "@Model.SeguroNombre"
+                };
+
+                // 3. Productos (Tabla oculta)
+                const productos = [];
+                const tablaProductos = document.querySelector(".table.table-hover[style='display: none;'] tbody");
+                if (tablaProductos) {
+                    tablaProductos.querySelectorAll("tr").forEach(fila => {
+                        const celdas = fila.querySelectorAll("td");
+                        if (celdas.length >= 6) {
+                            productos.push({
+                                fecha: celdas[0].textContent.trim(),
+                                item: celdas[1].textContent.trim(),
+                                tipo: celdas[2].textContent.trim(),
+                                cantidad: parseInt(celdas[3].textContent),
+                                precioUnitario: parseFloat(celdas[4].textContent.replace("Q", "")),
+                                subtotal: parseFloat(celdas[5].textContent.replace("Q", ""))
+                            });
+                        }
+                    });
+                }
+
+                // 4. Exclusiones
+                const exclusiones = [];
+                const tablaExclusiones = document.querySelector("#exclusiones-body");
+                if (tablaExclusiones) {
+                    tablaExclusiones.querySelectorAll("tr").forEach(fila => {
+                        const celdas = fila.querySelectorAll("td");
+                        if (celdas.length >= 4) {
+                            exclusiones.push({
+                                item: celdas[0].textContent.trim(),
+                                cantidad: parseInt(celdas[1].textContent),
+                                precioUnitario: parseFloat(celdas[2].textContent.replace("Q", "")),
+                                subtotal: parseFloat(celdas[3].textContent.replace("Q", ""))
+                            });
+                        }
+                    });
+                }
+
+                // 5. Honorarios Médicos
+                const honorarios = [];
+                // NUEVA LÓGICA: Leer del ViewModel para inyectarlo al PDF
+                if (typeof cuentaPagarVm !== 'undefined' && cuentaPagarVm.honorariosLista) {
+                    cuentaPagarVm.honorariosLista().forEach(h => {
+                        honorarios.push({
+                            medico: h.NombreMedico, // Propiedad que viene del nuevo endpoint del backend
+                            monto: parseFloat(h.Monto) || 0
+                        });
+                    });
+                }
+                // 6. Pagos
+                const pagos = {
+                    totalCuenta: parseFloat(document.getElementById("totalDeLaCuenta").value || 0),
+                    totalAseguradora: parseFloat(document.getElementById("totalAseguradora").value || 0),
+                    totalNoElegibles: parseFloat(document.getElementById("totalNoElegibles").value || 0),
+                    deducibles: parseFloat(document.getElementById("totalDeducibles").value || 0),
+                    coaseguro: parseFloat(document.getElementById("valorCoaseguro").value || 0),
+                    copago: parseFloat(document.getElementById("valorCopago").value || 0),
+                    iva: parseFloat(document.getElementById("valorIVA").value || 0),
+                    pagoPaciente: parseFloat(document.getElementById("pagoPaciente").value || 0),
+                    pagoSeguro: parseFloat(document.getElementById("pagoSeguro").value || 0)
+                };
+
+                // 7. Datos del Paciente desde las etiquetas HTML
+                const paciente = {};
+                document.querySelectorAll(".datos-paciente span").forEach(span => {
+                    const key = span.getAttribute("data-paciente");
+                    paciente[key] = span.textContent.trim() || "No disponible";
+                });
+
+                // 8. Datos de la Hospitalización desde las etiquetas HTML
+                //const hospitalizacion = {};
+                const hospitalizacion = {
+                    fechaInicio: document.querySelector("[data-hospitalizacion='fechaInicio']")?.textContent.trim() || "",
+                    medicoResponsable: document.querySelector("[data-hospitalizacion='medicoResponsable']")?.textContent.trim() || "",
+                    nombreSeguro: document.querySelector("[data-hospitalizacion='nombreSeguro']")?.textContent.trim() || "",
+                    hospitalizacionId: parseInt(document.getElementById("AdmisionId")?.value || "0")   // ← usa AdmisionId
+                };
+                document.querySelectorAll(".datos-hospitalizacion span").forEach(span => {
+                    const key = span.getAttribute("data-hospitalizacion");
+                    hospitalizacion[key] = span.textContent.trim() || "No disponible";
+                });
+
+                @* console.log("Datos del paciente:", paciente); *@
+                    @* console.log("Datos de la hospitalización:", hospitalizacion); *@
+
+                                                            return {
+                    // Usar PascalCase para todas las propiedades
+                    Responsable: {
+                        Nombre: document.querySelector("input[name='ResponsableNombre']").value,
+                        Nit: document.querySelector("input[name='ResponsableNit']").value,
+                        Direccion: "@Model.ResponsableDireccion",
+                        Correo: "@Model.ResponsableCorreo"
+                    },
+                    Habitacion: {
+                        Numero: document.getElementById("NumeroHabitacion").value,
+                        Categoria: document.getElementById("CategoriaHabitacion").value,
+                        Tarifa: parseFloat(document.getElementById("TarifaHabitacion").value || 0),
+                        Seguro: "@Model.SeguroNombre"
+                    },
+                    Productos: productos.map(p => ({
+                        Fecha: p.fecha,
+                        Item: p.item,
+                        Tipo: p.tipo,
+                        Cantidad: p.cantidad,
+                        PrecioUnitario: p.precioUnitario,
+                        Subtotal: p.subtotal
+                    })),
+                    Exclusiones: exclusiones.map(e => ({
+                        Item: e.item,
+                        Cantidad: e.cantidad,
+                        PrecioUnitario: e.precioUnitario,
+                        Subtotal: e.subtotal
+                    })),
+                    Honorarios: honorarios.map(h => ({
+                        Medico: h.medico,
+                        Monto: h.monto
+                    })),
+                    Pagos: {
+                        TotalCuenta: pagos.totalCuenta,
+                        TotalAseguradora: pagos.totalAseguradora,
+                        TotalNoElegibles: pagos.totalNoElegibles,
+                        Deducibles: pagos.deducibles,
+                        Coaseguro: pagos.coaseguro,
+                        Copago: pagos.copago,
+                        IVA: pagos.iva,
+                        PagoPaciente: pagos.pagoPaciente,
+                        PagoSeguro: pagos.pagoSeguro
+                    },
+                    Paciente: {
+                        Nombre: paciente.nombre,
+                        Telefono: paciente.telefono,
+                        Celular: paciente.celular,
+                        Direccion: paciente.direccion,
+                        FechaNacimiento: paciente.fechaNacimiento,
+                        Edad: paciente.edad,
+                        Sexo: paciente.sexo,
+                        Nit: paciente.nit,
+                        Dpi: paciente.dpi,
+                    },
+                    Hospitalizacion: {
+                        FechaInicioHospitalizacion: hospitalizacion.fechaInicio,
+                        MedicoResponsable: hospitalizacion.medicoResponsable,
+                        NombreSeguro: hospitalizacion.nombreSeguro,
+                        HospitalizacionId: hospitalizacion.hospitalizacionId  
+
+                    }
+                };
+            };
+
+            // Función para enviar los datos al servidor
+            @* const enviarDatosAlServidor = async (jsonString) => {
+                try {
+                    const response = await fetch('/CrearPDF/ProcesarEstadoCuenta', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: jsonString
+                    });
+
+                    const blob = await response.blob(); // Obtener el PDF como Blob
+                    const url = window.URL.createObjectURL(blob);
+                    window.open(url, '_blank');
+
+                    
+                                                            } catch (error) {
+                    console.error("Error:", error);
+                }
+            }; *@
+            const enviarDatosAlServidor = async (jsonString, hospitalizacionId) => {
+            const url = hospitalizacionId 
+                ? `/CrearPDF/ProcesarEstadoCuenta?id=${hospitalizacionId}`
+                : '/CrearPDF/ProcesarEstadoCuenta';
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: jsonString
+                });
+                const blob = await response.blob();
+                const urlBlob = window.URL.createObjectURL(blob);
+                window.open(urlBlob, '_blank');
+            };
+
+            // Función para validar y actualizar los datos del paciente
+            function validarDatosPaciente(paciente) {
+                // Recorrer todas las propiedades del objeto paciente
+                for (let propiedad in paciente) {
+                    // Validar si el valor de la propiedad es uno de los valores predeterminados
+                    if (paciente[propiedad] === "No disponible" ||
+                        paciente[propiedad] === "No registrada" ||
+                        paciente[propiedad] === "No definido" ||
+                        paciente[propiedad] === "0" ||
+                        paciente[propiedad] === "") {
+
+                        // Mostrar un prompt al usuario para que ingrese el valor faltante
+                        let nuevoValor = prompt(`Por favor, ingrese el valor para: ${propiedad}`, paciente[propiedad]);
+
+                        // Si el usuario ingresa un valor (no está vacío), actualizar la propiedad
+                        if (nuevoValor && nuevoValor.trim() !== "") {
+                            paciente[propiedad] = nuevoValor.trim();
+                            @* alert(`Valor de ${propiedad} actualizado a: ${nuevoValor.trim()}`); *@
+                                                                    } else {
+                            // Si no se ingresa un valor, mantén el valor original
+                            alert(`El valor de ${propiedad} no ha sido actualizado.`);
+                        }
+                    }
+                }
+
+                // Retornar el objeto paciente actualizado
+                return paciente;
+            }
+
+            // Modificar el evento click del botón
+            document.getElementById("btnEstadoCuenta").addEventListener("click", async (e) => {
+                e.preventDefault();
+
+                // Recopilar los datos completos del estado de cuenta (esto ya es un objeto JavaScript)
+                const datos = recopilarDatosEstadoCuenta();
+
+                // Convertir los datos a JSON para la visualización si es necesario
+                const jsonString = JSON.stringify(datos, null, 4);
+
+                // Primero, parsear el JSON para convertirlo a un objeto de JavaScript
+                const datosObjeto = JSON.parse(jsonString);
+
+                // Pasar el objeto Paciente para validarlo y actualizarlo
+                const nuevoDatosPaciente = validarDatosPaciente(datosObjeto.Paciente);
+
+                // Reemplazar el subobjeto Paciente con el actualizado
+                datosObjeto.Paciente = nuevoDatosPaciente;
+
+                // Convertir el objeto completo actualizado nuevamente a JSON
+                const jsonStringActualizado = JSON.stringify(datosObjeto, null, 4);
+
+                @* console.log(jsonStringActualizado); *@
+
+                    // Enviar los datos al servidor con el objeto actualizado
+                    const hospitalizacionId = datos.Hospitalizacion?.HospitalizacionId || 0;
+                    await enviarDatosAlServidor(jsonString, hospitalizacionId);
+                    //await enviarDatosAlServidor(jsonStringActualizado);
+            });
+        });
+
+        @* console.log("📦 Paquetes incluidos en la tabla:"); *@
+            document.querySelectorAll("#productos-body tr").forEach(row => {
+                let botones = row.querySelector("button");
+                if (botones && botones.textContent.trim() === "No excluible") {
+                    let nombre = row.children[0].textContent.trim();
+                    let precio = parseFloat(row.children[2].textContent.replace("Q", "").trim()) || 0;
+                    console.log(`- ${nombre}: Q${precio}`);
+                }
+            });
+
+
+
+window.actualizarDescuento = function (origen) {
+    const totalCuenta = parseFloat($("#totalDeLaCuenta").val()) || 0;
+
+    if (origen === 'monto') {
+        const montoDesc = parseFloat($("#montoDescuento").val()) || 0;
+        const pct = totalCuenta > 0 ? (montoDesc / totalCuenta) * 100 : 0;
+        $("#porcentajeDescuento").val(pct > 0 ? pct.toFixed(2) : "");
+    } else {
+        const pct = parseFloat($("#porcentajeDescuento").val()) || 0;
+        const montoDesc = (totalCuenta * pct) / 100;
+        $("#montoDescuento").val(montoDesc > 0 ? montoDesc.toFixed(2) : "");
+    }
+
+    const montoDescFinal = parseFloat($("#montoDescuento").val()) || 0;
+    const totalConDesc = Math.max(totalCuenta - montoDescFinal, 0);
+    $("#totalConDescuento").val(totalConDesc.toFixed(2));
+
+    window.recalcularPagoPacienteConDescuento();
+};
+
+window.limpiarDescuento = function () {
+    $("#porcentajeDescuento").val("");
+    $("#montoDescuento").val("");
+    $("#totalConDescuento").val("");
+    window.recalcularPagoPacienteConDescuento();
+};
+
+window.recalcularPagoPacienteConDescuento = function () {
+    const totalCuenta = parseFloat($("#totalDeLaCuenta").val()) || 0;
+    const montoDesc = parseFloat($("#montoDescuento").val()) || 0;
+
+    const totalConDescuento = Math.max(totalCuenta - montoDesc, 0);
+
+    const pagoPaciente = totalConDescuento;
+
+    $("#pagoPaciente").val(pagoPaciente.toFixed(2));
+
+    if (typeof cuentaPagarVm !== "undefined") {
+        cuentaPagarVm.actualizarTotales();
+    }
+};
+
+
+
+    </script>
+
+}

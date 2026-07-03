@@ -1,0 +1,826 @@
+@using Database.Shared.Paginacion
+@model sistema.Models.CitaViewModel
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+
+@{
+    var origenFormulario = (ViewData["OrigenFormulario"] as string) ?? "admision";
+    var esCalendario = origenFormulario == "calendario";
+    var esAdmision = origenFormulario == "admision";
+
+    string clienteconf = Configuration["Cliente"]; 
+
+}
+@Html.HiddenFor(a => a.CitaId)
+@Html.HiddenFor(a => a.PacienteId)
+@Html.HiddenFor(a => a.EstadoCita)
+@Html.HiddenFor(a => a.FechaHora)
+
+@Html.HiddenFor(a => a.DepartamentoId)
+@Html.HiddenFor(a => a.MunicipioId)
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="mb-3 p-3 border rounded bg-light">
+            <h4 class="mb-0"><b>Fecha y hora: <span id="fechaHoraCombinadaText">@Model.FechaHora.ToString("dd/MM/yyyy hh:mm tt")</span></b></h4>
+        </div>
+
+        @* SECCIÓN 1: DATOS DEL PACIENTE *@
+        <div class="border mb-4 rounded" style="overflow: hidden;">
+            <div class="p-3" style="background-color: #fff9e6;">
+                <h4 class="fw-bold mb-0">1. Datos del Paciente <i class="fas fa-user-plus"></i></h4>
+            </div>
+            <div class="p-3">
+                <div class="row g-3">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label"><strong>Seleccione paciente:</strong></label>
+                        <select class="form-control select2bs4" style="width: 100%;"
+                                data-bind="options: pacientes, optionsText: 'NombreConDpi', value: pacienteSeleccionado, optionsCaption: 'Seleccionar paciente'">
+                        </select>
+                    </div>
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label"><strong>Nombre del paciente</strong></label>
+                        @Html.TextBoxFor(a => a.PacienteNombre, new { type = "text", @class = "form-control", @readonly = "readonly" })
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label"><strong>No. DPI / Pasaporte</strong></label>
+                        @Html.TextBoxFor(a => a.dpiPacienteSeleccionado, new { type = "text", @class = "form-control", @placeholder = "" })
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label"><strong>Fecha de nacimiento</strong></label>
+                        @Html.TextBoxFor(a => a.FechaNacimiento, "{0:yyyy-MM-dd}", new { @class = "form-control", @type = "date", id = "FechaNacimiento", @onchange = "getEdad();", @onkeyup = "getEdad();", value = Model.FechaNacimiento?.ToString("yyyy-MM-dd") })
+                        <p style="display:none">Edad: <span data-bind="text: edadAniosPaciente" id="ABC"></span></p>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label class="form-label"><strong>Edad</strong></label>
+                        @Html.TextBoxFor(a => a.PacienteEdad, new { type = "text", @class = "form-control", @placeholder = "Edad", @readonly = "true" })
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label class="form-label"><strong>Sexo</strong></label>
+                        <select class="form-control" asp-for="@Model.SexoId" style="width: 100%;">
+                            <option value="">Seleccione...</option>
+                            <option value="1">Masculino</option>
+                            <option value="2">Femenino</option>
+                            <option value="3">Otro</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label class="form-label"><strong>Teléfono</strong></label>
+                        @Html.TextBoxFor(a => a.Telefono, new { type = "text", @class = "form-control", @placeholder = "" })
+                    </div>
+                     <div class="col-md-3 mb-3">
+                        <label class="form-label"><strong>Correo</strong></label>
+                        @Html.TextBoxFor(a => a.Email, new { type = "text", @class = "form-control", @placeholder = "" })
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label"><strong>Dirección</strong></label>
+                        @Html.TextBoxFor(a => a.Direccion, new { @class = "form-control", @placeholder = "" })
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label"><strong>Departamento</strong></label>
+                        <select class="form-control select2bs4" style="width: 100%;" id="departamentoSeleccionado" data-bind="options: departamentosExistentes, optionsText: 'DepartamentoNombreMostrar', optionsValue: 'Id', optionsCaption: 'Seleccione...', value: departamentoSeleccionado"></select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label"><strong>Municipio</strong></label>
+                        <select class="form-control select2bs4" style="width: 100%;" id="municipioSeleccionado" data-bind="options: municipiosExistentes, optionsText: 'MunicipioNombreMostrar', optionsValue: 'Id', optionsCaption: 'Seleccione...', value: municipioSeleccionado"></select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label"><strong>Etnia</strong></label>
+                        <select id="etniaSelect" class="form-control select2bs4" style="width: 100%;" asp-for="EtniaPaciente">
+                            <option value="Maya">Maya</option>
+                            <option value="Garifuna">Garifuna</option>
+                            <option value="Xinca">Xinca</option>
+                            <option value="Mestizo / Ladino">Mestizo / Ladino</option>
+                            <option value="Ninguno">Ninguno</option>
+                            <option value="Ignorado">Ignorado</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label"><strong>Origen</strong></label>
+                        <select id="origenPaciente" class="form-control select2bs4" style="width: 100%;" asp-for="OrigenPaciente">
+                            <option value="Guatemalteco/a">Guatemalteco/a</option>
+                            <option value="Extranjero">Extranjero</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label"><strong>Religión</strong></label>
+                        <select id="religionPaciente" class="form-control select2bs4" style="width: 100%;" asp-for="ReligionPaciente">
+                            <option value="Católico(a)">Católico(a)</option>
+                            <option value="Evangélico(a)">Evangélico(a)</option>
+                            <option value="Judío(a)">Judío(a)</option>
+                            <option value="Mormón(a)">Mormón(a)</option>
+                            <option value="Musulmán(a)">Musulmán(a)</option>
+                            <option value="Testigo de Jehová">Testigo de Jehová</option>
+                            <option value="Ateo(a)">Ateo(a)</option>
+                            <option value="No Definido">No Definido</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* SECCIÓN 2: DATOS DE LA CITA *@
+        <div class="border mb-4 rounded" style="overflow: hidden;">
+            <div class="p-3" style="background-color: #fff9e6;">
+                <h4 class="fw-bold mb-0">2. Datos de la Cita <i class="fas fa-calendar-alt"></i></h4>
+            </div>
+            <div class="p-3">
+                <div class="row g-3">
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label"><strong>Fecha</strong></label>
+                        @Html.TextBoxFor(a => a.FechaHora, "{0:yyyy-MM-dd}", new { @class = "form-control", @type = "date", @id = "fecha" })
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label"><strong>Hora</strong></label>
+                        @Html.TextBoxFor(a => a.FechaHora, "{0:HH:mm}", new { @class = "form-control", @type = "time", @id = "hora" })
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label"><strong>Médico asignado</strong></label>
+                        <select class="form-control select2bs4" style="width: 100%;" asp-for="EmpleadoId" asp-items="@Model.DoctoresSelectListItem">
+                            <option disabled selected>--- Sin Asignar ---</option>
+                        </select>
+                        <div id="msgConflictoEmpleado" class="text-danger small" style="display:none; margin-top:4px;"></div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                         @if (esCalendario)
+                        {
+                            @* <select class="form-control" asp-for="@Model.NivelPrioridadCita" style="width: 100%;" hidden readonly>
+                                <option value="BAJO">BAJO</option>
+                                <option value="MEDIO">MEDIO</option>
+                                <option value="ALTO" selected>ALTO</option>
+                            </select>
+                            </select> *@
+                        }
+                        else
+                        {
+                            @*<label class="form-label"><strong>Nivel de Atencion <span class="text-danger">*</span></strong></label>
+                             <label class="form-label"><strong>Nivel de Atencion <span class="text-danger">*</span></strong></label>
+                            <select class="form-control" asp-for="@Model.NivelPrioridadCita" style="width: 100%;">
+                                <option value="BAJO">BAJO</option>
+                                <option value="MEDIO">MEDIO</option>
+                                <option value="ALTO">ALTO</option>
+                            </select>
+                            </select> *@
+                        }
+                    </div>
+                    <div class="col-md-6 mb-3" id="CategoriaHabitacionSection">
+                        <label class="form-label"><strong>Área asignada / Categoría Habitacion</strong></label>
+                        @if (esCalendario)
+                        {
+                            <select class="form-control select2bs4" style="width: 100%;" asp-for="CategoriaHabitacionId" disabled>
+                                <option value="13" selected>Sala de Operaciones</option>
+                            </select>
+                            <input type="hidden" name="CategoriaHabitacionId" value="13" />
+                        }
+                        else
+                        {
+                            var categoriasAdmision = Model.CategoriaHabitacionSelectListItem?.Where(x => x.Value != "13").ToList();
+                            <select class="form-control select2bs4" style="width: 100%;" asp-for="CategoriaHabitacionId" asp-items="@categoriasAdmision">
+                                <option selected>- Seleccione un área -</option>
+                            </select>
+                        }
+                    </div>
+                    <div class="col-md-6 mb-3" id="CategoriaHabitacionSection2">
+                        <label class="form-label"><strong>Habitaciones</strong></label>
+                        @if (esCalendario)
+                        {
+                            <select class="form-control select2bs4" style="width: 100%;" id="HabitacionId" name="HabitacionId">
+                                <option value="">Cargando habitaciones...</option>
+                            </select>
+                        }
+                        else
+                        {
+                            <select class="form-control select2bs4" style="width: 100%;" asp-for="HabitacionId" asp-items="@Model.HabitacionSelectListItem">
+                                <option selected>- Seleccione una habitación -</option>
+                            </select>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (esCalendario)
+        {
+            @* SECCIÓN 3: EQUIPO QUIRÚRGICO *@
+            <div class="border mb-4 rounded" style="overflow: hidden;">
+                <div class="p-3" style="background-color: #fff9e6;">
+                    <h4 class="fw-bold mb-0">3. Equipo Quirúrgico <i class="fas fa-users-cog"></i></h4>
+                </div>
+                <div class="p-3">
+                    <div class="row g-3">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><strong>CIRUJANO <small class="text-primary">(Médico asignado)</small></strong></label>
+                            <input type="text" class="form-control" readonly placeholder="Se asigna con el médico seleccionado arriba" id="cirujanoDiplay" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><strong>1ER. AYUDANTE <small class="text-primary">(Médico secundario)</small></strong></label>
+                            <select class="form-control select2bs4 select-equipo-qx" style="width:100%;" id="PrimerAyudante" name="PrimerAyudante" data-especialidad-nombre="" data-unidad-nombre="">
+                                <option value="">Seleccione...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><strong>ANESTESISTA</strong></label>
+                            <select class="form-control select2bs4 select-equipo-qx" style="width:100%;" id="Anestesista" name="Anestesista" data-especialidad-nombre="Anestesista" data-unidad-nombre="">
+                                <option value="">Seleccione...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><strong>2DO. AYUDANTE</strong></label>
+                            <select class="form-control select2bs4 select-equipo-qx" style="width:100%;" id="SegundoAyudante" name="SegundoAyudante" data-especialidad-nombre="" data-unidad-nombre="">
+                                <option value="">Seleccione...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><strong>INSTRUMENTISTA</strong></label>
+                            <select class="form-control select2bs4 select-equipo-qx" style="width:100%;" id="Instrumentista" name="Instrumentista" data-especialidad-nombre="" data-unidad-nombre="Instrumentista">
+                                <option value="">Seleccione...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><strong>CIRCULANTE</strong></label>
+                            <select class="form-control select2bs4 select-equipo-qx" style="width:100%;" id="Circulante" name="Circulante" data-especialidad-nombre="" data-unidad-nombre="Circulante">
+                                <option value="">Seleccione...</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* SECCIÓN 4: RESPONSABLE DE PAGO Y TIPO DE ATENCIÓN *@
+        <div class="border mb-4 rounded" style="overflow: hidden;">
+            <div class="p-3" style="background-color: #fff9e6;">
+                <h4 class="fw-bold mb-0">4. Responsable y Tipo de Atención <i class="fas fa-file-invoice-dollar"></i></h4>
+            </div>
+            <div class="p-3">
+                <div class="row g-3">
+                    <div class="col-md-12"><h6 class="fw-bold">Responsable de Pago</h6></div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label"><strong>NIT</strong></label>
+                        @Html.TextBoxFor(a => a.ResponsableNit, new { type = "text", @class = "form-control" })
+                    </div>
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label"><strong>Nombre</strong></label>
+                        @Html.TextBoxFor(a => a.ResponsableNombre, new { type = "text", @class = "form-control" })
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label"><strong>Direccion</strong></label>
+                        @Html.TextBoxFor(a => a.ResponsableDireccion, new { type = "text", @class = "form-control" })
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label"><strong>Correo</strong></label>
+                        @Html.TextBoxFor(a => a.ResponsableCorreo, new { type = "text", @class = "form-control" })
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label"><strong>Telefono</strong></label>
+                        @Html.TextBoxFor(a => a.ResponsableTelefono, new { type = "text", @class = "form-control" })
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label"><strong>Pasaporte</strong></label>
+                        @Html.TextBoxFor(a => a.ResponsablePasaporte, new { type = "text", @class = "form-control" })
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label"><strong>Nacionalidad</strong></label>
+                        @Html.TextBoxFor(a => a.ResponsableNacionalidad, new { type = "text", @class = "form-control" })
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label"><strong>Ocupacion</strong></label>
+                        @Html.TextBoxFor(a => a.ResponsableOcupacion, new { type = "text", @class = "form-control" })
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label"><strong>Tipo de atención</strong></label>
+                        <select class="form-control" asp-for="CitaTipoAtencion" data_bind="value: citaTipoAtencion" id="CitaTipoAtencion">
+                            <option value="PRIVADO">Privado</option>
+                            <option value="IGSS">Igss</option>
+                            <option value="SEGURO">Seguro</option>
+                        </select>
+                    </div>
+                    <!--ko if:citaTipoAtencion() == 'IGSS'-->
+                    <div class="col-md-9 mb-3">
+                        <label class="form-label"><strong>No. Afiliacion IGSS</strong></label>
+                        @Html.TextBoxFor(a => a.no_IGGS, new { type = "text", @class = "form-control", @placeholder = "" })
+                    </div>
+                    <!--/ko-->
+                    <!--ko if:citaTipoAtencion() == 'SEGURO'-->
+                    <div class="col-md-5 mb-3">
+                        <label class="form-label"><strong>Seleccione Seguro:</strong></label>
+                        <select class="form-control" style="width: 100%;" id="SeguroSeleccionado" data-bind="options: seguros, optionsText: 'Nombre', optionsValue: 'Nombre', value: seguroSeleccionado"></select>
+                        @Html.TextBoxFor(a => a.CodigoCita, new { @class = "form-control", @placeholder = "Nombre del seguro" })
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label"><strong>Autorizacion</strong></label>
+                        @Html.TextBoxFor(a => a.CodigoAutorizacion, new { @class = "form-control", @placeholder = "Autorizacion" })
+                    </div>
+                    <!--/ko-->
+                </div>
+            </div>
+        </div>
+
+        @* SECCIÓN 5: ACOMPAÑANTE Y FAMILIARES *@
+        <div class="border mb-4 rounded" style="overflow: hidden;">
+            <div class="d-flex justify-content-between align-items-center p-3" style="background-color: #fff9e6;">
+                <h4 class="fw-bold mb-0">5. Acompañante y Familiares <i class="fas fa-users"></i></h4>
+                <div>
+                    <label class="form-label me-2 mb-0"><strong>¿Acompañante?</strong></label>
+                    <select class="form-select form-select-sm" id="acompananteSelector" style="width: auto; display: inline-block;">
+                        <option value="NO" selected>No</option>
+                        <option value="SI">Sí</option>
+                    </select>
+                </div>
+            </div>
+            <div class="p-3">
+                <div id="acompananteSection" style="display: none;">
+                    <div class="row g-3">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><strong>Nombre del Acompañante</strong></label>
+                            @Html.TextBoxFor(a => a.AcompananteNombre, new { type = "text", @class = "form-control", @placeholder = "Nombre del Acompañante" })
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><strong>Relación del Acompañante</strong></label>
+                            <select id="acompananteRelacion" class="form-control select2bs4" style="width: 100%;" asp-for="AcompananteRelacion">
+                                <option value="Padre">Padre</option>
+                                <option value="Madre">Madre</option>
+                                <option value="Hermano(a)">Hermano(a)</option>
+                                <option value="Primo(a)">Primo(a)</option>
+                                <option value="Tio(a)">Tio(a)</option>
+                                <option value="Amigo(a)">Amigo(a)</option>
+                                <option value="Conocido(a)">Conocido(a)</option>
+                               @if (clienteconf == "SS") 
+                                {
+                                    <option value="Esposo(a)">Esposo(a)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><strong>Fecha de Nacimiento</strong></label>
+                            @Html.TextBoxFor(a => a.AcompananteFechaNacimiento, "{0:yyyy-MM-dd}", new { @class = "form-control", @type = "date", @onchange = "calcularEdad('AcompananteFechaNacimiento', 'AcompananteEdad')", @onkeyup = "calcularEdad('AcompananteFechaNacimiento', 'AcompananteEdad')" })
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><strong>Edad</strong></label>
+                            @Html.TextBoxFor(a => a.AcompananteEdad, new { type = "text", @class = "form-control", @placeholder = "Edad", @readonly = "readonly", id = "AcompananteEdad" })
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><strong>DPI del Acompañante</strong></label>
+                            @Html.TextBoxFor(a => a.AcompananteDPI, new { type = "text", @class = "form-control", @placeholder = "DPI del Acompañante" })
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><strong>Dirección del Acompañante</strong></label>
+                            @Html.TextBoxFor(a => a.AcompananteDireccion, new { type = "text", @class = "form-control", @placeholder = "Dirección del Acompañante" })
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><strong>Teléfono del Acompañante</strong></label>
+                            @Html.TextBoxFor(a => a.AcompananteTelefono, new { type = "text", @class = "form-control", @placeholder = "Teléfono del Acompañante" })
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><strong>Correo del Acompañante</strong></label>
+                            @Html.TextBoxFor(a => a.AcompananteCorreo, new { type = "email", @class = "form-control", @placeholder = "Correo del Acompañante" })
+                        </div>
+                    </div>
+                </div>
+
+                <div id="datosPadre" style="display:none;">
+                    <hr /><h6 class="fw-bold mt-3">Datos del Padre / Tutor</h6>
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><strong>Nombre del Padre</strong></label>
+                            @Html.TextBoxFor(a => a.NombrePadre, new { type = "text", @class = "form-control" })
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><strong>DPI</strong></label>
+                            @Html.TextBoxFor(a => a.DPIPadre, new { type = "text", @class = "form-control" })
+                        </div>
+                    </div>
+                </div>
+                <div id="datosMadre" style="display:none;">
+                    <hr /> <h6 class="fw-bold mt-3">Datos de la Madre / Tutora</h6>
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><strong>Nombre de la Madre</strong></label>
+                            @Html.TextBoxFor(a => a.NombreMadre, new { type = "text", @class = "form-control" })
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><strong>DPI</strong></label>
+                            @Html.TextBoxFor(a => a.DPIMadre, new { type = "text", @class = "form-control" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* SECCIÓN 6: DATOS DE CONSULTA *@
+        <div class="border mb-4 rounded" style="overflow: hidden;">
+            <div class="p-3" style="background-color: #fff9e6;">
+               @if (clienteconf != "SS") 
+                {
+                    <h4 class="fw-bold mb-0">6. Detalles de la Consulta <i class="fas fa-notes-medical"></i></h4>
+                }
+                else 
+                {
+                    <h4 class="fw-bold mb-0">6. Detalle de Procedimiento <i class="fas fa-notes-medical"></i></h4>
+                }
+
+            </div>
+            <div class="p-3">
+                <div class="row g-3">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label"><strong>Especialidad</strong></label>
+                        <select class="form-control select2bs4" style="width: 100%;" asp-for="EspecialidadId" asp-items="@Model.EspecialidadSelectListItem">
+                            <option disabled selected>--- SELECCIONE ---</option>
+                        </select>
+                    </div>
+                    @* @if (esAdmision)
+                    {
+                        <div class="col-md-2 d-flex align-items-end mb-3">
+                            <button class="btn btn-primary w-100" data-bind="click:generarTurno">Generar Turno***</button>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label"><strong>No. Turno</strong></label>
+                            @Html.TextBoxFor(a => a.NumeroTurno, new { type = "text", @class = "form-control", @readonly = true })
+                        </div>
+                    } *@
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label"><strong>Motivo</strong></label>
+                        @Html.TextAreaFor(a => a.Motivo, 5, 500, htmlAttributes: new { @class = "form-control ", @placeholder = "Descripcion", @style = "max-width:100% !important;" })
+                    </div>
+                    @if (esCalendario)
+                    {
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label"><strong>Procedimiento</strong></label>
+                            @Html.TextAreaFor(a => a.Procedimiento, 3, 500, htmlAttributes: new { @class = "form-control", @placeholder = "Descripción del procedimiento a realizar", @style = "max-width:100% !important;" })
+                        </div>
+                    }
+                    @if (esCalendario || esAdmision)
+                    {
+                        @* SECCIÓN SERVICIOS *@
+                        <div class="" style="overflow: hidden;">
+                            <div class="p-3">
+                                <div class="row g-3">
+                                    <div class="col-md-12">
+                                       <b>Agregar @(clienteconf != "SS" ? "servicio" : "procedimiento"):</b>
+                                    </div>
+                                    <div class="col-md-7">
+                                       <label class="form-label">@(clienteconf != "SS" ? "Servicio" : "Procedimiento")</label>
+                                        <select class="form-control select2bs4" data-bind="options: serviciosExistentes,
+                                                           optionsText: 'ServicioNombreMostrar',
+                                                           value: servicioAgregarSeleccionado">
+                                        </select>
+                                    </div>
+                                    @if(clienteconf != "SS"){ 
+                                    <div class="col-md-4">
+                                        <label class="form-label">Precio</label>
+                                        <select data-bind="options: preciosServicioSeleccionado,
+                                                           value: precioServicioAgregarSeleccionado,
+                                                           optionsText: 'PrecioNombreMostrar'"
+                                                class="form-control">
+                                        </select>
+                                    </div>
+                                    }
+                                    else{
+                                        <div class="col-md-4" hidden>
+                                        <label class="form-label">Precio</label>
+                                        <select data-bind="options: preciosServicioSeleccionado,
+                                                           value: precioServicioAgregarSeleccionado,
+                                                           optionsText: 'PrecioNombreMostrar'"
+                                                class="form-control">
+                                        </select>
+                                    </div>
+                                    }
+                                    <div class="col-md-1">
+                                        <label class="form-label">&nbsp;</label>
+                                        <button class="btn btn-primary form-control" data-bind="click: agregarServicio">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <hr />
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Nombre del servicio</th>
+                                                <th>Tipo de precio</th>
+                                                <th>Valor</th>
+                                                <!--ko if: $root.citaTipoAtencion() == 'SEGURO'-->
+                                                <th>Valor Cubierto seguro</th>
+                                                <th>Valor Copago</th>
+                                                <!--/ko-->
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody data-bind="foreach: serviciosAgregados">
+                                            <tr>
+                                                <td data-bind="text: ServicioNombre"></td>
+                                                <td data-bind="text: PrecioNombre"></td>
+                                                <td>
+                                                    <!--ko if: $root.citaTipoAtencion() == 'SEGURO'-->
+                                                    <input class="form-control"
+                                                           data-bind="value: PrecioValor, event:{change:$root.actualizarTotales}" />
+                                                    <!--/ko-->
+                                                    <!--ko ifnot: $root.citaTipoAtencion() == 'SEGURO'-->
+                                                    <span data-bind="text: PrecioValor"></span>
+                                                    <!--/ko-->
+                                                </td>
+                                                <!--ko if: $root.citaTipoAtencion() == 'SEGURO'-->
+                                                <td>
+                                                    <input class="form-control"
+                                                           data-bind="value: PrecioValorCubiertoSeguro, event:{change:$root.actualizarTotales}" />
+                                                </td>
+                                                <td data-bind="text: PrecioValorCopago"></td>
+                                                <!--/ko-->
+                                                <td>
+                                                    <button class="btn btn-danger" data-bind="click: $root.quitarServicio">
+                                                        <i class="fa fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                        <tfoot data-bind="if: serviciosAgregados().length == 0">
+                                            <tr>
+                                                <td colspan="3"><i>No hay servicios agregados</i></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div title="Confirmar" style="display:none" id="mdl-confirmacion">
+    <span data-bind="html:txtModalConfirmacion"></span>
+</div>
+<div title="Respuesta" style="display:none" id="mdl-respuesta">
+    <span data-bind="html:txtModalRespuesta"></span>
+</div>
+
+<script>
+    $(document).ready(function () {
+
+        @if (esCalendario)
+        {
+            <text>
+            cargarHabitacionesPorCategoria(13);
+            </text>
+        }
+
+        @* function cargarHabitacionesPorCategoria(categoriaId, callback) {
+            if (!categoriaId) {
+                $('#HabitacionId').empty().append('<option selected>- Seleccione una habitación -</option>');
+                return;
+            }
+            $.ajax({
+                url: '/Cita/GetHabitacionesByCategoria',
+                type: 'GET',
+                data: { categoriaId: categoriaId },
+                success: function (data) {
+                    $('#HabitacionId').empty();
+                    if (data.length > 0) {
+                        $('#HabitacionId').append('<option disabled>- Seleccione una habitación -</option>');
+                        $.each(data, function (index, habitacion) {
+                            var $opt = $('<option>').val(habitacion.id).text(habitacion.nombreNumeroHabitacion);
+                            $('#HabitacionId').append($opt);
+                        });
+                        var primeraValida = $('#HabitacionId option:not([disabled])').first();
+                        if (primeraValida.length) {
+                            $('#HabitacionId').val(primeraValida.val()).trigger('change');
+                        }
+                        if (typeof callback === 'function') callback();
+                    } else {
+                        $('#HabitacionId').append('<option selected>- Sin habitaciones disponibles -</option>');
+                    }
+                },
+                error: function () { alert('Error al cargar las habitaciones.'); }
+            });
+        } *@
+
+function cargarHabitacionesPorCategoria(categoriaId, callback) {
+    if (!categoriaId) {
+        $('#HabitacionId').empty().append('<option selected>- Seleccione una habitación -</option>');
+        return;
+    }
+
+    // Obtener valores de fecha y hora de los inputs
+    var fechaInput = document.getElementById('fecha');
+    var horaInput = document.getElementById('hora');
+    
+    if (!fechaInput || !horaInput) {
+        console.error('No se encontraron los campos de fecha u hora');
+        return;
+    }
+
+    var fecha = fechaInput.value; // formato yyyy-MM-dd
+    var hora = horaInput.value;   // formato HH:mm
+
+    if (!fecha || !hora) {
+        console.warn('Fecha u hora vacías, se usará la fecha/hora actual como fallback');
+        // Usar la fecha actual como fallback
+        var ahora = new Date();
+        fecha = ahora.toISOString().split('T')[0];
+        hora = ahora.toTimeString().split(' ')[0].substring(0,5);
+    }
+
+    // Construir fecha de inicio válida (usando formato ISO)
+    var fechaInicioStr = fecha + 'T' + hora + ':00';
+    var fechaInicio = new Date(fechaInicioStr);
+    
+    // Validar que la fecha sea válida
+    if (isNaN(fechaInicio.getTime())) {
+        console.error('Fecha/hora inválida:', fechaInicioStr);
+        $('#HabitacionId').empty().append('<option selected>- Error en fecha/hora -</option>');
+        return;
+    }
+
+    // Calcular duración total (asegurarse de que los observables existan)
+    var horas = (typeof citaHospiVm !== 'undefined' && citaHospiVm.totalDuracionHoras) 
+                ? (citaHospiVm.totalDuracionHoras() || 0) : 0;
+    var minutos = (typeof citaHospiVm !== 'undefined' && citaHospiVm.totalDuracionMinutos) 
+                  ? (citaHospiVm.totalDuracionMinutos() || 0) : 0;
+    var duracionMinutos = (horas * 60) + minutos;
+    
+    // Si no hay duración (p.ej. sin servicios), usar un mínimo de 60 minutos
+    if (duracionMinutos <= 0) duracionMinutos = 60;
+
+    // Calcular fecha fin
+    var fechaFin = new Date(fechaInicio.getTime() + duracionMinutos * 60000);
+
+    // Formatear para enviar al servidor (ISO)
+    var fechaInicioISO = fechaInicio.toISOString();
+    var fechaFinISO = fechaFin.toISOString();
+
+    $.ajax({
+        url: '/Cita/GetHabitacionesByCategoria',
+        type: 'GET',
+        data: {
+            categoriaId: categoriaId,
+            fechaInicio: fechaInicioISO,
+            fechaFin: fechaFinISO,
+            citaId: $('#CitaId').val() || null
+        },
+        success: function (data) {
+            var select = $('#HabitacionId');
+            select.empty();
+            if (data && data.length > 0) {
+                select.append('<option disabled>- Seleccione una habitación -</option>');
+                $.each(data, function (i, hab) {
+                    select.append($('<option>').val(hab.id).text(hab.nombreNumeroHabitacion));
+                });
+                // Seleccionar la primera opción válida
+                var primera = select.find('option:not([disabled])').first();
+                if (primera.length) {
+                    select.val(primera.val());
+                }
+                if (typeof callback === 'function') callback();
+            } else {
+                select.append('<option selected>- Sin habitaciones disponibles -</option>');
+            }
+        },
+        error: function (xhr, status, error) {
+            console.error('Error al cargar habitaciones:', error);
+            $('#HabitacionId').empty().append('<option selected>- Error al cargar -</option>');
+        }
+    });
+}
+
+        $('#CategoriaHabitacionId').change(function () {
+            cargarHabitacionesPorCategoria($(this).val());
+        });
+
+        const acompananteSelector = document.getElementById("acompananteSelector");
+        const acompananteSection = document.getElementById("acompananteSection");
+
+        function toggleAcompananteSection() {
+            if (acompananteSelector.value === "SI") {
+                acompananteSection.style.display = "block";
+            } else {
+                acompananteSection.style.display = "none";
+            }
+        }
+
+        toggleAcompananteSection();
+        acompananteSelector.addEventListener("change", toggleAcompananteSection);
+    });
+
+    function calcularEdad(fechaInputId, edadInputId) {
+        const fechaInput = document.getElementById(fechaInputId).value;
+        const edadInput = document.getElementById(edadInputId);
+        if (!fechaInput) {
+            edadInput.value = "";
+            return;
+        }
+        const hoy = new Date();
+        const fechaNacimiento = new Date(fechaInput);
+        let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
+        const mes = hoy.getMonth() - fechaNacimiento.getMonth();
+        if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNacimiento.getDate())) {
+            edad--;
+        }
+        edadInput.value = edad >= 0 ? edad : "";
+    }
+
+    function verificarEdad(edad) {
+        if (isNaN(edad) || edad === null || edad === undefined) {
+            return;
+        }
+        document.getElementById('datosPadre').style.display = edad < 18 ? 'block' : 'none';
+        document.getElementById('datosMadre').style.display = edad < 18 ? 'block' : 'none';
+    }
+
+    let lastValue = '';
+    setInterval(() => {
+        const currentValue = document.getElementById('ABC').textContent;
+        if (currentValue !== lastValue) {
+            lastValue = currentValue;
+            verificarEdad(currentValue);
+        }
+    }, 500);
+
+    function formatearFechaHora(fecha, hora) {
+        var fechaHora = new Date(fecha + 'T' + hora);
+        var dia = fechaHora.getDate().toString().padStart(2, '0');
+        var mes = (fechaHora.getMonth() + 1).toString().padStart(2, '0');
+        var anio = fechaHora.getFullYear();
+        var hora12 = fechaHora.getHours() % 12 || 12;
+        var minutos = fechaHora.getMinutes().toString().padStart(2, '0');
+        var ampm = fechaHora.getHours() >= 12 ? 'p. m.' : 'a. m.';
+        return dia + '/' + mes + '/' + anio + ' ' + hora12 + ':' + minutos + ' ' + ampm;
+    }
+
+    function actualizarFechaHora() {
+        var fecha = document.getElementById('fecha').value;
+        var hora = document.getElementById('hora').value;
+        if (fecha && hora) {
+            var fechaHoraCombinada = formatearFechaHora(fecha, hora);
+            document.getElementById('fechaHoraCombinadaText').textContent = fechaHoraCombinada;
+            $("#FechaHora").val(fecha + 'T' + hora);
+        }
+    }
+
+    document.getElementById('fecha').addEventListener('input', actualizarFechaHora);
+    document.getElementById('hora').addEventListener('input', actualizarFechaHora);
+
+</script>
+
+@* El bloque del equipo quirúrgico se separa del script anterior para evitar *@
+@* problemas de parsing con el bloque @if dentro de <script> *@
+@if (esCalendario)
+{
+    <script>
+        $(document).ready(function () {
+
+            // Sincronizar campo cirujano con el médico asignado
+            function sincronizarCirujano() {
+                var texto = $("#EmpleadoId option:selected").text().trim();
+                var val = $("#EmpleadoId").val();
+                $("#cirujanoDiplay").val((val && val !== "" && texto !== "--- Sin Asignar ---") ? texto : "");
+            }
+            sincronizarCirujano();
+            $("#EmpleadoId").on("change", sincronizarCirujano);
+
+            // Cargar empleados del equipo quirúrgico por tipo
+            $(".select-equipo-qx").each(function () {
+                var $select = $(this);
+
+                var especialidadNombre = ($select.data("especialidad-nombre") || "").toString().trim();
+                var unidadNombre = ($select.data("unidad-nombre") || "").toString().trim();
+
+                var params = {};
+                if (especialidadNombre !== "") params.especialidadNombre = especialidadNombre;
+                if (unidadNombre !== "") params.unidadNombre = unidadNombre;
+
+                $.ajax({
+                    url: "/Cita/GetEmpleadosPorTipo",
+                    type: "GET",
+                    data: params,
+                    success: function (data) {
+                        if ($select.hasClass("select2bs4") && $select.data("select2")) {
+                            $select.select2("destroy");
+                        }
+
+                        $select.empty().append($('<option>').val("").text("Seleccione..."));
+
+                        $.each(data, function (i, emp) {
+                            // CORRECCIÓN: usar $('<option>').val() en lugar de concatenación
+                            // de strings para que el value sea el ID real del empleado
+                            var $opt = $('<option>').val(emp.id).text(emp.nombre);
+                            $select.append($opt);
+                        });
+
+                        if ($select.hasClass("select2bs4")) {
+                            $select.select2({ theme: "bootstrap4", width: "100%" });
+                        }
+                    },
+                    error: function () {
+                        console.error("Error al cargar empleados para #" + $select.attr("id"));
+                    }
+                });
+            });
+
+        });
+    </script>
+}

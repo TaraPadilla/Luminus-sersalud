@@ -1,0 +1,294 @@
+@model IEnumerable<Database.Shared.Models.DepartamentoOrg>
+
+<div class="container-fluid mt-4 px-lg-4 pb-5">
+
+    <div class="card shadow-sm border-0 rounded-lg">
+
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3 px-4">
+            <div class="d-flex align-items-center">
+                <div class="bg-white text-dark rounded-circle d-flex justify-content-center align-items-center mr-3 shadow-sm"
+                     style="width: 40px; height: 40px;">
+                    <i class="fas fa-sitemap fa-lg"></i>
+                </div>
+                <div>
+                    <h5 class="font-weight-bold mb-0">Estructura Organizacional</h5>
+                    <small class="text-light opacity-75">Gestión de departamentos, unidades y secciones</small>
+                </div>
+            </div>
+            <button type="button" onclick="abrirModal(0)"
+                    class="btn btn-primary btn-sm rounded-pill px-4 shadow-sm font-weight-bold">
+                <i class="fas fa-plus mr-1"></i> Nuevo Departamento
+            </button>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive p-3">
+                <table class="table table-hover table-borderless table-org w-100 mb-0" id="tablaOrganizacion">
+                    <thead>
+                        <tr class="border-bottom">
+                            <th>DepartamentoId</th>
+                            <th style="width: 30%">Unidad</th>
+                            <th style="width: 55%">Secciones</th>
+                            <th style="width: 15%" class="text-right pr-4">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var depto in Model)
+                        {
+                            var unidadesActivas = depto.Unidades.Where(u => !u.Eliminada).ToList();
+
+                            if (!unidadesActivas.Any())
+                            {
+                                <tr>
+                                    <td>@depto.Nombre|@depto.Id</td>
+                                    <td class="text-muted font-italic small align-middle pl-4"><i
+                                        class="fas fa-minus mr-2 text-lighter"></i>Sin unidades</td>
+                                        <td class="align-middle">-</td>
+                                        <td class="text-right align-middle pr-4">
+                                            <button type="button" onclick="abrirModal(@depto.Id)"
+                                                    class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                                                Editar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            else
+                                {
+                                    foreach (var unidad in unidadesActivas)
+                                    {
+                                        var seccionesActivas = unidad.Secciones.Where(s => !s.Eliminada).ToList();
+                                        <tr>
+                                            <td>@depto.Nombre|@depto.Id</td>
+
+                                            <td class="align-middle font-weight-500 pl-4 text-dark">
+                                                <i class="fas fa-caret-right mr-2 text-primary opacity-50"></i>@unidad.Nombre
+                                            </td>
+
+                                            <td class="align-middle py-2">
+                                                @if (seccionesActivas.Any())
+                                                {
+                                                    <div class="d-flex flex-wrap">
+                                                        @foreach (var seccion in seccionesActivas)
+                                                        {
+                                                            <span class="badge badge-minimal mt-1 mr-2 shadow-sm">
+                                                                @seccion.Nombre
+                                                            </span>
+                                                        }
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted small font-italic opacity-50">Sin secciones</span>
+                                                }
+                                            </td>
+                                            <td class="text-right align-middle pr-4">
+                                                <button type="button" onclick="abrirModal(@depto.Id)"
+                                                        class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                                                    Editar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalOrganizacion" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div class="modal-content border-0 shadow-lg" id="modalOrganizacionContent">
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Estilos Formales y Fluidos */
+        .table-org {
+            background-color: transparent;
+        }
+
+        .table-org thead th {
+            color: #495057;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.08rem;
+            padding-bottom: 1rem;
+            padding-top: 0.5rem;
+        }
+
+        .table-org td {
+            padding: 0.6rem 0.75rem;
+            color: #495057;
+            border-bottom: 1px solid #f8f9fa;
+        }
+
+        /* Estilo del Badge Minimalista pero con presencia */
+        .badge-minimal {
+            background-color: #fcfcfc;
+            color: #5c636a;
+            border: 1px solid #e2e5e8;
+            font-weight: 500;
+            border-radius: 4px;
+            padding: 0.35em 0.7em;
+            font-size: 0.7rem;
+        }
+
+        .opacity-75 {
+            opacity: 0.75;
+        }
+
+        .opacity-50 {
+            opacity: 0.50;
+        }
+
+        .font-weight-500 {
+            font-weight: 500;
+        }
+
+        .text-lighter {
+            color: #dee2e6;
+        }
+
+        /* Estilos para la fila de Agrupación que generará DataTables */
+        tr.dtrg-group td {
+            background-color: #f8f9fc !important;
+            color: #2c3e50;
+            font-weight: 600;
+            font-size: 1rem;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e3e6f0;
+            border-bottom: 2px solid #e3e6f0;
+        }
+    </style>
+
+    @section Scripts {
+        <link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap4.min.css">
+        <link rel="stylesheet" href="https://cdn.datatables.net/rowgroup/1.1.3/css/rowGroup.bootstrap4.min.css">
+
+        <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/1.10.25/js/dataTables.bootstrap4.min.js"></script>
+        <script src="https://cdn.datatables.net/rowgroup/1.1.3/js/dataTables.rowGroup.min.js"></script>
+
+        <script>
+            $(document).ready(function () {
+            // Inicialización de DataTable
+            $('#tablaOrganizacion').DataTable({
+            "language": {
+            "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
+            },
+            "pageLength": 25,
+            "order": [[0, 'asc']],
+
+            // Configuración de RowGroup
+            "rowGroup": {
+            dataSrc: 0,
+            startRender: function (rows, group) {
+            var parts = group.split('|');
+            var nombreDepto = parts[0];
+            var count = rows.count();
+
+            return $('<tr/>')
+            .append('<td colspan="4" class="text-uppercase">' +
+            '<i class="fas fa-building mr-2 text-primary opacity-75"></i>' +
+            nombreDepto +
+            '<span class="badge badge-light border text-muted ml-3 font-weight-normal px-2">' + count + ' registros</span>' +
+            '</td>');
+            }
+            },
+            "columnDefs": [
+            { "targets": [0], "visible": false },
+            { "targets": [3], "orderable": false }
+            ],
+            "dom": "<'row mb-3'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row mt-3'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>"
+            });
+            });
+
+            // ==========================================
+            // Funciones para Manejo del Modal (AJAX)
+            // ==========================================
+
+            // Abrir Modal
+            // Abrir Modal
+            function abrirModal(id) {
+            // 👇 ESTA ES LA LÍNEA MÁGICA QUE SOLUCIONA EL PROBLEMA DEL FONDO 👇
+            $('#modalOrganizacion').appendTo("body");
+
+            // Mostrar loader mientras carga
+            $('#modalOrganizacionContent').html('<div class="p-5 text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted">Cargando...</p></div>');
+            $('#modalOrganizacion').modal('show');
+
+            // Construir URL correctamente (asegúrate de que las rutas coincidan con tu configuración)
+            var url = '@Url.Action("Editor", "Organizacion")';
+            if (id > 0) {
+            url += '/' + id;
+            }
+
+            // Petición GET
+            $.get(url, function (data) {
+            $('#modalOrganizacionContent').html(data);
+            }).fail(function () {
+            $('#modalOrganizacionContent').html('<div class="p-4 text-center text-danger"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><br/>Error al cargar el formulario.</div>');
+            });
+            }
+
+            // Guardar desde el Modal
+            function submitForm(form) {
+            // Cambiar botón a estado "Guardando..."
+            var btnSubmit = $(form).find('button[type="submit"]');
+            var txtOriginal = btnSubmit.html();
+            btnSubmit.html('<i class="fas fa-circle-notch fa-spin mr-1"></i> Guardando...').prop('disabled', true);
+
+            // ---> INICIO DE LÓGICA DE RE-INDEXACIÓN ESTRICTA PARA ASP.NET CORE <---
+            $(form).find('.unidad-item').each(function (uIndex) {
+
+            // 1. Re-indexamos las Unidades para que sean (0, 1, 2...)
+            $(this).find('input').each(function () {
+            var name = $(this).attr('name');
+            if (name) {
+            $(this).attr('name', name.replace(/Unidades\[\d+\]/, 'Unidades[' + uIndex + ']'));
+            }
+            });
+
+            // 2. Re-indexamos las Secciones dentro de ESTA unidad para que sean (0, 1, 2...)
+            $(this).find('.seccion-item').each(function (sIndex) {
+            $(this).find('input').each(function () {
+            var name = $(this).attr('name');
+            if (name) {
+            $(this).attr('name', name.replace(/Secciones\[\d+\]/, 'Secciones[' + sIndex + ']'));
+            }
+            });
+            });
+            });
+            // ---> FIN DE LÓGICA DE RE-INDEXACIÓN <---
+
+            $.ajax({
+            type: "POST",
+            url: form.action,
+            data: $(form).serialize(),
+            success: function (response) {
+            if (response.success) {
+            $('#modalOrganizacion').modal('hide');
+            // Recargamos la página para ver los cambios reflejados en la tabla
+            location.reload();
+            } else {
+            // Si no es un JSON de éxito, significa que devolvió el PartialView con errores de validación
+            $('#modalOrganizacionContent').html(response);
+            }
+            },
+            error: function () {
+            alert("Ocurrió un error de conexión al intentar guardar la información.");
+            btnSubmit.html(txtOriginal).prop('disabled', false);
+            }
+            });
+
+            return false; // Prevenir el envío tradicional del formulario
+            }
+        </script>
+    }

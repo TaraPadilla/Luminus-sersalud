@@ -1,0 +1,1266 @@
+@using Database.Shared.Paginacion;
+@model sistema.Models.CalendarioLinealViewModel
+
+@{
+    ViewData["Title"] = "Calendario";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+    <div class="main-card mb-3 card">
+        <div class="card-body form-row ">
+        <form asp-controller="" asp-action="" method="post">
+            <div class="text-center col-md-12">
+                <h4 ><b>Estado de resultados</b></h4>
+                <hr />
+
+            </div>
+
+            <div class="col-md-12 form-row offset-md-3 mt-4 mb-3">
+                <div class="col-md-4">
+                    <label>Fecha Inicial:</label>
+                    <input type="date" class="form-control" id="fechacita" name="fecha" >
+                </div>
+
+                <div class="col-md-4">
+                    <label>Fecha Final:</label>
+                    <input type="date" class="form-control" id="fechacita" name="fecha">
+                </div>
+
+                
+                <div class="col-md-4">
+                        <label>Año</label>
+                        <select class="form-control">
+                            <option>Todos</option>
+                        </select>
+                </div>
+            </div>
+            <div class="col-md-12">
+
+                <a href="#" class="btn btn-danger enlace-redirigir no-acceso">
+                    <i class="fas fa-list"></i>  &nbsp; Mes actual
+                </a>
+                <a href="#" class="btn btn-danger enlace-redirigir no-acceso">
+                    <i class="fas fa-list"></i>  &nbsp; Rango de fechas
+                </a>
+
+                <a href="#" class="btn btn-danger enlace-redirigir no-acceso">
+                    <i class="fas fa-list"></i>  &nbsp; Anual
+                </a>
+                <a href="#" class="btn btn-danger enlace-redirigir no-acceso">
+                    <i class="fas fa-list"></i>  &nbsp; Facturado
+                </a>
+                <a href="#" class="btn btn-danger enlace-redirigir no-acceso">
+                    <i class="fas fa-list"></i>  &nbsp; No facturado
+                </a>
+
+                <a href="#" class="btn btn-danger enlace-redirigir no-acceso">
+                    <i class="fas fa-list"></i>  &nbsp; General
+                </a>
+            </div>
+           
+
+          </form>
+        </div>
+    </div>
+
+<br>
+
+<ul class="body-tabs body-tabs-layout tabs-animated body-tabs-animated nav">
+    <li class="nav-item">
+        <a role="tab" class="nav-link active" id="tab-0" data-toggle="tab" href="#tab-content-0">
+            <span>Estado de resultados</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a role="tab" class="nav-link" id="tab-2" data-toggle="tab" href="#tab-content-1">
+            <span>Balance general</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a role="tab" class="nav-link" id="tab-3" data-toggle="tab" href="#tab-content-2">
+            <span>Flujo de efectivo</span>
+        </a>
+    </li>
+    
+</ul>
+
+<div class="form-row">
+    <div class="col-md-12">
+        <div class="tab-content">
+            <div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card" style="border-radius: 10px">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-12">
+                                        <div id="tab-historia-medica">
+                                            <div class="main-card mb-3 card">
+                                                <div class="card-body">
+                                                    <div class="form-row">
+                                                        <div class="col-md-12">
+                                                            <h5><b>Ingresos</b></h5>
+                                                            <hr />
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">Suman los ingresos por servicios</label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">Ingresos por cirugias</label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">Ingresos por hospitalizaciones</label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">Ingresos por consultas medicas</label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">Ingresos por laboratorios</label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">Ingresos por ultrasonidos</label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">Ingresos por rayos x</label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                        </div>
+
+                                                        
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <hr />
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-12">
+                                        <div id="tab-historia-medica">
+                                            <div class="main-card mb-3 card">
+                                                <div class="card-body">
+                                                    <div class="form-row">
+                                                        <div class="col-md-12">
+                                                            <h5><b>Gastos de operación</b></h5>
+                                                            <hr />
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">
+                                                                        Compras hospital
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">
+                                                                        Compra medicamentos laboratorio
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">
+                                                                        Fletes y enviós
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">
+                                                                        Internet
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">
+                                                                        Agua
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Luz
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Cable
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Teléfono
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Gastos de mantenimiento y mejoras edificio
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Compra de mobiliario y equipo
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Insumos de limpieza
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Sueldos Médicos
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Sueldos Enfermería
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Sueldos Laboratorio
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Sueldos Administración
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Sueldos Intendencia
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Sueldos Cocina
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Bono 14
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Honorarios Médicos
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Honorarios médicos internos
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Honorarios médicos Externos
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Bonos médicos
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Anestecias
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Regencias
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Interes gasto
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Alquiler de Equipo Médico
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Gastos administrativos
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Examenes externos
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        compra de equipos médicos
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+
+                                                               
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Referencias
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Gastos varios
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        <b>Total Gastos de Operación</b>
+
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        <b>Total Gastos de Operación</b>
+
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+
+                                                            </div>
+                                                        </div>
+                                                        
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <hr />
+                                    </div>
+
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane tabs-animation fade show" id="tab-content-1" role="tabpanel">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card" style="border-radius: 10px">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-12">
+                                        <div id="tab-historia-medica">
+                                            <div class="main-card mb-3 card">
+                                                <div class="card-body">
+                                                    <div class="form-row">
+                                                        <div class="col-md-12">
+                                                            <h5><b>Activo corriente</b></h5>
+                                                            <hr />
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">Caja</label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">Bancos</label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">Suma del activo corriente</label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">No corriente</label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">Inmuebles</label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">Mobiliario y equipo médico hospitalario</label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Mobiliario y equipo de oficina
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                            </div>
+
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        <b>Suma el activo no corriente</b>
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado"><b>Suma del activo</b></label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                        </div>
+
+                                                        <div class="col-md-12">
+                                                            <h5><b>Activo no corriente</b></h5>
+                                                            <hr />
+                                                        </div>
+                                                        <div class="col-md-12">
+                                                            <h5><b>Pasivo corriente</b></h5>
+                                                            <hr />
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">Suma del pasivo corriente</label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">No corriente</label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">Suma el pasivo</label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right"><b>Creditos bancarios</b></label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado"><b>Credito cooperativa Guadalupana</b></label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado"></label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                        </div>
+
+                                                        <div class="col-md-12">
+                                                            <h5><b>Pasivo no corriente</b></h5>
+                                                            <hr />
+                                                        </div>
+                                                        <div class="col-md-12">
+                                                            <h5><b>Capital</b></h5>
+                                                            <hr />
+                                                        </div>
+                                                        <div class="row">
+
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right"><b>Suman los ingresos por servicios</b></label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right"><b>Ingresos por cirugias</b></label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right"><b>Ingresos por hospitalizaciones</b></label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                                                                                        
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <hr />
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane tabs-animation fade show" id="tab-content-2" role="tabpanel">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card" style="border-radius: 10px">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-12">
+                                        <div id="tab-historia-medica">
+                                            <div class="main-card mb-3 card">
+                                                <div class="card-body">
+                                                    <div class="form-row">
+                                                        <div class="col-md-12">
+                                                            <h5><b>Ingresos</b></h5>
+                                                            <hr />
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">
+                                                                        Suman los ingresos por servicios
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">
+                                                                        Ingresos por cirugias
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">
+                                                                        Ingresos por hospitalizaciones
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">
+                                                                        Ingresos por consultas medicas
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">
+                                                                        Ingresos por laboratorios
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Ingresos por ultrasonidos
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaOperado">
+                                                                        Ingresos por rayos x
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                        </div>
+                                                        <div class="col-md-12">
+                                                            <h5><b>Gastos de operación</b></h5>
+                                                            <hr />
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">
+                                                                        Compras hospital
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">
+                                                                        Compra medicamentos laboratorio
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">
+                                                                        Fletes y enviós
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">
+                                                                        Internet
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right">
+                                                                        Agua
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Luz
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Cable
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Teléfono
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Gastos de mantenimiento y mejoras edificio
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Compra de mobiliario y equipo
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Insumos de limpieza
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Sueldos Médicos
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Sueldos Enfermería
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Sueldos Laboratorio
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Sueldos Administración
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Sueldos Intendencia
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Sueldos Cocina
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Bono 14
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Honorarios Médicos
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Honorarios médicos internos
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Honorarios médicos Externos
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Bonos médicos
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Anestecias
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Regencias
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Interes gasto
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Alquiler de Equipo Médico
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Gastos administrativos
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Examenes externos
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Compra de equipos médicos
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Referencias
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        Gastos varios
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        <b>Total Gastos de Operación</b>
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div class="col-md-4">
+                                                                <div class="position-relative form-group row">
+                                                                    <label class="col-sm-6 col-form-label text-right" for="HistoriaHospitalizado">
+                                                                        <b>Utilidad del ejercicio/Perdida del ejercicio</b>
+                                                                    </label>
+                                                                    <div class="col-sm-6">
+                                                                        <input class="form-control" type="text" data-bind="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <hr />
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+
+@*
+    @{
+    var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+    }
+
+
+
+    <a asp-action="Lista" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@(Model.PageIndex - 1)"
+    asp-route-currentFilter="@ViewData["CurrentFilter"]" class="btn btn-danger btn-sm @prevDisabled">
+    Anterior
+    </a>
+    <a asp-action="Lista" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@(Model.PageIndex + 1)"
+    asp-route-currentFilter="@ViewData["CurrentFilter"]" class="btn btn-danger btn-sm @nextDisabled" class="">
+    Siguiente
+    </a> *@
+<div id="mdl-observaciones-cita" style="display:none" title="Observaciones de la cita">
+    Contenido observaciones
+</div>
+
+@section Scripts
+{
+@*<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>*@
+@*<script type="text/javascript" src="~/js/moment.min.js"></script>*@
+@*<script type="text/javascript" src="~/js/daterangepicker.js"></script>*@
+@*<script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>*@
+@*<script src="https://knockoutjs.com/downloads/knockout-3.5.1.js"></script>*@
+@*<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.js"></script>*@
+<script src="~/ViewModelKo/CitaCalendarioLinealVM.js"></script>
+}
+
+@section css {
+@*<link href="~/css/daterangepicker.css" rel="stylesheet">*@
+}

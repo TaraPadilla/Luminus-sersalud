@@ -1,0 +1,108 @@
+@model sistema.Models.HospitalizacionDetallesViewModel
+@{
+    var usuarioAdmisiones = User.IsInRole("Admisiones");
+} 
+<div class="tab-pane tabs-animation fade show " id="tab-content-control-glucometria" role="tabpanel">
+    <div class="form-row">
+        <div class="col-md-12">
+            <div class="main-card mb-3 card" style="border-radius: 10px">
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="col-md-11">
+                            <h6><b>Control de glucometria</b></h6>
+                        </div>
+                        <div class="col-md-1">
+                            @if (!usuarioAdmisiones)
+                            {
+                                @if (!Model.HospitalizacionFinalizada && !User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
+                                {
+                                    <button class="btn btn-primary"
+                                            data-bind="click:verModalAgregarControlGlucometria">
+                                        Agregar
+                                    </button>
+                                }
+                            }
+                        </div>
+                        <div class="col-md-12">
+                            <!-- Tabla responsiva: scroll horizontal en móviles -->
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha de registro</th>
+                                            <th>GMT</th>
+                                            <th>Insulina</th>
+                                            <th>Unidades</th>
+                                            <th>Medicamento</th>
+                                            <th style="display: none;">Dosis</th>
+                                            <th>Firma</th>
+                                            <th>Aplicado</th>
+                                            <th>Fecha y hora de aplicaci&oacute;n</th>
+                                            <th>Persona que aplica</th>
+                                            <th>Profesional</th>
+                                            @if (!usuarioAdmisiones)
+                                            {
+                                                <th>Aplicar</th>
+                                            }
+                                            <th>Estado</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!--ko foreach: controlesGlucometria-->
+                                        <tr>
+                                            <td data-bind="text:FechaHora"></td>
+                                            <td data-bind="text:GMT"></td>
+                                            <td data-bind="text:Insulina"></td>
+                                            <td data-bind="text:Unidades"></td>
+                                            <td data-bind="text:Medicamento"></td>
+                                            <td data-bind="text:Dosis" style="display: none;"></td>
+                                            <td data-bind="text:Firma"></td>
+
+                                            <td>
+                                                <label class="badge badge-success" data-bind="if:Aplicado">SI</label>
+                                                <label class="badge badge-danger" data-bind="ifnot:Aplicado">NO</label>
+                                            </td>
+                                            <td data-bind="text:FechaHoraAplicacion"></td>
+                                            <td data-bind="text:NombrePersonaAplica"></td>
+                                            <td data-bind="text:NombreProfesional"></td>
+                                            @if (!usuarioAdmisiones)
+                                            {
+                                                <td>
+                                                    <!-- ko if: $data.Autorizado === true && $data.Aplicado === false -->
+                                                    <button class="btn btn-primary" data-bind="click:$root.aplicarControlGlucometria">
+                                                        <i class="fas fa-syringe"></i>
+                                                    </button>
+                                                    <!-- /ko -->
+                                                    <!-- ko if: $data.Autorizado === true && $data.Aplicado === true -->
+                                                    <span class="text-muted">Aplicado</span>
+                                                    <!-- /ko -->
+                                                </td>
+                                            }
+                                            <td>
+                                                <!-- ko if: $data.Autorizado === true -->
+                                                <span class="badge badge-success">Autorizado</span>
+                                                <!-- /ko -->
+                                                <!-- ko if: $data.Autorizado === false -->
+                                                <span class="badge badge-warning">Pendiente por Autorización</span>
+                                                <!-- /ko -->
+                                            </td>
+                                            <td>
+                                                <!-- ko if: $data.Autorizado === false -->
+                                                <button class="btn btn-sm btn-warning" data-bind="click: $root.autorizarControlGlucometria">
+                                                    <i class="fas fa-fingerprint"></i> Autorizar
+                                                </button>
+                                                <!-- /ko -->
+                                            </td>
+                                        </tr>
+                                        <!--/ko-->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

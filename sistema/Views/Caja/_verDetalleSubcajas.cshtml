@@ -1,0 +1,197 @@
+@using Database.Shared.Enumeraciones
+@using sistema.Models
+@model CajaDetallesViewModel
+@{
+    var usuarioAdministrador = User.IsInRole("Administrador");
+    var usuarioDesarrollador = User.IsInRole("Desarrollador");
+}
+
+@if (Model.AmbienteId == (int)AmbienteEnum.Global)
+{
+    <div class="form-row">
+        <div class="col-md-12">
+            <div class="main-card mb-3 card">
+                <div class="card-body">
+                    <h4>Subcajas</h4>
+                    <hr />
+                    @if (Model.SucursalId == null)
+                    {
+                        <b>Filtrar por sucursal:</b>
+                        <div class="form-row">
+                            <div class="col-md-2">
+                                <input type="checkbox" class="subcajas-filtro-sucursal"
+                                       id="subcajas-filtro-sucursal-" checked onchange="aplicarFiltrosSubcajas()" />
+                                <label for="subcajas-filtro-sucursal-">TODAS</label>
+                            </div>
+                            @foreach (var sucursal in Model.ListaSucursales)
+                            {
+                                <div class="col-md-2">
+                                    <input type="checkbox" class="subcajas-filtro-sucursal"
+                                           id="subcajas-filtro-sucursal-@sucursal.Id" checked onchange="aplicarFiltrosSubcajas()" />
+                                    <label for="subcajas-filtro-sucursal-@sucursal.Id">@sucursal.NombreSucursal</label>
+                                </div>
+                            }
+                        </div>
+                        <hr />
+                    }
+                    <b>Filtrar por ambiente:</b>
+                    <div class="form-row">
+                        <div class="col-md-2">
+                            <input type="checkbox" class="subcajas-filtro-ambiente"
+                                   id="subcajas-filtro-ambiente-@((int)AmbienteEnum.Global)"
+                                   checked onchange="aplicarFiltrosSubcajas()" />
+                            <label for="subcajas-filtro-ambiente-@((int)AmbienteEnum.Global)">Global</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="checkbox" class="subcajas-filtro-ambiente"
+                                   id="subcajas-filtro-ambiente-@((int)AmbienteEnum.Hospital)"
+                                   checked onchange="aplicarFiltrosSubcajas()" />
+                            <label for="subcajas-filtro-ambiente-@((int)AmbienteEnum.Hospital)">Hospital</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="checkbox" class="subcajas-filtro-ambiente"
+                                   id="subcajas-filtro-ambiente-@((int)AmbienteEnum.Farmacia)"
+                                   checked onchange="aplicarFiltrosSubcajas()" />
+                            <label for="subcajas-filtro-ambiente-@((int)AmbienteEnum.Farmacia)">Farmacia</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="checkbox" class="subcajas-filtro-ambiente"
+                                   id="subcajas-filtro-ambiente-@((int)AmbienteEnum.Clinica)"
+                                   checked onchange="aplicarFiltrosSubcajas()" />
+                            <label for="subcajas-filtro-ambiente-@((int)AmbienteEnum.Clinica)">Clinica</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="checkbox" class="subcajas-filtro-ambiente"
+                                   id="subcajas-filtro-ambiente-@((int)AmbienteEnum.Laboratorio)"
+                                   checked onchange="aplicarFiltrosSubcajas()" />
+                            <label for="subcajas-filtro-ambiente-@((int)AmbienteEnum.Laboratorio)">Laboratorio</label>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="col-md-12">
+                            <div class="table-responsive">
+                                <table class="mb-0 table table-hover ">
+                                    <thead>
+                                        <tr>
+                                            <th>Sucursal</th>
+                                            <th>Ambiente</th>
+                                            <th>Fecha apertura</th>
+                                            <th>Resp. apertura</th>
+                                            <th>Monto apertura</th>
+                                            <th>Ingresos</th>
+                                            <th>Gastos</th>
+                                            <th>Fecha cierre</th>
+                                            <th>Resp. cierre</th>
+                                            <th>Total cierre</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (Model.Subcajas != null && Model.Subcajas.Count > 0)
+                                        {
+                                            var totalMontosAperturaSubcajas = 0.0m;
+                                            var totalIngresosSubcajas = 0.0m;
+                                            var totalGastosSubcajas = 0.0m;
+                                            var totalCierreSubcajas = 0.0m;
+                                            foreach (var subcaja in Model.Subcajas)
+                                            {
+                                                var background = subcaja.EstadoCaja ? "lightgreen" : "";
+
+                                                @if (
+                                               (!subcaja.EstadoCaja && (usuarioAdministrador|| usuarioDesarrollador))
+                                               || subcaja.EstadoCaja
+                                               )
+                                                {
+                                                    <tr style="background-color:@background" class="subcajas-reg-sucursal-@subcaja.SucursalId subcajas-reg-ambiente-@subcaja.AmbienteId">
+                                                        <td>@subcaja.SucursalNombre</td>
+                                                        <td><span class="badge badge-primary">@subcaja.AmbienteNombre</span></td>
+                                                        <td>@subcaja.FechaApertura</td>
+                                                        <td>@subcaja.ResponsableApertura</td>
+                                                        <td><span class="subcajas-montos-apertura-valor-sucursal-@subcaja.SucursalId subcajas-montos-apertura-valor-ambiente-@subcaja.AmbienteId">@subcaja.MontoApertura</span></td>
+                                                        <td><span class="subcajas-ingresos-valor-sucursal-@subcaja.SucursalId subcajas-ingresos-valor-ambiente-@subcaja.AmbienteId">@subcaja.Ingresos</span></td>
+                                                        <td><span class="subcajas-gastos-valor-sucursal-@subcaja.SucursalId subcajas-gastos-valor-ambiente-@subcaja.AmbienteId">@subcaja.Gastos</span></td>
+                                                        <td>@subcaja.FechaCierre</td>
+                                                        <td>@subcaja.ResponsableCierre</td>
+                                                        <td><span class="subcajas-totales-cierre-valor-sucursal-@subcaja.SucursalId subcajas-totales-cierre-valor-ambiente-@subcaja.AmbienteId">@subcaja.TotalCierre</span></td>
+                                                        <td>
+                                                            <a href="@Url.Action("VerDetalle","Caja", new {id = @subcaja.Id})"
+                                                               class="btn btn-warning" target="_blank">
+                                                                <i class="fas fa-eye"></i> Ver
+                                                            </a>
+                                                            @if (subcaja.EstadoCaja)
+                                                            {
+                                                                <button onclick="cerrarCaja(@subcaja.Id)" class="btn btn-danger">
+                                                                    <i class="fas fa-eye"></i> Cerrar
+                                                                </button>
+                                                            }
+                                                            @if (!subcaja.EstadoCaja)
+                                                            {
+                                                                <button data-toggle="modal" data-target="#mdlReabrirCaja" data-backdrop="false"
+                                                                        class="btn btn-success" onclick="seleccionarCajaReabrir(@subcaja.Id)">
+                                                                    <i class="fas fa-eye"></i> Reabrir
+                                                                </button>
+                                                            }
+                                                        </td>
+                                                    </tr>
+
+                                                    totalMontosAperturaSubcajas += subcaja.MontoApertura;
+                                                    totalIngresosSubcajas += subcaja.Ingresos;
+                                                    totalGastosSubcajas += subcaja.Gastos;
+                                                    totalCierreSubcajas += subcaja.TotalCierre;
+                                                }
+                                            }
+                                            <tr class="bg-dark text-light">
+                                                <td colspan="4"><b>TOTAL</b></td>
+                                                <td id="subcajas-montos-apertura-total">@totalMontosAperturaSubcajas</td>
+                                                <td id="subcajas-ingresos-total">@totalIngresosSubcajas</td>
+                                                <td id="subcajas-gastos-total">@totalGastosSubcajas</td>
+                                                <td></td>
+                                                <td></td>
+                                                <td id="subcajas-totales-cierre-total">@totalCierreSubcajas</td>
+                                                <td></td>
+                                            </tr>
+                                        }
+                                        else
+                                        {
+                                            <tr>
+                                                <td colspan="10">No hay registro de subcajas</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+
+
+<!-- Modal  Reabrir caja-->
+<div class="modal fade mt-5" id="mdlReabrirCaja" tabindex="-1" role="dialog"
+     aria-labelledby="mdlReabrirCaja" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="mdlReabrirCaja">Reabrir caja</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulario dentro del modal -->
+                <form>
+                    <div class="form-group">
+                        <label for="descripcion">Codigo de empleado:</label>
+                        <input type="text" class="form-control" data-bind="value:codigoEmpleadoReabrirCaja">
+                    </div>
+                    <button type="submit" data-bind="click:reabrirCaja" class="btn btn-primary">Reabrir caja</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

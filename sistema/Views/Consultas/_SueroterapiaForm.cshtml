@@ -1,0 +1,495 @@
+@model sistema.Models.ConsultasViewModel
+@using System.Linq
+@using Database.Shared.Models
+@{
+  var _sueroHist = ViewBag.SueroHistorialFull as IEnumerable<ConsultasSueroterapia>;
+  Func<object, string> Vs = (val) =>
+  {
+    if (val == null) return "Sin definir";
+    if (val is string s) return string.IsNullOrWhiteSpace(s) ? "Sin definir" : s;
+    return Convert.ToString(val);
+  };
+  string JoinArr(string[] arr) => (arr == null || arr.Length == 0) ? "Sin definir" : string.Join(", ", arr);
+  int sidx = 0;
+}
+
+
+@* IDs necesarios para upsert *@
+@Html.HiddenFor(m => m.Suero_ConsultaId)
+@Html.HiddenFor(m => m.Suero_Id)
+
+@{
+  // ===== Helpers de formateo seguro (uso en lectura) =====
+  string TextoONada(string? v) => string.IsNullOrWhiteSpace(v) ? "—" : v;
+  string[] Arr(string[]? a) => a ?? Array.Empty<string>();
+
+  string LabelMedio(string v) => v switch
+  {
+    "referencia" => "Referencia personal",
+    "redes" => "Redes sociales",
+    "salud" => "Personal de salud",
+    "otro" => "Otro",
+    _ => v
+  };
+  string LabelResp(string v) => v switch
+  {
+    "sin_alteracion" => "Sin alteración observada",
+    "disnea_esfuerzo" => "Disnea de esfuerzo",
+    "disnea_reposo" => "Disnea en reposo",
+    "tos_seca" => "Tos seca",
+    "tos_productiva" => "Tos productiva",
+    "oxigeno" => "Oxígeno suplementario",
+    "marcapasos" => "Marca pasos",
+    _ => v
+  };
+  string LabelCirc(string v) => v switch
+  {
+    "sin_alteracion" => "Sin alteración observada",
+    "palpitaciones" => "Palpitaciones",
+    "entumecimiento" => "Entumecimiento",
+    "ext_frio" => "Extremidades frías",
+    "edemas" => "Edemas",
+    "dolor_precordial" => "Dolor precordial",
+    _ => v
+  };
+  string LabelNut(string v) => v switch
+  {
+    "sin_alteracion" => "Sin alteración observada",
+    "masticacion" => "Dificultad para la masticación",
+    "protesis" => "Prótesis",
+    "deglucion" => "Dificultad para la deglución",
+    "nauseas" => "Náuseas",
+    "vomitos" => "Vómitos",
+    "peso" => "Alteración del peso",
+    "ayuda" => "Necesita ayuda",
+    "dieta" => "Dieta especial",
+    _ => v
+  };
+}
+
+<style>
+  :root {
+    --ink: #1f2937;
+    --ink-soft: #334155;
+    --muted: #6b7280;
+    --brand: #0ea5e9;
+    --brand-ink: #0369a1;
+    --bg: #f7fbff;
+    --card: #ffffff;
+    --card-bdr: #e5edf7;
+    --accent: #dbeafe;
+  }
+
+  .oft-wrap {
+    background: var(--bg);
+    color: var(--ink)
+  }
+
+  .oft-card {
+    background: var(--card);
+    border: 1px solid var(--card-bdr);
+    border-radius: .9rem;
+    box-shadow: 0 8px 24px rgba(2, 32, 71, .06);
+  }
+
+  .oft-head {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    color: var(--brand-ink);
+    font-weight: 800;
+    letter-spacing: .2px;
+    margin-bottom: .75rem;
+  }
+
+  .oft-sub {
+    color: var(--muted);
+    font-size: .95rem
+  }
+
+  .oft-pill {
+    display: inline-block;
+    padding: .25rem .6rem;
+    border-radius: 9999px;
+    background: var(--accent);
+    color: var(--brand-ink);
+    font-weight: 700;
+    font-size: .8rem;
+  }
+
+  .table thead th {
+    background: var(--accent);
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--card-bdr)
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: var(--ink-soft)
+  }
+
+  .hr-soft {
+    border-top: 1px dashed #e5edf7
+  }
+</style>
+
+<div class="oft-wrap">
+  <!-- =========================== CABECERA: MODO Y VALIDACIÓN =========================== -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    @if (Model.HabilitarEdicion)
+    {
+      <span class="oft-pill">MODO EDICIÓN</span>
+    }
+    else
+    {
+      <span class="oft-pill" style="background:#eaeef6;color:#475569">MODO LECTURA</span>
+    }
+    <div class="text-danger" asp-validation-summary="ModelOnly"></div>
+  </div>
+
+  
+  @* ============================ Lectura ============================ *@
+    @if (Model.HabilitarEdicion)
+  {
+    <!-- 1) Datos de Valoración Inicial -->
+    <div class="oft-card mb-3 p-3 p-md-4">
+      <div class="oft-head"><i class="bi bi-file-earmark-text"></i>
+        <h5 class="mb-0">Datos de Valoración Inicial</h5>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label" for="Suero_Motivo">Motivo de consulta:</label>
+          <textarea class="form-control" asp-for="Suero_Motivo" id="Suero_Motivo" rows="2"></textarea>
+          <span class="text-danger" asp-validation-for="Suero_Motivo"></span>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="Suero_DiagnosticoMedico">Diagnóstico médico:</label>
+          <textarea class="form-control" asp-for="Suero_DiagnosticoMedico" id="Suero_DiagnosticoMedico"
+          rows="2"></textarea>
+          <span class="text-danger" asp-validation-for="Suero_DiagnosticoMedico"></span>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="Suero_Labs">Laboratorios a la vista:</label>
+          <textarea class="form-control" asp-for="Suero_Labs" id="Suero_Labs" rows="2"></textarea>
+          <span class="text-danger" asp-validation-for="Suero_Labs"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2) ¿Cómo se enteró del servicio? -->
+    <div class="oft-card mb-3 p-3 p-md-4">
+      <div class="oft-head"><i class="bi bi-bullhorn"></i>
+        <h5 class="mb-0">¿Cómo se enteró del servicio?</h5>
+      </div>
+
+      <div class="d-flex flex-wrap gap-3">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="Suero_Medio_Referencia" name="Suero_Medio"
+            value="referencia" @(Model?.Suero_Medio != null && Model.Suero_Medio.Contains("referencia") ? "checked" :
+                                         "") />
+          <label class="form-check-label" for="Suero_Medio_Referencia">Referencia personal</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="Suero_Medio_Redes" name="Suero_Medio" value="redes"
+            @(Model?.Suero_Medio != null && Model.Suero_Medio.Contains("redes") ? "checked" : "") />
+          <label class="form-check-label" for="Suero_Medio_Redes">Redes sociales</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="Suero_Medio_Salud" name="Suero_Medio" value="salud"
+            @(Model?.Suero_Medio != null && Model.Suero_Medio.Contains("salud") ? "checked" : "") />
+          <label class="form-check-label" for="Suero_Medio_Salud">Personal de salud</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="Suero_Medio_Otro" name="Suero_Medio" value="otro"
+            @(Model?.Suero_Medio != null && Model.Suero_Medio.Contains("otro") ? "checked" : "") />
+          <label class="form-check-label" for="Suero_Medio_Otro">Otro</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3) Oxigenación y Circulación -->
+    <div class="oft-card mb-3 p-3 p-md-4">
+      <div class="oft-head"><i class="bi bi-lungs"></i>
+        <h5 class="mb-0">Oxigenación y Circulación</h5>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <div class="oft-sub">Sistema Respiratorio</div>
+          <div class="d-flex flex-column gap-2 mt-2">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="Suero_Resp_Sin" name="Suero_Resp" value="sin_alteracion"
+                @(Model?.Suero_Resp != null && Model.Suero_Resp.Contains("sin_alteracion") ? "checked" : "") />
+              <label class="form-check-label" for="Suero_Resp_Sin">Sin alteración observada</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="Suero_Resp_DisEsfuerzo" name="Suero_Resp"
+                value="disnea_esfuerzo" @(Model?.Suero_Resp != null && Model.Suero_Resp.Contains("disnea_esfuerzo") ?
+                                                      "checked" : "") />
+              <label class="form-check-label" for="Suero_Resp_DisEsfuerzo">Disnea de esfuerzo</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="Suero_Resp_DisReposo" name="Suero_Resp"
+                value="disnea_reposo" @(Model?.Suero_Resp != null && Model.Suero_Resp.Contains("disnea_reposo") ?
+                                                    "checked" : "") />
+              <label class="form-check-label" for="Suero_Resp_DisReposo">Disnea en reposo</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="Suero_Resp_TosSeca" name="Suero_Resp" value="tos_seca"
+                @(Model?.Suero_Resp != null && Model.Suero_Resp.Contains("tos_seca") ? "checked" : "") />
+              <label class="form-check-label" for="Suero_Resp_TosSeca">Tos seca</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="Suero_Resp_TosProd" name="Suero_Resp"
+                value="tos_productiva" @(Model?.Suero_Resp != null && Model.Suero_Resp.Contains("tos_productiva") ?
+                                                     "checked" : "") />
+              <label class="form-check-label" for="Suero_Resp_TosProd">Tos productiva</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="Suero_Resp_Oxigeno" name="Suero_Resp" value="oxigeno"
+                @(Model?.Suero_Resp != null && Model.Suero_Resp.Contains("oxigeno") ? "checked" : "") />
+              <label class="form-check-label" for="Suero_Resp_Oxigeno">Oxígeno suplementario</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="Suero_Resp_Marcapasos" name="Suero_Resp"
+                value="marcapasos" @(Model?.Suero_Resp != null && Model.Suero_Resp.Contains("marcapasos") ? "checked" :
+                                                 "") />
+              <label class="form-check-label" for="Suero_Resp_Marcapasos">Marca pasos</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+          <div class="oft-sub">Sistema Circulatorio</div>
+          <div class="d-flex flex-column gap-2 mt-2">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="Suero_Circ_Sin" name="Suero_Circ" value="sin_alteracion"
+                @(Model?.Suero_Circ != null && Model.Suero_Circ.Contains("sin_alteracion") ? "checked" : "") />
+              <label class="form-check-label" for="Suero_Circ_Sin">Sin alteración observada</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="Suero_Circ_Palpitaciones" name="Suero_Circ"
+                value="palpitaciones" @(Model?.Suero_Circ != null && Model.Suero_Circ.Contains("palpitaciones") ?
+                                                    "checked" : "") />
+              <label class="form-check-label" for="Suero_Circ_Palpitaciones">Palpitaciones</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="Suero_Circ_Entumecimiento" name="Suero_Circ"
+                value="entumecimiento" @(Model?.Suero_Circ != null && Model.Suero_Circ.Contains("entumecimiento") ?
+                                                     "checked" : "") />
+              <label class="form-check-label" for="Suero_Circ_Entumecimiento">Entumecimiento</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="Suero_Circ_ExtFrio" name="Suero_Circ" value="ext_frio"
+                @(Model?.Suero_Circ != null && Model.Suero_Circ.Contains("ext_frio") ? "checked" : "") />
+              <label class="form-check-label" for="Suero_Circ_ExtFrio">Extremidades frías</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="Suero_Circ_Edemas" name="Suero_Circ" value="edemas"
+                @(Model?.Suero_Circ != null && Model.Suero_Circ.Contains("edemas") ? "checked" : "") />
+              <label class="form-check-label" for="Suero_Circ_Edemas">Edemas</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="Suero_Circ_Dolor" name="Suero_Circ"
+                value="dolor_precordial" @(Model?.Suero_Circ != null && Model.Suero_Circ.Contains("dolor_precordial") ?
+                                                       "checked" : "") />
+              <label class="form-check-label" for="Suero_Circ_Dolor">Dolor precordial</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4) Nutrición -->
+    <div class="oft-card mb-3 p-3 p-md-4">
+      <div class="oft-head"><i class="bi bi-apple"></i>
+        <h5 class="mb-0">Necesidad de Nutrición</h5>
+      </div>
+
+      <div class="oft-sub mb-2">Alteraciones o necesidades</div>
+      <div class="d-flex flex-wrap gap-3">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="Suero_Nut_Sin" name="Suero_Nutricion" value="sin_alteracion"
+            @(Model?.Suero_Nutricion != null && Model.Suero_Nutricion.Contains("sin_alteracion") ? "checked" : "") />
+          <label class="form-check-label" for="Suero_Nut_Sin">Sin alteración observada</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="Suero_Nut_Masticacion" name="Suero_Nutricion"
+            value="masticacion" @(Model?.Suero_Nutricion != null && Model.Suero_Nutricion.Contains("masticacion") ?
+                                          "checked" : "") />
+          <label class="form-check-label" for="Suero_Nut_Masticacion">Dificultad para la masticación</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="Suero_Nut_Protesis" name="Suero_Nutricion" value="protesis"
+            @(Model?.Suero_Nutricion != null && Model.Suero_Nutricion.Contains("protesis") ? "checked" : "") />
+          <label class="form-check-label" for="Suero_Nut_Protesis">Prótesis</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="Suero_Nut_Deglucion" name="Suero_Nutricion"
+            value="deglucion" @(Model?.Suero_Nutricion != null && Model.Suero_Nutricion.Contains("deglucion") ? "checked"
+                                        : "") />
+          <label class="form-check-label" for="Suero_Nut_Deglucion">Dificultad para la deglución</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="Suero_Nut_Nauseas" name="Suero_Nutricion" value="nauseas"
+            @(Model?.Suero_Nutricion != null && Model.Suero_Nutricion.Contains("nauseas") ? "checked" : "") />
+          <label class="form-check-label" for="Suero_Nut_Nauseas">Náuseas</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="Suero_Nut_Vomitos" name="Suero_Nutricion" value="vomitos"
+            @(Model?.Suero_Nutricion != null && Model.Suero_Nutricion.Contains("vomitos") ? "checked" : "") />
+          <label class="form-check-label" for="Suero_Nut_Vomitos">Vómitos</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="Suero_Nut_Peso" name="Suero_Nutricion" value="peso"
+            @(Model?.Suero_Nutricion != null && Model.Suero_Nutricion.Contains("peso") ? "checked" : "") />
+          <label class="form-check-label" for="Suero_Nut_Peso">Alteración del peso</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="Suero_Nut_Ayuda" name="Suero_Nutricion" value="ayuda"
+            @(Model?.Suero_Nutricion != null && Model.Suero_Nutricion.Contains("ayuda") ? "checked" : "") />
+          <label class="form-check-label" for="Suero_Nut_Ayuda">Necesita ayuda</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="Suero_Nut_Dieta" name="Suero_Nutricion" value="dieta"
+            @(Model?.Suero_Nutricion != null && Model.Suero_Nutricion.Contains("dieta") ? "checked" : "") />
+          <label class="form-check-label" for="Suero_Nut_Dieta">Dieta especial</label>
+        </div>
+      </div>
+
+      <div class="mt-3">
+        <label class="form-label" for="Suero_NutricionObs">Observaciones:</label>
+        <textarea class="form-control" asp-for="Suero_NutricionObs" id="Suero_NutricionObs" rows="2"></textarea>
+        <span class="text-danger" asp-validation-for="Suero_NutricionObs"></span>
+      </div>
+    </div>
+
+    <!-- 5) Plan Recomendado Terapéutico -->
+    <div class="oft-card mb-4 p-3 p-md-4">
+      <div class="oft-head"><i class="bi bi-capsule"></i>
+        <h5 class="mb-0">Plan Recomendado Terapéutico</h5>
+      </div>
+
+      <textarea class="form-control" asp-for="Suero_PlanTerapeutico" id="Suero_PlanTerapeutico" rows="3"
+      placeholder="Indique el plan, recomendaciones y seguimiento."></textarea>
+      <span class="text-danger" asp-validation-for="Suero_PlanTerapeutico"></span>
+    </div>
+  }
+</div>
+
+@* ====================== HISTÓRICO SUEROTERAPIA (SIEMPRE) ====================== *@
+
+@if (_sueroHist != null)
+{
+    <div class="mt-4">
+      <h3 class="h5 mb-3 text-secondary">Histórico Sueroterapia (completo)</h3>
+
+      <div class="accordion" id="sueroHistAccordion">
+        @foreach (var h in _sueroHist)
+        {
+            var collapseId = $"sueroHist-{sidx}";
+            var headingId = $"sueroHead-{sidx}";
+            sidx++;
+
+            <div class="card mb-3">
+              <div class="card-header" id="@headingId">
+                <h2 class="mb-0">
+                  <button class="btn btn-link collapsed w-100 text-left d-flex justify-content-between align-items-center"
+                          type="button"
+                          data-toggle="collapse"
+                          data-target="#@collapseId"
+                          aria-expanded="false"
+                          aria-controls="@collapseId">
+                    <div class="w-100 d-flex flex-column flex-md-row justify-content-between small">
+                      <div>
+                        <span class="fw-semibold text-dark">Fecha:</span>
+                        @{
+                            DateTime? f = h.Fecha;
+                        }
+                        @(f.HasValue? f.Value.ToString("dd-MM-yyyy HH:mm") : "Sin definir")
+                      </div>
+                    </div>
+                  </button>
+                </h2>
+              </div>
+
+              <div id="@collapseId"
+                   class="collapse"
+                   aria-labelledby="@headingId"
+                   data-parent="#sueroHistAccordion">
+                <div class="card-body">
+
+                  <div class="card border rounded shadow-sm mb-4">
+                    <div class="card-body">
+
+                      <!-- 1) Datos de valoración inicial -->
+                      <div class="border rounded mb-4 p-3">
+                        <div class="oft-head"><i class="fas fa-clipboard-list"></i><h5 class="mb-0">Datos de valoración inicial</h5></div>
+                        <div class="row">
+                          <div class="col-12 col-md-4 mb-3"><div class="text-dark text-uppercase"><strong>Motivo</strong></div><div class="text-muted">@Vs(h.Motivo)</div></div>
+                          <div class="col-12 col-md-4 mb-3"><div class="text-dark text-uppercase"><strong>Diagnóstico médico</strong></div><div class="text-muted">@Vs(h.DiagnosticoMedico)</div></div>
+                          <div class="col-12 col-md-4 mb-3"><div class="text-dark text-uppercase"><strong>Laboratorios</strong></div><div class="text-muted">@Vs(h.Labs)</div></div>
+                        </div>
+                      </div>
+
+                      <!-- 2) ¿Cómo se enteró del servicio? -->
+                      <div class="border rounded mb-4 p-3">
+                        <div class="oft-head"><i class="fas fa-bullhorn"></i><h5 class="mb-0">¿Cómo se enteró del servicio?</h5></div>
+                        <div class="text-muted">@JoinArr(h.Medio ?? Array.Empty<string>())</div>
+                      </div>
+
+                      <!-- 3) Oxigenación y Circulación -->
+                      <div class="border rounded mb-4 p-3">
+                        <div class="oft-head"><i class="fas fa-lungs"></i><h5 class="mb-0">Oxigenación y Circulación</h5></div>
+                        <div class="row">
+                          <div class="col-12 col-md-6 mb-3">
+                            <div class="fw-bold text-primary mb-1">Oxigenación</div>
+                            <div class="text-muted">@JoinArr(h.Resp ?? Array.Empty<string>())</div>
+                          </div>
+                          <div class="col-12 col-md-6 mb-3">
+                            <div class="fw-bold text-primary mb-1">Circulación</div>
+                            <div class="text-muted">@JoinArr(h.Circ ?? Array.Empty<string>())</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 4) Necesidad de Nutrición -->
+                      <div class="border rounded mb-4 p-3">
+                        <div class="oft-head"><i class="fas fa-utensils"></i><h5 class="mb-0">Necesidad de Nutrición</h5></div>
+                        <div class="row">
+                          <div class="col-12 col-md-6 mb-3">
+                            <div class="text-dark text-uppercase"><strong>Aspectos</strong></div>
+                            <div class="text-muted">@JoinArr(h.Nutricion ?? Array.Empty<string>())</div>
+                          </div>
+                          <div class="col-12 col-md-6 mb-3">
+                            <div class="text-dark text-uppercase"><strong>Observaciones</strong></div>
+                            <div class="text-muted">@Vs(h.NutricionObs)</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 5) Plan terapéutico -->
+                      <div class="border rounded mb-1 p-3">
+                        <div class="oft-head"><i class="fas fa-prescription-bottle-alt"></i><h5 class="mb-0">Plan terapéutico</h5></div>
+                        <div class="text-muted">@Vs(h.PlanTerapeutico)</div>
+                      </div>
+
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+        }
+      </div>
+    </div>
+}
+else
+{
+    <div class="mt-4 small text-muted">No hay histórico de sueroterapia para este paciente.</div>
+}
+@section Scripts {
+  <partial name="_ValidationScriptsPartial" />
+}
+

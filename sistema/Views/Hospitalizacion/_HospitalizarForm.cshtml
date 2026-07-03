@@ -1,0 +1,1389 @@
+@using Database.Shared.Enumeraciones
+@model sistema.Models.HospitalizacionHospitalizarViewModel
+@inject Microsoft.Extensions.Configuration.IConfiguration Config
+
+@Html.HiddenFor(a => a.EspecialidadId)
+@Html.HiddenFor(a => a.PacienteId)
+@Html.HiddenFor(a => a.ConsultaId)
+@Html.HiddenFor(a => a.EmergenciaId)
+@Html.HiddenFor(a => a.CodigoSeguro)
+@Html.HiddenFor(m => m.HabitacionId)
+@Html.HiddenFor(m => m.HabitacionCategoriaId)
+@Html.HiddenFor(m => m.HabitacionEstadoId)
+@Html.HiddenFor(m => m.UrlArchivoConsentimiento)
+@Html.HiddenFor(m => m.Base64FirmaConsentimiento)
+@Html.HiddenFor(a => a.CitaId)
+
+@* @{
+    var habitacionId = Context.Request.Query["habitacionId"];
+    var consultaId = Model.ConsultaId;
+    var pacienteId = Model.PacienteId;
+} *@
+
+@{
+    // Si no viene en el query string, tomar el valor del modelo (caso: acceso desde calendario con citaId)
+    var habitacionIdQuery = Context.Request.Query["habitacionId"].ToString();
+    var habitacionId = !string.IsNullOrEmpty(habitacionIdQuery) ? habitacionIdQuery : Model.HabitacionId.ToString();
+    var consultaId = Model.ConsultaId;
+    var pacienteId = Model.PacienteId;
+
+    string clienteconf = Config["Cliente"]; 
+
+}
+
+
+<style>
+    .select2-container {
+        width: 100% !important;
+    }
+
+
+
+
+    .stepper-wrapper {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        padding: 10px 0;
+        position: relative;
+    }
+
+    .stepper-item {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+        @* z-index: 2; *@
+    }
+
+    .stepper-item::before {
+        position: absolute;
+        content: "";
+        border-bottom: 3px solid #e0e0e0;
+        width: 100%;
+        top: 20px;
+        left: -50%;
+        z-index: 1;
+    }
+
+    .stepper-item:first-child::before {
+        content: none;
+    }
+
+    .step-counter {
+        position: relative;
+        z-index: 5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #e0e0e0;
+        color: #666;
+        font-weight: bold;
+        border: 2px solid #fff;
+        transition: all 0.3s ease;
+    }
+
+    .stepper-item.active .step-counter {
+        background-color: #3f6ad8;
+        color: #fff;
+        transform: scale(1.1);
+        box-shadow: 0 0 10px rgba(63, 106, 216, 0.4);
+    }
+
+    .stepper-item.completed .step-counter {
+        background-color: #3ac47d;
+        color: #fff;
+    }
+
+    .stepper-item.completed::before {
+        border-bottom-color: #3ac47d;
+    }
+
+    .step-name {
+        color: #999;
+        font-size: 0.85rem;
+        margin-top: 8px;
+        text-align: center;
+        font-weight: 500;
+    }
+
+    .stepper-item.active .step-name {
+        color: #3f6ad8;
+        font-weight: bold;
+    }
+
+    @@media (max-width: 768px) {
+        .step-name {
+            display: none;
+        }
+
+        .step-counter {
+            width: 30px;
+            height: 30px;
+            font-size: 12px;
+        }
+
+        .stepper-item::before {
+            top: 15px;
+        }
+    }
+</style>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-6">
+                <center>
+                    <h4><b>Registrar hospitalizaci&oacute;n</b></h4>
+                </center>
+            </div>
+            <div class="col-md-6">
+                <div class="form-row h5">
+                    <div class="col-md-4">
+                        <b>Habitacion</b><br />
+                        <span class="badge badge-primary">@Model.HabitacionNumeroNombre</span>
+                    </div>
+                    <div class="col-md-4">
+                        <b>Categoria</b><br />
+                        <label class="badge badge-warning">@Model.HabitacionCategoria</label>
+                    </div>
+                    @* <div class="col-md-4">
+                        <b>Estado</b><br />
+                        @{
+                            var estadoId = Model.HabitacionEstadoId;
+                        }
+                        @if (estadoId == (int)EstadoHabitacionEnum.Disponible)
+                        {
+                            <label class="badge badge-success">@Model.HabitacionEstado</label>
+                        }
+                        else if (estadoId == (int)EstadoHabitacionEnum.Ocupada)
+                        {
+                            <label class="badge badge-danger">@Model.HabitacionEstado</label>
+                        }
+                        else
+                        {
+                            <label class="badge badge-warning">@Model.HabitacionEstado</label>
+                        }
+                    </div> *@
+                    <div class="col-md-4">
+                        <b>Seguro</b><br />
+                        <label class="badge badge-warning">
+                            @(string.IsNullOrEmpty(Model.CodigoSeguro) ? "Sin seguro" : Model.CodigoSeguro)
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@* <div class="form-row paso" id="paso-especialidad">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <h5><b>1. Seleccionar especialidad</b></h5>
+                        <hr />
+                    </div>
+                    <div class="col-md-12" id="texto-validacion-especialidad">
+                        <label class="text-danger">Debe seleccionar una especialidad</label>
+                    </div>
+                    <div class="col-md-12">
+                        <select class="select2bs4 form-control">
+                            <option value="1" selected>Medicina General</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-12 text-right">
+        <button class="btn btn-primary" data-bind="click:pasoTarifas">Siguiente <i
+                class="fas fa-arrow-alt-circle-right"></i></button>
+    </div>
+</div> *@
+
+
+<div class="stepper-wrapper">
+    <div class="stepper-item active" id="step-1">
+        <div class="step-counter">1</div>
+        <div class="step-name">Especialidad</div>
+    </div>
+    <div class="stepper-item" id="step-2">
+        <div class="step-counter">2</div>
+        <div class="step-name">Tarifa</div>
+    </div>
+    <div class="stepper-item" id="step-3">
+        <div class="step-counter">3</div>
+        <div class="step-name">Paciente</div>
+    </div>
+    <div class="stepper-item" id="step-4">
+        <div class="step-counter">4</div>
+        <div class="step-name">Estadía</div>
+    </div>
+    <div class="stepper-item" id="step-5">
+        <div class="step-counter">5</div>
+        <div class="step-name">Consentimiento</div>
+    </div>
+    <div class="stepper-item" id="step-6">
+        <div class="step-counter">6</div>
+        <div class="step-name">Cuestionario Pre-Anestésico</div>
+    </div>
+    <div class="stepper-item" id="step-7">
+        <div class="step-counter">7</div>
+        <div class="step-name">Lista de Chequeo</div>
+    </div>
+    <div class="stepper-item" id="step-8">
+        <div class="step-counter">8</div>
+        <div class="step-name">Firmas</div>
+    </div>
+    <div class="stepper-item" id="step-9">
+        <div class="step-counter">9</div>
+        <div class="step-name">Resumen</div>
+    </div>
+</div>
+
+<div class="form-row paso" id="paso-especialidad">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <h5><b>1. Seleccionar especialidad</b></h5>
+                        <hr />
+                    </div>
+
+                    <div class="col-md-12" id="texto-validacion-especialidad">
+                        <label class="text-danger">Debe seleccionar una especialidad</label>
+                    </div>
+
+                    <div class="col-md-12">
+                        <select class="select2bs4 form-control" data-bind="
+                            options: especialidades,
+                            optionsText: 'NombreEspecialidad',
+                            optionsValue: 'Id',
+                            value: especialidadId,
+                            event: {
+                            change: function () {
+                            var id = especialidadId();
+                            var sel = null;
+
+                            // Buscar objeto seleccionado para mantener especialidadSeleccionada y nombre
+                            ko.utils.arrayForEach(especialidades(), function (e) {
+                            if (e && e.Id == id) { sel = e; }
+                            });
+
+                            especialidadSeleccionada(sel);
+                            especialidadNombre(sel ? sel.NombreEspecialidad : 'Medicina General');
+
+                            // Regla: si queda vacío/0, forzar MG
+                            if (!id || id == 0) {
+                            especialidadId(1);
+                            especialidadNombre('Medicina General');
+                            especialidadSeleccionada(null);
+                            }
+                            }
+                            }">
+                        </select>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-12 text-right">
+        <button class="btn btn-primary" data-bind="click:pasoTarifas">
+            Siguiente <i class="fas fa-arrow-alt-circle-right"></i>
+        </button>
+    </div>
+
+</div>
+
+
+<div class="form-row paso" id="paso-tarifas">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-11">
+                        <h5><b>2. Seleccionar tarifa</b></h5>
+                        <hr />
+                    </div>
+                    <div class="col-md-1">
+                        <button class="btn btn-primary" data-bind="click:consultarTarifas">
+                            <i class="fas fa-redo"></i>
+                        </button>
+                    </div>
+                    <div class="col-md-12" id="texto-validacion-tarifas">
+                        <label class="text-danger">Debe seleccionar una tarifa</label>
+                    </div>
+                    <div class="col-md-12">
+                        <table class="table table-hover table-responsive">
+                            <thead>
+                                <tr>
+                                    <th>Seleccionar</th>
+                                    <th>Nombre</th>
+                                    <th>Días</th>
+                                    <th>Fecha especial</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!--ko foreach: tarifas-->
+                                <tr>
+                                    <td>
+                                        <input type="radio" class="form-control"
+                                               data-bind="checked: $root.tarifaSeleccionada, value: $data" />
+                                    </td>
+                                    <td data-bind="text:NombreTarifa"></td>
+                                    <td>
+                                        <!--ko if:Lunes-->
+                                        <label class="badge badge-success">Lu</label>
+                                        <!--/ko-->
+                                        <!--ko if:Martes-->
+                                        <label class="badge badge-success">Ma</label>
+                                        <!--/ko-->
+                                        <!--ko if:Miercoles-->
+                                        <label class="badge badge-success">Mi</label>
+                                        <!--/ko-->
+                                        <!--ko if:Jueves-->
+                                        <label class="badge badge-success">Ju</label>
+                                        <!--/ko-->
+                                        <!--ko if:Viernes-->
+                                        <label class="badge badge-success">Vi</label>
+                                        <!--/ko-->
+                                        <!--ko if:Sabado-->
+                                        <label class="badge badge-success">Sa</label>
+                                        <!--/ko-->
+                                        <!--ko if:Domingo-->
+                                        <label class="badge badge-success">Do</label>
+                                        <!--/ko-->
+                                    </td>
+                                    <td>
+                                        <!--ko if:FechaEspecial-->
+                                        <label class="badge badge-success" data-bind="text:FechaTarifa"></label>
+                                        <!--/ko-->
+                                        <!--ko ifnot:FechaEspecial-->
+                                        -
+                                        <!--/ko-->
+                                    </td>
+                                    <td data-bind="text:ValorTarifa"></td>
+                                </tr>
+                                <!--/ko-->
+                            </tbody>
+                        </table>
+                        <hr />
+                    </div>
+                    <div class="col-md-12">
+                        <a class="btn btn-primary text-white" data-bind="click:modificarCategoria">
+                            Modificar tarifas
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-12 text-right">
+        <button class="btn btn-warning" data-bind="click:pasoEspecialidad"><i class="fas fa-arrow-alt-circle-left"></i>
+            Anterior</button>
+            <button class="btn btn-primary" data-bind="click:pasoPaciente">Siguiente <i
+                class="fas fa-arrow-alt-circle-right"></i></button>
+            </div>
+        </div>
+
+        <div class="form-row paso" id="paso-paciente">
+            <div class="col-md-12">
+                <div id="msgCuentas" style="display:none;">
+                    <div class="form-row">
+                        <div class="col-md-12">
+                            <div class="alert alert-warning" role="alert">
+                                El paciente seleccionado tiene cuentas pendientes,
+                                <a id="revisarRentas" href="#" class="alert-link">
+                                    click aquí para revisar
+                                </a>.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>3. Seleccionar paciente</b></h5>
+                                <hr />
+                            </div>
+                            <div class="col-md-12" id="texto-validacion-paciente">
+                                <label class="text-danger">Debe seleccionar un paciente</label>
+                            </div>
+                            <div class="col-md-4">
+                                Buscar paciente (Nombre/DPI)<br />
+                                <select class="select2bs4 form-control" data-bind="options: listaUsuarios,
+                                optionsText: 'NombreConDpi',
+                                @*optionsValue: 'Id',*@
+                                value: pacienteSeleccionado,
+                                optionsCaption: 'Seleccione un paciente',
+                                event:{change:validarExistenciaPaciente}"></select>
+                            </div>
+                            <div class="col-md-4" style="display: none;">
+                                Paciente ID<br />
+                                <input class="form-control" data-bind="value:pacienteId" readonly />
+                            </div>
+                            <div class="col-md-4">
+                                Nombre<br />
+                                <input class="form-control" data-bind="value:pacienteNombre" readonly />
+                            </div>
+                            <div class="col-md-4">
+                                DPI
+                                <input class="form-control" data-bind="value:pacienteDpi" />
+                            </div>
+                            <div class="col-md-4">
+                                Telefono
+                                <input class="form-control" data-bind="value:pacienteTelefono" />
+                            </div>
+                            <div class="col-md-4">
+                                Fecha de nacimiento
+                                <input class="form-control" type="date" data-bind="value:pacienteFechaNacimiento" />
+                            </div>
+                            <div class="col-md-4">
+                                Edad
+                                <input class="form-control" data-bind="value: edadCalculada" readonly disabled />
+                                <!-- Este campo ahora es deshabilitado -->
+                            </div>
+
+                            @*<div class="col-md-2">
+                    <label class="text-white">Validar</label><br />
+                    <a href="#" class="btn btn-warning" data-bind="click:validarExistenciaPaciente">Validar</a>
+                    </div>*@
+                            @*<div class="col-md-5">
+                    <label>Buscar por Nombre:</label>
+                    <input type="text" class="form-control" placeholder="Buscar por nombre"
+                    data-bind="value:terminoBusquedaNombre" />
+                    </div>
+
+                    <br />
+
+                    <div class="col-md-12">
+                    <table class="table">
+                    <thead>
+                    <tr>
+                    <th>DPI</th>
+                    <th>Nombre</th>
+                    <th>Seleccionar</th>
+                    </tr>
+                    </thead>
+                    <tbody data-bind="foreach: pacientesExistentes">
+                    <tr>
+                    <td data-bind="text:Dpi"></td>
+                    <td data-bind="text:Nombre"></td>
+                    <td>
+                    <input type="radio" class="form-control" data-bind="checked:$root.pacienteId,value:Id" />
+                    </td>
+                    </tr>
+                    </tbody>
+                    </table>
+                    </div>
+                    @*<div class="col-md-12">
+                    <span>No se encontraron coincidencias</span><br />
+                    <a href="/Pacientes/Nuevo" target="_blank" class="btn btn-primary">
+                    <i class="fas fa-external-link-alt"></i>
+                    Nuevo paciente
+                    </a>
+                    </div>*@
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-12 text-right">
+                <button class="btn btn-warning" data-bind="click:volverTarifas">
+                    <i class="fas fa-arrow-alt-circle-left"></i> Anterior
+                </button>
+                <button class="btn btn-primary" data-bind="click:pasoEstadia">Siguiente <i
+                    class="fas fa-arrow-alt-circle-right"></i></button>
+                </div>
+            </div>
+
+            <div class="form-row paso" id="paso-estadia">
+                <div class="col-md-12">
+                    <div class="main-card mb-3 card">
+                        <div class="card-body">
+                            <div class="form-row">
+                                <div class="col-md-12">
+                                    <h5><b>4. Seleccionar estadia</b></h5>
+                                    <hr />
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label>Periodo de hospitalización</label>
+                                        <input type="text" class="form-control" id="Periodo" data-bind="value:periodo" />
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <label>Observaciones</label>
+                                    @Html.TextAreaFor(a => a.Observaciones, 5, 500, new
+                                    {
+                                        @class = "form-control",
+                                        @placeholder = "Observaciones",
+                                        data_bind = "value:observaciones"
+                                    })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 text-right">
+                    <button class="btn btn-warning" data-bind="click:volverPaciente">
+                        <i class="fas fa-arrow-alt-circle-left"></i> Anterior
+                    </button>
+                    <button class="btn btn-primary" data-bind="click:pasoConsentimiento">Siguiente<i
+                        class="fas fa-arrow-alt-circle-right"></i></button>
+                    </div>
+                </div>
+
+                <div class="form-row paso" id="paso-consentimiento">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-12">
+                                        <h5><b>5. Consentimiento</b></h5>
+                                        <hr />
+                                    </div>
+                                    @* <div class="col-md-12">
+                        <b>Archivo cargado</b><br />
+                        <!--ko if:urlArchivoConsentimiento()!=null && urlArchivoConsentimiento()!=''-->
+                        <a data-bind="attr:{href:urlArchivoConsentimiento}" href="#" target="_blank">Archivo
+                            consentimiento</a>
+                        <!--/ko-->
+                        <!--ko if:urlArchivoConsentimiento()==null || urlArchivoConsentimiento()==''-->
+                        No hay archivo cargado aun
+                        <!--/ko-->
+                    </div>
+                    <div class="col-md-12">
+                        <b>Subir/cambiar archivo consentimiento firmado</b><br />
+                            <input type="text" id="nuevo-nombre-archivo" class="form-control" placeholder="Ingrese el nombre del archivo sin la extensión" />
+
+                        <input type="file" id="archivo-consentimiento-firmado" class="form-control"
+                            data-bind="event:{change:subirArchivoConsentimientoFirmado}" />
+                    </div> *@
+                                    <div>
+                                        <h6><b>Redactar / Crear Consentimiento</b></h6>
+                                        <a href="#" id="irAhora" class="btn btn-primary" target="_blank">
+                                            <i class="fas fa-external-link-alt"></i>&nbsp; Ir Ahora
+                                        </a>
+                                        <div id="mensajeConsulta" style="display: none;" class="mt-3">
+                                            <div class="alert alert-info">
+                                                <p>Se ha consultado la base de datos. Si no recuerdas haber creado este documento de
+                                                    consentimiento para este usuario y habitación, haz clic en <a href="#" id="irAhora"
+                                                                                                              class="btn btn-primary"><i class="fas fa-external-link-alt"></i>&nbsp; Ir
+                                                    Ahora</a> para crear uno nuevo. </br>
+                                                    Si ya has creado el nuevo documento de consentimiento, haz clic en 'Imprimir
+                                                    Consentimiento'.</p>
+                                                </div>
+                                                <a class="btn btn-danger" target="_blank" style="color: white; display: none;"
+                                                       id="botonImprimir">
+                                                    <i class="fas fa-print"></i>&nbsp; Imprimir Consentimiento
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12 text-right">
+                            @if(clienteconf != "SS"){ 
+                            <button class="btn btn-warning" data-bind="click:volverEstadia">
+                                <i class="fas fa-arrow-alt-circle-left"></i> Anterior
+                            </button>
+                            }
+
+                            @* <button class="btn btn-primary" data-bind="click:pasoResumen">Siguiente (Resumen)<i
+                                            class="fas fa-arrow-alt-circle-right"></i></button> *@
+
+                            <button class="btn btn-primary" data-bind="click:pasoCuestionario">Siguiente<i
+                                class="fas fa-arrow-alt-circle-right"></i></button>
+                            </div>
+                        </div>
+
+
+
+                        <div class="form-row paso" id="paso-cuestionario">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="form-row">
+                                            <div class="col-md-12">
+                                                <h5><b>6. Cuestionario Pre-Anestésico</b></h5>
+                                                <hr />
+                                            </div>
+                                            <div>
+                                                <h6><b>Redactar / Crear Cuestionario</b></h6>
+                                                <button type="button" id="irCuestionario" class="btn btn-primary"
+                                                        onclick="abrirVentanaHija('cuestionario')">
+                                                    <i class="fas fa-external-link-alt"></i>&nbsp; Ir Ahora
+                                                </button>
+                                                <div id="mensajeCuestionario" style="display: none;" class="mt-3">
+                                                    <div class="alert alert-info">
+                                                        <p>Se ha consultado la base de datos. Si no recuerdas haber creado este cuestionario
+                                                            para este usuario y habitación, haz clic en
+                                                            <button type="button" class="btn btn-primary btn-sm"
+                                                                    onclick="abrirVentanaHija('cuestionario')">
+                                                                <i class="fas fa-external-link-alt"></i>&nbsp; Ir Ahora
+                                                            </button> para crear uno nuevo.<br />
+                                                            Si ya has creado el nuevo cuestionario, haz clic en 'Imprimir Cuestionario'.
+                                                        </p>
+                                                    </div>
+                                                    <a class="btn btn-danger" target="_blank" style="color: white; display: none;"
+                                                       id="botonImprimirCuestionario">
+                                                        <i class="fas fa-print"></i>&nbsp; Imprimir Cuestionario
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-12 text-right">
+                                        <button class="btn btn-warning" data-bind="click:volverConsentimiento">
+                                            <i class="fas fa-arrow-alt-circle-left"></i> Anterior
+                                        </button>
+                                        <button class="btn btn-primary" data-bind="click:pasoListaChequeo">Siguiente<i
+                                            class="fas fa-arrow-alt-circle-right"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                        </div>
+
+
+                        <div class="form-row paso" id="paso-chequeo">
+                                    <div class="col-md-12">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <div class="form-row">
+                                                    <div class="col-md-12">
+                                                        <h5><b>7. Lista de Chequeo</b></h5>
+                                                        <hr />
+                                                    </div>
+                                                    <div>
+                                                        <h6><b>Redactar / Crear Lista de Chequeo</b></h6>
+                                                        <button type="button" id="irListaChequeo" class="btn btn-primary"
+                                                                onclick="abrirVentanaHija('listachequeo')">
+                                                            <i class="fas fa-external-link-alt"></i>&nbsp; Ir Ahora
+                                                        </button>
+                                                        <div id="mensajeListaChequeo" style="display: none;" class="mt-3">
+                                                            <div class="alert alert-info">
+                                                                <p>Se ha consultado la base de datos. Si no recuerdas haber creado esta lista de chequeo
+                                                                    para este usuario y habitación, haz clic en
+                                                                    <button type="button" class="btn btn-primary btn-sm"
+                                                                            onclick="abrirVentanaHija('listachequeo')">
+                                                                        <i class="fas fa-external-link-alt"></i>&nbsp; Ir Ahora
+                                                                    </button> para crear una nueva.<br />
+                                                                    Si ya has creado la nueva lista de chequeo, haz clic en 'Imprimir Lista de Chequeo'.
+                                                                </p>
+                                                            </div>
+                                                            <a class="btn btn-danger" target="_blank" style="color: white; display: none;"
+                                                               id="botonImprimirListaChequeo">
+                                                                <i class="fas fa-print"></i>&nbsp; Imprimir Lista de Chequeo
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12 text-right mt-3">
+                                            <button class="btn btn-warning" data-bind="click:volverCuestionario">
+                                                <i class="fas fa-arrow-alt-circle-left"></i> Anterior
+                                            </button>
+                                            <button class="btn btn-primary" data-bind="click:pasoFirmas">Siguiente<i
+                                                class="fas fa-arrow-alt-circle-right"></i></button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+
+                                    <div class="form-row paso" id="paso-firmas">
+                                        <div class="col-md-12">
+                                            <div class="main-card mb-3 card">
+                                                <div class="card-body">
+                                                    <h5><b>8. Firmas de Conformidad</b></h5>
+                                                    <hr />
+                                                    <div class="row">
+
+                                                        @* ── Firma Paciente ── *@
+                                                        <div class="col-md-6 border-right mb-3">
+                                                            <h6><b>Firma del Paciente</b></h6>
+
+                                                            <ul class="nav nav-pills mb-2" style="gap:5px;">
+                                                                <li class="nav-item">
+                                                                    <a class="nav-link active btn-sm" href="#"
+                                                                       onclick="switchTabFirma('paciente','canvas'); return false;">
+                                                                        <i class="fas fa-pen mr-1"></i> Dibujar
+                                                                    </a>
+                                                                </li>
+                                                                <li class="nav-item">
+                                                                    <a class="nav-link btn-sm" href="#"
+                                                                       onclick="switchTabFirma('paciente','archivo'); return false;">
+                                                                        <i class="fas fa-upload mr-1"></i> Subir imagen
+                                                                    </a>
+                                                                </li>
+                                                            </ul>
+
+                                                            @* Panel canvas *@
+                                                            <div id="panel-canvas-paciente">
+                                                                <div class="firma-canvas-wrapper border rounded"
+                                                                     style="background:#f9fafb; position:relative; touch-action:none;">
+                                                                    <canvas id="canvasFirmaPaciente"
+                                                                            style="display:block; width:100%; cursor:crosshair; touch-action:none;"></canvas>
+                                                                    <p class="firma-hint text-muted" id="hint-paciente"
+                                                                       style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+                                                                              font-size:0.8rem;pointer-events:none;user-select:none;white-space:nowrap;">
+                                                                        Firma aquí
+                                                                    </p>
+                                                                </div>
+                                                                <div class="d-flex justify-content-between align-items-center mt-1">
+                                                                    <button type="button" class="btn btn-link btn-sm text-danger p-0"
+                                                                            onclick="limpiarFirmaCanvas('paciente')">
+                                                                        <i class="fas fa-trash-alt mr-1"></i> Limpiar
+                                                                    </button>
+                                                                    <button type="button" class="btn btn-success btn-sm"
+                                                                            onclick="subirFirmaCanvas('paciente')">
+                                                                        <i class="fas fa-check mr-1"></i> Confirmar firma
+                                                                    </button>
+                                                                </div>
+                                                                @* Estado de firma guardada *@
+                                                                <div id="estado-firma-paciente" class="mt-2" style="display:none;">
+                                                                    <span class="badge badge-success">
+                                                                        <i class="fas fa-check-circle mr-1"></i> Firma guardada
+                                                                    </span>
+                                                                    <a href="#" class="btn btn-link btn-sm text-danger p-0 ml-2"
+                                                                       onclick="eliminarFirmaGuardada('paciente'); return false;">
+                                                                        Eliminar
+                                                                    </a>
+                                                                    <img id="preview-firma-guardada-paciente"
+                                                                         style="display:block; max-height:60px; margin-top:4px; border:1px solid #e2e8f0; border-radius:4px;" />
+                                                                </div>
+                                                            </div>
+
+                                                            @* Panel subir archivo *@
+                                                            <div id="panel-archivo-paciente" class="d-none">
+                                                                <input type="file" class="form-control form-control-sm" accept="image/*"
+                                                                       onchange="previsualizarFirma(this, 'prev-paciente')" />
+                                                                <img id="prev-paciente" style="max-height:80px; display:none; margin-top:6px;
+                                                                     border:1px solid #e2e8f0; border-radius:4px;" />
+                                                            </div>
+                                                        </div>
+
+                                                        @* ── Firma Responsable ── *@
+                                                        <div class="col-md-6 mb-3">
+                                                            <h6><b>Firma del Responsable de Cuenta</b></h6>
+
+                                                            <ul class="nav nav-pills mb-2" style="gap:5px;">
+                                                                <li class="nav-item">
+                                                                    <a class="nav-link active btn-sm" href="#"
+                                                                       onclick="switchTabFirma('responsable','canvas'); return false;">
+                                                                        <i class="fas fa-pen mr-1"></i> Dibujar
+                                                                    </a>
+                                                                </li>
+                                                                <li class="nav-item">
+                                                                    <a class="nav-link btn-sm" href="#"
+                                                                       onclick="switchTabFirma('responsable','archivo'); return false;">
+                                                                        <i class="fas fa-upload mr-1"></i> Subir imagen
+                                                                    </a>
+                                                                </li>
+                                                            </ul>
+
+                                                            <div id="panel-canvas-responsable">
+                                                                <div class="firma-canvas-wrapper border rounded"
+                                                                     style="background:#f9fafb; position:relative; touch-action:none;">
+                                                                    <canvas id="canvasFirmaResponsable"
+                                                                            style="display:block; width:100%; cursor:crosshair; touch-action:none;"></canvas>
+                                                                    <p class="firma-hint text-muted" id="hint-responsable"
+                                                                       style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+                                                                              font-size:0.8rem;pointer-events:none;user-select:none;white-space:nowrap;">
+                                                                        Firma aquí
+                                                                    </p>
+                                                                </div>
+                                                                <div class="d-flex justify-content-between align-items-center mt-1">
+                                                                    <button type="button" class="btn btn-link btn-sm text-danger p-0"
+                                                                            onclick="limpiarFirmaCanvas('responsable')">
+                                                                        <i class="fas fa-trash-alt mr-1"></i> Limpiar
+                                                                    </button>
+                                                                    <button type="button" class="btn btn-success btn-sm"
+                                                                            onclick="subirFirmaCanvas('responsable')">
+                                                                        <i class="fas fa-check mr-1"></i> Confirmar firma
+                                                                    </button>
+                                                                </div>
+                                                                <div id="estado-firma-responsable" class="mt-2" style="display:none;">
+                                                                    <span class="badge badge-success">
+                                                                        <i class="fas fa-check-circle mr-1"></i> Firma guardada
+                                                                    </span>
+                                                                    <a href="#" class="btn btn-link btn-sm text-danger p-0 ml-2"
+                                                                       onclick="eliminarFirmaGuardada('responsable'); return false;">
+                                                                        Eliminar
+                                                                    </a>
+                                                                    <img id="preview-firma-guardada-responsable"
+                                                                         style="display:block; max-height:60px; margin-top:4px; border:1px solid #e2e8f0; border-radius:4px;" />
+                                                                </div>
+                                                            </div>
+
+                                                            <div id="panel-archivo-responsable" class="d-none">
+                                                                <input type="file" class="form-control form-control-sm" accept="image/*"
+                                                                       onchange="previsualizarFirma(this, 'prev-responsable')" />
+                                                                <img id="prev-responsable" style="max-height:80px; display:none; margin-top:6px;
+                                                                     border:1px solid #e2e8f0; border-radius:4px;" />
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12 text-right">
+                                            <button class="btn btn-warning" data-bind="click: volverChequeo">
+                                                <i class="fas fa-arrow-alt-circle-left"></i> Anterior
+                                            </button>
+                                            <button class="btn btn-primary" data-bind="click:pasoResumen">
+                                                Siguiente (Resumen) <i class="fas fa-arrow-alt-circle-right"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+<div class="form-row paso" id="paso-resumen">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <h5><b>9. Resumen de hospitalizacion</b></h5>
+                        <hr />
+                    </div>
+                    <div class="col-md-4">
+                        <b>Especialidad</b><br />
+                        <span data-bind="text:especialidadNombre"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <b>Tarifa</b><br />
+                        <span data-bind="text: tarifaSeleccionada() ? tarifaSeleccionada().NombreTarifa + ' - Q ' + tarifaSeleccionada().ValorTarifa : 'No seleccionada'"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <b>Nombre del paciente</b><br />
+                        <span data-bind="text:pacienteNombre"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <b>DPI del paciente</b><br />
+                        <span data-bind="text:pacienteDpi"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <b>Telefono del paciente</b><br />
+                        <span data-bind="text:pacienteTelefono"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <b>Fecha de nacimiento</b><br />
+                        <span data-bind="text:pacienteFechaNacimiento"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <b>Periodo</b><br />
+                        <span data-bind="text:periodo"></span>
+                    </div>
+                    <div class="col-md-12">
+                        <b>Observaciones</b><br />
+                        <span data-bind="text:observaciones"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <h5><b>Consentimiento</b></h5>
+                        <a class="btn btn-danger" target="_blank" style="color: white; display:none;" id="botonImprimir2">
+                            <i class="fas fa-print"></i>&nbsp; Imprimir Consentimiento
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-12 text-right mt-3">
+        <button class="btn btn-warning" data-bind="click:volverFirmas">
+            <i class="fas fa-arrow-alt-circle-left"></i> Anterior
+        </button>
+        <!-- Mensaje si no hay consentimiento -->
+        <p id="mensajeConsentimiento" class="text-danger" style="display: none;">
+            El formulario de consentimiento es obligatorio antes de finalizar la hospitalización.
+        </p>
+        <!-- Mensajes si faltan firmas -->
+        <p id="mensajeFirmaPaciente" class="text-danger" style="display: none;">
+            <i class="fas fa-exclamation-triangle mr-1"></i>
+            La firma del paciente es obligatoria. Regrese al paso 8 y confirme la firma.
+        </p>
+        <p id="mensajeFirmaResponsable" class="text-danger" style="display: none;">
+            <i class="fas fa-exclamation-triangle mr-1"></i>
+            La firma del responsable de cuenta es obligatoria. Regrese al paso 8 y confirme la firma.
+        </p>
+        <!-- Botón Finalizar: se muestra solo cuando existe consentimiento -->
+        <button id="btnFinalizar" class="btn btn-primary" data-bind="click:registrarHospitalizacion" style="display: none;">
+            Finalizar
+        </button>
+    </div>
+</div>
+
+                                                                <script>
+
+                                                                        // ── Variables globales (accesibles desde funciones globales) ──
+                                                                        var urlCuestionario = null;
+                                                                        var urlListaChequeo = null;
+                                                                        var habitacionId    = '@habitacionId';
+                                                                        var pacienteId      = '@Model.PacienteId';
+
+                                                                       
+                                                                        function abrirVentanaHija(tipo) {
+                                                                            var url = tipo === 'cuestionario' ? urlCuestionario : urlListaChequeo;
+                                                                            if (!url) {
+                                                                                alert('Primero debe seleccionar un paciente.');
+                                                                                return;
+                                                                            }
+                                                                            window.open(url, '_blank');
+                                                                        }
+
+                                                                        document.addEventListener("DOMContentLoaded", function () {
+                                                                            $(".paso").hide();
+                                                                            $("#paso-especialidad").show();
+                                                                            actualizarVisualizacionStepper(1);
+                                                                            // habitacionId y pacienteId ya son globales arriba
+                                                                            var consultaId = '@consultaId';
+                                                                            var citaId     = '@Model.CitaId';
+
+                                                                            // Iniciar el intervalo para calcular las URLs cuando pacienteId esté disponible
+                                                                            var interval = setInterval(function () {
+                                                                                if (!pacienteId || pacienteId === "0") {
+                                                                                    pacienteId = document.querySelector('[data-bind="value:pacienteId"]').value;
+                                                                                }
+
+                                                                                if (pacienteId && pacienteId !== "0") {
+                                                                                    var newHref = '@Url.Action("CrearFormConsentimientoHospi", "Pacientes", new { HabitacionId = "__habitacionId__", PacienteId = "__pacienteId__", ConsultaId = "__consultaId__", CitaId = "__citaId__" })'
+                                                                                        .replace('__habitacionId__', habitacionId)
+                                                                                        .replace('__pacienteId__', pacienteId)
+                                                                                        .replace('__consultaId__', consultaId)
+                                                                                        .replace('__citaId__', citaId)
+                                                                                        .replace(/&amp;/g, '&');
+
+                                                                                    urlCuestionario = '@Url.Action("CargarCuestionarioPreAnestesico", "Hospitalizacion", new { HabitacionId = "__habitacionId__", PacienteId = "__pacienteId__", CitaId = "__citaId__" })'
+                                                                                        .replace('__habitacionId__', habitacionId)
+                                                                                        .replace('__pacienteId__', pacienteId)
+                                                                                        .replace('__citaId__', citaId)
+                                                                                        .replace(/&amp;/g, '&');
+
+                                                                                    urlListaChequeo = '@Url.Action("CargarListaChequeo", "Hospitalizacion", new { HabitacionId = "__habitacionId__", PacienteId = "__pacienteId__", CitaId = "__citaId__" })'
+                                                                                        .replace('__habitacionId__', habitacionId)
+                                                                                        .replace('__pacienteId__', pacienteId)
+                                                                                        .replace('__citaId__', citaId)
+                                                                                        .replace(/&amp;/g, '&');
+
+                                                                                    // El consentimiento sigue con href directo (no necesita window.opener)
+                                                                                    document.getElementById('irAhora').href = newHref;
+
+                                                                                    clearInterval(interval);
+                                                                                }
+                                                                            }, 500);
+
+                                                                            function consultarExistenciaConsentimiento() {
+                                                                                var pidActual = (typeof hospitalizarVm !== 'undefined' && hospitalizarVm.pacienteId && hospitalizarVm.pacienteId())
+                                                                                    ? hospitalizarVm.pacienteId()
+                                                                                    : pacienteId;
+
+                                                                                if (!pidActual || pidActual === "0" || pidActual === 0) return;
+
+                                                                                $.ajax({
+                                                                                    url: "/ConsentimientoHospi/ObtenerPorPacienteYHabitacion",
+                                                                                    method: "GET",
+                                                                                    data: {
+                                                                                        pacienteId: parseInt(pidActual),
+                                                                                        habitacionId: parseInt(habitacionId)
+                                                                                    },
+                                                                                    success: function (dataResult) {
+                                                                                        let data = JSON.parse(dataResult);
+                                                                                        if (data.exitoso) {
+                                                                                            $('#mensajeConsulta').show();
+                                                                                            $('#botonImprimir').show();
+                                                                                            $('#botonImprimir2').show();
+
+                                                                                            var resultado = data.resultado;
+                                                                                            if (resultado) {
+                                                                                                var urlFirmaPac  = resultado.URLFirmaPaciente    || resultado.urlFirmaPaciente    || '';
+                                                                                                var urlFirmaResp = resultado.URLFirmaResponsable || resultado.urlFirmaResponsable || '';
+
+                                                                                                if (urlFirmaPac && !hospitalizarVm.urlFirmaPaciente()) {
+                                                                                                    hospitalizarVm.urlFirmaPaciente(urlFirmaPac);
+                                                                                                    hospitalizarVm.firmaPacienteBase64(urlFirmaPac);
+                                                                                                    // Mostrar badge y preview en el paso de firmas
+                                                                                                    var estadoPac = document.getElementById('estado-firma-paciente');
+                                                                                                    var previewPac = document.getElementById('preview-firma-guardada-paciente');
+                                                                                                    if (estadoPac) estadoPac.style.display = '';
+                                                                                                    if (previewPac) previewPac.src = urlFirmaPac;
+                                                                                                    // Ocultar el hint del canvas
+                                                                                                    var hintPac = document.getElementById('hint-paciente');
+                                                                                                    if (hintPac) hintPac.style.display = 'none';
+                                                                                                    _firmaState['paciente'].firmada = true;
+                                                                                                }
+
+                                                                                                if (urlFirmaResp && !hospitalizarVm.urlFirmaResponsable()) {
+                                                                                                    hospitalizarVm.urlFirmaResponsable(urlFirmaResp);
+                                                                                                    hospitalizarVm.firmaResponsableBase64(urlFirmaResp);
+                                                                                                    var estadoResp = document.getElementById('estado-firma-responsable');
+                                                                                                    var previewResp = document.getElementById('preview-firma-guardada-responsable');
+                                                                                                    if (estadoResp) estadoResp.style.display = '';
+                                                                                                    if (previewResp) previewResp.src = urlFirmaResp;
+                                                                                                    var hintResp = document.getElementById('hint-responsable');
+                                                                                                    if (hintResp) hintResp.style.display = 'none';
+                                                                                                    _firmaState['responsable'].firmada = true;
+                                                                                                }
+                                                                                            }
+
+                                                                                            // Evaluar estado del botón Finalizar con los datos ya cargados
+                                                                                            actualizarEstadoBtnFinalizar(true);
+
+                                                                                            if (hospitalizarVm && hospitalizarVm.listaChequeo) {
+                                                                                                hospitalizarVm.listaChequeo.ci_consentimiento('SI');
+                                                                                            }
+                                                                                        } else {
+                                                                                            $('#mensajeConsulta').hide();
+                                                                                            $('#botonImprimir').hide();
+                                                                                            $('#botonImprimir2').hide();
+                                                                                            actualizarEstadoBtnFinalizar(false);
+                                                                                        }
+                                                                                    },
+                                                                                    error: function (dataError) {
+                                                                                        console.log('Error consultando consentimiento:', dataError);
+                                                                                    }
+                                                                                });
+                                                                            }
+
+                                                                           
+                                                                            function actualizarEstadoBtnFinalizar(tieneConsentimiento) {
+                                                                                var tieneFirmaPaciente    = !!(hospitalizarVm && hospitalizarVm.urlFirmaPaciente && hospitalizarVm.urlFirmaPaciente());
+                                                                                var tieneFirmaResponsable = !!(hospitalizarVm && hospitalizarVm.urlFirmaResponsable && hospitalizarVm.urlFirmaResponsable());
+
+                                                                                $('#mensajeFirmaPaciente').toggle(!tieneFirmaPaciente);
+                                                                                $('#mensajeFirmaResponsable').toggle(!tieneFirmaResponsable);
+
+                                                                                if (tieneConsentimiento && tieneFirmaPaciente && tieneFirmaResponsable) {
+                                                                                    $('#btnFinalizar').show();
+                                                                                    $('#mensajeConsentimiento').hide();
+                                                                                } else {
+                                                                                    $('#btnFinalizar').hide();
+                                                                                    $('#mensajeConsentimiento').toggle(!tieneConsentimiento);
+                                                                                }
+                                                                            }
+
+                                                                            function consultarExistenciaCuestionario() {
+                                                                                // Logica para verificar si el cuestionario ya existe
+                                                                            }
+
+                                                                            setInterval(function () {
+                                                                                consultarExistenciaConsentimiento();
+                                                                            }, 3000)
+
+                                                                            // Asignamos el manejador de eventos al botón de imprimir
+                                                                            $('#botonImprimir').on('click', function () {
+                                                                                generarPDFConsentimiento(parseInt(pacienteId), parseInt(habitacionId));
+                                                                            });
+
+                                                                            $('#botonImprimir2').on('click', function () {
+                                                                                generarPDFConsentimiento(parseInt(pacienteId), parseInt(habitacionId));
+                                                                            });
+
+                                                                            function generarPDFConsentimiento(idPaciente, idHabitacion, idHospi = null) {
+                                                                                // citaId viene de la variable global del script (query param de la URL)
+                                                                                const idCita = (typeof citaId !== 'undefined' && citaId && citaId !== '0') ? citaId : null;
+                                                                                const url = `/CrearPDF/GenerarPDFConsentimientoHospi?idPaciente=${idPaciente}&idHabitacion=${idHabitacion}&idHospi=${idHospi}&citaId=${idCita}`;
+                                                                                window.open(url, "_blank");
+                                                                            }
+                                                                        });
+
+                                                                        // ── CANVAS DE FIRMAS — PASO 8 ────────────────────────────────
+                                                                        var _firmaState = {
+                                                                            paciente:    { lineas: [], drawing: false, firmada: false },
+                                                                            responsable: { lineas: [], drawing: false, firmada: false }
+                                                                        };
+
+                                                                        // Inicializa ambos canvas al entrar al paso 8
+                                                                        function inicializarCanvases() {
+                                                                            setupCanvas('paciente');
+                                                                            setupCanvas('responsable');
+                                                                        }
+
+                                                                        function setupCanvas(tipo) {
+                                                                            var canvasId = tipo === 'paciente' ? 'canvasFirmaPaciente' : 'canvasFirmaResponsable';
+                                                                            var canvas   = document.getElementById(canvasId);
+                                                                            if (!canvas) return;
+
+                                                                            var state = _firmaState[tipo];
+
+                                                                            var wrapper = canvas.parentElement;
+                                                                            canvas.width  = wrapper.offsetWidth  || 400;
+                                                                            canvas.height = 180;
+
+                                                                            var ctx = canvas.getContext('2d');
+                                                                            ctx.strokeStyle = '#1a1a2e';
+                                                                            ctx.lineWidth   = 2.5;
+                                                                            ctx.lineJoin    = 'round';
+                                                                            ctx.lineCap     = 'round';
+                                                                            ctx.fillStyle   = '#f9fafb';
+                                                                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                                                                            _redibujarLineas(tipo);
+
+                                                                            function getPos(e) {
+                                                                                var rect   = canvas.getBoundingClientRect();
+                                                                                var scaleX = canvas.width  / rect.width;
+                                                                                var scaleY = canvas.height / rect.height;
+                                                                                var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                                                                                var clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                                                                                return {
+                                                                                    x: (clientX - rect.left) * scaleX,
+                                                                                    y: (clientY - rect.top)  * scaleY
+                                                                                };
+                                                                            }
+
+                                                                            function onStart(e) {
+                                                                                e.preventDefault();
+                                                                                state.drawing = true;
+                                                                                var p = getPos(e);
+                                                                                state.lineas.push([{ x: p.x, y: p.y }]);
+                                                                                // Ocultar hint la primera vez que se dibuja
+                                                                                var hint = document.getElementById('hint-' + tipo);
+                                                                                if (hint) hint.style.display = 'none';
+                                                                            }
+
+                                                                            function onMove(e) {
+                                                                                if (!state.drawing) return;
+                                                                                e.preventDefault();
+                                                                                var p = getPos(e);
+                                                                                state.lineas[state.lineas.length - 1].push({ x: p.x, y: p.y });
+                                                                                _redibujarLineas(tipo);
+                                                                            }
+
+                                                                            function onEnd(e) {
+                                                                                state.drawing = false;
+                                                                            }
+
+                                                                            // Limpiar listeners previos clonando el nodo
+                                                                            var nuevoCanvas = canvas.cloneNode(true);
+                                                                            canvas.parentNode.replaceChild(nuevoCanvas, canvas);
+                                                                            canvas = nuevoCanvas;
+
+                                                                            // Restaurar ctx con el nuevo nodo
+                                                                            ctx = canvas.getContext('2d');
+                                                                            ctx.fillStyle = '#f9fafb';
+                                                                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                                                                            ctx.strokeStyle = '#1a1a2e';
+                                                                            ctx.lineWidth   = 2.5;
+                                                                            ctx.lineJoin    = 'round';
+                                                                            ctx.lineCap     = 'round';
+                                                                            _redibujarLineas(tipo);
+
+                                                                            // Mouse
+                                                                            canvas.addEventListener('mousedown',  onStart, { passive: false });
+                                                                            canvas.addEventListener('mousemove',  onMove,  { passive: false });
+                                                                            canvas.addEventListener('mouseup',    onEnd);
+                                                                            canvas.addEventListener('mouseleave', onEnd);
+
+                                                                            // Touch (permite dibujar sin hacer scroll)
+                                                                            canvas.addEventListener('touchstart', onStart, { passive: false });
+                                                                            canvas.addEventListener('touchmove',  onMove,  { passive: false });
+                                                                            canvas.addEventListener('touchend',   onEnd,   { passive: false });
+                                                                        }
+
+                                                                        function _redibujarLineas(tipo) {
+                                                                            var canvasId = tipo === 'paciente' ? 'canvasFirmaPaciente' : 'canvasFirmaResponsable';
+                                                                            var canvas   = document.getElementById(canvasId);
+                                                                            if (!canvas) return;
+                                                                            var ctx    = canvas.getContext('2d');
+                                                                            var lineas = _firmaState[tipo].lineas;
+
+                                                                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                                                                            ctx.fillStyle = '#f9fafb';
+                                                                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                                                                            ctx.strokeStyle = '#1a1a2e';
+                                                                            ctx.lineWidth   = 2.5;
+                                                                            ctx.lineJoin    = 'round';
+                                                                            ctx.lineCap     = 'round';
+
+                                                                            lineas.forEach(function(seg) {
+                                                                                if (seg.length < 1) return;
+                                                                                ctx.beginPath();
+                                                                                ctx.moveTo(seg[0].x, seg[0].y);
+                                                                                seg.forEach(function(p) { ctx.lineTo(p.x, p.y); });
+                                                                                ctx.stroke();
+                                                                            });
+                                                                        }
+
+                                                                        // Limpia el canvas Y el estado de trazos
+                                                                        function limpiarFirmaCanvas(tipo) {
+                                                                            var canvasId = tipo === 'paciente' ? 'canvasFirmaPaciente' : 'canvasFirmaResponsable';
+                                                                            var canvas   = document.getElementById(canvasId);
+                                                                            if (!canvas) return;
+                                                                            _firmaState[tipo].lineas  = [];
+                                                                            _firmaState[tipo].firmada = false;
+                                                                            var ctx = canvas.getContext('2d');
+                                                                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                                                                            ctx.fillStyle = '#f9fafb';
+                                                                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                                                                            // Mostrar hint de nuevo
+                                                                            var hint = document.getElementById('hint-' + tipo);
+                                                                            if (hint) hint.style.display = '';
+                                                                        }
+
+                                                                        // Sube la firma al servidor y guarda la URL en el ViewModel
+                                                                        function subirFirmaCanvas(tipo) {
+                                                                            var canvasId = tipo === 'paciente' ? 'canvasFirmaPaciente' : 'canvasFirmaResponsable';
+                                                                            var canvas   = document.getElementById(canvasId);
+                                                                            if (!canvas) return;
+
+                                                                            if (_firmaState[tipo].lineas.length === 0) {
+                                                                                alert('Por favor dibuje la firma antes de confirmar.');
+                                                                                return;
+                                                                            }
+
+                                                                            var dataBase64 = canvas.toDataURL('image/png');
+                                                                            showLoading();
+
+                                                                            $.ajax({
+                                                                                method: 'POST',
+                                                                                url: '/Files/SubirArchivo',
+                                                                                data: { base64Archivo: dataBase64, extension: '.png' },
+                                                                                success: function(data) {
+                                                                                    if (!data.exitoso) {
+                                                                                        hideLoading();
+                                                                                        alert(data.mensaje || 'Error al subir la firma');
+                                                                                        return;
+                                                                                    }
+
+                                                                                    var url = data.url;
+
+                                                                                    // 1. Guardar en el ViewModel (para enviarlo al finalizar)
+                                                                                    if (tipo === 'paciente') {
+                                                                                        hospitalizarVm.firmaPacienteBase64(dataBase64);
+                                                                                        hospitalizarVm.urlFirmaPaciente(url);
+                                                                                    } else {
+                                                                                        hospitalizarVm.firmaResponsableBase64(dataBase64);
+                                                                                        hospitalizarVm.urlFirmaResponsable(url);
+                                                                                    }
+
+                                                                                    // 2. Persistir en BD en el ConsentimientoHospi existente
+                                                                                    var pidActual = (hospitalizarVm.pacienteId && hospitalizarVm.pacienteId())
+                                                                                        ? hospitalizarVm.pacienteId()
+                                                                                        : pacienteId;
+
+                                                                                    var payload = {
+                                                                                        pacienteId:   parseInt(pidActual),
+                                                                                        habitacionId: parseInt(habitacionId)
+                                                                                    };
+                                                                                    if (tipo === 'paciente') {
+                                                                                        payload.urlFirmaPaciente = url;
+                                                                                    } else {
+                                                                                        payload.urlFirmaResponsable = url;
+                                                                                    }
+
+                                                                                    $.ajax({
+                                                                                        method: 'POST',
+                                                                                        url: '/ConsentimientoHospi/ActualizarFirmas',
+                                                                                        data: payload,
+                                                                                        success: function(result) {
+                                                                                            hideLoading();
+                                                                                            var res = typeof result === 'string' ? JSON.parse(result) : result;
+                                                                                            if (res.exitoso) {
+                                                                                                _firmaState[tipo].firmada = true;
+                                                                                                var estado = document.getElementById('estado-firma-' + tipo);
+                                                                                                if (estado) {
+                                                                                                    var previewGuardada = document.getElementById('preview-firma-guardada-' + tipo);
+                                                                                                    if (previewGuardada) previewGuardada.src = dataBase64;
+                                                                                                    estado.style.display = '';
+                                                                                                }
+                                                                                                mensajeEmergente('Firma guardada correctamente');
+                                                                                            } else {
+                                                                                                alert(res.mensaje || 'La firma se subió pero no se pudo guardar en el consentimiento');
+                                                                                            }
+                                                                                        },
+                                                                                        error: function() {
+                                                                                            hideLoading();
+                                                                                            alert('Error al guardar la firma en el consentimiento');
+                                                                                        }
+                                                                                    });
+                                                                                },
+                                                                                error: function() {
+                                                                                    hideLoading();
+                                                                                    alert('Error de conexión al subir la firma');
+                                                                                }
+                                                                            });
+                                                                        }
+
+                                                                        // Elimina una firma ya guardada
+                                                                        function eliminarFirmaGuardada(tipo) {
+                                                                            if (tipo === 'paciente') {
+                                                                                hospitalizarVm.firmaPacienteBase64(null);
+                                                                                hospitalizarVm.urlFirmaPaciente('');
+                                                                            } else {
+                                                                                hospitalizarVm.firmaResponsableBase64(null);
+                                                                                hospitalizarVm.urlFirmaResponsable('');
+                                                                            }
+                                                                            _firmaState[tipo].firmada = false;
+                                                                            var estado = document.getElementById('estado-firma-' + tipo);
+                                                                            if (estado) estado.style.display = 'none';
+                                                                            limpiarFirmaCanvas(tipo);
+                                                                        }
+
+                                                                        function switchTabFirma(tipo, modo) {
+                                                                            var panelCanvas  = document.getElementById('panel-canvas-'  + tipo);
+                                                                            var panelArchivo = document.getElementById('panel-archivo-' + tipo);
+                                                                            if (modo === 'canvas') {
+                                                                                panelCanvas.classList.remove('d-none');
+                                                                                panelArchivo.classList.add('d-none');
+                                                                                // Re-inicializar canvas al volver a este panel
+                                                                                setTimeout(function() { setupCanvas(tipo); }, 50);
+                                                                            } else {
+                                                                                panelCanvas.classList.add('d-none');
+                                                                                panelArchivo.classList.remove('d-none');
+                                                                            }
+                                                                        }
+
+                                                                        window.previsualizarFirma = function (input, imgId) {
+                                                                            var file = input.files[0];
+                                                                            if (!file) return;
+                                                                            var reader = new FileReader();
+                                                                            reader.onload = function (e) {
+                                                                                var img = document.getElementById(imgId);
+                                                                                img.src = e.target.result;
+                                                                                img.style.display = 'block';
+                                                                                if (imgId === 'prev-paciente') {
+                                                                                    hospitalizarVm.firmaPacienteBase64(e.target.result);
+                                                                                } else if (imgId === 'prev-responsable') {
+                                                                                    hospitalizarVm.firmaResponsableBase64(e.target.result);
+                                                                                }
+                                                                            };
+                                                                            reader.readAsDataURL(file);
+                                                                        };
+                                                                </script>
+
+
+                                                                <script>
+                                                                    window.EmpresaConfig = {
+                                                                        Nombre: "@Config["EstablecimientoNombreEmpresa"]",
+                                                                        Logo: "@Config["ImagenLogoBase64"]",
+                                                                        Direccion: "@Config["EstablecimientoDireccion"]",
+                                                                        Telefono: "@Config["EstablecimientoTelefono"]"
+                                                                    };
+                                                                </script>
+
+                                                                <script src="~/js-utilidades-wp-email/SendEmail.js"></script>

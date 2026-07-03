@@ -1,0 +1,131 @@
+@using Database.Shared.Enumeraciones
+@using sistema.Models
+@model CajaDetallesViewModel
+
+@{
+    decimal totalEgreso = 0.00m;
+}
+
+
+<div class="form-row">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <h4>Egresos</h4>
+                <hr />
+                @if (Model.AmbienteId == (int)AmbienteEnum.Global)
+                {
+                    @if (Model.SucursalId == null)
+                    {
+                        <b>Filtrar por sucursal:</b>
+                        <div class="form-row">
+                            <div class="col-md-2">
+                                <input type="checkbox" class="egresos-filtro-sucursal"
+                               id="egresos-filtro-sucursal-" checked onchange="aplicarFiltrosEgresos()" />
+                                <label for="egresos-filtro-sucursal-">TODAS</label>
+                            </div>
+                            @foreach (var sucursal in Model.ListaSucursales)
+                            {
+                                <div class="col-md-2">
+                                    <input type="checkbox" class="egresos-filtro-sucursal"
+                               id="egresos-filtro-sucursal-@sucursal.Id" checked onchange="aplicarFiltrosEgresos()" />
+                                    <label for="egresos-filtro-sucursal-@sucursal.Id">@sucursal.NombreSucursal</label>
+                                </div>
+                            }
+                        </div>
+                        <hr />
+                    }
+                    <b>Filtrar por ambiente:</b>
+                    <div class="form-row">
+                        <div class="col-md-2">
+                            <input type="checkbox" class="egresos-filtro-ambiente"
+                               id="egresos-filtro-ambiente-@((int)AmbienteEnum.Global)"
+                               checked onchange="aplicarFiltrosEgresos()" />
+                            <label for="egresos-filtro-ambiente-@((int)AmbienteEnum.Global)">Global</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="checkbox" class="egresos-filtro-ambiente"
+                               id="egresos-filtro-ambiente-@((int)AmbienteEnum.Hospital)"
+                               checked onchange="aplicarFiltrosEgresos()" />
+                            <label for="egresos-filtro-ambiente-@((int)AmbienteEnum.Hospital)">Hospital</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="checkbox" class="egresos-filtro-ambiente"
+                               id="egresos-filtro-ambiente-@((int)AmbienteEnum.Farmacia)"
+                               checked onchange="aplicarFiltrosEgresos()" />
+                            <label for="egresos-filtro-ambiente-@((int)AmbienteEnum.Farmacia)">Farmacia</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="checkbox" class="egresos-filtro-ambiente"
+                               id="egresos-filtro-ambiente-@((int)AmbienteEnum.Clinica)"
+                               checked onchange="aplicarFiltrosEgresos()" />
+                            <label for="egresos-filtro-ambiente-@((int)AmbienteEnum.Clinica)">Clinica</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="checkbox" class="egresos-filtro-ambiente"
+                               id="egresos-filtro-ambiente-@((int)AmbienteEnum.Laboratorio)"
+                               checked onchange="aplicarFiltrosEgresos()" />
+                            <label for="egresos-filtro-ambiente-@((int)AmbienteEnum.Laboratorio)">Laboratorio</label>
+                        </div>
+                    </div>
+                }
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="table-responsive">
+                            <table class="mb-0 table table-hover ">
+                                <thead>
+                                    <tr>
+                                        <th>Sucursal</th>
+                                        <th>Ambiente</th>
+                                        <th>Fecha</th>
+                                        <th>Descripción</th>
+                                        <th>Número de comprobante</th>
+                                        <th>Cuenta contable</th>
+                                        <th>Total</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.Egresos == null || Model.Egresos.Count == 0)
+                                    {
+                                        <tr>
+                                            <td colspan="9">No hay egresos registrados</td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var egreso in Model.Egresos)
+                                        {
+                                            <tr class="egresos-reg-sucursal-@egreso.SucursalId egresos-reg-ambiente-@egreso.AmbienteId">
+                                                <td>@egreso.SucursalNombre</td>
+                                                <td><span class="badge badge-primary">@egreso.AmbienteNombre</span></td>
+                                                <td>@egreso.FechaEgreso</td>
+                                                <td>@egreso.Descripcion</td>
+                                                <td>@egreso.NumeroComprobante</td>
+                                                <td>@egreso.CuentaContable</td>
+                                                <td>Q <span class="egresos-valor-sucursal-@egreso.SucursalId egresos-valor-ambiente-@egreso.AmbienteId">@egreso.Total</span></td>
+                                                <td>
+                                                    <a class="btn btn-danger text-white" onclick="eliminarDetalle(@egreso.Id)">
+                                                        <i class="fas fa-trash"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+
+                                            totalEgreso += @egreso.Total;
+                                        }
+                                        <tr class="bg-dark text-light font-weight-bolder">
+                                            <td colspan="7">TOTAL</td>
+                                            <td>Q <span id="egresos-total">@totalEgreso</span></td>
+                                            <td></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

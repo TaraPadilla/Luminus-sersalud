@@ -1,0 +1,215 @@
+@using Database.Shared.Enumeraciones
+@using sistema.Models
+
+@model CajaDetallesViewModel
+
+@{
+    ViewData["Title"] = "Caja - Detalles";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+@Html.HiddenFor(a=>a.Id)
+@Html.HiddenFor(a=>a.SucursalId)
+
+<div class="main-card mb-3 card bg-dark text-light fixed-top" style="padding-top:60px;">
+    <div class="card-body">
+        <div class="form-row" style="padding-left:25%">
+            <div class="col-md-4 h4">
+                Estado de caja:
+                @{
+                    if (Model.EstadoCaja)
+                    {
+                        <span class="badge badge-success">ABIERTA</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge-danger">CERRADA</span>
+                    }
+                }
+            </div>
+            <div class="col-md-4 h4">
+                Ambiente:
+                <span class="badge badge-primary">@(Model.AmbienteNombre)</span>
+            </div>
+            <div class="col-md-4 h4">
+                Sucursal:
+                <span class="badge badge-primary">@(Model.SucursalNombre)</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="form-row" style="padding-top:75px">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+
+                @if (Model.EstadoCaja)
+                {
+                    <!-- Botón para abrir el modal -->
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#miModalIngreso"
+                        tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true" data-backdrop="false">
+                        Nuevo Ingreso
+                    </button>
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#miModalEgreso"
+                        tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true" data-backdrop="false">
+                        Nuevo Egreso
+                    </button>
+                }
+                @if (Model.EstadoCaja)
+                {
+                    <a onclick="cerrarCaja(@Model.Id)" class="btn btn-warning text-left">
+                        Cerrar caja
+                    </a>
+                }
+
+                <a href="@Url.Action("ReporteDetalle","Caja", new {id = @Model.Id})"
+                   class="btn btn-danger text-left" target="_blank">
+                    Generar PDF
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+@await Html.PartialAsync("_verDetalleVentas")
+
+@await Html.PartialAsync("_verDetalleMontos")
+
+@await Html.PartialAsync("_verDetalleCompras")
+
+@await Html.PartialAsync("_verDetalleIngresos")
+
+@await Html.PartialAsync("_verDetalleEgresos")
+
+@await Html.PartialAsync("_verDetalleSubcajas")
+
+
+<div class="form-row">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="text-right" style="font-size: 17px;">
+                    <span>Monto Apertura:</span>
+                    Q <span>@Model.MontoApertura</span>
+                </div>
+                <div class="text-right" style="font-size: 17px;">
+                    <span>Total Ingresos</span>
+                    Q <span>@Model.TotalIngresosCaja</span>
+                </div>
+                <div class="text-right" style="font-size: 17px;">
+                    <span>Total Egresos:</span>
+                    Q <span>@Model.TotalEgresosCaja</span>
+                </div>
+                <div class="text-right" style="font-size: 17px;">
+                    <span>Total Efectivo:</span>
+                    Q <span>@(Model.MontoApertura + (Model.Montos!=null?Model.Montos.Sum(a=>a.Efectivo):0))</span>
+                </div>
+                <div class="text-right" style="font-size: 17px;">
+                    <span>Total Cierre:</span>
+                    Q <span>@Model.TotalCierreCaja</span>
+                </div>
+                <div class="text-right" style="font-size: 17px;">
+                    <span>Monto de compras al credito:</span>
+                    Q <span>@Model.TotalComprasCredito</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal  ingreso-->
+<div class="modal fade mt-5" id="miModalIngreso" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Nuevo ingreso</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulario dentro del modal -->
+                <form id="miFormularioIngreso">
+                    <div class="form-group">
+                        <label for="descripcion">Descripción:</label>
+                        <input type="text" class="form-control" id="descripcion-ingreso" name="descripcion">
+                    </div>
+                    <div class="form-group">
+                        <label for="monto">Monto:</label>
+                        <input type="number" step="0.01" class="form-control" id="monto-ingreso" name="monto">
+                    </div>
+                    <div class="form-group">
+                        <label for="numeroComprobante">Número de comprobante:</label>
+                        <input type="text" class="form-control" id="numeroComprobante" name="numeroComprobante">
+                    </div>
+                    <div class="form-group">
+                        <label>Banco</label>
+                        <select class="form-control" data-bind="options:bancos, optionsText:'Nombre', value:bancoSeleccionado">
+                        </select>
+
+                    </div>
+                    <div class="form-group mb-3">
+                        <label>Cuentas</label>
+                        <select class="form-control" data-bind="options:cuentasBanco, optionsText:'NumeroCuenta', value:cuentaSeleccionado">
+                        </select>
+                    </div>
+                    <input type="hidden" id="cajaClinicaId" name="cajaClinicaId" value="@Model.Id" />
+                    <button type="submit" class="btn btn-primary">Enviar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal  egreso-->
+<div class="modal fade mt-5" id="miModalEgreso" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Nuevo Egreso</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulario dentro del modal -->
+                <form id="miFormularioEgreso">
+                    <div class="form-group">
+                        <label for="descripcion">Descripción:</label>
+                        <input type="text" class="form-control" id="descripcion-egreso" name="descripcion">
+                    </div>
+                    <div class="form-group">
+                        <label for="monto">Monto:</label>
+                        <input type="number" step="0.01" class="form-control" id="monto-egreso" name="monto">
+                    </div>
+                    <div class="form-group">
+                        <label for="numeroComprobante">Número de comprobante:</label>
+                        <input type="text" class="form-control" id="numeroComprobante" name="numeroComprobante">
+                    </div>
+                    <div class="form-group">
+                        <label>Cuenta contable:</label>
+                        <select class="form-control" data-bind="options:cuentasContables, optionsText:'NombreCuenta', value:cuentaContableSeleccionado">
+                        </select>
+
+                    </div>
+                    <input type="hidden" id="cajaClinicaId" name="cajaClinicaId" value="@Model.Id" />
+
+                    <button type="submit" class="btn btn-primary">Enviar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@section Scripts
+{
+<script src="~/js/FuncionesCaja.js"></script>
+}

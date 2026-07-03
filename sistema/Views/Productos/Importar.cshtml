@@ -1,0 +1,52 @@
+<form asp-controller="Productos" asp-action="Importar" method="post" enctype="multipart/form-data">
+    <div class="form-row">
+        <div class="col-md-12">
+            <div class="position-relative form-group">
+                <label class="">Subir Archivo Excel</label>
+                <input type="file" name="file" class="form-control" />
+            </div>
+            <button type="submit" class="btn btn-warning">Importar desde Excel</button>
+            
+        </div>
+
+    </div>
+
+</form>
+
+    <div class="form-row">
+        <div class="col-md-12">
+            <div class="position-relative form-group">
+                <br/><br/>
+                 <a asp-controller="Productos" asp-action="ExportarProductos" class="btn btn-primary">
+                                   Exportar Productos a Excel
+                                </a>
+            </div>
+            
+        </div>
+
+    </div>
+
+    <div class="form-row">
+        <div class="col-md-12">
+            <div class="position-relative form-group">
+                <br/><br/>
+                 <a asp-controller="Venta" asp-action="ExportarVentas" class="btn btn-primary">
+                                   Exportar Ventas a Excel
+                                </a>
+            </div>
+            
+        </div>
+
+    </div>
+     <div class="form-row">
+        <div class="col-md-12">
+            <div class="position-relative form-group">
+                <br/><br/>
+                 <a asp-controller="Venta" asp-action="ExportarDetalleVentas" class="btn btn-primary">
+                                   Exportar detalle de Ventas a Excel
+                                </a>
+            </div>
+            
+        </div>
+
+    </div>

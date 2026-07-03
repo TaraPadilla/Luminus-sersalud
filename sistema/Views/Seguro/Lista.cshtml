@@ -1,0 +1,92 @@
+@using Database.Shared.Models
+@model List<Seguro>
+@{
+    ViewData["Title"] = "Seguros";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <center>
+                    <h4><b>Seguros</b></h4>
+                </center>
+                <hr />
+                <a class="btn btn-danger" asp-action="Nuevo" asp-controller="Seguro">
+                    Nuevo Seguro
+                </a>
+                <a class="btn btn-success" asp-controller="Productos" asp-action="ImportarDesdeExcelSeguros">
+                    Importar precios
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="tabla-seguros">
+                <thead>
+                    <tr>
+                        <th style="width: 150px;">Id del Seguro</th>
+                        <th>Nombre</th>
+                        <th>Dirección</th>
+                        <th>Teléfono</th>
+                        <th>Nit</th>
+                        <th>Web</th>
+
+                        <th style="width: 200px;">Acciones</th>
+
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Count() > 0)
+                    {
+                        foreach (var seguro in Model)
+                        {
+                            <tr>
+                                <td>@seguro.Id</td>
+                                <td>@seguro.Nombre</td>
+                                <td>@seguro.Direccion</td>
+                                <td>@seguro.Telefono</td>
+                                <td>@seguro.Nit</td>
+                                <td>@seguro.Web</td>
+                                <td>
+                                    <button class="btn btn-warning" onclick="inventarioMedicamentosSeguro(@seguro.Id)">
+                                        <i class="fas fa-briefcase-medical"></i>
+                                    </button>
+                                    <button class="btn btn-warning" onclick="inventarioInsumosSeguro(@seguro.Id)">
+                                        <i class="fas fa-prescription-bottle-medical"></i>
+                                    </button>
+                                    <button class="btn btn-warning" onclick="modificarSeguro(@seguro.Id)">
+                                        <i class="fa fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-danger" onclick="eliminarSeguro(@seguro.Id)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td><i>No hay Seguros registrados</i></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/ViewModelKo/SeguroListaVM.js"></script>
+}

@@ -1,0 +1,113 @@
+@using Database.Shared.Enumeraciones
+@model List<Database.Shared.Models.Habitacion>
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    // Leer el valor del appsettings.json. 
+    string sufijoLayout = Configuration["Cliente"]; 
+    
+    // Concatenar para formar el nombre del Layout (ejemplo: "_Layout" + "SS")
+    // Si la clave trae el nombre completo (ej. "_LayoutSS"), simplemente asignalo directo.
+    Layout = $"_Layout{sufijoLayout}"; 
+    
+    ViewData["Title"] = "Habitaciones";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12 text-center">
+                <h4><b>Habitaciones</b></h4>
+                <hr />
+            </div>
+            <div class="col-md-12">
+                <a class="btn btn-danger text-white"
+                   href="@Url.Action("Nueva","Habitaciones")">
+                    Nueva habitación
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="tabla-habitaciones">
+                <thead>
+                    <tr>
+                        <th>Número de Habitacion</th>
+                        <th>Estado</th>
+                        <th>Categoría</th>
+                        <th>Tarifas</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Count() > 0)
+                    {
+                        @foreach (var habitacion in Model)
+                        {
+                            <tr>
+                                <td>@habitacion.NombreNumeroHabitacion</td>
+                                <td>
+                                    @{
+                                        var estadoId = habitacion.EstadoHabitacionId;
+                                    }
+                                    @if (estadoId == (int)EstadoHabitacionEnum.Disponible)
+                                    {
+                                        <label class="badge badge-success">@habitacion.EstadoHabitacion.NombreEstado</label>
+                                    }
+                                    else if (estadoId == (int)EstadoHabitacionEnum.Ocupada)
+                                    {
+                                        <label class="badge badge-danger">@habitacion.EstadoHabitacion.NombreEstado</label>
+                                    }
+                                    else
+                                    {
+                                        <label class="badge badge-warning">@habitacion.EstadoHabitacion.NombreEstado</label>
+                                    }
+                                </td>
+                                <td>@habitacion.CategoriaHabitacion.NombreCategoria</td>
+                                <td>
+                                    @if (habitacion.CategoriaHabitacion.CategoriaHabitacionTarifas != null
+                                   && habitacion.CategoriaHabitacion.CategoriaHabitacionTarifas.Count() > 0)
+                                    {
+                                        @foreach (var tarifa in habitacion.CategoriaHabitacion.CategoriaHabitacionTarifas)
+                                        {
+                                            <b>@tarifa.NombreTarifa: </b>
+                                            @tarifa.ValorTarifa
+                                            <br />
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <i>
+                                            No hay tarifas registradas para la categoría&nbsp;
+                                            "@habitacion.CategoriaHabitacion.NombreCategoria"
+                                        </i>
+                                    }
+                                </td>
+                                <td>
+                                    <button class="btn btn-warning"
+                                    onclick="modificarHabitacion(@habitacion.Id)">
+                                        <i class="fa fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-danger"
+                                    onclick="eliminarHabitacion(@habitacion.Id)">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+<!--JS Vista (depende de knockout)-->
+<script type="text/javascript" src="~/ViewModelKo/HabitacionesListaVM.js"></script>
+}

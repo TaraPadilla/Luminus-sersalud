@@ -1,0 +1,225 @@
+@{
+    Layout = "";
+    ViewData["Title"] = "BRES PDF";
+}
+
+<style>
+    .bres-pdf {
+        font-family: Arial, sans-serif;
+        color: #000;
+        box-sizing: border-box;
+    }
+
+    .bres-header {
+        text-align: center;
+        margin-bottom: 6px;
+        line-height: 1.2;
+    }
+
+    .bres-header .title {
+        font-weight: bold;
+        font-size: 12px;
+        text-transform: uppercase;
+    }
+
+    .bres-header .subtitle {
+        font-weight: bold;
+        font-size: 11px;
+        text-transform: uppercase;
+    }
+
+    .bres-meta {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 6px;
+        table-layout: fixed;
+        font-size: 9px;
+    }
+
+    .bres-meta td {
+        padding: 2px 4px;
+        vertical-align: top;
+    }
+
+    .bres-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    .bres-table th,
+    .bres-table td {
+        border: 1px solid #000;
+        padding: 2px 2px;
+        font-size: 6.5px;
+        vertical-align: middle;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+
+    .bres-table th {
+        font-weight: bold;
+        text-align: center;
+        background: #e6e6e6;
+    }
+
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+    .nowrap { white-space: nowrap; }
+
+    /* Anchos aproximados (afinamos luego 1:1) */
+    .w-no { width: 18px; }
+    .w-fin { width: 42px; }
+    .w-min { width: 58px; }
+    .w-ind { width: 36px; }
+    .w-act { width: 44px; }
+    .w-desc { width: 170px; }
+    .w-descm { width: 100px; }
+    .w-med { width: 46px; }
+    .w-num { width: 44px; }
+    .w-pre { width: 52px; }
+    .w-tot { width: 55px; }
+    .w-obs { width: 90px; }
+</style>
+
+<div class="bres-pdf">
+    <div class="bres-header">
+        <div class="title">BALANCE, REQUISICIÓN Y ENVÍO DE SUMINISTROS</div>
+        <div class="subtitle">MEDICAMENTOS</div>
+    </div>
+
+    <table class="bres-meta">
+        <tr>
+            <td style="width: 45%;">
+                <strong>Unidad:</strong> Hospital Pedro de Bethancourt
+            </td>
+            <td style="width: 25%;">
+                <strong>Fecha de Elaboración:</strong> 01/02/2026
+            </td>
+            <td style="width: 30%;">
+                <strong>Niveles de Seguridad:</strong> Mín 3 / Máx 6
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <strong>Cuantos servicios deben informar:</strong> 3<br />
+                <strong>Cuantos servicios informan:</strong> 3
+            </td>
+            <td>
+                <strong>Mes:</strong> 3
+            </td>
+            <td>
+                <strong>Año:</strong> 2026
+            </td>
+        </tr>
+    </table>
+
+    <!-- TABLA COMPLETA (sin columna separadora 12) -->
+    <table class="bres-table">
+        <thead>
+            <tr>
+                <th class="w-no">No.</th>
+                <th class="w-fin">CODIGO DE<br />FINANZAS</th>
+                <th class="w-min">CODIGO<br />MINISTERIO</th>
+                <th class="w-ind">INDICADOR</th>
+                <th class="w-act">ACTIVO/<br />INACTIVO</th>
+                <th class="w-desc">DESCRIPCION DE PRODUCTO</th>
+                <th class="w-descm">DESCRIPCION DE PRODUCTO<br />DEL MINISTERIO</th>
+                <th class="w-med">MEDIDA</th>
+                <th class="w-num">SALDO MES<br />ANTERIOR</th>
+                <th class="w-num">ENTRADA A NIVEL<br />SUPERIOR</th>
+                <th class="w-num">ENTREGA<br />USUARIO</th>
+
+                <!-- (Columna separadora eliminada) -->
+
+                <th class="w-num">REAJUSTES<br />(+) (-)</th>
+                <th class="w-num">EXISTENCIA<br />A</th>
+                <th class="w-num">EXISTENCIA</th>
+                <th class="w-num">PROMEDIO<br />CONSUMO</th>
+                <th class="w-num">EXISTENC<br />MES</th>
+                <th class="w-num">A<br />SOLICITAR</th>
+
+                <th class="w-pre">PRECIO<br />UNITARIO</th>
+                <th class="w-tot">TOTAL</th>
+                <th class="w-obs">OBSERVACIONES</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Datos quemados (mock) iguales a los del Excel -->
+            <tr>
+                <td class="text-center">4</td>
+                <td class="text-center">25</td>
+                <td></td>
+                <td class="text-center"></td>
+                <td class="text-center" style="color:#c00000;font-weight:bold;">Inactivo</td>
+                <td>Aciclovir, Concentración: 200mg; Forma farmacéutica: Tableta; Vía de administración: Oral;</td>
+                <td></td>
+                <td class="text-center">Unidad/1<br />Unidad(es)</td>
+                <td class="text-right">0.00</td>
+                <td class="text-right">0.00</td>
+                <td class="text-right">0.00</td>
+
+                <td class="text-right">0.00</td>
+                <td class="text-right">0.00</td>
+                <td class="text-right">0.00</td>
+                <td class="text-right">2.00</td>
+                <td class="text-right">0.00</td>
+                <td class="text-right">12.00</td>
+
+                <td class="text-right">Q 0.37</td>
+                <td class="text-right">Q 4.44</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td class="text-center">3</td>
+                <td class="text-center">59479</td>
+                <td class="text-center">MX0007430101</td>
+                <td class="text-center"></td>
+                <td class="text-center">Activo</td>
+                <td>Acetaminofén (paracetamol), Concentración: 10mg/ml; Forma farmacéutica: solución inyectable; vía: intravenosa;</td>
+                <td></td>
+                <td class="text-center">Bols, 100<br />Mililitro</td>
+                <td class="text-right">0.00</td>
+                <td class="text-right">0.00</td>
+                <td class="text-right">0.00</td>
+
+                <td class="text-right">0.00</td>
+                <td class="text-right">0.00</td>
+                <td class="text-right">0.00</td>
+                <td class="text-right">2300.00</td>
+                <td class="text-right">0.00</td>
+                <td class="text-right">13800.00</td>
+
+                <td class="text-right">Q 18.10</td>
+                <td class="text-right">Q 249,780.00</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td class="text-center">17</td>
+                <td class="text-center">90480</td>
+                <td class="text-center">MX0038430201</td>
+                <td class="text-center"></td>
+                <td class="text-center">Activo</td>
+                <td>Albúmina humana, Concentración: 20%; Forma farmacéutica: Solución inyectable; Vía: intravenosa;</td>
+                <td></td>
+                <td class="text-center">Vial, 50<br />Mililitro</td>
+                <td class="text-right">735.00</td>
+                <td class="text-right">0.00</td>
+                <td class="text-right">680.00</td>
+
+                <td class="text-right">55.00</td>
+                <td class="text-right">110.00</td>
+                <td class="text-right">110.00</td>
+                <td class="text-right">450.00</td>
+                <td class="text-right">0.24</td>
+                <td class="text-right">2645.00</td>
+
+                <td class="text-right">Q 375.00</td>
+                <td class="text-right">Q 991,875.00</td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+</div>

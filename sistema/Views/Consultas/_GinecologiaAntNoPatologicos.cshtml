@@ -1,0 +1,149 @@
+@model sistema.Models.ConsultasViewModel
+
+<br />
+
+<div class="border rounded p-3 bg-white shadow-sm">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
+        <h6 class="mb-0 font-weight-bold text-primary text-uppercase">
+            <i class="fas fa-venus mr-2"></i> Ginecología - Antecedentes no patológicos
+        </h6>
+    </div>
+
+    <!-- Form -->
+    <div class="form-row">
+
+        <div class="col-sm-6 col-md-3 mb-3">
+            <label class="font-weight-bold small text-muted">Menarquia</label>
+            @Html.TextBoxFor(a => a.GinecologiaAntNoPatologicosMenarquia,
+            new { @class = "form-control dato-consulta" })
+        </div>
+
+        <div class="col-sm-6 col-md-3 mb-3">
+            <label class="font-weight-bold small text-muted">FUR</label>
+            @Html.TextBoxFor(a => a.GinecologiaAntNoPatologicosFechaUltimaRegla,
+                        new { @class = "form-control dato-consulta" })
+        </div>
+
+        <div class="col-sm-6 col-md-3 mb-3">
+            <label class="font-weight-bold small text-muted">Ciclo menstrual</label>
+            @Html.TextBoxFor(a => a.GinecologiaAntNoPatologicosCicloMenstrual,
+                        new { @class = "form-control dato-consulta" })
+        </div>
+
+        <div class="col-sm-6 col-md-3 mb-3">
+            <label class="font-weight-bold small text-muted">Método anticonceptivo / Sustituto hormonal</label>
+            @Html.TextBoxFor(a => a.GinecologiaAntNoPatologicosMetodoAnticonceptivo,
+                        new { @class = "form-control dato-consulta" })
+        </div>
+
+        <div class="col-sm-6 col-md-3 mb-3">
+            <label class="font-weight-bold small text-muted">Lactancia materna</label>
+            @Html.TextBoxFor(a => a.GinecologiaAntNoPatologicosLactanciaMaterna,
+                        new { @class = "form-control dato-consulta" })
+        </div>
+
+        <div class="col-sm-4 col-md-3 mb-3">
+            <label class="font-weight-bold small text-muted">G</label>
+            @Html.TextBoxFor(a => a.GinecologiaAntNoPatologicosGestas,
+                        new { @class = "form-control dato-consulta" })
+        </div>
+
+        <div class="col-sm-4 col-md-3 mb-3">
+            <label class="font-weight-bold small text-muted">P</label>
+            @Html.TextBoxFor(a => a.GinecologiaAntNoPatologicosPartos,
+                        new { @class = "form-control dato-consulta" })
+        </div>
+
+        <div class="col-sm-4 col-md-3 mb-3">
+            <label class="font-weight-bold small text-muted">AB</label>
+            @Html.TextBoxFor(a => a.GinecologiaAntNoPatologicosAbortos,
+                        new { @class = "form-control dato-consulta" })
+        </div>
+
+        <div class="col-sm-4 col-md-3 mb-3">
+            <label class="font-weight-bold small text-muted">CSTP</label>
+            @Html.TextBoxFor(a => a.GinecologiaAntNoPatologicosCesareas,
+                        new { @class = "form-control dato-consulta" })
+        </div>
+
+        <div class="col-sm-4 col-md-3 mb-3">
+            <label class="font-weight-bold small text-muted">HV</label>
+            @Html.TextBoxFor(a => a.GinecologiaAntNoPatologicosHijosVivos,
+                        new { @class = "form-control dato-consulta" })
+        </div>
+
+        <div class="col-sm-4 col-md-3 mb-3">
+            <label class="font-weight-bold small text-muted">HM</label>
+            @Html.TextBoxFor(a => a.GinecologiaAntNoPatologicosHijosMuertos,
+                        new { @class = "form-control dato-consulta" })
+        </div>
+
+        <div class="col-sm-6 col-md-3 mb-3">
+            <label class="font-weight-bold small text-muted">Otros</label>
+            @Html.TextBoxFor(a => a.GinecologiaAntNoPatologicosOtros,
+                        new { @class = "form-control dato-consulta" })
+        </div>
+
+    </div>
+
+    <!-- Historial -->
+    <div class="mt-4">
+        <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
+            <h6 class="mb-0 font-weight-bold text-primary text-uppercase">
+                <i class="fas fa-history mr-2"></i> Historial antecedentes no patológicos
+            </h6>
+        </div>
+
+        <div class="text-primary texto-cargando-historial mb-2" style="display:none">
+            <i class="fas fa-spinner fa-spin mr-1"></i> Cargando historial...
+        </div>
+
+        <div class="text-danger texto-error-cargando-historial mb-2" style="display:none">
+            <i class="fas fa-exclamation-triangle mr-1"></i>
+            Error de servidor y/o conexión.
+            <a href="#" data-bind="click:consultarHistorialConsultas">Reintentar</a>
+        </div>
+
+        <!--ko foreach:historialConsultas-->
+        <div class="border rounded p-3 mb-3 bg-white">
+            <div class="font-weight-bold text-dark mb-2">
+                <i class="fas fa-calendar-alt text-primary mr-1"></i>
+                Fecha: <span data-bind="text:Fecha"></span>
+            </div>
+
+            <div class="row small">
+                <div class="col-md-2"><b>Menarquia:</b> <span
+                        data-bind="text:GinecologiaAntNoPatologicosMenarquia"></span></div>
+                <div class="col-md-2"><b>FUR:</b> <span
+                        data-bind="text:GinecologiaAntNoPatologicosFechaUltimaRegla"></span></div>
+                <div class="col-md-2"><b>Ciclo:</b> <span
+                        data-bind="text:GinecologiaAntNoPatologicosCicloMenstrual"></span></div>
+                <div class="col-md-3"><b>Método:</b> <span
+                        data-bind="text:GinecologiaAntNoPatologicosMetodoAnticonceptivo"></span></div>
+                <div class="col-md-3"><b>Lactancia:</b> <span
+                        data-bind="text:GinecologiaAntNoPatologicosLactanciaMaterna"></span></div>
+                <div class="col-md-2"><b>G:</b> <span data-bind="text:GinecologiaAntNoPatologicosGestas"></span></div>
+                <div class="col-md-2"><b>P:</b> <span data-bind="text:GinecologiaAntNoPatologicosPartos"></span></div>
+                <div class="col-md-2"><b>AB:</b> <span data-bind="text:GinecologiaAntNoPatologicosAbortos"></span></div>
+                <div class="col-md-2"><b>CSTP:</b> <span data-bind="text:GinecologiaAntNoPatologicosCesareas"></span>
+                </div>
+                <div class="col-md-2"><b>HV:</b> <span data-bind="text:GinecologiaAntNoPatologicosHijosVivos"></span>
+                </div>
+                <div class="col-md-2"><b>HM:</b> <span data-bind="text:GinecologiaAntNoPatologicosHijosMuertos"></span>
+                </div>
+                <div class="col-md-4"><b>Otros:</b> <span data-bind="text:GinecologiaAntNoPatologicosOtros"></span>
+                </div>
+            </div>
+        </div>
+        <!--/ko-->
+
+        <!--ko if:historialConsultas().length==0-->
+        <div class="text-muted">
+            <i class="fas fa-info-circle mr-1"></i> No hay registro de consultas anteriores
+        </div>
+        <!--/ko-->
+    </div>
+
+</div>

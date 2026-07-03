@@ -1,0 +1,289 @@
+@model sistema.Models.InventarioViewModel
+@await Html.PartialAsync("_MensajeExito")
+
+<div data-bind="visible: !MostrandoPrevisualizacion()">
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="form-row">
+                <div class="col-md-12 text-center">
+                    <h4><b>Importar Productos a Inventario</b></h4>
+                    <hr />
+                </div>
+                <div class="col-md-12">
+                    <div class="form-row">
+                        <div class="col-md-4">
+                            <label><b>Bodega</b></label>
+                            <select class="form-control select2bs4" asp-for="BodegaId" asp-items="@Model.BodegaSelectList" id="BodegaId" required>
+                                <option selected="selected" value="">--- Ninguna ---</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label><b>Tipo de producto</b></label>
+                            <select class="form-control select2bs4" asp-for="TipoProductoId" asp-items="@Model.TipoProductoSelectList" id="TipoProductoId" required>
+                                <option selected="selected" value="">--- Ninguno ---</option>
+                            </select>
+                        </div>
+                        <br />
+                        <div class="col-md-12">
+                            <label><b>Importar Inventario Excel</b></label>
+                            <div class="input-group mb-3">
+                                <input type="file" class="form-control" name="excel" id="excel" accept=".xlsx, .xls" required>
+                            </div>
+                        </div>
+                        <br />
+                        <div class="card-body form-row">
+                            <div class="col-md-12">
+                                <button class="btn btn-primary" data-bind="click:ImportarInventarioExcel">
+                                    Importar y Previsualizar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Exportar los datos importados *@
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="form-row">
+                <div class="col-md-12 text-center">
+                    <h4><b>Exportar Inventario</b></h4>
+                    <hr />
+                </div>
+                <div class="col-md-12">
+                    <form class="form-row" asp-controller="Productos" asp-action="ExportarProductosInventario" method="post" enctype="multipart/form-data">
+                        <div class="col-md-4">
+                            <label><b>Bodega</b></label>
+                            <select class="form-control select2bs4" asp-for="BodegaId" asp-items="@Model.BodegaSelectList" required>
+                                <option selected="selected">--- Ninguna ---</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label><b>Ambiente</b></label>
+                            <select class="form-control select2bs4" asp-for="AmbienteId" asp-items="@Model.AmbienteSelectList" required>
+                                <option selected="selected">--- Ninguna ---</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label><b>Tipo de producto</b></label>
+                            <select class="form-control select2bs4" asp-for="TipoProductoId" asp-items="@Model.TipoProductoSelectList" required>
+                                <option selected="selected">--- Ninguna ---</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                        </div>
+                        <br />
+                        <div class="form-row">
+                            <div class="col-md-4 ">
+                                <input class="btn btn-success" type="submit" value="Exportar" />
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card" style="display: none;" data-bind="visible: MostrandoPrevisualizacion">
+    <div class="card-body">
+        <h4 class="text-center"><b>Confirmación de Importación de Inventario</b></h4>
+        <hr />
+        
+        <div class="alert alert-info">
+            <strong>Resumen:</strong> Se procesaron <span data-bind="text: FilasPrevisualizacion().length"></span> filas del archivo Excel. Por favor, revise las acciones que se ejecutarán.
+        </div>
+
+        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+            <table class="table table-bordered table-striped">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Fila</th>
+                        <th>Código Ref.</th>
+                        <th>Producto</th>
+                        <th>Lote a Aplicar</th>
+                        <th>Stock a Ingresar</th>
+                        <th>Acción del Sistema</th>
+                    </tr>
+                </thead>
+                <tbody data-bind="foreach: FilasPrevisualizacion">
+                    <tr>
+                        <td data-bind="text: FilaExcel"></td>
+                        <td data-bind="text: CodigoReferencia"></td>
+                        <td data-bind="text: NombreProducto"></td>
+                        <td data-bind="text: Lote"></td>
+                        <td data-bind="text: StockASumar"></td>
+                        <td>
+                            <span class="badge badge-warning" style="font-size: 14px;">Sumar a Lote Existente</span>
+                            <span class="badge badge-info" style="font-size: 14px;">Crear Lote Nuevo</span>
+                            <span class="badge badge-success" style="font-size: 14px;">Crear Producto Nuevo</span>
+                            </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="text-right mt-4">
+            <button class="btn btn-secondary" data-bind="click: CancelarPrevisualizacion">Cancelar y Descartar</button>
+            <button class="btn btn-success btn-lg" data-bind="click: ConfirmarYGuardar">Confirmar y Guardar Inventario</button>
+        </div>
+    </div>
+</div>
+
+<div title="Confirmar" style="display:none" id="mdl-confirmacion">
+    <span data-bind="html:txtModalConfirmacion"></span>
+</div>
+<div title="Respuesta" style="display:none" id="mdl-respuesta">
+    <span data-bind="html:txtModalRespuesta"></span>
+</div>
+
+@section Scripts {
+    <script>
+        var ImportarInventarioVM = function () {
+            var self = this;
+            self.txtModalRespuesta = ko.observable();
+            self.txtModalConfirmacion = ko.observable();
+            
+            // Nuevos observables para la previsualización
+            self.MostrandoPrevisualizacion = ko.observable(false);
+            self.FilasPrevisualizacion = ko.observableArray([]);
+            self.SessionKey = ko.observable('');
+
+            self.ImportarInventarioExcel = function () {
+                var bodegaVal = $("#BodegaId").val();
+                var tipoProductoVal = $("#TipoProductoId").val();
+                var fileInput = $('#excel')[0].files[0];
+
+                if (!bodegaVal || !tipoProductoVal) {
+                    alert("Por favor, seleccione una Bodega y un Tipo de Producto.");
+                    return;
+                }
+
+                if (!fileInput) {
+                    alert("Por favor, seleccione un archivo Excel.");
+                    return;
+                }
+
+                self.txtModalConfirmacion("&iquest;Desea procesar y previsualizar el inventario?");
+                $("#mdl-confirmacion").dialog({
+                    modal: true,
+                    buttons: [{
+                        text: "Si",
+                        class: "btn btn-success",
+                        click: function () {
+                            $(this).dialog("close");
+                            showLoading();
+
+                            var formData = new FormData();
+                            formData.append('BodegaId', bodegaVal);
+                            formData.append('TipoProductoId', tipoProductoVal);
+                            formData.append('excel', fileInput);
+
+                            $.ajax({
+                                url: "/Productos/ImportarInventarioExcel",
+                                method: "POST",
+                                processData: false,
+                                contentType: false,
+                                data: formData,
+                                success: function (dataResult) {
+                                    var data;
+                                    try {
+                                        data = typeof dataResult === 'string' ? JSON.parse(dataResult) : dataResult;
+                                    } catch (e) {
+                                        hideLoading();
+                                        alert("Ocurrió un error al leer la respuesta del servidor.");
+                                        return;
+                                    }
+
+                                    if (data.Exitoso) {
+                                        // Poblar observables y mostrar previsualización
+                                        self.SessionKey(data.Data.SessionKey);
+                                        self.FilasPrevisualizacion(data.Data.Filas);
+                                        self.MostrandoPrevisualizacion(true);
+                                        hideLoading();
+                                    } else {
+                                        hideLoading();
+                                        alert(data.Mensaje);
+                                    }
+                                },
+                                error: function (dataError) {
+                                    hideLoading();
+                                    console.log(dataError);
+                                    alert("Falla de comunicación con el servidor.");
+                                }
+                            });
+                        }
+                    },
+                    {
+                        text: "No",
+                        class: "btn btn-danger",
+                        click: function () {
+                            $(this).dialog("close");
+                        }
+                    }]
+                });
+            };
+
+            self.CancelarPrevisualizacion = function() {
+                self.MostrandoPrevisualizacion(false);
+                self.FilasPrevisualizacion([]);
+                self.SessionKey('');
+                $('#excel').val(''); // Limpiar el input file
+            };
+
+            self.ConfirmarYGuardar = function() {
+                self.txtModalConfirmacion("&iquest;Está seguro de guardar estos datos en el sistema?");
+                $("#mdl-confirmacion").dialog({
+                    modal: true,
+                    buttons: [{
+                        text: "Sí, Guardar",
+                        class: "btn btn-success",
+                        click: function () {
+                            $(this).dialog("close");
+                            showLoading();
+
+                            $.ajax({
+                                url: "/Productos/ConfirmarYGuardarInventario",
+                                method: "POST",
+                                data: { sessionKey: self.SessionKey() },
+                                success: function (dataResult) {
+                                    var data;
+                                    try {
+                                        data = typeof dataResult === 'string' ? JSON.parse(dataResult) : dataResult;
+                                    } catch (e) {
+                                        hideLoading();
+                                        alert("Ocurrió un error al leer la respuesta del servidor.");
+                                        return;
+                                    }
+
+                                    if (data.Exitoso) {
+                                        alert("¡Inventario guardado exitosamente!");
+                                        window.location.reload(); // Recargar para limpiar estado
+                                    } else {
+                                        hideLoading();
+                                        alert(data.Mensaje);
+                                    }
+                                },
+                                error: function (dataError) {
+                                    hideLoading();
+                                    alert("Error al intentar guardar el inventario.");
+                                }
+                            });
+                        }
+                    },
+                    {
+                        text: "No",
+                        class: "btn btn-danger",
+                        click: function () {
+                            $(this).dialog("close");
+                        }
+                    }]
+                });
+            };
+        }
+        var ImportarInventarioVm = new ImportarInventarioVM();
+        ko.applyBindings(ImportarInventarioVm);
+    </script>
+}

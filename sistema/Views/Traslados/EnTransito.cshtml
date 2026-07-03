@@ -1,0 +1,111 @@
+@using Database.Shared.Paginacion;
+@model PaginacionList<Database.Shared.Models.TrasladosProductos>
+
+@{
+    ViewData["Title"] = "Lista traslados";
+}
+
+
+@await Html.PartialAsync("_MensajeExito")
+@await Html.PartialAsync("_TrasladosNav")
+
+@*<div class="col-md-12">
+    <a class="btn btn-danger btn-sm" asp-action="NuevoTraslado" asp-controller="Traslados">
+        Nueva solicitud
+    </a>
+    <a class="btn btn-danger btn-sm" asp-action="Lista" asp-controller="Traslados">
+        Todos
+    </a>
+    <a class="btn btn-danger btn-sm" asp-action="Aceptados" asp-controller="Traslados">
+        Aceptados
+    </a>
+    <a class="btn btn-danger btn-sm" asp-action="Faltantes" asp-controller="Traslados">
+        Faltantes
+    </a>
+     <a class="btn btn-danger btn-sm" asp-action="ConProblema" asp-controller="Traslados">
+        Con problema
+    </a>
+     <a class="btn btn-danger btn-sm" asp-action="Cancelados" asp-controller="Traslados">
+        Cancelados
+    </a>
+</div>*@
+
+@*<br/>*@
+
+
+<form asp-action="EnTransito" method="get">
+    @* <div class="col-md-6">
+    <a href="@Url.Action("ClientesPdf","CrearPDF")" class="btn btn-primary">
+        Generar Pdf
+    </a>
+</div> *@
+<br />
+    <div class="col-md-12">
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <input type="submit" value="Buscar" class="btn btn-success"></input>
+            </div>
+            <input type="text" name="buscar" value="@ViewData["CurrentFilter"]" class="form-control"
+                placeholder="Buscar por codigo o por responsable...">
+        </div>
+    </div>
+</form>
+
+
+<br />
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="mb-0 table table-hover ">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Fecha</th>
+                        <th>Usuario Envío</th>
+                        <th>Estado</th>
+                        <th># Productos</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        var personaEnviado = item.ResponsableEnviado == null ? "" : item.ResponsableEnviadoText;
+                        var personaRecibido = item.ResponsableRecibido == null ? "" : item.ResponsableRecibidoText;
+
+                        <tr>
+                            <td>@item.Id</td>
+                            <td>@item.FechaTraslado</td>
+                            <td>@personaEnviado</td>
+                            <td>@item.EstadoTraslados.DescripcionEstado</td>
+                            <td>@item.DetalleTrasladoProductos.Count()</td>
+                            <td>
+                                <a href="@Url.Action("Editar","TrasladosBodegaAClinica", new {id = @item.Id})"
+                                    class="btn btn-warning btn-sm">
+                                    Información
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@{
+    var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+}
+
+
+
+<a asp-action="EnTransito" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@(Model.PageIndex - 1)"
+    asp-route-currentFilter="@ViewData["CurrentFilter"]" class="btn btn-danger btn-sm @prevDisabled">
+    Anterior
+</a>
+<a asp-action="EnTransito" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@(Model.PageIndex + 1)"
+    asp-route-currentFilter="@ViewData["CurrentFilter"]" class="btn btn-danger btn-sm @nextDisabled" class="">
+    Siguiente
+</a>

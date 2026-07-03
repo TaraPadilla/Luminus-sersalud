@@ -1,0 +1,206 @@
+﻿@using Database.Shared.Paginacion;
+@model PaginacionList<Database.Shared.Models.Venta>
+
+@{
+    ViewData["Title"] = "Ventas - Laboratorio";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-10">
+                <center>
+                    <h4><b>Laboratorio - Ventas</b></h4>
+                </center>
+            </div>
+            <div class="col-md-12">
+                <hr />
+            </div>
+            <div class="col-md-12">
+                <form id="examenForm" asp-action="ListaVentasLaboratorio" method="get">
+                    <div class="form-row">
+                        <div class="col-md-4">
+                            <label>Fecha Inicial:</label>
+                            <input type="date" name="fechaInicial" value="@ViewData["CurrentFilter"]"
+                                class="form-control" id="fechacita">
+                        </div>
+                        <div class="col-md-4">
+                            <label>Fecha Final:</label>
+                            <input type="date" name="fechaFinal" value="@ViewData["CurrentFilter"]" class="form-control"
+                                id="fechacita">
+                        </div>
+                        <div class="col-md-4">
+                            <label>N&uacute;mero de venta:</label>
+                            <input type="number" name="numeroVenta" value="@ViewData["CurrentFilter"]"
+                                class="form-control" id="fechacita">
+                        </div>
+                        <div class="col-md-4">
+                            <label>N&uacute;mero de comprobante:</label>
+                            <input type="text" name="comprobante" value="@ViewData["CurrentFilter"]"
+                                class="form-control" id="fechacita">
+                        </div>
+                        <div class="col-md-4">
+                            <label>Forma de pago:</label>
+                            @Html.DropDownList("formaPago", ViewBag.FormasPago as SelectList, "Todas", new
+                                {
+                                    @class =
+                                     "form-control",
+                                    @name = "formaPago"
+                                })
+                        </div>
+                        <div class="col-md-4">
+                            <label>Facturado:</label>
+                            <select name="" class="form-control" disabled>
+                                <option value="0">Todas</option>
+                                <option value="1">Facturado</option>
+                                <option value="2">Comprobante</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <input type="submit" value="Filtrar" class="btn btn-success" />
+                            <a id="reportePDF" class="btn btn-secondary btn-sm" href="#">
+                                Reporte PDF
+                            </a>
+                            <a class="btn btn-secondary btn-sm" href="#" id="reporteExcel">
+                                Reporte EXCEL
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="mb-0 table table-hover ">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Venta #</th>
+                        <th>Vendedor</th>
+                        <th>NoComprobante</th>
+                        <th>Nombre</th>
+                        <th>Nit</th>
+                        <th>Forma de Pago</th>
+                        <th>Total</th>
+                        <th>Monto Pagado</th>
+                        <th>Vuelto</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.FechaVenta</td>
+                            <td>@item.Id</td>
+                            <td>@(item.Empleado != null ? item.Empleado.Nombre : "Admin")</td>
+                            <td>@item.NoComprobante</td>
+                            <td>@item.Nombres</td>
+                            <td>@item.Nit</td>
+                            <td>
+                                @if (item.Pagos.Count() > 0)
+                                {
+                                    foreach (var pago in item.Pagos)
+                                    {
+                                        <span>@pago.FormaPago.NombreFormaPago - Q @pago.Monto</span>
+                                    }
+                                }
+
+                            </td>
+                            <td>Q @item.DetalleVenta.Sum(a => a.Total)</td>
+                            <td>Q @item.MontoPago</td>
+                            <td>Q @item.Vuelto</td>
+
+                            <td>
+                                <a href="@Url.Action("Modificar","Venta", new {id = @item.Id})" class="btn btn-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="@Url.Action("ReciboVentaPdf","CrearPDF", new {id = @item.Id})"
+                                    class="btn btn-danger" target="_blank">
+                                    <i class="fas fa-file-pdf"></i>
+                                </a>
+                                <a href="@Url.Action("AnularVenta", "Venta", new { id = @item.Id, returnAction = "ListaVentasLaboratorio" })"
+                                    class="btn btn-danger">
+                                    <i class="fas fa-minus-circle"></i> Anular
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@{
+    var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+}
+
+<a asp-action="ListaVentasLaboratorio" asp-route-sortOrder="@ViewData["CurrentSort"]"
+    asp-route-pageNumber="@(Model.PageIndex - 1)" asp-route-currentFilter="@ViewData["CurrentFilter"]"
+    class="btn btn-danger btn-sm @prevDisabled">
+    Anterior
+</a>
+<a asp-action="ListaVentasLaboratorio" asp-route-sortOrder="@ViewData["CurrentSort"]"
+    asp-route-pageNumber="@(Model.PageIndex + 1)" asp-route-currentFilter="@ViewData["CurrentFilter"]"
+    class="btn btn-danger btn-sm @nextDisabled" class="">
+    Siguiente
+</a>
+
+@section Scripts
+{
+    <script type="text/javascript" src="~/ViewModelKo/ListaVentasClinicaVM.js"></script>
+}
+
+<script>
+    document.getElementById('reportePDF').addEventListener('click', function (event) {
+        event.preventDefault(); // Previene el comportamiento predeterminado del enlace
+
+        // Capturar los valores del formulario
+        var fechaInicial = document.getElementsByName('fechaInicial')[0].value;
+        var fechaFinal = document.getElementsByName('fechaFinal')[0].value;
+        var numeroVenta = document.getElementsByName('numeroVenta')[0].value;
+        var comprobante = document.getElementsByName('comprobante')[0].value;
+        var formaPago = document.getElementsByName('formaPago')[0].value;
+
+        // Construir la URL con los parámetros
+        var url = '@Url.Action("GenerarPdfVentasClinica", "CrearPDF")' +
+            '?fechaInicial=' + encodeURIComponent(fechaInicial) +
+            '&fechaFinal=' + encodeURIComponent(fechaFinal) +
+            '&numeroVenta=' + encodeURIComponent(numeroVenta) +
+            '&comprobante=' + encodeURIComponent(comprobante) +
+            '&formaPago=' + encodeURIComponent(formaPago);
+
+        // Redireccionar al controlador con los parámetros del formulario
+        window.location.href = url;
+    });
+
+    document.getElementById('reporteExcel').addEventListener('click', function (event) {
+        event.preventDefault(); // Previene el comportamiento predeterminado del enlace
+
+        // Capturar los valores del formulario
+        var fechaInicial = document.getElementsByName('fechaInicial')[0].value;
+        var fechaFinal = document.getElementsByName('fechaFinal')[0].value;
+        var numeroVenta = document.getElementsByName('numeroVenta')[0].value;
+        var comprobante = document.getElementsByName('comprobante')[0].value;
+        var formaPago = document.getElementsByName('formaPago')[0].value;
+
+        // Construir la URL con los parámetros
+        var url = '@Url.Action("CrearExcelVentasClinica", "CrearExcel")' +
+            '?fechaInicial=' + encodeURIComponent(fechaInicial) +
+            '&fechaFinal=' + encodeURIComponent(fechaFinal) +
+            '&numeroVenta=' + encodeURIComponent(numeroVenta) +
+            '&comprobante=' + encodeURIComponent(comprobante) +
+            '&formaPago=' + encodeURIComponent(formaPago);
+
+        // Redireccionar al controlador con los parámetros del formulario
+        window.location.href = url;
+    });
+</script>

@@ -1,0 +1,121 @@
+@model sistema.Models.HospitalizacionDetallesViewModel
+<div class="tab-pane tabs-animation fade show" id="tab-content-chequeo" role="tabpanel">
+    <div class="form-row">
+        <div class="col-md-12">
+            <div class="main-card mb-3 nota-clinica-card">
+
+                <div class="nota-header nota-header-chequeo">
+                    <div class="d-flex align-items-center">
+                        <div class="nota-header-icon nota-header-icon-chequeo">
+                            <i class="fas fa-clipboard-check"></i>
+                        </div>
+                        <div>
+                            <h5 class="nota-header-title">Lista de Chequeo Quir&uacute;rgica</h5>
+                            <p class="nota-header-subtitle">Control de seguridad quir&uacute;rgica del paciente (Entrada · Pausa · Salida)</p>
+                        </div>
+                    </div>
+                    @if(!User.IsInRole("Medico Externo")){
+                    <div>
+                        <button class="btn btn-nota-primary btn-nota-primary-chequeo" data-bind="click: verModalAgregarChequeo">
+                            <i class="fas fa-plus mr-1"></i> Nueva Lista de Chequeo
+                        </button>
+                    </div>
+                    }
+                </div>
+
+                <div class="nota-card-body">
+                    <div class="table-responsive">
+                        <table class="table tabla-notas">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Procedimiento / Cirugía</th>
+                                    <th class="text-center">Etapas completadas</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!--ko foreach: listasChequeo-->
+                                <tr>
+                                    <td>
+                                        <div class="nota-fecha-wrapper">
+                                            <div class="nota-fecha-icon nota-fecha-icon-chequeo">
+                                                <i class="fas fa-clock"></i>
+                                            </div>
+                                            <div>
+                                                <!-- ko if: $data.FechaChequeo -->
+                                                <div class="nota-fecha-text" data-bind="text: $data.FechaChequeo"></div>
+                                                <!-- /ko -->
+                                                <!-- ko ifnot: $data.FechaChequeo -->
+                                                <div class="nota-fecha-text" data-bind="text: $data.FechaRegistro"></div>
+                                                <!-- /ko -->
+                                                <!-- ko if: $data.HoraChequeo -->
+                                                <div class="nota-fecha-label" data-bind="text: $data.HoraChequeo"></div>
+                                                <!-- /ko -->
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <!-- ko if: $data.CP_NombreCirugia -->
+                                        <div class="nota-contenido-cell nota-contenido-cell-chequeo" data-bind="text: $data.CP_NombreCirugia"></div>
+                                        <!-- /ko -->
+                                        <!-- ko if: $data.CI_Operacion -->
+                                        <div class="nota-contenido-cell nota-contenido-cell-chequeo" style="font-size:0.8rem;opacity:.8;" data-bind="text: $data.CI_Operacion"></div>
+                                        <!-- /ko -->
+                                        <!-- ko ifnot: $data.CP_NombreCirugia --><!-- ko ifnot: $data.CI_Operacion -->
+                                        <span class="text-muted" style="font-size:0.82rem;">Sin descripción</span>
+                                        <!-- /ko --><!-- /ko -->
+                                    </td>
+                                    <td class="text-center">
+                                        <div style="display:flex;justify-content:center;gap:6px;flex-wrap:wrap;">
+                                            <!-- ko if: $data.EntradaCompleta -->
+                                            <span class="badge badge-info px-2 py-1" style="font-size:0.72rem;border-radius:6px;"><i class="fas fa-sign-in-alt mr-1"></i>Entrada</span>
+                                            <!-- /ko -->
+                                            <!-- ko if: $data.PausaCompleta -->
+                                            <span class="badge badge-warning px-2 py-1" style="font-size:0.72rem;border-radius:6px;"><i class="fas fa-pause-circle mr-1"></i>Pausa</span>
+                                            <!-- /ko -->
+                                            <!-- ko if: $data.SalidaCompleta -->
+                                            <span class="badge badge-success px-2 py-1" style="font-size:0.72rem;border-radius:6px;"><i class="fas fa-sign-out-alt mr-1"></i>Salida</span>
+                                            <!-- /ko -->
+                                            <!-- ko ifnot: $data.EntradaCompleta --><!-- ko ifnot: $data.PausaCompleta --><!-- ko ifnot: $data.SalidaCompleta -->
+                                            <span class="text-muted" style="font-size:0.8rem;">Sin completar</span>
+                                            <!-- /ko --><!-- /ko --><!-- /ko -->
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="d-flex justify-content-center" style="gap:6px;">
+                                            @if(!User.IsInRole("Medico Externo")){
+
+                                            <button class="btn btn-warning text-white btn-nota-accion" data-bind="click: function() { $root.abrirEditarListaChequeo($data) }">
+                                                <i class="fas fa-edit mr-1"></i> Editar
+                                            </button>
+                                            }
+                                            <button class="btn btn-nota-accion btn-nota-chequeo" data-bind="click: function() { $root.verDetalleListaChequeo($data) }">
+                                                <i class="fas fa-eye mr-1"></i> Ver
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!--/ko-->
+                                <!-- ko if: listasChequeo().length === 0 -->
+                                <tr>
+                                    <td colspan="4">
+                                        <div class="nota-empty-state">
+                                            <i class="fas fa-clipboard-check d-block"></i>
+                                            <p>No hay listas de chequeo registradas</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- /ko -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="nota-footer">
+                    <span><i class="fas fa-clipboard-check mr-1" style="color:var(--chequeo-color)"></i> Registros: <strong data-bind="text: listasChequeo().length"></strong></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

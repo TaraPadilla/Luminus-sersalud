@@ -1,0 +1,94 @@
+@model sistema.Models.ReportesVentasViewModel
+
+@{
+    Layout = "_HojaLayout";
+    decimal MontoPagado = 0m;
+    decimal VueltoTotal = 0m;
+    
+    var Desde = Convert.ToDateTime(@Model.Desde).ToString("MM/dd/yyyy");
+    var Hasta = Convert.ToDateTime(@Model.Hasta).ToString("MM/dd/yyyy");
+    
+    int totalventas = 0;
+}
+
+	<div>
+		<div class="text-center" style="border: 1px black solid;">
+			<h4> Reporte de Ventas </h4>
+		</div>
+	</div>
+	<br>
+     <div>
+		<span class="font-weight-bold">FECHA Y HORA DE EMISIÓN  </span>
+		<span> @DateTime.Now</span>
+	</div>
+     <div>
+		<span class="font-weight-bold">DESDE</span>
+		<span> @Desde </span>
+	</div>
+     <div>
+		<span class="font-weight-bold">HASTA</span>
+		<span> @Hasta </span>
+	</div>
+    <br>
+  
+   
+    <table class="table table-sm table-striped">
+                <thead>
+                <tr>
+                    <th><span contenteditable>Fecha</span></th>
+                    <th><span contenteditable>#</span></th>
+                    <th ><span contenteditable>Vendedor</span></th>
+                    <th ><span contenteditable>Nombre</span></th>
+                    <th ><span contenteditable>Nit</span></th>
+                    <th ><span contenteditable>Forma Pago</span></th>
+                    <th ><span contenteditable>Total</span></th>
+                    <th><span contenteditable>Monto Pagado</span></th>
+                    <th><span contenteditable>Vuelto</span></th>
+
+                </tr>
+                </thead>
+                <tbody>
+                        @foreach(var item in Model.Ventas)
+                            {
+                                MontoPagado += @item.MontoPago;
+                                VueltoTotal += @item.Vuelto;
+                                
+                                <tr>
+                                    <td>@item.FechaVenta</td>
+                                    <td>@item.Id</td>
+                                    <td>@item.Empleado.Nombre</td>
+                                    <td>@item.Nombres</td>
+                                    <td>@item.Nit</td>
+                                    <td>
+                                        @if(item.Pagos.Count() > 0)
+                                        {
+                                                foreach (var pago in item.Pagos)
+                                            {
+                                            <span>@pago.FormaPago.NombreFormaPago - Q @pago.Monto</span>
+                                            }
+                                        }
+                                        
+                                    </td>
+                                    <td>Q @item.DetalleVenta.Sum(a => a.Total)</td>
+                                    <td>Q @item.MontoPago</td>
+                                    <td>Q @item.Vuelto</td>
+                                </tr>
+                                
+                                totalventas += 1; 
+                            }
+                </tbody>
+    </table>
+    <br>
+    <div>
+		<span class="font-weight-bold">Monto</span>
+		<span> Q @MontoPagado</span>
+	</div>
+    <div>
+		<span class="font-weight-bold">Vuelto</span>
+		<span> Q @VueltoTotal</span>
+	</div>
+    <div>
+		<span class="font-weight-bold">Total Ventas</span>
+		<span> @totalventas</span>
+	</div>
+

@@ -1,0 +1,124 @@
+@model sistema.Models.ConsultasViewModel
+@Html.HiddenFor(a => a.CitaId)
+@Html.HiddenFor(a => a.PacienteId)
+@Html.HiddenFor(a => a.ConsultaId)
+@Html.HiddenFor(a => a.PrimeraConsulta)
+@Html.HiddenFor(a => a.HistoriaId)
+@Html.HiddenFor(a => a.ExamenFisicoId)
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-12">
+                <h5><b>Padecimiento actual</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-12 table-responsive">
+                <table class="table table-hover">
+                    <tbody>
+                        <tr>
+                            <td><b>ONCOLÓGICO</b></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Primario:<br />
+                                <select class="form-control">
+                                    <option>Seleccione...</option>
+                                    <option>Intracraneal</option>
+                                    <option>Tiroides</option>
+                                    <option>Mama</option>
+                                    <option>Pulmón</option>
+                                    <option>Estómago</option>
+                                    <option>Hígado</option>
+                                    <option>Otro primario</option>
+                                </select>
+                            </td>
+                            <td>
+                                <label>Describa:</label>
+                                <input class="form-control" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Metástasis:<br />
+                                <select class="form-control">
+                                    <option>Seleccione...</option>
+                                    <option>Intracraneales</option>
+                                    <option>Pulmonares</option>
+                                    <option>Hepáticas</option>
+                                    <option>Columna vertebral</option>
+                                    <option>Otras</option>
+                                </select>
+                            </td>
+                            <td>
+                                <label>Describa:</label>
+                                <input class="form-control" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><b>NO ONCOLÓGICO</b></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <select class="form-control">
+                                    <option>Seleccione...</option>
+                                    <option>Neumopatía</option>
+                                    <option>Otra</option>
+                                </select>
+                            </td>
+                            <td>
+                                <label>Describa:</label>
+                                <input class="form-control" />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-md-12 table-responsive">
+                <table class="table table-hover">
+                    <tbody>
+                        <tr>
+                            <td>
+                                <label>Historia y progresión de la enfermedad terminal</label>
+                                <textarea class="form-control"></textarea>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="col-md-12 table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <td><b>PADECIMIENTO ALGOLÓGICO ACTUAL</b></td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <label>¿Hace cuanto tiempo inició el dolor?</label>
+                                <textarea class="form-control"></textarea>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label>¿Cómo ha evolucionado el dolor desde su inicio a la fecha?</label>
+                                <textarea class="form-control"></textarea>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label>
+                                    ¿Cómo es el dolor actual? (Duración, naturaleza,
+                                    localización, irradiación, agravantes, atenuantes)
+                                </label>
+                                <textarea class="form-control"></textarea>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

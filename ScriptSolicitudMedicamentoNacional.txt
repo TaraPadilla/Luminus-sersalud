@@ -1,0 +1,31 @@
+CREATE TABLE IF NOT EXISTS public."SolicitudMedicamentoNacional" (
+    "Id" SERIAL PRIMARY KEY,
+    
+    "HospitalizacionId" INT4 NOT NULL,
+    "ProductoId" INT4 NOT NULL,
+    "NombreProducto" TEXT NOT NULL,
+    "UnidadMedidaVentaId" INT4 NOT NULL,
+    "Cantidad" INT4 NOT NULL,
+    "Precio" NUMERIC(12, 2) NOT NULL,
+    
+    "Indicaciones" TEXT,
+    "ViaAdministracion" TEXT,
+    "FrecuenciaAdministracion" TEXT,
+    
+    "IdProductoPrecioInventario" INT4 NOT NULL,
+    "PrecioId" INT4 NOT NULL,
+    
+    "FechaHoraAplicacionManual" TEXT,
+    "Estado" TEXT NOT NULL DEFAULT 'En espera'::text,
+    "TipoProducto" TEXT NOT NULL,
+    
+    "UsuarioSolicitanteId" TEXT NOT NULL,
+    "UsuarioSolicitanteNombre" TEXT NOT NULL,
+    "FechaSolicitud" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    "UsuarioDespachanteId" TEXT,
+    "FechaDespacho" TIMESTAMP,
+    
+    "EsRegistroHospitalizacion" BOOL NOT NULL DEFAULT false,
+    "Directa" BOOL NOT NULL DEFAULT false
+);

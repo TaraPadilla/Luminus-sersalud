@@ -1,0 +1,192 @@
+@using Database.Shared.Models
+@using System.Globalization
+@using sistema.Models
+@model ConsultasViewModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Examenes Consulta";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+}
+
+<style>
+    .report-container {
+        margin-top: 10px;
+    }
+
+    .report-title {
+        text-align: center;
+        font-weight: bold;
+        font-size: 16px;
+        color: #0d0e36;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+
+    .report-subtitle {
+        text-align: center;
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+
+    .report-meta {
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .report-meta b {
+        font-weight: bold;
+    }
+
+    .report-table {
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    /* Fila de título de sección (similar a bloque SERVICIOS) */
+    .report-table-title-row th {
+        background-color: #f3f4ff;
+        border-left: 3px solid #0d0e36;
+        color: #0d0e36;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: bold;
+        font-size: 12px;
+        text-align: center;
+        padding: 6px 8px;
+    }
+
+    /* Fila de encabezados de columnas (más suave, sin fondo oscuro) */
+    .report-table-header-row th {
+        background-color: #eef2ff;
+        color: #0d0e36;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 11px;
+        text-align: left;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table tbody td {
+        font-size: 12px;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    footer {
+        margin-top: 25px;   /* se coloca después del contenido, sin solaparse */
+        font-size: 11px;
+    }
+
+    .report-footer-sign {
+        text-align: center;
+        margin-bottom: 6px;
+    }
+
+    .report-footer-sign img {
+        display: block;
+        margin: 0 auto 4px auto;
+    }
+
+    .report-footer-info {
+        text-align: center;
+        margin-top: 4px;
+    }
+
+    .report-footer-info b {
+        font-weight: bold;
+    }
+</style>
+
+<div class="report-container">
+    <!-- Encabezado del reporte -->
+    <div class="report-header">
+        <div class="report-title">
+            REPORTE - @ViewData["Title"]
+        </div>
+        <div class="report-subtitle">
+            <b>Fecha y hora de emisión:</b> @fecha
+        </div>
+    </div>
+
+    <!-- Datos del paciente -->
+    <div class="report-meta">
+        <b>Nombre:</b> @Model.PacienteNombre
+    </div>
+    <div class="report-meta">
+        <b>Fecha:</b> @fecha.ToString("dd/MM/yyyy HH:mm")
+    </div>
+
+    <!-- Tabla de exámenes -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="3">Exámenes</th>
+            </tr>
+            <tr class="report-table-header-row">
+                <th>Código</th>
+                <th>Nombre</th>
+                <th>Cantidad</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.ExamenesAgregados != null && Model.ExamenesAgregados.Any())
+            {
+                foreach (var examen in Model.ExamenesAgregados)
+                {
+                    <tr>
+                        <td>@examen.ExamenCodigo</td>
+                        <td>@examen.ExamenNombre</td>
+                        <td>@examen.Cantidad</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="3">No hay exámenes registrados</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<footer>
+
+
+    <div class="report-footer-sign">
+
+    @if (!string.IsNullOrEmpty(Model.EstablecimientoImagenFirmaMedico))
+    {
+        <img src="@Model.EstablecimientoImagenFirmaMedico" style="max-width: 200px; height: auto;" />
+
+        <br /><b>Firma</b>
+    }
+    else
+    {
+        <span>No hay firma disponible</span>
+    }
+        _____________________
+    </div>
+
+    <div class="report-footer-info">
+        <b>Dirección: </b>@ViewData["Direccion"]<br />
+        <b>Teléfonos: </b>@ViewData["Telefono"]<br />
+        <b>Correo: </b>@ViewData["CorreoElectronico"]
+    </div>
+</footer>

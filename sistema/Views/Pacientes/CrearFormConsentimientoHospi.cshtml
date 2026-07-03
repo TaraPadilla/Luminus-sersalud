@@ -1,0 +1,267 @@
+@model farmamest.Models.ConsentimientoHospiVM
+@{
+    ViewData["Title"] = "Formulario De Consentimiento";
+}
+
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">@ViewData["Title"]</h4>
+    </div>
+    <div class="card-body">
+        <form id="form-consentimiento">
+
+            <!-- Sección Datos del Paciente -->
+            <h5 class="card-title">Datos del Paciente</h5>
+            <div class="p-3 mb-4 bg-light border rounded">
+                <div class="row">
+                    <div class="col-md-3 form-group">
+                        <label for="horaIngreso">Hora de Ingreso</label>
+                        <input type="text" id="horaIngreso" class="form-control" data-bind="value: horaIngreso" readonly />
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label for="numeroPaciente"># Paciente</label>
+                        <input type="text" id="numeroPaciente" class="form-control" data-bind="value: numeroPaciente" placeholder="Ingrese el número de paciente" />
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label for="numeroHabitacion"># Habitación</label>
+                        <input type="text" id="numeroHabitacion" class="form-control" data-bind="value: numeroHabitacion" placeholder="Ingrese el número de habitación" />
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label for="nombreCompleto">Nombre Completo</label>
+                        <input type="text" id="nombreCompleto" class="form-control" data-bind="value: nombreCompleto" placeholder="Ingrese el nombre completo" />
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label for="estadoCivil">Estado Civil</label>
+                        <input type="text" id="estadoCivil" class="form-control" data-bind="value: estadoCivil" placeholder="Ingrese el estado civil" />
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label for="dpi">DPI o Pasaporte</label>
+                        <input type="text" id="dpi" class="form-control" data-bind="value: dpi" placeholder="Ingrese DPI o Pasaporte" />
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label for="fechaNacimiento">Fecha de Nacimiento</label>
+                        <input type="date" id="fechaNacimiento" class="form-control" data-bind="value: fechaNacimiento" />
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label for="edad">Edad - Años</label>
+                        <input type="text" id="edad" class="form-control" data-bind="value: edad" readonly />
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label for="nacionalidad">Nacionalidad</label>
+                        <input type="text" id="nacionalidad" class="form-control" data-bind="value: nacionalidad" placeholder="Ingrese la nacionalidad" />
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label for="direccion">Dirección</label>
+                        <input type="text" id="direccion" class="form-control" data-bind="value: direccion" placeholder="Ingrese la dirección" />
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label for="celular">Celular</label>
+                        <input type="text" id="celular" class="form-control" data-bind="value: celular" placeholder="Ingrese el número celular" />
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" class="form-control" data-bind="value: email" placeholder="Ingrese el correo electrónico" />
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label for="tipoSangre">Tipo de Sangre</label>
+                        <input type="text" id="tipoSangre" class="form-control" data-bind="value: tipoSangre" placeholder="Ingrese el tipo de sangre" />
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label for="genero">Género</label>
+                        <input type="text" id="genero" class="form-control" data-bind="value: genero" placeholder="Ingrese el genero/sexo" />
+                    </div>
+                    @* <div class="col-md-3 form-group">
+                        <label for="religion">Religión</label>
+                        <input type="text" id="religion" class="form-control" data-bind="value: religion" placeholder="Ingrese la religión" />
+                    </div> *@
+                    <div class="col-md-3 form-group">
+                        <label for="religion">Religión</label>
+                        <select id="religion" class="form-control select2bs4" data-bind="value: religion">
+                            <option value="Católico(a)">Católico(a)</option>
+                            <option value="Evangélico(a)">Evangélico(a)</option>
+                            <option value="Judío(a)">Judío(a)</option>
+                            <option value="Mormón(a)">Mormón(a)</option>
+                            <option value="Musulmán(a)">Musulmán(a)</option>
+                            <option value="Testigo de Jehová">Testigo de Jehová</option>
+                            <option value="Ateo(a)">Ateo(a)</option>
+                            <option value="No Definido">No Definido</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label for="ocupacion">Ocupación</label>
+                        <input type="text" id="ocupacion" class="form-control" data-bind="value: ocupacion" placeholder="Ingrese la ocupación" />
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label for="poseeSeguroMedico">¿Posee Seguro Médico?</label>
+                        <select id="poseeSeguroMedico" class="form-control" data-bind="value: poseeSeguroMedico">
+                            <option value="false">No</option>
+                            <option value="true">Sí</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label for="aseguradora">Aseguradora</label>
+                        <input type="text" id="aseguradora" class="form-control" data-bind="value: aseguradora, disable: aseguradoraDisabled()" placeholder="Ingrese la aseguradora" />
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label for="tipoPoliza">Tipo de Póliza</label>
+                        <select id="tipoPoliza" class="form-control" data-bind="value: tipoPoliza, disable: tipoPolizaDisabled()">
+                            <option>Individual</option>
+                            <option>Empresarial</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label for="nombreEmpresa">Nombre de la Empresa</label>
+                        <input type="text" id="nombreEmpresa" class="form-control" data-bind="value: nombreEmpresa, disable: nombreEmpresaDisabled()" placeholder="Ingrese el nombre de la empresa" />
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label for="formularioPreAutorizacion">Formulario de Pre-autorización</label>
+                        <select id="formularioPreAutorizacion" class="form-control" data-bind="value: formularioPreAutorizacion, disable: formularioPreAutorizacionDisabled()">
+                            <option value="false">No</option>
+                            <option value="true">Sí</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label for="tratamientoMedico">Tratamiento Médico</label>
+                        <input type="text" id="tratamientoMedico" class="form-control" data-bind="value: tratamientoMedico" placeholder="Ingrese el nombre del tratamiento médico" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección Datos del Responsable -->
+            <h5 class="card-title">Datos del Responsable de la Cuenta</h5>
+            <div class="p-3 mb-4 bg-light border rounded">
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="copyFromPatientCheckbox" data-bind="checked: copyFromPatient">
+                            <label class="form-check-label" for="copyFromPatientCheckbox">
+                                <strong>Usar los mismos datos del paciente para el responsable de la cuenta</strong>
+                            </label>
+                            <small class="text-muted d-block">Al marcar esta opción, se copiarán automáticamente los datos del paciente al responsable. Si ya hay datos, serán sobrescritos.</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        <label for="nombreResponsable">Nombre Completo</label>
+                        <input type="text" id="nombreResponsable" class="form-control" data-bind="value: nombreResponsable" placeholder="Ingrese el nombre completo" />
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="dpiResponsable">DPI o Pasaporte</label>
+                        <input type="text" id="dpiResponsable" class="form-control" data-bind="value: dpiResponsable" placeholder="Ingrese el DPI o pasaporte" />
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="fechaNacimientoResponsable">Fecha de Nacimiento</label>
+                        <input type="date" id="fechaNacimientoResponsable" class="form-control" data-bind="value: fechaNacimientoResponsable" />
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="edadResponsable">Edad - Años</label>
+                        <input type="text" id="edadResponsable" class="form-control" data-bind="value: edadResponsable" readonly />
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="direccionResponsable">Dirección</label>
+                        <input type="text" id="direccionResponsable" class="form-control" data-bind="value: direccionResponsable" placeholder="Ingrese la dirección" />
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="celularResponsable">Celular</label>
+                        <input type="text" id="celularResponsable" class="form-control" data-bind="value: celularResponsable" placeholder="Ingrese el número de celular" />
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="emailResponsable">Email</label>
+                        <input type="email" id="emailResponsable" class="form-control" data-bind="value: emailResponsable" placeholder="Ingrese el correo electrónico" />
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="nitResponsable">NIT</label>
+                        <input type="text" id="nitResponsable" class="form-control" data-bind="value: nitResponsable" placeholder="Ingrese el NIT" />
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="nacionalidadResponsable">Nacionalidad</label>
+                        <input type="text" id="nacionalidadResponsable" class="form-control" data-bind="value: nacionalidadResponsable" placeholder="Ingrese la nacionalidad" />
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="ocupacionResponsable">Ocupacion</label>
+                        <input type="text" id="ocupacionResponsable" class="form-control" data-bind="value: ocupacionResponsable" placeholder="Ingrese el profesion u ocupacion" />
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="nombreFacturacion">Nombre para Facturación</label>
+                        <input type="text" id="nombreFacturacion" class="form-control" data-bind="value: nombreFacturacion" placeholder="Ingrese el nombre para facturación" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección Contacto de Emergencia -->
+            @* <h5 class="card-title">Contacto de Emergencia</h5>
+            <div class="p-3 bg-light border rounded">
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        <label for="nombreContactoEmergencia">Nombre de la persona a notificar</label>
+                        <input type="text" id="nombreContactoEmergencia" class="form-control" data-bind="value: nombreContactoEmergencia" placeholder="Ingrese el nombre de la persona a notificar" />
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="celularContactoEmergencia">Celular</label>
+                        <input type="text" id="celularContactoEmergencia" class="form-control" data-bind="value: celularContactoEmergencia" placeholder="Ingrese el número de celular" />
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="parentescoContactoEmergencia">Parentesco</label>
+                        <input type="text" id="parentescoContactoEmergencia" class="form-control" data-bind="value: parentescoContactoEmergencia" placeholder="Ingrese el parentesco" />
+                    </div>
+                </div>
+            </div> *@
+
+
+
+            <!-- Sección Contacto de Emergencia -->
+          <h5 class="card-title">Contactos de Emergencia</h5>
+            <div class="p-3 bg-light border rounded">
+                <div data-bind="foreach: contactosEmergencia">
+                    <div class="row mb-3 pb-3" data-bind="css: { 'border-bottom': $index() < $parent.contactosEmergencia().length - 1 }">
+                        
+                        <div class="col-12 col-sm-6 col-lg-4 form-group">
+                            <label class="font-weight-bold" data-bind="attr: { for: 'nombreContactoEmergencia_' + $index() }">Nombre</label>
+                            <input type="text" class="form-control" data-bind="value: $data.nombre, attr: { id: 'nombreContactoEmergencia_' + $index() }" placeholder="Nombre completo" />
+                        </div>
+            
+                        <div class="col-12 col-sm-6 col-lg-3 form-group">
+                            <label class="font-weight-bold" data-bind="attr: { for: 'celularContactoEmergencia_' + $index() }">Celular</label>
+                            <input type="text" class="form-control" data-bind="value: $data.celular, attr: { id: 'celularContactoEmergencia_' + $index() }" placeholder="Número de celular" />
+                        </div>
+            
+                        <div class="col-12 col-sm-8 col-lg-3 form-group">
+                            <label class="font-weight-bold" data-bind="attr: { for: 'parentescoContactoEmergencia_' + $index() }">Parentesco</label>
+                            <input type="text" class="form-control" data-bind="value: $data.parentesco, attr: { id: 'parentescoContactoEmergencia_' + $index() }" placeholder="Ej: Madre, Padre..." />
+                        </div>
+            
+                        <div class="col-12 col-sm-4 col-lg-2 form-group d-flex align-items-end">
+                            <button type="button" class="btn btn-outline-danger btn-block btn-sm" data-bind="click: $parent.eliminarContactoEmergencia.bind($parent)">
+                                <i class="fas fa-trash-alt"></i> Eliminar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-2">
+                    <div class="col-12 text-right text-sm-left">
+                        <button type="button" class="btn btn-sm btn-primary" data-bind="click: agregarContactoEmergencia">
+                            <i class="fas fa-plus"></i> Agregar otro contacto
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </form>
+    </div>
+    <div class="card-footer d-flex justify-content-end">
+        <button type="button" class="btn btn-warning mr-2" onclick="document.getElementById('form-consentimiento').reset();">Restablecer Formulario</button>
+        <button type="button" data-bind="click: guardarFormConsentimientoConDefaults" class="btn btn-danger mr-2">Terceros Lesionados</button>
+        <button type="button" data-bind="click: guardarFormConsentimientoHospi" class="btn btn-primary">Guardar</button>
+    </div>
+</div>
+
+<script type="application/json" id="viewModelData">
+    @Html.Raw(Json.Serialize(Model))
+</script>
+
+@section Scripts
+{
+<script type="text/javascript" src="~/ViewModelKo/FormConsentimientoVM.js"></script>
+}

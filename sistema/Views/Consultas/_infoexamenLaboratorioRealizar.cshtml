@@ -1,0 +1,115 @@
+﻿@*ESTE ARCHIVO ESTA EN REVISION Y PROXIMO A SER ELIMINADO, PUES
+    SE HA OPTIMIZADO EL CONTENIDO DE LAS CONSULTAS
+*@
+
+@* @model sistema.Models.InfoConsultaViewModel
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <div class="table-responsive">
+                    <table class="mb-0 table" name="Prescriptions">
+                        <thead>
+                            <tr>
+
+                                <b class="center-elem">
+                                    EXAMENES A REALIZAR
+                                </b>
+
+                            </tr>
+                            <tr>
+                                <th>Item</th>
+                                <th>Codigo</th>
+                                <th>Examen a Realizar</th>
+                                <th>Cantidad</th>
+
+                                @*<th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="Prescriptions">
+                            @if (Model.Prescripcion != null
+                            && Model.Prescripcion.DetallePrescripcion.Count() > 0)
+                            {
+                                foreach (var medicamento in Model.Prescripcion.DetallePrescripcion)//aqui valida los que tienen item mayor a 1000 ya que las prescripciones empiezan en 1 y los examene empiezan en 1000
+                                {
+                                    if (medicamento.Item >= 1000)
+                                    {
+                                        <tr id="@medicamento.Item">
+
+                                            <td><b>@medicamento.Item</b></td>
+                                            <td>@medicamento.Indications</td>
+                                            <td>@medicamento.Medicine</td>
+                                            <td>@medicamento.Qty</td>
+
+                                        </tr>
+                                    }
+
+
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <br>
+        <br>
+        <div class="form-row justify-content-end">
+            <div class="col-1">
+                <button type="submit" class="btn btn-success btn-lg text-white"
+                        id="generarExamenesSolicitarPdf" onclick="generarExamenesSolicitarPdf(@Model.PrescripcionId)">
+                    Generar PDF ß &nbsp<i class="fas fa-arrow-down"></i>
+                </button>
+
+                <br>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*MANANTIALES NO LO UTILIZA EN EL MOMENTO, por ello se utiliza la clase CSS 'd-none'
+<div class="main-card mb-3 card col-md-12 d-none">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <table class="table table-hover">
+                    @if (Model.Consulta.ConsultaExamenArchivos == null || Model.Consulta.ConsultaExamenArchivos.Count == 0)
+                    {
+                        <thead>
+                            <tr>
+                                <th>No hay archivos subidos</th>
+                            </tr>
+                        </thead>
+                    }
+                    else
+                    {
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Ruta</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        foreach (var archivo in Model.Consulta.ConsultaExamenArchivos)
+                        {
+                            <tbody>
+                                <tr>
+                                    <td>@archivo.NombreArchivo</td>
+                                    <td>@archivo.UrlArchivo</td>
+
+                                    <td>
+                                        <a download href="~/@archivo.UrlArchivo" target="_blank"
+                                           class="btn btn-primary text-light">Descargar</a>
+                                    </td>
+
+                                </tr>
+                            </tbody>
+                        }
+                    }
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+ *@

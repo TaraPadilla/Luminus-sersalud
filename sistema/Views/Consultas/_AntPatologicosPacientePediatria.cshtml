@@ -1,0 +1,37 @@
+@model sistema.Models.ConsultasViewModel
+
+<br />
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Antecedentes patologicos</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-4">
+                <b>Medicos:</b><br />
+                @Html.TextAreaFor(a => a.PediatricoAntMedicos, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-4">
+                Quirurgicos:<br />
+                @Html.TextAreaFor(a => a.PediatricoAntQuirurgicos, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-4">
+                Alergicos:<br />
+                @Html.TextAreaFor(a => a.PediatricoAntAlergias, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-4">
+                Traumaticos:<br />
+                @Html.TextAreaFor(a => a.PediatricoAntTraumaticos, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-4">
+                Vicios y/o man&iacute;as:<br />
+                @Html.TextAreaFor(a => a.PediatricoAntVicios, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-4">
+                Medicamento de uso actual:<br />
+                @Html.TextAreaFor(a => a.PediatricoAntMedicamentos, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+    </div>
+</div>

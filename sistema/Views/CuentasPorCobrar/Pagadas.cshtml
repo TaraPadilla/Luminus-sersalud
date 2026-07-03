@@ -1,0 +1,72 @@
+@{
+    ViewData["Title"] = "Cuentas pagadas";
+}
+
+<link rel="stylesheet" href="~/js/DataTables/datatables.css" />
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="col-md-12">
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="text-center">
+                <h4><b>Cuentas pagadas</b></h4>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel">
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="tabla-cuentas-pagadas">
+                    <thead>
+                        <tr>
+                            <th>Id</th>
+                            <th>Paciente</th>
+                            <th>Fecha límite de pago</th>
+                            @* <th>Valor</th> *@
+                            <th>Pagada</th>
+                            <th>Fecha de pago realizado</th>
+                            <th>Ver detalles</th>
+                            <th>Imprimir recibo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!--ko foreach: cuentasPagadas-->
+                        <tr>
+                            <td data-bind="text: id"></td>
+                            <td data-bind="text: paciente.nombre"></td>
+                            <!--ko if:fechaLimitePago != null-->
+                            <td data-bind="text: moment(fechaLimitePago).format('ll')"></td>
+                            <!--/ko-->
+                            <!--ko if:fechaLimitePago == null-->
+                            <td>-</td>
+                            <!--/ko-->
+                            @* <td data-bind="text: valor"></td> *@
+                            <td data-bind="text: pagadaText"></td>
+                            <td data-bind="text: moment(fechaPagoRealizado).format('ll')"></td>
+                            <td><a class="btn btn-primary" data-bind="attr:{href:'/CuentasPorCobrar/VerDetallesCuenta?cuentaId='+id}">Ver detalles</a></td>
+                            @* <td><a class="btn btn-primary" data-bind="attr:{href:'/CrearPDF/CuentasPorCobrarReciboPagoPDF?id='+id}">Ver recibo</a></td> *@
+                            <td>
+                                <a class="btn btn-primary" 
+                                data-bind="attr: { href: 'http://esacdev.com/Xml/GeneratePDF?uuid=' + uuidFel }">
+                                Ver recibo
+                                </a>
+                            </td>
+                        </tr>
+                        <!--/ko-->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* <script src="https://code.jquery.com/jquery-1.12.4.js"></script> *@
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+@* <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script> *@
+@* <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script> *@
+<script src="https://knockoutjs.com/downloads/knockout-3.5.1.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.js"></script>
+<script src="~/ViewModelKo/CuentasPagadasListaVM.js"></script>

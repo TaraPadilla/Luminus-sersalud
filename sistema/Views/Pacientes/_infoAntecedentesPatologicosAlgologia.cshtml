@@ -1,0 +1,437 @@
+@model Database.Shared.Models.Paciente
+ 
+
+
+                @*area para mostrar antecedentes patologicos*@
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Antecedentes personales</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-12">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <tbody>
+                            @foreach (var item in ViewBag.AntPatologicos)
+                            {
+
+                            if (item.Posicion == 13)
+                            {
+
+                            <tr>
+                                <td> <b>Transfusión </b></td>
+                                <td>
+                                    &nbsp;
+                                    @if (item.Presento == true)
+                                    {
+                                    <input class="form-control" value="SI" readonly/>
+                                    }
+                                    else
+                                    {
+                                    <input class="form-control" value="NO" readonly/>
+                                    }
+
+                                </td>
+                                <td>
+                                    Detalles:<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly/>
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+                            }
+
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <hr />
+            </div>
+        </div>
+    </div>
+</div>
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Mujeres</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-12">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <tbody>
+                            @foreach (var item in ViewBag.AntPatologicos)
+                            {
+
+
+                            if (item.Posicion == 14)
+                            {
+
+                            <tr>
+                                <td> <b>Ciclos  </b></td>
+
+                                <td>
+                                    Ciclos:<br />
+                                    <input class="form-control" value="@item.Variable1" readonly/>
+                                </td>
+                                <td>
+                                    Detalles<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly/>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+
+
+                            }
+
+
+                            if (item.Posicion == 15)
+                            {
+
+                            <tr>
+                                <td> <b>Obstétricos</b></td>
+                                <td>
+                                    &nbsp;
+                                    @if (item.Presento == true)
+                                    {
+                                    <input class="form-control" value="SI" readonly/>
+                                    }
+                                    else
+                                    {
+                                    <input class="form-control" value="NO" readonly/>
+                                    }
+                                </td>
+                                <td>
+                                    Detalles:<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly/>
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+                            }
+                            if (item.Posicion == 16)
+                            {
+
+                            <tr>
+                                <td> <b>Gestas</b></td>
+                                <td>
+                                    &nbsp;
+                                    @if (item.Presento == true)
+                                    {
+                                    <input class="form-control" value="SI" readonly/>
+                                    }
+                                    else
+                                    {
+                                    <input class="form-control" value="NO" readonly/>
+                                    }
+                                </td>
+                                <td>
+                                    Detalles:<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly/>
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+                            }
+                            if (item.Posicion == 17)
+                            {
+
+                            <tr>
+                                <td> <b>Paras</b></td>
+                                <td>
+                                    &nbsp;
+                                    @if (item.Presento == true)
+                                    {
+                                    <input class="form-control" value="SI" readonly/>
+                                    }
+                                    else
+                                    {
+                                    <input class="form-control" value="NO" readonly/>
+                                    }
+                                </td>
+                                <td>
+                                    Detalles:<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly/>
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+                            }
+
+                            if (item.Posicion == 18)
+                            {
+
+                            <tr>
+                                <td> <b>Hijos vivos</b></td>
+                                <td>
+                                    &nbsp;
+                                    @if (item.Presento == true)
+                                    {
+                                    <input class="form-control" value="SI" readonly/>
+                                    }
+                                    else
+                                    {
+                                    <input class="form-control" value="NO" readonly/>
+                                    }
+                                </td>
+                                <td>
+                                    Detalles:<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly/>
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+                            }
+                            if (item.Posicion == 19)
+                            {
+
+                            <tr>
+                                <td> <b>Hijos muertos</b></td>
+                                <td>
+                                    &nbsp;
+                                    @if (item.Presento == true)
+                                    {
+                                    <input class="form-control" value="SI" readonly/>
+                                    }
+                                    else
+                                    {
+                                    <input class="form-control" value="NO" readonly/>
+                                    }
+                                </td>
+                                <td>
+                                    Detalles:<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly/>
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+                            }
+                            if (item.Posicion == 20)
+                            {
+
+                            <tr>
+                                <td> <b>Menarquia</b></td>
+                                <td>
+                                    &nbsp;
+                                    @if (item.Presento == true)
+                                    {
+                                    <input class="form-control" value="SI" readonly/>
+                                    }
+                                    else
+                                    {
+                                    <input class="form-control" value="NO" readonly/>
+                                    }
+                                </td>
+                                <td>
+                                    Detalles:<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly/>
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+                            }
+
+                            if (item.Posicion == 21)
+                            {
+
+                            <tr>
+                                <td> <b>Menopausia</b></td>
+                                <td>
+                                    &nbsp;
+                                    @if (item.Presento == true)
+                                    {
+                                    <input class="form-control" value="SI" readonly/>
+                                    }
+                                    else
+                                    {
+                                    <input class="form-control" value="NO" readonly/>
+                                    }
+                                </td>
+                                <td>
+                                    Detalles:<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly/>
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+                            }
+                            if (item.Posicion == 22)
+                            {
+
+                            <tr>
+                                <td> <b>FUR (Fecha de ultima regla)</b></td>
+
+                                <td>
+                                    Descripcion:<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly/>
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+                            }
+
+
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <hr />
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Hombre</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-12">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <tbody>
+                            @foreach (var item in ViewBag.AntPatologicos)
+                            {
+
+
+                            if (item.Posicion == 23)
+                            {
+
+
+
+                            <tr>
+
+                                <td> <b>Fértil</b></td>
+                                <td>
+                                    &nbsp;
+                                    @if (item.Presento == true)
+                                    {
+                                    <input class="form-control" value="SI" readonly/>
+                                    }
+                                    else
+                                    {
+                                    <input class="form-control" value="NO" readonly/>
+                                    }
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+                            }
+                            if (item.Posicion == 24)
+                            {
+
+                            <tr>
+                                <td> <b>Hijos</b></td>
+                                <td>
+                                    &nbsp;
+                                    @if (item.Presento == true)
+                                    {
+                                    <input class="form-control" value="SI" readonly/>
+                                    }
+                                    else
+                                    {
+                                    <input class="form-control" value="NO" readonly/>
+                                    }
+                                </td>
+                                <td>
+                                    Detalles:<br />
+                                    <input class="form-control" value="@item.Descripcion" readonly/>
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+                            }
+                            if (item.Posicion == 25)
+                            {
+
+                            <tr>
+                                <td> <b>Disfunción eréctil</b></td>
+                                <td>
+                                    &nbsp;
+                                    @if (item.Presento == true)
+                                    {
+                                    <input class="form-control" value="SI" readonly />
+                                    }
+                                    else
+                                    {
+                                    <input class="form-control" value="NO" readonly/>
+                                    }
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+                            }
+                            if (item.Posicion == 26)
+                            {
+
+                            <tr>
+                                <td> <b>Higiene adecuada</b></td>
+                                <td>
+                                    &nbsp;
+                                    @if (item.Presento == true)
+                                    {
+                                    <input class="form-control" value="SI" readonly/>
+                                    }
+                                    else
+                                    {
+                                    <input class="form-control" value="NO" readonly/>
+                                    }
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                            </tr>
+                            }
+
+
+
+
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <hr />
+            </div>
+        </div>
+    </div>
+</div>

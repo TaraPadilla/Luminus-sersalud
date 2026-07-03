@@ -1,0 +1,126 @@
+@model sistema.Models.PacientesAplicarMembresiaViewModel
+@{
+    ViewData["Title"] = "Aplicar membresía";
+}
+@Html.HiddenFor(m=>m.PacienteId)
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <h4><b>Aplicar membresía</b></h4>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Datos del paciente</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-12">
+                <div class="form-row">
+                    <div class="col-md-4">
+                        <span><b>Nombre</b></span><br>
+                        @Model.PacienteNombre
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br><br>
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Membresía PlusVida</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-12">
+                <b>Para pacientes en mantenimiento</b><br /><br />
+                PLUSVIDA, te ofrece un modelo de tratamiento para que puedas disfrutar de
+                los servicios básicos y necesarios para lograr tu cuidado día a día y lograr un mantenimiento a largo plazo.
+                <br />
+                <b>PRE-REQUISITOS</b><br />
+                <ul>
+                    <li>Estar actualmente dentro del rango de tu peso saludable.</li>
+                    <li>
+                        Haber estado durante un año en mantenimiento, manteniéndote en tu rango de peso saludable y
+                        haber asistido regularmente a tus citas mensuales de control nutricional.
+                    </li>
+                </ul>
+                <b>BENEFICIOS</b><br />
+                <ul>
+                    <li>Tendrás un 50% de descuento en el costo mensual de tu tratamiento, siendo este un total de Q800.</li>
+                    <li>Contarás con citas presenciales 1 vez al mes, para tu control nutricional y tu seguimiento terapéutico.</li>
+                    <li>Tendrás acceso a las sesiones en vivo diarias transmitidas en GoTomeeting.</li>
+                    <li>Tendrás acceso al portal, dónde podrás escuchar los audios y llevar tu registro diario de peso.</li>
+                </ul>
+                <b>POS-REQUISITOS</b><br />
+                <ul>
+                    <li>Mantenerte en el rango de tu peso saludable, verificable en tus citas presenciales nutricionales.</li>
+                    <li>Realizar tu pago mensualmente.</li>
+                    <li>
+                        En caso que necesites regresar a la fase de adelgazamiento, inmediatamente entraras
+                        en ese formato del tratamiento y tendrás nuevamente la opción de utilizar
+                        tu membresía PLUSVIDA al haber nuevamente permanecido en tu rango de peso saludable por 3 meses.
+                    </li>
+                    <li>
+                        Si estás de acuerdo con lo anterior mencionado, te damos la bienvenida a nuestro grupo
+                        selecto de pacientes en mantenimiento, que desarrollaron la consciencia
+                        de cuidarse de por vida y encontraron aquí el medio para lograrlo.
+                    </li>
+                </ul>
+                <br /><br />
+                <input type="checkbox" id="compromiso" />
+                <label for="compromiso">Me comprometo a cumplir y aceptar los requisitos descritos en el presente documento</label>
+            </div>
+            <div class="col-md-12">
+                <h6><b>Firma del paciente</b></h6>
+                <hr>
+            </div>
+            <div class="col-md-12">
+                <canvas id="firma"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <button class="btn btn-primary" data-bind="click: guardarMembresia">
+                    Guardar
+                </button>
+                <a class="btn btn-danger text-light" href="/Pacientes/Lista">
+                    Cancelar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.0.1/js/toastr.js"></script>
+<script type="text/javascript" src="~/js/moment.min.js"></script>
+<script type="text/javascript" src="~/js/daterangepicker.js"></script>
+<script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<script src="https://knockoutjs.com/downloads/knockout-3.5.1.js"></script>
+<script src="~/ViewModelKo/PacienteAplicarMembresiaVM.js"></script>
+<script>
+
+
+</script>
+}
+
+@section css{
+<style>
+    canvas {
+        width: 900px;
+        height: 300px;
+        background-color: #ffffff;
+        border: 1px solid black;
+    }
+</style>
+}

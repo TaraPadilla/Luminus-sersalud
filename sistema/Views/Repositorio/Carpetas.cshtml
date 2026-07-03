@@ -1,0 +1,64 @@
+@{
+    ViewData["Title"] = "Carpetas";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <h4><b>Carpetas</b></h4>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h6><b>Nueva carpeta</b></h6>
+                <hr />
+            </div>
+            <div class="col-md-11">
+                <input class="form-control" placeholder="Nombre de nueva carpeta" />
+            </div>
+            <div class="col-md-1">
+                <button class="btn btn-success">Agregar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <table id="tabla-carpetas">
+                    <thead>
+                        <tr>
+                            <th>Nombre de carpeta</th>
+                            <th>Ruta</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!--ko foreach: carpetas-->
+                        <tr>
+                            <td data-bind="text:NombreCarpeta"></td>
+                            <td data-bind="text:Ruta"></td>
+                            <td>
+                                <a class="btn btn-primary" href="/Repositorio/ArchivosCarpeta">Ver</a>
+                                <button class="btn btn-danger">Eliminar</button>
+                            </td>
+                        </tr>
+                        <!--/ko-->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://knockoutjs.com/downloads/knockout-3.5.1.js"></script>
+<script type="text/javascript" src="~/ViewModelKo/RepositorioCarpetasVM.js"></script>

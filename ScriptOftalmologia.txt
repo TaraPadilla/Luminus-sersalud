@@ -1,0 +1,143 @@
+DROP TABLE "ConsultasOftalmologia"
+-- Opcional: para generar UUIDs con gen_random_uuid()
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- Tabla Oftalmología sin tipos ENUM (todas las columnas fijas son TEXT o NUMERIC)
+CREATE TABLE IF NOT EXISTS "ConsultasOftalmologia" (
+  "Id"                       BIGSERIAL PRIMARY KEY,
+
+  -- Claves foráneas (indexables)
+  "PacienteId"               INT NOT NULL,
+  "ConsultaId"               INT NOT NULL,
+
+  -- Motivo / Antecedentes
+  "HistoriaEnfermedadActual"   TEXT,
+  "PacienteMedicos"            TEXT,
+  "PacienteQuirurgicos"        TEXT,
+  "PacienteTraumaticos"        TEXT,
+  "PacienteAlergias"           TEXT,
+  "PacienteFamiliares"         TEXT,
+
+  -- Datos objetivos
+  -- AV sin corrección
+  "AgudezaSC_Test"           TEXT,
+  "AgudezaSC_OD"             TEXT,
+  "AgudezaSC_OS"             TEXT,
+
+  -- Sensibilidad de contraste
+  "Contraste_OD"             TEXT,
+  "Contraste_OS"             TEXT,
+
+  -- AV cerca sin corrección
+  "AVCerca_OD"               TEXT,
+  "AVCerca_OS"               TEXT,
+
+  -- Tests especiales
+  "TestIshihara_OD"          TEXT,
+  "TestIshihara_OS"          TEXT,
+  "TestEstereopsis_OD"       TEXT,
+  "TestEstereopsis_OS"       TEXT,
+
+  -- Óptica - Lensometría (Histórico)
+  "Lensometria_OD_Esfera"    NUMERIC(5,2),
+  "Lensometria_OD_Cilindro"  NUMERIC(5,2),
+  "Lensometria_OD_Eje"       INT CHECK ("Lensometria_OD_Eje" BETWEEN 0 AND 180),
+  "Lensometria_OD_Agudeza"   TEXT,
+  "Lensometria_OS_Esfera"    NUMERIC(5,2),
+  "Lensometria_OS_Cilindro"  NUMERIC(5,2),
+  "Lensometria_OS_Eje"       INT CHECK ("Lensometria_OS_Eje" BETWEEN 0 AND 180),
+  "Lensometria_OS_Agudeza"   TEXT,
+
+  -- Óptica - Final
+  "Final_OD_Esfera"          NUMERIC(5,2),
+  "Final_OD_Cilindro"        NUMERIC(5,2),
+  "Final_OD_Eje"             INT CHECK ("Final_OD_Eje" BETWEEN 0 AND 180),
+  "Final_OD_Agudeza"         TEXT,
+  "Final_OS_Esfera"          NUMERIC(5,2),
+  "Final_OS_Cilindro"        NUMERIC(5,2),
+  "Final_OS_Eje"             INT CHECK ("Final_OS_Eje" BETWEEN 0 AND 180),
+  "Final_OS_Agudeza"         TEXT,
+  "Final_Adicion"            NUMERIC(5,2),
+  "Final_DIP_mm"             NUMERIC(5,2),
+
+  -- Óptica - Retinoscopía
+  "Retino_OD_Esfera"         NUMERIC(5,2),
+  "Retino_OD_Cilindro"       NUMERIC(5,2),
+  "Retino_OD_Eje"            INT CHECK ("Retino_OD_Eje" BETWEEN 0 AND 180),
+  "Retino_OS_Esfera"         NUMERIC(5,2),
+  "Retino_OS_Cilindro"       NUMERIC(5,2),
+  "Retino_OS_Eje"            INT CHECK ("Retino_OS_Eje" BETWEEN 0 AND 180),
+
+  -- Tipo de lente / Material
+  "TipoLente"                TEXT,
+  "LenteMaterialTratamiento" TEXT,
+
+  -- Inspección / LH / Oftalmoscopía (select con "Sin alteración")
+  "Inspeccion_MovExtraoculares_OD"  TEXT,
+  "Inspeccion_MovExtraoculares_OS"  TEXT,
+  "Inspeccion_Cejas_OD"             TEXT,
+  "Inspeccion_Cejas_OS"             TEXT,
+  "Inspeccion_ParpadosPestanas_OD"  TEXT,
+  "Inspeccion_ParpadosPestanas_OS"  TEXT,
+  "Inspeccion_ViaLagrimal_OD"       TEXT,
+  "Inspeccion_ViaLagrimal_OS"       TEXT,
+
+  -- Segmento anterior
+  "Inspeccion_Conjuntiva_OD"        TEXT,
+  "Inspeccion_Conjuntiva_OS"        TEXT,
+  "Inspeccion_CorneaEsclera_OD"     TEXT,
+  "Inspeccion_CorneaEsclera_OS"     TEXT,
+  "Inspeccion_CamaraAnteriorAngulo_OD" TEXT,
+  "Inspeccion_CamaraAnteriorAngulo_OS" TEXT,
+  "Inspeccion_IrisPupila_OD"        TEXT,
+  "Inspeccion_IrisPupila_OS"        TEXT,
+  "Inspeccion_Cristalino_OD"        TEXT,
+  "Inspeccion_Cristalino_OS"        TEXT,
+  "Inspeccion_BUT_OD"               TEXT,
+  "Inspeccion_BUT_OS"               TEXT,
+  "Inspeccion_PresionIntraocular_OD"  NUMERIC(4,1),
+  "Inspeccion_PresionIntraocular_OS"  NUMERIC(4,1),
+
+  -- Segmento posterior
+  "Inspeccion_Vitreo_OD"            TEXT,
+  "Inspeccion_Vitreo_OS"            TEXT,
+  "Inspeccion_NervioOptico_OD"      TEXT,
+  "Inspeccion_NervioOptico_OS"      TEXT,
+  "Inspeccion_Macula_OD"            TEXT,
+  "Inspeccion_Macula_OS"            TEXT,
+  "Inspeccion_Retina_OD"            TEXT,
+  "Inspeccion_Retina_OS"            TEXT,
+
+  -- Impresión clínica / Tratamiento
+  "HistoriaClinicaImpresionClinica" TEXT,
+  "HistoriaClinicaComentario"       TEXT,
+
+  -- Unicidad opcional de ConsultaId (1:1 con Consulta)
+  CONSTRAINT consultas_consultaid_unique UNIQUE ("ConsultaId"),
+
+  -- Llaves foráneas
+  CONSTRAINT fk_oft_paciente
+    FOREIGN KEY ("PacienteId")
+    REFERENCES "Pacientes"("Id")
+    ON UPDATE CASCADE
+    ON DELETE RESTRICT,
+
+  CONSTRAINT fk_oft_consulta
+    FOREIGN KEY ("ConsultaId")
+    REFERENCES "Consultas"("Id")
+    ON UPDATE CASCADE
+    ON DELETE CASCADE
+);
+
+-- Índices (mejoran JOINs y filtros)
+CREATE INDEX IF NOT EXISTS idx_oft_paciente ON "ConsultasOftalmologia"("PacienteId");
+-- Si prefieres índice único en vez del constraint UNIQUE de arriba, usa este:
+-- CREATE UNIQUE INDEX IF NOT EXISTS ux_oft_consulta ON "ConsultasOftalmologia"("ConsultaId");
+
+-- Fecha del registro para ordenar histórico por PacienteId
+ALTER TABLE IF EXISTS "ConsultasOftalmologia"
+  ADD COLUMN IF NOT EXISTS "Fecha" TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
+-- Índice recomendado para consultas por paciente + orden por fecha
+CREATE INDEX IF NOT EXISTS idx_oft_paciente_fecha
+  ON "ConsultasOftalmologia"("PacienteId", "Fecha" DESC);

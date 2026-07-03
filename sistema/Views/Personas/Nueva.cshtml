@@ -1,0 +1,17 @@
+@{
+    ViewData["Title"] = "Nueva persona";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <h4><b>Nueva persona</b></h4>
+        </div>
+    </div>
+</div>
+
+<form asp-controller="Personas" asp-action="Nueva" method="post">
+    @await Html.PartialAsync("_PersonaForm")
+</form>

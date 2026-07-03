@@ -1,0 +1,91 @@
+-- =========================
+-- Tabla: ConsultasPodologia (sin ENUM)
+-- =========================
+CREATE TABLE IF NOT EXISTS "ConsultasPodologia" (
+  "Id"                      BIGSERIAL PRIMARY KEY,
+
+  -- Claves foráneas
+  "PacienteId"              INT NOT NULL,
+  "ConsultaId"              INT NOT NULL,
+
+  -- 1) Antecedentes Médicos
+  "Enfermedades"            TEXT[],   -- múltiples checkboxes: ['DM','HTA',...,'Otros']
+  "Enfermedades_Otros"      TEXT,     -- cuando se marque "Otros"
+  "Medicamentos"            TEXT,     -- dosis y frecuencia (texto libre)
+  "PresionArterial"         TEXT,     -- "120/80 mmHg"
+
+  -- 2) Examen del Pie
+  -- Pulsos
+  "Pulso_Pedio"             TEXT,     -- 'Palpable' | 'Débil' | 'Ausente' (sin ENUM)
+  "Pulso_TibialPosterior"   TEXT,
+  "Pulso_Popliteo"          TEXT,
+
+  -- Estado general
+  "TemperaturaPie"          TEXT,     -- 'Fría' | 'Normal' | 'Caliente'
+  "ProblemasCirculatorios"  BOOLEAN,
+  "EstadoPiel"              TEXT,     -- 'Seca' | 'Normal' | 'Húmeda'
+  "ObservacionesExamen"     TEXT,
+
+  -- 3) Tratamiento Realizado
+  "Procedimientos"          TEXT[],   -- múltiples: ['asepsia','pulido',...,'otros']
+  "OtrosProcedimientos"     TEXT,     -- cuando "otros" esté marcado
+  "ObservacionesTratamiento" TEXT,
+
+  -- 4) Indicaciones y Datos Finales
+  "Indicaciones"            TEXT,
+  "PesoKg"                  NUMERIC(5,1),
+  "EstaturaM"               NUMERIC(4,2),
+  "FechaAtencion"           DATE,
+  "Profesional"             TEXT,
+
+  -- Unicidad 1:1 con Consulta
+  CONSTRAINT consultas_pod_consultaid_unique UNIQUE ("ConsultaId"),
+
+  -- FKs (ajusta nombres si tu esquema difiere)
+  CONSTRAINT fk_pod_paciente
+    FOREIGN KEY ("PacienteId")
+    REFERENCES "Pacientes"("Id")
+    ON UPDATE CASCADE
+    ON DELETE RESTRICT,
+
+  CONSTRAINT fk_pod_consulta
+    FOREIGN KEY ("ConsultaId")
+    REFERENCES "Consultas"("Id")
+    ON UPDATE CASCADE
+    ON DELETE CASCADE
+);
+
+-- Índices útiles
+CREATE INDEX IF NOT EXISTS idx_pod_paciente  ON "ConsultasPodologia"("PacienteId");
+-- (Opcional) Índice único alternativo a la constraint UNIQUE
+-- CREATE UNIQUE INDEX IF NOT EXISTS ux_pod_consulta ON "ConsultasPodologia"("ConsultaId");
+
+-- =========================
+-- Reglas de validación (opcionales) sin ENUM: CHECKs
+-- Si quieres restringir a listas válidas sin ENUM, descomenta:
+-- =========================
+/*
+ALTER TABLE "ConsultasPodologia"
+  ADD CONSTRAINT ck_pod_pulsos
+  CHECK (
+    ("Pulso_Pedio"            IS NULL OR "Pulso_Pedio"            IN ('Palpable','Débil','Ausente')) AND
+    ("Pulso_TibialPosterior"  IS NULL OR "Pulso_TibialPosterior"  IN ('Palpable','Débil','Ausente')) AND
+    ("Pulso_Popliteo"         IS NULL OR "Pulso_Popliteo"         IN ('Palpable','Débil','Ausente'))
+  );
+
+ALTER TABLE "ConsultasPodologia"
+  ADD CONSTRAINT ck_pod_temp_piel
+  CHECK (
+    ("TemperaturaPie" IS NULL OR "TemperaturaPie" IN ('Fría','Normal','Caliente')) AND
+    ("EstadoPiel"     IS NULL OR "EstadoPiel"     IN ('Seca','Normal','Húmeda'))
+  );
+*/
+
+-- Fecha del registro para ordenar histórico por PacienteId
+ALTER TABLE IF EXISTS "ConsultasPodologia" 
+ADD COLUMN IF NOT EXISTS "Fecha" TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
+-- Índice recomendado para consultas por paciente + orden por fecha
+CREATE INDEX IF NOT EXISTS idx_pod_paciente_fecha
+  ON "ConsultasPodologia"("PacienteId", "Fecha" DESC);
+

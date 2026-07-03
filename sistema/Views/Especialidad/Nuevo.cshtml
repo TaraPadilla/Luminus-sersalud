@@ -1,0 +1,65 @@
+@using sistema.Models
+@using Database.Shared.Models
+@model EspecialidadBaseViewModel
+
+@{
+    ViewData["Title"] = "Nueva Especialidad";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <center>
+            <h4><b>Nueva Especialidad</b></h4>
+        </center>
+    </div>
+</div>
+
+<form asp-controller="Especialidad" asp-action="Nuevo" method="post">
+    <div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-6">
+                        <div class="position-relative form-group">
+                            <label for="exampleEmail11" class="">Nombre<span class="text-danger"> * Obligatorio</span></label>
+                            @Html.TextBoxFor(a => a.Especialidad.NombreEspecialidad, new {@class="form-control", placeholder="Nombre de la Especialidad", data_bind="value: Nombre"})
+                            @Html.ValidationMessageFor(a => a.Especialidad.NombreEspecialidad, "", new { @class = "text-danger"})
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="position-relative form-group">
+                            <label for="exampleEmail11" class="">Codigo</label>
+                            @Html.TextBoxFor(a => a.Especialidad.Codigo, new {@class="form-control", placeholder="Codigo de la Especialidad", data_bind="value: Codigo"})
+                            @Html.ValidationMessageFor(a => a.Especialidad.Codigo, "", new { @class = "text-danger"})
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="position-relative form-group">
+                            <label class="">Descripcion</label>
+                            @Html.TextAreaFor(a => a.Especialidad.Descripcion, 3, 100, htmlAttributes: new { @class = "form-control", placeholder = "Descripcion de la Especialidad", data_bind="value: Descripcion"})
+                            @Html.ValidationMessageFor(a => a.Especialidad.Descripcion, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="position-relative form-group">
+                            <button class="btn btn-primary" data-bind="click: agregarEspecialidad">Guardar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts
+{
+<script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.5.1/knockout-min.js"></script>
+<script src="~/ViewModelKo/NuevaEspecialidadVM.js"></script>
+}

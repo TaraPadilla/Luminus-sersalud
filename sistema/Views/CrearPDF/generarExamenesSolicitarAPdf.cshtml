@@ -1,0 +1,194 @@
+﻿@using Database.Shared.Models
+@using System.Globalization
+@using sistema.Models
+@model PrescripcionPdfViewModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Prescripción médica";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+    CultureInfo culture = new CultureInfo("es-GT");
+
+    var sexo = (Model.PacienteSexo == 1) ? "Masculino" : "Femenino";
+    var linea = " ____________________";
+}
+
+<style>
+    /* Encabezado estándar del reporte */
+    .report-header {
+        margin-top: 10px;
+        margin-bottom: 8px;
+        font-size: 12px;
+    }
+
+    .report-title {
+        text-align: center;
+        font-weight: bold;
+        font-size: 16px;
+        color: #0d0e36;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+
+    .report-subtitle {
+        text-align: center;
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+
+    /* Estilo propio de la receta */
+    .table {
+        border-collapse: collapse;
+        border: 1px solid #000000;
+        width: 95mm;
+    }
+
+    .table th,
+    .table td {
+        border: 1px solid #000;
+        padding: 8px;
+        text-align: left;
+    }
+
+    .espacio-largo {
+        width: 110px;
+    }
+</style>
+
+<div id="contenido" style="width: 220mm; height: 340mm; margin: 0 auto; font-size: 15px;">
+
+    <!-- Título estándar del reporte -->
+    <div class="report-header">
+        <div class="report-title">
+            REPORTE - @ViewData["Title"]
+        </div>
+        <div class="report-subtitle">
+            <b>Fecha y hora de emisión:</b> @fecha.ToString("dd/MM/yyyy HH:mm")
+        </div>
+    </div>
+
+    <!-- Encabezado propio de la doctora -->
+    <div class="header center" style="width: 100%; padding: 5px; font-family: Georgia, serif; text-align: center;">
+        <strong><span style="font-size: 18px;">Dra. Amanda Elena Kestler Gramajo</span></strong><br />
+        <strong style="color:steelblue">Alergología e inmunología</strong>
+        <p>Médico y Cirujano, Universidad de San Carlos de Guatemala (USAC) Colegiado activo 13,731</p>
+        <p>Maestría en Pediatría, Hospital General San Juan de Dios, Universidad de San Carlos de Guatemala (USAC)</p>
+        <p>
+            Alergia e Inmunología Clínica, Antiguo Hospital Civil de Guadalajara “Fray Antonio alcalde”,
+            CUCS, UDG, Jalisco México
+        </p>
+        <hr style="background-color: black; border: solid;" />
+    </div>
+
+    <!-- Datos del paciente / cabecera de la receta -->
+    <div class="col-md-12">
+        <table class="col-md-12" style="font-size: 18px; font-weight: revert;">
+            <tr>
+                <td>
+                    Nombre: @Model.PacienteNombre
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Edad: @Model.PacienteEdad
+                </td>
+                <td>
+                    Sexo: @sexo
+                </td>
+                <td>
+                    Fecha: @fecha.ToString("dd/MM/yyyy")
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Afiliación: @linea
+                </td>
+                <td>
+                    BH: @linea
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    SPS 465: @linea
+                </td>
+                <td>
+                    NOG: @linea
+                </td>
+            </tr>
+        </table>
+
+        <br />
+    </div>
+
+    <!-- Detalle de prescripción -->
+    @if (Model.DetallesPrescripcion != null && Model.DetallesPrescripcion.Any())
+    {
+        var categorias = Model.DetallesPrescripcion
+            .Select(m => m.Categoria)
+            .Distinct();
+
+        if (categorias.Any())
+        {
+            <div>
+                @foreach (var categoria in categorias)
+                {
+                    var medicamentosCategoria = Model.DetallesPrescripcion
+                        .Where(m => m.Categoria == categoria && m.Item >= 1000);
+
+                    if (medicamentosCategoria.Any())
+                    {
+                        <div style="display: inline-block; margin-right: 40px; font-size: 15px;">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th colspan="3">@categoria</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var medicamento in medicamentosCategoria)
+                                    {
+                                        <tr>
+                                            <td>@medicamento.Observaciones</td>
+                                            <td>@medicamento.Medicamento</td>
+                                            <td class="espacio-largo"></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                }
+            </div>
+        }
+        else
+        {
+            <table class="table" style="width:100%;">
+                <tbody>
+                    <tr>
+                        <td colspan="3">No hay medicamentos registrados</td>
+                    </tr>
+                </tbody>
+            </table>
+        }
+    }
+    else
+    {
+        <table class="table" style="width:100%;">
+            <tbody>
+                <tr>
+                    <td colspan="3">No hay medicamentos registrados</td>
+                </tr>
+            </tbody>
+        </table>
+    }
+</div>

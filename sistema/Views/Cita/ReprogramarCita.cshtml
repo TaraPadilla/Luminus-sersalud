@@ -1,0 +1,93 @@
+@model sistema.Models.CitasEditViewModel
+
+@{
+    ViewData["Title"] = "Reprogramar Cita";
+    var cliente = Model.Cita.Paciente == null ? "// sin asignar" : Model.Cita.Paciente.Nombre; 
+
+}
+
+
+ @await Html.PartialAsync("_MensajeExito")
+<div class="form-row">
+    <div class="col-md-12">
+         <div class="col-md-12">
+        <a asp-action="Lista" asp-controller="Cita" class="btn btn-danger">
+                <i class="fas fa-list"></i> &nbsp; Formato lista 
+        </a>
+
+        <a asp-action="CalendarioLineal" asp-controller="Cita" class="btn btn-danger" asp-route-buscar="@Model.HoraYFecha.ToString("MM/dd/yyyy")">
+               <i class="fas fa-calendar-alt"></i> &nbsp; Regresar calendario @Model.HoraYFecha.ToString("MM/dd/yyyy") 
+        </a>
+    </div>
+    </div>
+</div>
+<br>
+<form asp-controller="Cita" asp-action="ReprogramarCita" method="post">
+    @Html.HiddenFor(a => a.Id)
+    @Html.HiddenFor(a => a.HoraYFecha)
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <h6>Reprogramar cita para => <span style="color: red;">
+                @cliente
+                
+                </span></h6>
+            <div class="form-row">
+               <div class="col-md-12">
+                    <div class="position-relative form-group">
+                        <label class="">Fecha y hora de cita</label>
+                        <input type="text" class="form-control float-right" id="fechacita" asp-for="Cita.FechaInicio">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="col-md-12">
+                    <div class="position-relative form-group">
+                        <button class="btn btn-primary">Guardar</button>
+                    </div>
+                </div>
+            </div>
+                
+            </div>
+
+        </div>
+    </div>
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+</form>
+
+
+@section Scripts{
+    <script type="text/javascript" src="~/js/moment.min.js"></script>
+    <script type="text/javascript" src="~/js/daterangepicker.js"></script>
+    <script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+    <script>
+
+        $('#fechacita').daterangepicker({
+            timePicker: true,
+            timePickerIncrement: 30,
+            singleDatePicker: true,
+            locale: {
+            format: 'MM/DD/YYYY hh:mm A'
+            }
+        });
+
+    </script>
+    }
+
+    @section css {
+         <link href="~/css/daterangepicker.css" rel="stylesheet">
+    }

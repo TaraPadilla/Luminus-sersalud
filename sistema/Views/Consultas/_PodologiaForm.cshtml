@@ -1,0 +1,400 @@
+@model sistema.Models.ConsultasViewModel
+@using Database.Shared.Models
+
+@{
+  // ===== Helpers comunes (mismo look & feel que _OftalmologiaForm) =====
+  string TextoONada(string? v) => string.IsNullOrWhiteSpace(v) ? "—" : v;
+  string DecNulo(decimal? n, string f = "0.0##") =>
+      n.HasValue ? n.Value.ToString(f, global::System.Globalization.CultureInfo.InvariantCulture) : "—";
+  string FechaCorta(DateTime? d) =>
+      d.HasValue ? d.Value.ToString("dd-MM-yyyy", global::System.Globalization.CultureInfo.InvariantCulture) : "—";
+  string FechaHora(DateTime? d) =>
+      d.HasValue ? d.Value.ToString("dd-MM-yyyy HH:mm", global::System.Globalization.CultureInfo.InvariantCulture) : "—";
+}
+
+@* IDs necesarios para upsert *@
+@Html.HiddenFor(m => m.Pod_ConsultaId)
+@Html.HiddenFor(m => m.Pod_Id)
+
+<style>
+  :root {
+    --ink: #1f2937;
+    --ink-soft: #334155;
+    --muted: #6b7280;
+    --brand: #0ea5e9;
+    --brand-ink: #0369a1;
+    --bg: #f7fbff;
+    --card: #ffffff;
+    --card-bdr: #e5edf7;
+    --accent: #dbeafe;
+  }
+  .oft-wrap { background: var(--bg); color: var(--ink) }
+  .oft-card { background: var(--card); border: 1px solid var(--card-bdr); border-radius: .9rem; box-shadow: 0 8px 24px rgba(2,32,71,.06) }
+  .oft-head { display:flex; align-items:center; gap:.6rem; color:var(--brand-ink); font-weight:800; letter-spacing:.2px; margin-bottom:.75rem }
+  .oft-head i { font-size:1.3rem; color:var(--brand) }
+  .oft-sub { color:var(--muted); font-size:.95rem }
+  .oft-pill { display:inline-block; padding:.25rem .6rem; border-radius:9999px; background:var(--accent); color:var(--brand-ink); font-weight:700; font-size:.8rem }
+  .form-label { font-weight:600; color:var(--ink-soft) }
+  .hint { font-size:.85rem; color:var(--muted) }
+  .hr-soft { border-top:1px dashed #e5edf7 }
+  .table thead th { background:var(--accent); color:var(--ink-soft); border-bottom:1px solid var(--card-bdr) }
+  .fw-semibold { font-weight:600 }
+</style>
+
+<div class="oft-wrap">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    @if (Model.HabilitarEdicion)
+    {
+      <span class="oft-pill">MODO EDICIÓN</span>
+    }
+    else
+    {
+      <span class="oft-pill" style="background:#eaeef6;color:#475569">MODO LECTURA</span>
+    }
+    <div class="text-danger" asp-validation-summary="ModelOnly"></div>
+  </div>
+ @if (Model.HabilitarEdicion)
+    {
+  <!-- ====================== FORMULARIO PODOLOGÍA (EDICIÓN) ====================== -->
+  <div class="oft-card mb-3 p-3 p-md-4">
+      <div class="oft-head"><i class="bi bi-file-earmark-medical"></i>
+        <h5 class="mb-0">Antecedentes Médicos</h5>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label d-block">Enfermedades que padece:</label>
+        @* Nota: para string[] usamos name="Pod_Enfermedades" en cada checkbox *@
+        @{
+          string[] enfValues = new[] { "DM", "HTA", "Artritis", "Artrosis", "Osteoporosis", "Otros" };
+          string[] enfLabels = new[] {
+            "Diabetes Mellitus (DM)","HTA","Artritis","Artrosis","Osteoporosis","Otros"
+          };
+          for (int i = 0; i < enfValues.Length; i++)
+          {
+            var val = enfValues[i];
+            var lab = enfLabels[i];
+            var chk = Model.Pod_Enfermedades != null && Model.Pod_Enfermedades.Contains(val);
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="checkbox" id="Pod_Enfermedades_@val" name="Pod_Enfermedades" value="@val" @(chk ? "checked" : "") />
+          <label class="form-check-label" for="Pod_Enfermedades_@val">@lab</label>
+        </div>
+          }
+        }
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-8">
+          <label class="form-label">Medicamentos (Dosis y Frecuencia):</label>
+          <textarea class="form-control" rows="2" asp-for="Pod_Medicamentos" placeholder="Ej: Metformina 850mg c/12h"></textarea>
+          <span class="text-danger" asp-validation-for="Pod_Medicamentos"></span>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Presión Arterial (P/A):</label>
+          <input type="text" class="form-control" asp-for="Pod_PresionArterial" placeholder="Ej: 120/80 mmHg">
+          <span class="text-danger" asp-validation-for="Pod_PresionArterial"></span>
+        </div>
+      </div>
+
+      <div class="mt-3">
+        <label class="form-label">Si marcó “Otros”, especifique:</label>
+        <input type="text" class="form-control" asp-for="Pod_Enfermedades_Otros" id="Pod_Enf_Otros" placeholder="Detalle de otros antecedentes">
+        <span class="text-danger" asp-validation-for="Pod_Enfermedades_Otros"></span>
+      </div>
+    </div>
+
+    @* 2) Examen del Pie *@
+    <div class="oft-card mb-3 p-3 p-md-4">
+      <div class="oft-head"><i class="bi bi-footsteps"></i>
+        <h5 class="mb-0">Examen del Pie</h5>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <label class="form-label mb-2">Evaluación de Pulsos:</label>
+          <label class="form-label">Pulso Pedio:</label>
+          <input type="text" class="form-control" asp-for="Pod_Pulso_Pedio" placeholder="Palpable, Débil, Ausente">
+          <span class="text-danger" asp-validation-for="Pod_Pulso_Pedio"></span>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Pulso Tibial Posterior:</label>
+          <input type="text" class="form-control" asp-for="Pod_Pulso_TibialPosterior" placeholder="Palpable, Débil, Ausente">
+          <span class="text-danger" asp-validation-for="Pod_Pulso_TibialPosterior"></span>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Pulso Poplíteo:</label>
+          <input type="text" class="form-control" asp-for="Pod_Pulso_Popliteo" placeholder="Palpable, Débil, Ausente">
+          <span class="text-danger" asp-validation-for="Pod_Pulso_Popliteo"></span>
+        </div>
+      </div>
+
+      <div class="row g-4 mb-3">
+        <div class="col-md-4">
+          <label class="form-label">Temperatura del Pie:</label>
+          <div class="pt-1">
+            <div class="form-check"><input class="form-check-input" type="radio" asp-for="Pod_TemperaturaPie" id="tempFria" value="Fría"><label class="form-check-label" for="tempFria">Fría</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" asp-for="Pod_TemperaturaPie" id="tempNormal" value="Normal"><label class="form-check-label" for="tempNormal">Normal</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" asp-for="Pod_TemperaturaPie" id="tempCaliente" value="Caliente"><label class="form-check-label" for="tempCaliente">Caliente</label></div>
+          </div>
+          <span class="text-danger" asp-validation-for="Pod_TemperaturaPie"></span>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Problemas Circulatorios:</label>
+          <div class="pt-1">
+            <div class="form-check"><input class="form-check-input" type="radio" asp-for="Pod_ProblemasCirculatorios" id="circuSi" value="true"><label class="form-check-label" for="circuSi">Sí</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" asp-for="Pod_ProblemasCirculatorios" id="circuNo" value="false"><label class="form-check-label" for="circuNo">No</label></div>
+          </div>
+          <span class="text-danger" asp-validation-for="Pod_ProblemasCirculatorios"></span>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Estado de la Piel:</label>
+          <div class="pt-1">
+            <div class="form-check"><input class="form-check-input" type="radio" asp-for="Pod_EstadoPiel" id="pielSeca" value="Seca"><label class="form-check-label" for="pielSeca">Seca</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" asp-for="Pod_EstadoPiel" id="pielNormal" value="Normal"><label class="form-check-label" for="pielNormal">Normal</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" asp-for="Pod_EstadoPiel" id="pielHumeda" value="Húmeda"><label class="form-check-label" for="pielHumeda">Húmeda</label></div>
+          </div>
+          <span class="text-danger" asp-validation-for="Pod_EstadoPiel"></span>
+        </div>
+      </div>
+
+      <div class="mb-0">
+        <label class="form-label">Observaciones del Examen Físico:</label>
+        <textarea class="form-control" rows="3" asp-for="Pod_ObservacionesExamen" placeholder="Detalles de lesiones, deformidades, coloración, edema, etc."></textarea>
+        <span class="text-danger" asp-validation-for="Pod_ObservacionesExamen"></span>
+      </div>
+    </div>
+
+    @* 3) Tratamiento Realizado *@
+    <div class="oft-card mb-3 p-3 p-md-4">
+      <div class="oft-head"><i class="bi bi-tools"></i>
+        <h5 class="mb-0">3. Tratamiento Realizado</h5>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label d-block">Procedimientos aplicados:</label>
+        @{
+          var procs = new (string value, string label)[] {
+            ("asepsia","Asepsia Inicial"),
+            ("helotomia","Helotomía (Eliminación de Callos)"),
+            ("fomentacion","Fomentación"),
+            ("devastado","Devastado de Hiperqueratosis"),
+            ("limpieza","Limpieza de surcos ungueales"),
+            ("pulido","Pulido de Uñas"),
+            ("onicotomia","Onicotomía (Corte de uñas)"),
+            ("resecado","Resecado de Grietas/Fisuras"),
+            ("despiculizacion","Despiculización (Uña encarnada)"),
+            ("asepsia_final","Asepsia Final"),
+            ("otros","Otros procedimientos")
+          };
+          foreach (var p in procs)
+          {
+            bool marcado = Model.Pod_Procedimientos != null && Model.Pod_Procedimientos.Contains(p.value);
+        <div class="form-check form-check-inline mb-1">
+          <input class="form-check-input" type="checkbox" id="Pod_Procedimientos_@p.value" name="Pod_Procedimientos" value="@p.value" @(marcado ? "checked" : "") />
+          <label class="form-check-label" for="Pod_Procedimientos_@p.value">@p.label</label>
+        </div>
+          }
+        }
+      </div>
+
+      <div class="row g-2">
+        <div class="col-md-6">
+          <label class="form-label">Si marcó “Otros procedimientos”, especifique:</label>
+          <input type="text" class="form-control" asp-for="Pod_OtrosProcedimientos" id="Pod_OtrosProcedimientos" placeholder="Detalle de otros procedimientos">
+          <span class="text-danger" asp-validation-for="Pod_OtrosProcedimientos"></span>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Observaciones/Complicaciones del Tratamiento:</label>
+          <textarea class="form-control" rows="2" asp-for="Pod_ObservacionesTratamiento" placeholder="Notas sobre el proceso y resultados"></textarea>
+          <span class="text-danger" asp-validation-for="Pod_ObservacionesTratamiento"></span>
+        </div>
+      </div>
+    </div>
+
+    @* 4) Indicaciones y Datos Finales *@
+    <div class="oft-card mb-4 p-3 p-md-4">
+      <div class="oft-head"><i class="bi bi-clipboard-check"></i>
+        <h5 class="mb-0">4. Indicaciones y Datos Finales</h5>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Indicaciones para el paciente (Cuidados, próxima cita, etc.):</label>
+        <textarea class="form-control" rows="3" asp-for="Pod_Indicaciones" placeholder="Recomendaciones de calzado, higiene, cremas, y control"></textarea>
+        <span class="text-danger" asp-validation-for="Pod_Indicaciones"></span>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Peso (Kg):</label>
+          <input type="number" class="form-control" asp-for="Pod_PesoKg" step="0.1" placeholder="Ej: 75.5">
+          <span class="text-danger" asp-validation-for="Pod_PesoKg"></span>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Estatura (m):</label>
+          <input type="number" class="form-control" asp-for="Pod_EstaturaM" step="0.01" placeholder="Ej: 1.70">
+          <span class="text-danger" asp-validation-for="Pod_EstaturaM"></span>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Fecha de Atención:</label>
+          <input type="date" class="form-control" asp-for="Pod_FechaAtencion">
+          <span class="text-danger" asp-validation-for="Pod_FechaAtencion"></span>
+        </div>
+        <div class="col-12 mt-3">
+          <label class="form-label">Nombre y firma del profesional / Código:</label>
+          <input type="text" class="form-control" asp-for="Pod_Profesional" placeholder="Nombre completo, Nº Colegiado o Licencia">
+          <span class="text-danger" asp-validation-for="Pod_Profesional"></span>
+        </div>
+      </div>
+    </div>
+}
+  <!-- ====================== HISTÓRICO PODOLOGÍA (SIEMPRE) ====================== -->
+  @{
+      // Nombres distintos para evitar colisión con Oftalmología
+      var _podHist = ViewBag.PodHistorialFull as IEnumerable<ConsultasPodologia>;
+      Func<object, string> Vp = (val) =>
+      {
+          if (val == null) return "Sin definir";
+          if (val is string s) return string.IsNullOrWhiteSpace(s) ? "Sin definir" : s;
+          return Convert.ToString(val);
+      };
+      int pidx = 0;
+  }
+
+  @if (_podHist != null && _podHist.Any())
+  {
+    <div class="mt-4">
+      <h3 class="h5 mb-3 text-secondary">Histórico Podología (completo)</h3>
+
+      <div class="accordion" id="podHistAccordion">
+        @foreach (var h in _podHist)
+        {
+          var collapseId = $"podHist-{pidx}";
+          var headingId  = $"podHead-{pidx}";
+          pidx++;
+
+          <div class="card mb-3">
+            <div class="card-header" id="@headingId">
+              <h2 class="mb-0">
+                <button class="btn btn-link collapsed w-100 text-left d-flex justify-content-between align-items-center"
+                        type="button"
+                        data-toggle="collapse"
+                        data-target="#@collapseId"
+                        aria-expanded="false"
+                        aria-controls="@collapseId">
+                  <div class="w-100 d-flex flex-column flex-md-row justify-content-between small">
+                    <div>
+                      <span class="fw-semibold text-dark">Fecha: </span>
+                      @{
+                        DateTime? f = h.Fecha;
+                      }
+                      @(f.HasValue ? f.Value.ToString("dd-MM-yyyy HH:mm") : "Sin definir")
+                    </div>
+                  </div>
+                </button>
+              </h2>
+            </div>
+
+            <div id="@collapseId" class="collapse" aria-labelledby="@headingId" data-parent="#podHistAccordion">
+              <div class="card-body">
+
+                <div class="card border rounded shadow-sm mb-4">
+                  <div class="card-body">
+                    <!-- 1) Antecedentes Médicos -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-clipboard-list"></i><h5 class="mb-0">Antecedentes Médicos</h5></div>
+                      <div class="row">
+                        <div class="col-3 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Enfermedades que Padece:</strong></div>
+                          <div class="text-muted">
+                            @{
+                              var e = h.Enfermedades ?? Array.Empty<string>();
+                            }
+                            @(e.Length == 0 ? "Sin definir" : string.Join(", ", e))
+                          </div>
+                        </div>
+                        <div class="col-3 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Medicamentos (Dosis y Frecuencia):</strong></div>
+                          <div class="text-muted">@Vp(h.Medicamentos)</div>
+                        </div>
+                        <div class="col-3 mb-3">
+                          <div class="text-dark text-uppercase"><strong>(Otros)</strong></div>
+                          <div class="text-muted">@Vp(h.Enfermedades_Otros)</div>
+                        </div>
+                        <div class="col-3 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Presión Arterial (P/A):</strong></div>
+                          <div class="text-muted">@Vp(h.PresionArterial)</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 2) Examen del Pie -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-stethoscope"></i><h5 class="mb-0">Examen del Pie</h5></div>
+
+                      <div class="fw-bold text-primary mb-2">Pulsos</div>
+                      <div class="row">
+                        <div class="col-12 col-md-4 mb-3"><div class="text-dark text-uppercase"><strong>Pedio</strong></div><div class="text-muted">@Vp(h.Pulso_Pedio)</div></div>
+                        <div class="col-12 col-md-4 mb-3"><div class="text-dark text-uppercase"><strong>Tibial Posterior</strong></div><div class="text-muted">@Vp(h.Pulso_TibialPosterior)</div></div>
+                        <div class="col-12 col-md-4 mb-3"><div class="text-dark text-uppercase"><strong>Poplíteo</strong></div><div class="text-muted">@Vp(h.Pulso_Popliteo)</div></div>
+                      </div>
+
+                      <div class="fw-bold text-primary mb-2">Estado general</div>
+                      <div class="row">
+                        <div class="col-12 col-md-4 mb-3"><div class="text-dark text-uppercase"><strong>Temperatura del pie</strong></div><div class="text-muted">@Vp(h.TemperaturaPie)</div></div>
+                        <div class="col-12 col-md-4 mb-3"><div class="text-dark text-uppercase"><strong>Problemas circulatorios</strong></div><div class="text-muted">@((h.ProblemasCirculatorios ?? false) ? "Sí" : "No")</div></div>
+                        <div class="col-12 col-md-4 mb-3"><div class="text-dark text-uppercase"><strong>Estado de la piel</strong></div><div class="text-muted">@Vp(h.EstadoPiel)</div></div>
+                        <div class="col-12 mb-3"><div class="text-dark text-uppercase"><strong>Observaciones del examen físico</strong></div><div class="text-muted">@Vp(h.ObservacionesExamen)</div></div>
+                      </div>
+                    </div>
+
+                    <!-- 3) Tratamiento Realizado -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-hand-holding-medical"></i><h5 class="mb-0">Tratamiento Realizado</h5></div>
+                      <div class="row">
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Procedimientos aplicados:</strong></div>
+                          <div class="text-muted">
+                            @{
+                              var ps = h.Procedimientos ?? Array.Empty<string>();
+                            }
+                            @(ps.Length == 0 ? "Sin definir" : string.Join(", ", ps))
+                          </div>
+                        </div>
+                        <div class="col-4 mb-3"><div class="text-dark text-uppercase"><strong>Otros procedimientos</strong></div><div class="text-muted">@Vp(h.OtrosProcedimientos)</div></div>
+                        <div class="col-4 mb-3"><div class="text-dark text-uppercase"><strong>Observaciones/Complicaciones del Tratamiento:</strong></div><div class="text-muted">@Vp(h.ObservacionesTratamiento)</div></div>
+                      </div>
+                    </div>
+
+                    <!-- 4) Indicaciones y Datos Finales -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="bi bi-clipboard2-check"></i><h5 class="mb-0">Indicaciones y Datos Finales</h5></div>
+                      <div class="row">
+                        <div class="col-12 mb-3"><div class="text-dark text-uppercase"><strong>Indicaciones para el paciente (Cuidados, próxima cita, etc.):</strong></div><div class="text-muted">@Vp(h.Indicaciones)</div></div>
+                        <div class="col-3 col-md-4 mb-3"><div class="text-dark text-uppercase"><strong>Peso (kg)</strong></div><div class="text-muted">@Vp(h.PesoKg)</div></div>
+                        <div class="col-3 col-md-4 mb-3"><div class="text-dark text-uppercase"><strong>Estatura (m)</strong></div><div class="text-muted">@Vp(h.EstaturaM)</div></div>
+                        <div class="col-3 col-md-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Fecha atención</strong></div>
+                          <div class="text-muted">
+                            @(f.HasValue ? f.Value.ToString("dd-MM-yyyy HH:mm") : "Sin definir")
+                          </div>
+                        </div>
+                        <div class="col-3 col-md-4 mb-3"><div class="text-dark text-uppercase"><strong>Nombre y firma del profesional / Código:</strong></div><div class="text-muted">@Vp(h.Profesional)</div></div>
+                      </div>
+                    </div>
+
+                  </div> <!-- /inner card-body -->
+                </div> <!-- /inner card -->
+              </div> <!-- /accordion-body -->
+            </div> <!-- /collapse -->
+          </div> <!-- /item -->
+        }
+      </div> <!-- /accordion -->
+    </div>
+  }
+  else
+  {
+    <div class="mt-4 small text-muted">No hay histórico de podología para este paciente.</div>
+  }
+
+</div> <!-- /oft-wrap -->

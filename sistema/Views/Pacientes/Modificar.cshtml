@@ -1,0 +1,50 @@
+@{
+    ViewData["Title"] = "Modificar paciente";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <center>
+                    <h5><b>Modificar paciente</b></h5>
+                </center>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@await Html.PartialAsync("_PacientesForm")
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div>
+            <button class="btn btn-primary" data-bind="click: editarPaciente">
+                Guardar paciente
+            </button>
+            <button class="btn btn-danger" data-bind="click: cancelarEdicionPaciente">
+                Cancelar
+            </button>
+        </div>
+    </div>
+</div>
+
+
+
+@section Scripts{
+<script type="text/javascript" src="~/js/moment.min.js"></script>
+<script type="text/javascript" src="~/js/daterangepicker.js"></script>
+<script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+
+<script src="https://knockoutjs.com/downloads/knockout-3.5.1.js"></script>
+<script type="text/javascript" src="~/ViewModelKo/PacienteVM.js"></script>
+
+    }
+
+@section css {
+<link href="~/css/daterangepicker.css" rel="stylesheet">
+    }

@@ -1,0 +1,87 @@
+@model IEnumerable<Database.Shared.Models.Proveedor>
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Listado de Proveedores";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"]              = true;
+    ViewData["MostrarNombreEmpresa"]     = true;
+    ViewData["MostrarDireccion"]         = true;
+    ViewData["MostrarTelefono"]          = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"]         = true;
+    ViewData["MostrarEmergencias"]       = true;
+
+    DateTime fecha = DateTime.Now;
+    var i = 0;
+}
+
+<div class="doc">
+
+  <!-- Título -->
+  <div class="doc-title">LISTADO DE PROVEEDORES</div>
+  <div class="doc-underline"></div>
+
+  <!-- Fecha de emisión -->
+  <table class="table" style="border:0;">
+    <tbody>
+      <tr>
+        <td style="text-align:center; font-weight:700; border:0;">
+          Fecha y hora de emisión: @fecha.ToString("dd/MM/yyyy hh:mm tt")
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Sección -->
+  <table class="section-title">
+    <tr>
+      <td class="bar"></td>
+      <td>PROVEEDORES</td>
+    </tr>
+  </table>
+
+  <!-- Bloque con la tabla de proveedores -->
+  <table class="block">
+    <tr>
+      <td style="padding:0;">
+        <table class="table">
+          <colgroup>
+            <col />               @* Nombre *@
+            <col style="width:16%" /> @* Giro *@
+            <col style="width:14%" /> @* Teléfono *@
+            <col style="width:14%" /> @* NIT *@
+            <col />               @* Dirección *@
+            <col style="width:18%" /> @* Correo *@
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Giro</th>
+              <th>Teléfono</th>
+              <th>NIT</th>
+              <th>Dirección</th>
+              <th>Correo</th>
+            </tr>
+          </thead>
+          <tbody>
+            @foreach (var item in Model)
+            {
+                var zebra = (i++ % 2 == 0) ? "kv-row" : "";
+                <tr class="@zebra">
+                  <td><span class="value">@item.Nombre</span></td>
+                  <td><span class="value">@item.Giro</span></td>
+                  <td><span class="value">@item.Telefono_1</span></td>
+                  <td><span class="value">@item.Nit</span></td>
+                  <td><span class="value">@item.Direccion</span></td>
+                  <td><span class="value">@item.Correo</span></td>
+                </tr>
+            }
+          </tbody>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+</div>

@@ -1,0 +1,55 @@
+-- ============================================================
+--  TABLA: DevolucionNacional
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public."DevolucionNacional" (
+    "Id"                  SERIAL          NOT NULL,
+    "NumeroDevolucion"    INT4            NOT NULL,
+    "FechaSolicitud"      TIMESTAMP       NOT NULL DEFAULT now(),
+    "Direccion"           VARCHAR(100),
+    "Departamento"        VARCHAR(100),
+    "UnidadSeccion"       VARCHAR(60),
+    "Otros"               TEXT,
+    "Observaciones"       VARCHAR(500),
+    "BodegaOrigenId"      INT4            NOT NULL,
+    "SolicitanteNombre"   VARCHAR(60),
+    "Estado"              INT4            NOT NULL DEFAULT 1,
+    "CreadoEn"            TIMESTAMP       NOT NULL DEFAULT now(),
+    "CreadoPor"           VARCHAR(60),
+    "FirmaSolicitante"    VARCHAR(255),
+    "AutorizadoPor"       VARCHAR(60),
+    "FirmaAutorizacion"   VARCHAR(255),
+    "ProveedorId"         INT4,
+    "NumeroOficio"        INT4,
+
+    CONSTRAINT "DevolucionNacional_pkey" PRIMARY KEY ("Id"),
+
+    CONSTRAINT "FK_DevolucionNacional_Proveedores"
+        FOREIGN KEY ("ProveedorId")
+        REFERENCES public."Proveedores" ("Id")
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT
+);
+
+-- ============================================================
+--  TABLA: DevolucionNacionalDetalle
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public."DevolucionNacionalDetalle" (
+    "Id"                    INT4    GENERATED ALWAYS AS IDENTITY NOT NULL,
+    "DevolucionNacionalId"  INT4    NOT NULL,
+    "ProductoInventarioId"  INT4    NOT NULL,
+    "CantidadDevuelta"      INT4    NOT NULL,
+
+    CONSTRAINT "DevolucionNacionalDetalle_pkey" PRIMARY KEY ("Id"),
+
+    CONSTRAINT "FK_DevolucionNacionalDetalle_DevolucionNacional"
+        FOREIGN KEY ("DevolucionNacionalId")
+        REFERENCES public."DevolucionNacional" ("Id")
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+
+    CONSTRAINT "FK_DevolucionNacionalDetalle_ProductosInventario"
+        FOREIGN KEY ("ProductoInventarioId")
+        REFERENCES public."ProductosInventario" ("Id")
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT
+);

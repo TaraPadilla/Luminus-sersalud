@@ -1,0 +1,69 @@
+-- ============================================================
+-- TABLA: CuestionariosPreAnestesicos
+-- ============================================================
+
+DROP TABLE IF EXISTS public."CuestionariosPreAnestesicos" CASCADE;
+
+CREATE TABLE public."CuestionariosPreAnestesicos"
+(
+    "Id"                      SERIAL          PRIMARY KEY,
+    "HospitalizacionId"       INTEGER         NOT NULL,
+    "FechaRegistro"           TIMESTAMP       NOT NULL DEFAULT NOW(),
+    "UserId"                  VARCHAR(450),
+
+    -- Datos del paciente
+    "NombreCompleto"          VARCHAR(300),
+    "RegistroMedico"          VARCHAR(100),
+    "Edad"                    VARCHAR(20),
+    "FechaCuestionario"       DATE,
+    "Peso"                    DOUBLE PRECISION,
+    "Estatura"                DOUBLE PRECISION,
+    "FechaUltimaRegla"        DATE,
+    "FechaProcedimiento"      DATE,
+    "ProcedimientoProgramado" VARCHAR(300),
+    "Cirujano"                VARCHAR(200),
+
+    -- Antecedentes — columna izquierda
+    "PA_Alergia"              VARCHAR(5),
+    "PA_AlergiaCual"          VARCHAR(300),
+    "PA_Fuma"                 VARCHAR(5),
+    "PA_FumaCuanto"           VARCHAR(150),
+    "PA_Drogas"               VARCHAR(5),
+    "PA_DrogasCuales"         VARCHAR(300),
+    "PA_Alcohol"              VARCHAR(5),
+    "PA_AlcoholCuanto"        VARCHAR(150),
+    "PA_Embarazo"             VARCHAR(5),
+    "PA_Transfusion"          VARCHAR(5),
+    "PA_Asma"                 VARCHAR(5),
+    "PA_Pulmones"             VARCHAR(5),
+    "PA_Corazon"              VARCHAR(5),
+
+    -- Antecedentes — columna derecha
+    "PA_AtaqueCardiaco"       VARCHAR(5),
+    "PA_Angina"               VARCHAR(5),
+    "PA_Soplo"                VARCHAR(5),
+    "PA_Presion"              VARCHAR(5),
+    "PA_Higado"               VARCHAR(5),
+    "PA_Rinones"              VARCHAR(5),
+    "PA_Diabetes"             VARCHAR(5),
+    "PA_Epilepsia"            VARCHAR(5),
+    "PA_Derrame"              VARCHAR(5),
+    "PA_Tiroides"             VARCHAR(5),
+    "PA_Anestesico"           VARCHAR(5),
+    "PA_AceptaTransfusion"    VARCHAR(5),
+
+    -- Información adicional
+    "AI_Medicamentos"         TEXT,
+    "AI_Actividad"            VARCHAR(5),
+    "AI_ActividadDetalle"     TEXT,
+    "AI_OperacionesPrevias"   TEXT,
+    "AI_Comentarios"          TEXT,
+
+    CONSTRAINT "FK_CuestionariosPreAnestesicos_Hospitalizaciones"
+        FOREIGN KEY ("HospitalizacionId")
+        REFERENCES public."Hospitalizaciones" ("Id")
+        ON DELETE CASCADE
+);
+
+CREATE INDEX "IX_CuestionariosPreAnestesicos_HospitalizacionId"
+    ON public."CuestionariosPreAnestesicos" ("HospitalizacionId");

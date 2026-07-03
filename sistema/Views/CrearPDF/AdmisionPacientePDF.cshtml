@@ -1,0 +1,551 @@
+@model sistema.Models.CitaViewModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Admisión - Pacientes";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+
+    // Cálculo de edad
+    var edad = 0;
+    var fechaNacimiento = Model.FechaNacimiento;
+    if (fechaNacimiento.HasValue)
+    {
+        edad = DateTime.Today.Year - fechaNacimiento.Value.Year;
+        if (DateTime.Today < fechaNacimiento.Value.AddYears(edad)) { edad--; }
+    }
+    var fechaNacimientoFormateada = fechaNacimiento.HasValue
+        ? fechaNacimiento.Value.ToString("dd/MM/yyyy")
+        : "No disponible";
+
+    string SexoTexto()
+    {
+        if (!Model.SexoId.HasValue) return "No especificado";
+        return Model.SexoId.Value switch
+        {
+            1 => "Masculino",
+            2 => "Femenino",
+            3 => "Otro",
+            _ => "No especificado"
+        };
+    }
+}
+
+<style>
+    .report-container {
+        margin-top: 10px;
+        font-size: 12px;
+    }
+
+    .report-title {
+        text-align: center;
+        font-weight: bold;
+        font-size: 16px;
+        color: #0d0e36;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+
+    .report-subtitle {
+        text-align: center;
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    /* Título de sección (barra azul similar a otros reportes) */
+    .report-table-title-row th {
+        background-color: #f3f4ff;
+        border-left: 3px solid #0d0e36;
+        color: #0d0e36;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: bold;
+        font-size: 12px;
+        text-align: left;
+        padding: 6px 8px;
+    }
+
+    /* Encabezados de columnas */
+    .report-table-header-row th {
+        background-color: #eef2ff;
+        color: #0d0e36;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 11px;
+        text-align: left;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table td {
+        font-size: 12px;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+        vertical-align: top;
+    }
+
+    .report-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Evitar que se corten bloques entre páginas */
+    .keep-with-next {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        -webkit-column-break-inside: avoid;
+        -webkit-region-break-inside: avoid;
+    }
+</style>
+
+<div class="report-container">
+    <!-- Encabezado -->
+    <div class="report-title">REPORTE - ADMISION PACIENTES</div>
+    <div class="report-subtitle">
+        <b>Fecha y hora de emisión:</b> @fecha.ToString("dd/MM/yyyy HH:mm")
+    </div>
+
+    <!-- Fecha y Hora de la Cita -->
+    <table class="report-table keep-with-next">
+        <thead>
+            <tr class="report-table-title-row">
+                <th>Fecha y Hora de la Cita</th>
+            </tr>
+            <tr class="report-table-header-row">
+                <th>Fecha y hora</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>@Model.FechaHora</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Datos del Paciente -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="4">Datos del Paciente</th>
+            </tr>
+            <tr class="report-table-header-row">
+                <th>Nombre</th>
+                <th>Nombre del Acompañante</th>
+                <th>DPI del Paciente</th>
+                <th>Sexo del Paciente</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>@(!string.IsNullOrEmpty(Model.PacienteNombre) ? Model.PacienteNombre : "No especificado")</td>
+                <td>@(!string.IsNullOrEmpty(Model.AcompananteNombre) ? Model.AcompananteNombre : "No especificado")</td>
+                <td>@(!string.IsNullOrEmpty(Model.dpiPacienteSeleccionado) ? Model.dpiPacienteSeleccionado : "No especificado")</td>
+                <td>@SexoTexto()</td>
+            </tr>
+
+            <tr class="report-table-header-row">
+                <th>Teléfono del Paciente</th>
+                <th>Fecha de nacimiento - Edad</th>
+                <th>Dirección del Paciente</th>
+                <th>Etnia del Paciente</th>
+            </tr>
+            <tr>
+                <td>@(!string.IsNullOrEmpty(Model.Telefono) ? Model.Telefono : "No especificado")</td>
+                <td>@(!Model.FechaNacimiento.HasValue ? "No especificado" : $"{fechaNacimientoFormateada} - {edad} Años")</td>
+                <td>@(!string.IsNullOrEmpty(Model.Direccion) ? Model.Direccion : "No especificado")</td>
+                <td>@(!string.IsNullOrEmpty(Model.EtniaPaciente) ? Model.EtniaPaciente : "No especificado")</td>
+            </tr>
+
+            <tr class="report-table-header-row">
+                <th>Origen del Paciente</th>
+                <th>Departamento del Paciente</th>
+                <th>Municipio del Paciente</th>
+                <th>Área asignada</th>
+            </tr>
+            <tr>
+                <td>@(!string.IsNullOrEmpty(Model.OrigenPaciente) ? Model.OrigenPaciente : "No especificado")</td>
+                <td>@(!string.IsNullOrEmpty(Model.DepartamentoNombre) ? Model.DepartamentoNombre : "No especificado")</td>
+                <td>@(!string.IsNullOrEmpty(Model.MunicipioNombre) ? Model.MunicipioNombre : "No especificado")</td>
+                <td>
+                    @(Model.CategoriaHabitacionId.HasValue
+                        ? Model.CategoriaHabitacionSelectListItem.FirstOrDefault(i => i.Value == Model.CategoriaHabitacionId.Value.ToString())?.Text
+                        : "No especificado")
+                </td>
+            </tr>
+
+            <tr class="report-table-header-row">
+                <th>Habitación del Paciente</th>
+                <th>Médico asignado</th>
+                <th></th>
+                <th></th>
+            </tr>
+            <tr>
+                <td>
+                    @(Model.HabitacionId.HasValue
+                        ? Model.HabitacionSelectListItem.FirstOrDefault(i => i.Value == Model.HabitacionId.Value.ToString())?.Text
+                        : "No especificado")
+                </td>
+                <td>
+                    @((Model.EmpleadoId.HasValue)
+                        ? Model.DoctoresSelectListItem.FirstOrDefault(i => i.Value == Model.EmpleadoId.ToString())?.Text
+                        : "No especificado")
+                </td>
+                <td></td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Datos del Responsable de Pago -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="4">Datos del Responsable de Pago</th>
+            </tr>
+            <tr class="report-table-header-row">
+                <th>Nombre del Responsable</th>
+                <th>NIT del Responsable</th>
+                <th>DPI del Responsable</th>
+                <th>Teléfono del Responsable</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>@(!string.IsNullOrEmpty(Model.ResponsableNombre) ? Model.ResponsableNombre : "No especificado")</td>
+                <td>@(!string.IsNullOrEmpty(Model.ResponsableNit) ? Model.ResponsableNit : "No especificado")</td>
+                <td>@(!string.IsNullOrEmpty(Model.ResponsableDPI) ? Model.ResponsableDPI : "No especificado")</td>
+                <td>@(!string.IsNullOrEmpty(Model.ResponsableTelefono) ? Model.ResponsableTelefono : "No especificado")</td>
+            </tr>
+
+            <tr class="report-table-header-row">
+                <th>Dirección del Responsable</th>
+                <th>Correo del Responsable</th>
+                <th>Pasaporte del Responsable</th>
+                <th></th>
+            </tr>
+            <tr>
+                <td>@(!string.IsNullOrEmpty(Model.ResponsableDireccion) ? Model.ResponsableDireccion : "No especificado")</td>
+                <td>@(!string.IsNullOrEmpty(Model.ResponsableCorreo) ? Model.ResponsableCorreo : "No especificado")</td>
+                <td>@(!string.IsNullOrEmpty(Model.ResponsablePasaporte) ? Model.ResponsablePasaporte : "No especificado")</td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Datos del Acompañante -->
+    <table class="report-table keep-with-next">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="4">Datos del Acompañante</th>
+            </tr>
+            <tr class="report-table-header-row">
+                <th>Nombre del Acompañante</th>
+                <th>Relación del Acompañante</th>
+                <th>Fecha de Nacimiento</th>
+                <th>Edad del Acompañante</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>@(!string.IsNullOrEmpty(Model.AcompananteNombre) ? Model.AcompananteNombre : "No especificado")</td>
+                <td>@(!string.IsNullOrEmpty(Model.AcompananteRelacion) ? Model.AcompananteRelacion : "No especificado")</td>
+                <td>@(!Model.AcompananteFechaNacimiento.HasValue ? "No especificado" : Model.AcompananteFechaNacimiento.Value.ToString("yyyy-MM-dd"))</td>
+                <td>@(!string.IsNullOrEmpty(Model.AcompananteEdad) ? Model.AcompananteEdad : "No especificado")</td>
+            </tr>
+
+            <tr class="report-table-header-row">
+                <th>DPI del Acompañante</th>
+                <th>Dirección del Acompañante</th>
+                <th>Teléfono del Acompañante</th>
+                <th>Correo del Acompañante</th>
+            </tr>
+            <tr>
+                <td>@(!string.IsNullOrEmpty(Model.AcompananteDPI) ? Model.AcompananteDPI : "No especificado")</td>
+                <td>@(!string.IsNullOrEmpty(Model.AcompananteDireccion) ? Model.AcompananteDireccion : "No especificado")</td>
+                <td>@(!string.IsNullOrEmpty(Model.AcompananteTelefono) ? Model.AcompananteTelefono : "No especificado")</td>
+                <td>@(!string.IsNullOrEmpty(Model.AcompananteCorreo) ? Model.AcompananteCorreo : "No especificado")</td>
+            </tr>
+
+            <tr class="report-table-header-row">
+                <th>Ocupación del Acompañante</th>
+                <th>Nombre de la Empresa</th>
+                <th>Teléfono de la Empresa</th>
+                <th>Dirección de la Empresa</th>
+            </tr>
+            <tr>
+                <td>@(!string.IsNullOrEmpty(Model.AcompananteOcupacion) ? Model.AcompananteOcupacion : "No especificado")</td>
+                <td>@(!string.IsNullOrEmpty(Model.AcompananteEmpresa) ? Model.AcompananteEmpresa : "No especificado")</td>
+                <td>@(!string.IsNullOrEmpty(Model.AcompananteTelefonoEmpresa) ? Model.AcompananteTelefonoEmpresa : "No especificado")</td>
+                <td>@(!string.IsNullOrEmpty(Model.AcompananteDireccionEmpresa) ? Model.AcompananteDireccionEmpresa : "No especificado")</td>
+            </tr>
+
+            <tr class="report-table-header-row">
+                <th>Tipo de Identificación</th>
+                <th>Fecha de Ingreso</th>
+                <th>Antigüedad en la Empresa</th>
+                <th></th>
+            </tr>
+            <tr>
+                <td>@(!string.IsNullOrEmpty(Model.AcompananteTipoIdentificacion) ? Model.AcompananteTipoIdentificacion : "No especificado")</td>
+                <td>@(!Model.AcompananteFechaIngreso.HasValue ? "No especificado" : Model.AcompananteFechaIngreso.Value.ToString("yyyy-MM-dd"))</td>
+                <td>@(!string.IsNullOrEmpty(Model.AcompananteAntiguedad) ? Model.AcompananteAntiguedad : "No especificado")</td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Datos del Padre (condicional) -->
+    @if (!string.IsNullOrEmpty(Model.NombrePadre) ||
+        Model.FechaNacimientoPadre.HasValue ||
+        Model.EdadPadre.HasValue ||
+        !string.IsNullOrEmpty(Model.DPIPadre) ||
+        !string.IsNullOrEmpty(Model.DireccionPadre) ||
+        !string.IsNullOrEmpty(Model.TelefonoPadre) ||
+        !string.IsNullOrEmpty(Model.CorreoPadre) ||
+        !string.IsNullOrEmpty(Model.OcupacionPadre) ||
+        !string.IsNullOrEmpty(Model.EmpresaPadre) ||
+        !string.IsNullOrEmpty(Model.TelefonoEmpresaPadre) ||
+        !string.IsNullOrEmpty(Model.DireccionEmpresaPadre))
+    {
+        <table class="report-table keep-with-next">
+            <thead>
+                <tr class="report-table-title-row">
+                    <th colspan="4">Datos del Padre</th>
+                </tr>
+                <tr class="report-table-header-row">
+                    <th>Nombre del Padre</th>
+                    <th>Fecha de Nacimiento</th>
+                    <th>Edad del Padre</th>
+                    <th>DPI del Padre</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>@(!string.IsNullOrEmpty(Model.NombrePadre) ? Model.NombrePadre : "No especificado")</td>
+                    <td>@(Model.FechaNacimientoPadre.HasValue ? Model.FechaNacimientoPadre.Value.ToString("dd/MM/yyyy") : "No especificado")</td>
+                    <td>@(Model.EdadPadre.HasValue ? Model.EdadPadre.Value.ToString() : "No especificado")</td>
+                    <td>@(!string.IsNullOrEmpty(Model.DPIPadre) ? Model.DPIPadre : "No especificado")</td>
+                </tr>
+
+                <tr class="report-table-header-row">
+                    <th>Dirección del Padre</th>
+                    <th>Teléfono del Padre</th>
+                    <th>Correo del Padre</th>
+                    <th>Ocupación del Padre</th>
+                </tr>
+                <tr>
+                    <td>@(!string.IsNullOrEmpty(Model.DireccionPadre) ? Model.DireccionPadre : "No especificado")</td>
+                    <td>@(!string.IsNullOrEmpty(Model.TelefonoPadre) ? Model.TelefonoPadre : "No especificado")</td>
+                    <td>@(!string.IsNullOrEmpty(Model.CorreoPadre) ? Model.CorreoPadre : "No especificado")</td>
+                    <td>@(!string.IsNullOrEmpty(Model.OcupacionPadre) ? Model.OcupacionPadre : "No especificado")</td>
+                </tr>
+
+                <tr class="report-table-header-row">
+                    <th>Nombre de la Empresa</th>
+                    <th>Teléfono de la Empresa</th>
+                    <th>Dirección de la Empresa</th>
+                    <th></th>
+                </tr>
+                <tr>
+                    <td>@(!string.IsNullOrEmpty(Model.EmpresaPadre) ? Model.EmpresaPadre : "No especificado")</td>
+                    <td>@(!string.IsNullOrEmpty(Model.TelefonoEmpresaPadre) ? Model.TelefonoEmpresaPadre : "No especificado")</td>
+                    <td>@(!string.IsNullOrEmpty(Model.DireccionEmpresaPadre) ? Model.DireccionEmpresaPadre : "No especificado")</td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+    }
+
+    <!-- Datos de la Madre (condicional) -->
+    @if (!string.IsNullOrEmpty(Model.NombreMadre) ||
+        Model.FechaNacimientoMadre.HasValue ||
+        Model.EdadMadre.HasValue ||
+        !string.IsNullOrEmpty(Model.DPIMadre) ||
+        !string.IsNullOrEmpty(Model.DireccionMadre) ||
+        !string.IsNullOrEmpty(Model.TelefonoMadre) ||
+        !string.IsNullOrEmpty(Model.CorreoMadre) ||
+        !string.IsNullOrEmpty(Model.OcupacionMadre) ||
+        !string.IsNullOrEmpty(Model.EmpresaMadre) ||
+        !string.IsNullOrEmpty(Model.TelefonoEmpresaMadre) ||
+        !string.IsNullOrEmpty(Model.DireccionEmpresaMadre))
+    {
+        <table class="report-table keep-with-next">
+            <thead>
+                <tr class="report-table-title-row">
+                    <th colspan="4">Datos de la Madre</th>
+                </tr>
+                <tr class="report-table-header-row">
+                    <th>Nombre de la Madre</th>
+                    <th>Fecha de Nacimiento</th>
+                    <th>Edad de la Madre</th>
+                    <th>DPI de la Madre</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>@(!string.IsNullOrEmpty(Model.NombreMadre) ? Model.NombreMadre : "No especificado")</td>
+                    <td>@(Model.FechaNacimientoMadre.HasValue ? Model.FechaNacimientoMadre.Value.ToString("dd/MM/yyyy") : "No especificado")</td>
+                    <td>@(Model.EdadMadre.HasValue ? Model.EdadMadre.Value.ToString() : "No especificado")</td>
+                    <td>@(!string.IsNullOrEmpty(Model.DPIMadre) ? Model.DPIMadre : "No especificado")</td>
+                </tr>
+
+                <tr class="report-table-header-row">
+                    <th>Dirección de la Madre</th>
+                    <th>Teléfono de la Madre</th>
+                    <th>Correo de la Madre</th>
+                    <th>Ocupación de la Madre</th>
+                </tr>
+                <tr>
+                    <td>@(!string.IsNullOrEmpty(Model.DireccionMadre) ? Model.DireccionMadre : "No especificado")</td>
+                    <td>@(!string.IsNullOrEmpty(Model.TelefonoMadre) ? Model.TelefonoMadre : "No especificado")</td>
+                    <td>@(!string.IsNullOrEmpty(Model.CorreoMadre) ? Model.CorreoMadre : "No especificado")</td>
+                    <td>@(!string.IsNullOrEmpty(Model.OcupacionMadre) ? Model.OcupacionMadre : "No especificado")</td>
+                </tr>
+
+                <tr class="report-table-header-row">
+                    <th>Nombre de la Empresa</th>
+                    <th>Teléfono de la Empresa</th>
+                    <th>Dirección de la Empresa</th>
+                    <th></th>
+                </tr>
+                <tr>
+                    <td>@(!string.IsNullOrEmpty(Model.EmpresaMadre) ? Model.EmpresaMadre : "No especificado")</td>
+                    <td>@(!string.IsNullOrEmpty(Model.TelefonoEmpresaMadre) ? Model.TelefonoEmpresaMadre : "No especificado")</td>
+                    <td>@(!string.IsNullOrEmpty(Model.DireccionEmpresaMadre) ? Model.DireccionEmpresaMadre : "No especificado")</td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+    }
+
+    <!-- Datos de la consulta -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="4">Datos de la consulta</th>
+            </tr>
+            <tr class="report-table-header-row">
+                <th>Especialidad</th>
+                <th>Sucursal</th>
+                <th>Profesional</th>
+                <th>Número del Turno</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    @((Model.EspecialidadId.HasValue)
+                        ? Model.EspecialidadSelectListItem.FirstOrDefault(i => i.Value == Model.EspecialidadId.ToString())?.Text
+                        : "No especificado")
+                </td>
+                <td>
+                    @((Model.SucursalId.HasValue)
+                        ? Model.SucursalesSelectListItem.FirstOrDefault(i => i.Value == Model.SucursalId.ToString())?.Text
+                        : "No especificado")
+                </td>
+                <td>
+                    @((Model.EmpleadoId.HasValue)
+                        ? Model.DoctoresSelectListItem.FirstOrDefault(i => i.Value == Model.EmpleadoId.ToString())?.Text
+                        : "No especificado")
+                </td>
+                <td>@(!string.IsNullOrEmpty(Model.NumeroTurno) ? Model.NumeroTurno : "No especificado")</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-header-row">
+                <th>Motivo de consulta</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>@(!string.IsNullOrEmpty(Model.Motivo) ? Model.Motivo : "No especificado")</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Servicios de la consulta -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="4">Servicios de la consulta</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Servicios != null && Model.Servicios.Any())
+            {
+                <tr class="report-table-header-row">
+                    <th>Servicio</th>
+                    <th>Duración</th>
+                    <th>Cantidad</th>
+                    <th>Precio</th>
+                </tr>
+                @foreach (var servicio in Model.Servicios)
+                {
+                    <tr>
+                        <td>@servicio.ServicioNombre</td>
+                        <td>@servicio.ServicioDuracionHoras horas @servicio.ServicioDuracionMinutos minutos</td>
+                        <td>@servicio.Cantidad</td>
+                        <td>@servicio.PrecioValor</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td>No se han agregado servicios a la cita.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Exámenes de la consulta -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="3">Exámenes de la consulta</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Examenes != null && Model.Examenes.Any())
+            {
+                <tr class="report-table-header-row">
+                    <th>Examen</th>
+                    <th>Cantidad</th>
+                    <th>Precio</th>
+                </tr>
+                @foreach (var examen in Model.Examenes)
+                {
+                    <tr>
+                        <td>@examen.ExamenNombre</td>
+                        <td>@examen.Cantidad</td>
+                        <td>@examen.PrecioValor</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td>No se han agregado exámenes a la cita.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+</div>

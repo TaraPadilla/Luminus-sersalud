@@ -1,0 +1,96 @@
+   @model sistema.Models.HospitalizacionDetallesViewModel
+@{
+    var usuarioAdmisiones = User.IsInRole("Admisiones");
+} 
+<div class="tab-pane tabs-animation fade show" id="tab-content-usuarios-acceso" role="tabpanel">
+    <div class="form-row">
+        <div class="col-md-12">
+            <div class="main-card mb-3 card" style="border-radius: 10px">
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="col-md-11">
+                            <h6><b>Usuarios con acceso</b></h6>
+                            <hr />
+                        </div>
+                        <div class="col-md-1">
+                            <button class="btn btn-primary" data-bind="click: verModalAgregarUsuario">
+                                Agregar
+                            </button>
+                        </div>
+                        <div class="col-md-12">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Usuario</th>
+                                        <th>Permisos</th>
+                                        <th>Quitar acceso</th>
+                                    </tr>
+                                </thead>
+                                <tbody data-bind="foreach: usuariosAcceso">
+                                    <tr>
+                                        <td>
+                                            <span data-bind="text:UserNombre"></span><br />
+                                            <span data-bind="text:UserEmail"></span><br />
+                                            <span class="text-primary" id="texto-actualizando-permisos" style="display:none">
+                                                Actualizando permisos...
+                                            </span>
+                                            <span class="text-danger" id="texto-error-actualizar-permisos" style="display:none">
+                                                Error de conexion.
+                                                <a href="#" data-bind="click: $root.actualizarPermisos">Reintentar</a>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="form-row">
+                                                <div class="col-md-4">
+                                                    <input type="checkbox" data-bind="checked:AutTabEnfermeria, event:{change:$root.actualizarPermisos}" />
+                                                    Pesta&ntilde;a Enfermeria
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <input type="checkbox" data-bind="checked:AutTabActualizarEstadia, event:{change:$root.actualizarPermisos}" />
+                                                    Pesta&ntilde;a Actualizar estadia
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <input type="checkbox" data-bind="checked:AutTabIncretaExcreta, event:{change:$root.actualizarPermisos}" />
+                                                    Pesta&ntilde;a Increta/Excreta
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <input type="checkbox" data-bind="checked:AutTabControlGlucometria, event:{change:$root.actualizarPermisos}" />
+                                                    Pesta&ntilde;a Control de glucometria
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <input type="checkbox" data-bind="checked:AutTabNotaEnfermeria, event:{change:$root.actualizarPermisos}" />
+                                                    Pesta&ntilde;a Nota de enfermeria
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <input type="checkbox" data-bind="checked:AutTabPagos, event:{change:$root.actualizarPermisos}" />
+                                                    Pesta&ntilde;a Pagos
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <input type="checkbox" data-bind="checked:AutTabDietas, event:{change:$root.actualizarPermisos}" />
+                                                    Pesta&ntilde;a Dietas
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <input type="checkbox" data-bind="checked:AutTabSignosVitales, event:{change:$root.actualizarPermisos}" />
+                                            Pesta&ntilde;a Signos vitales
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <input type="checkbox" data-bind="checked:AutTabNotaMedica, event:{change:$root.actualizarPermisos}" />
+                                                    Pesta&ntilde;a Nota medica
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-danger" data-bind="click: $parent.eliminarUsuarioAcceso">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

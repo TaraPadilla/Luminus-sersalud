@@ -1,0 +1,7 @@
+CREATE TABLE "HistorialImportacionExcel" (
+    "Id" serial NOT NULL,
+    "HashArchivo" character varying(64) NOT NULL,
+    "NombreArchivo" character varying(255) NOT NULL,
+    "FechaImportacion" timestamp with time zone NOT NULL,
+    CONSTRAINT "PK_HistorialImportacionExcel" PRIMARY KEY ("Id")
+);

@@ -1,0 +1,162 @@
+@model IEnumerable<Database.Shared.Models.Cotizacion>
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Cotizaciones detalladas";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+}
+
+<style>
+    .report-container {
+        margin-top: 10px;
+        font-size: 12px;
+    }
+
+    .report-title {
+        text-align: center;
+        font-weight: bold;
+        font-size: 16px;
+        color: #0d0e36;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+
+    .report-subtitle {
+        text-align: center;
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+
+    .report-section-title {
+        font-weight: bold;
+        font-size: 13px;
+        margin-top: 12px;
+        margin-bottom: 4px;
+    }
+
+    .report-separator {
+        border-top: 2px dashed #cbd5e1;
+        margin: 12px 0;
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 4px;
+    }
+
+    .report-table th {
+        background-color: #eef2ff;
+        color: #0d0e36;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 11px;
+        text-align: left;
+        padding: 4px 6px;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table td {
+        font-size: 12px;
+        padding: 4px 6px;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+</style>
+
+<div class="report-container">
+    <!-- Título principal estándar -->
+    <div class="report-title">
+        REPORTE - @ViewData["Title"]
+    </div>
+
+    <!-- Fecha y hora de emisión -->
+    <div class="report-subtitle">
+        <b>Fecha y hora de emisión:</b> @fecha.ToString("dd/MM/yyyy HH:mm")
+    </div>
+
+    @foreach (var item in Model)
+    {
+        <div class="report-separator"></div>
+
+        <!-- Encabezado de la cotización -->
+        <div class="report-section-title">Datos de la cotización</div>
+        <table class="report-table">
+            <tbody>
+                <tr>
+                    <th style="width:20%;">Cotización #</th>
+                    <td style="width:30%;">@item.Id</td>
+                    <th style="width:20%;">Fecha cotización</th>
+                    <td style="width:30%;">@item.FechaCotizacion</td>
+                </tr>
+                <tr>
+                    <th>Cliente</th>
+                    <td>@item.Nombres</td>
+                    <th>NIT Cliente</th>
+                    <td>@item.Nit</td>
+                </tr>
+                <tr>
+                    <th>Válido hasta</th>
+                    <td>@item.FechaValida</td>
+                    <th>Total cotización</th>
+                    <td>Q @item.DetalleCotizacion.Sum(a => a.Total)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Detalle de productos -->
+        <div class="report-section-title">Detalle de productos</div>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Nombre producto</th>
+                    <th>Cantidad</th>
+                    <th>Precio</th>
+                    <th>%</th>
+                    <th>Descuento</th>
+                    <th>Subtotal</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    int porc = 0;
+                }
+                @foreach (var det in item.DetalleCotizacion)
+                {
+                    if (det.Descuento == 0 || det.Subtotal == 0)
+                    {
+                        porc = 0;
+                    }
+                    else
+                    {
+                        porc = Convert.ToInt32((det.Descuento / det.Subtotal) * 100);
+                    }
+
+                    <tr>
+                        <td>@det.Producto</td>
+                        <td>@det.Cantidad</td>
+                        <td>Q @det.Precio</td>
+                        <td>@porc</td>
+                        <td>Q @det.Descuento</td>
+                        <td>Q @det.Subtotal</td>
+                        <td>Q @det.Total</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

@@ -1,0 +1,173 @@
+@model sistema.Models.SegurosPreciosViewModel
+@await Html.PartialAsync("_MensajeExito")
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12 text-center">
+                <h4><b>Editar precios de seguros</b></h4>
+                <hr />
+            </div>
+
+            <div class="col-md-12">
+                <div class="form-row">
+                    @* <div class="col-md-4">
+                        <label><b>Fecha de edición</b></label>
+                        <select class="form-control select2bs4" asp-for="FechaEdicion" required disabled>
+                            <option value="@Model.FechaEdicion">@Model.FechaEdicion.ToString("dd/MM/yyyy hh:mm tt")</option>
+                        </select>
+                    </div> *@
+                    <div class="col-md-4">
+                        <label><b>Seguro</b></label>
+                        <select class="form-control select2bs4" asp-for="SeguroId"
+                            asp-items="@Model.SegurosSelectListItem">
+                            <option disabled selected>Sin Asignar</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label><b>Tipo de precios</b></label>
+                        <select class="form-control select2bs4" asp-for="TipoPrecio" required>
+                            <option disabled selected>Sin Asignar</option>
+                            <option value="1"> COEX </option>
+                            <option value="2"> HOSP </option>
+
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label><b>Tipo de items</b></label>
+                        <select class="form-control select2bs4" asp-for="TipoItem" required>
+                            <option disabled selected>Sin Asignar</option>
+                            <option value="1"> Medicamentos </option>
+                            <option value="2"> Insumos </option>
+                            <option value="3"> Servicios </option>
+                            <option value="4"> Examenes Complementarios</option>
+
+                        </select>
+                    </div>
+                    <br />
+                    <div class="col-md-12">
+                        <label><b>Importar Excel</b></label>
+                        <div class="input-group mb-3">
+                            <input type="file" class="form-control" name="excel" id="excel" required>
+                        </div>
+                    </div>
+                    <br />
+                    <div class="card-body form-row">
+                        <div class="col-md-12">
+                            <button class="btn btn-primary" data-bind="click:ImportarExcelSeguros">
+                                Importar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div title="Confirmar" style="display:none" id="mdl-confirmacion">
+    <span data-bind="html:txtModalConfirmacion"></span>
+</div>
+<div title="Respuesta" style="display:none" id="mdl-respuesta">
+    <span data-bind="html:txtModalRespuesta"></span>
+</div>
+
+
+@section Scripts {
+@*<script type="text/javascript" src="~/ViewModelKo/InventarioVM.js"></script>*@
+    <script>
+
+        var ImportarInventarioVM = function () {
+
+            let model = {};
+            var self = this;
+            self.txtModalRespuesta = ko.observable();
+            self.txtModalConfirmacion = ko.observable();
+
+            self.ImportarExcelSeguros = function () {
+                self.txtModalConfirmacion("&iquest;Desea Cargar inventario?")
+                $("#mdl-confirmacion").dialog({
+                    modal: true,
+                    buttons: [{
+                        text: "Si",
+                        class: "btn btn-success",
+                        click: function () {
+                            console.log("Entro a respuesta Si");
+
+                            var tipoItem = $("#TipoItem").val();
+                            var tipoPrecio = $("#TipoPrecio").val();
+                            var tipoProducto = 0;
+                            var url = "";
+
+                            // Validar TipoPrecio
+                            if (tipoPrecio !== "2") {
+                                alert("Los precios COEX están deshabilitados. Contacta a soporte.");
+                                return; // Salir si TipoPrecio no es "2"
+                            }
+
+                            // Verificar TipoItem y asignar la URL correspondiente
+                            if (tipoItem === "4") {
+                                url = "/Productos/ImportarExamenesSeguros";
+                            } else if (tipoItem === "3") {
+
+                                url = "/Productos/ImportarServiciosSeguros";
+                            } else if (tipoItem === "2") {
+                                tipoProducto = 2;
+                                url = "/Productos/ImportarProductosSeguros";
+                            } else if (tipoItem === "1") {
+                                tipoProducto = 1;
+                                url = "/Productos/ImportarProductosSeguros";
+                            } else {
+                                alert("El Tipo de items no es válido");
+                                return;
+                            }
+
+                            showLoading();
+
+                            var formData = new FormData();
+                            formData.append('TipoPrecio', tipoPrecio); 
+                            formData.append('TipoItem', tipoItem); 
+                            formData.append('SeguroId', $("#SeguroId").val());
+                            formData.append('TipoProductoId', tipoProducto); 
+                            formData.append('excel', $('#excel')[0].files[0]);
+
+                            $.ajax({
+                                url: url, // Usar la URL dinámica
+                                method: "POST",
+                                processData: false,
+                                contentType: false,
+                                data: formData,
+                                success: function (dataResult) {
+                                    var data = JSON.parse(dataResult); // Asegúrate de que sea un JSON válido
+                                    if (data.Exitoso) {
+                                        window.location.href = "/Seguro/Lista";
+                                    } else {
+                                        hideLoading();
+                                        alert(data.Mensaje); // Muestra el mensaje correctamente
+                                    }
+                                },
+                                error: function (dataError) {
+                                    hideLoading();
+                                    console.log(dataError);
+                                    alert("Ocurrió un error al procesar la solicitud.");
+                                }
+                            });
+                        }
+                    },
+                    {
+                        text: "No",
+                        class: "btn btn-danger",
+                        click: function () {
+                            $(this).dialog("close");
+                        }
+                    }]
+                });
+            };
+
+        }
+        var ImportarInventarioVm = new ImportarInventarioVM();
+        ko.applyBindings(ImportarInventarioVm);
+
+    </script>
+}

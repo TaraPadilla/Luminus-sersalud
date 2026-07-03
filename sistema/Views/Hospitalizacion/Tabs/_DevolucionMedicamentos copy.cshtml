@@ -1,0 +1,343 @@
+@{
+    // Se asume que en el modelo se tiene la propiedad HospitalizacionId
+    var hospitalizacionId = Model.HospitalizacionId;
+}
+<script>
+    // Variable global para usar el ID de hospitalización
+    var hospitalizacionIdGlobal = '@hospitalizacionId';
+</script>
+
+<!-- Estilos específicos para la vista -->
+<style>
+    .main-card {
+        border-radius: 10px;
+    }
+    .main-card .card-body {
+        padding: 20px;
+    }
+    .main-card h6 {
+        margin-bottom: 10px;
+    }
+    .main-card hr {
+        margin: 10px 0 20px;
+    }
+    .header-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+    .header-container h3 {
+        margin: 0;
+        padding-right: 15px;
+    }
+    .table-responsive {
+        margin-top: 20px;
+    }
+    /* Estilo opcional para el input de búsqueda */
+    #global-search {
+        padding: 5px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        margin-right: 10px;
+    }
+</style>
+
+<!-- Incluir jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Incluir CSS y JS de Tabulator -->
+<link href="https://unpkg.com/tabulator-tables@5.4.4/dist/css/tabulator.min.css" rel="stylesheet">
+<script src="https://unpkg.com/tabulator-tables@5.4.4/dist/js/tabulator.min.js"></script>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <!-- Encabezado con título, botón y buscador global -->
+        <div class="header-container">
+            <h6><b>Devolución de Medicamentos</b></h6>
+            <div>
+                <input id="global-search" type="text" placeholder="Buscar...">
+                <button class="btn btn-primary" onclick="cargarMedicamentosParaDevolucion()">
+                    Cargar Medicamentos Disponibles
+                </button>
+            </div>
+        </div>
+        
+        <!-- Contenedor para la tabla de Tabulator -->
+        <div class="table-responsive">
+            <div id="tablaDevolucionMedicamentos"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Variable global para almacenar la instancia de Tabulator
+    var tabulatorTable = null;
+
+    /**
+     * Función: cargarMedicamentosParaDevolucion
+     * Realiza la consulta vía AJAX y renderiza la tabla usando Tabulator.
+     */
+    async function cargarMedicamentosParaDevolucion() {
+        const tipoProductoMedicamento = 1; // Se asume que el ID para medicamentos es 1
+        showLoading();
+        try {
+            let response = await $.ajax({
+                url: "/Hospitalizacion/ConsultarProductosAplicacionHospitalizacion",
+                method: "POST",
+                dataType: "json",
+                data: {
+                    hospitalizacionId: hospitalizacionIdGlobal,
+                    tipoProductoId: tipoProductoMedicamento
+                }
+            });
+            hideLoading();
+            let data = response; // La respuesta ya es un objeto JSON
+            if (data.Exitoso) {
+                // Filtrar los medicamentos que NO hayan sido aplicados
+                let medicamentos = (data.Resultado || []).filter(item => !item.Aplicado);
+                if (medicamentos.length > 0) {
+                    renderizarTablaDevolucion(medicamentos);
+                } else {
+                    alert("No se encontraron medicamentos disponibles para devolución.");
+                    if(tabulatorTable){
+                        tabulatorTable.clearData();
+                    }
+                }
+            } else {
+                mensajeEmergenteError(data.Mensaje);
+            }
+        } catch (error) {
+            hideLoading();
+            console.error("Error al obtener los datos:", error);
+            mensajeEmergenteError("Error al obtener los datos.");
+        }
+    }
+
+    /**
+    * Función: renderizarTablaDevolucion
+    * Renderiza la tabla de devolución utilizando Tabulator.
+    * {Array} medicamentos - Array de objetos con la data de medicamentos.
+    */
+    function renderizarTablaDevolucion(medicamentos) {
+        if (tabulatorTable) {
+            tabulatorTable.setData(medicamentos);
+        } else {
+            tabulatorTable = new Tabulator("#tablaDevolucionMedicamentos", {
+                data: medicamentos,
+                layout: "fitColumns",
+                responsiveLayout: "collapse",
+                pagination: "local",
+                paginationSize: 5,
+                columns: [
+                    {title: "ID", field: "Id", sorter: "string"},
+                    {title: "Nombre del Medicamento", field: "Nombre", sorter: "string"},
+                    {title: "Indicaciones", field: "Indicaciones", sorter: "string"},
+                    {title: "Cantidad", field: "Cantidad", sorter: "number"},
+                    {title: "Unidad de Venta", field: "UnidadMedidaVentaNombre", sorter: "string"},
+                    {title: "Asignado por", field: "PersonaCrea", sorter: "string"},
+                    {
+                        title: "Acciones",
+                        field: "hospitalizacionProductoAplicacionId",
+                        formatter: function(){
+                            return `<button class="btn btn-warning btn-sm">Devolver</button>`;
+                        },
+                        cellClick: function(e, cell){
+                            let rowData = cell.getRow().getData();
+                            devolverMedicamento(rowData);
+                        }
+                    }
+                ],
+                locale: true,
+                langs: {
+                    "default": {
+                        "pagination": {
+                            "first": "Primero",
+                            "first_title": "Primera Página",
+                            "last": "Último",
+                            "last_title": "Última Página",
+                            "prev": "Anterior",
+                            "prev_title": "Página Anterior",
+                            "next": "Siguiente",
+                            "next_title": "Página Siguiente"
+                        }
+                    }
+                }
+            });
+        }
+        // Llamar a la función para actualizar el estado de los botones después de renderizar la tabla
+        actualizarEstadoDeBotonesDevolucion();
+    }
+
+    /**
+    * Función: cargarDevolucionesParaHospitalizacion
+    * Realiza una llamada AJAX para obtener todas las devoluciones de la hospitalización.
+    */
+    async function cargarDevolucionesParaHospitalizacion() {
+        try {
+            let response = await $.ajax({
+                url: "/DevolucionMedicamento/GetAllDevolucionesMedicamento",
+                method: "GET", // Ajusta si es POST, según tu implementación
+                dataType: "json",
+                data: { hospitalizacionId: hospitalizacionIdGlobal }
+            });
+            console.log("Devoluciones recibidas:", response);
+            return response || [];
+        } catch (error) {
+            console.error("Error al cargar devoluciones:", error);
+            return [];
+        }
+    }
+
+    /**
+    * Función: actualizarEstadoDeBotonesDevolucion
+    * Recorre cada fila de la tabla de Tabulator, y para cada fila, verifica si existe
+    * una devolución con Estado "En espera" o "Aprobada" que coincida con su HospitalizacionProductoAplicacionId.
+    * Si existe, inhabilita el botón y agrega un indicador.
+    */
+    async function actualizarEstadoDeBotonesDevolucion() {
+        console.log("actualizarEstadoDeBotonesDevolucion: Iniciando...");
+        // Obtener todas las devoluciones para la hospitalización
+        let devoluciones = await cargarDevolucionesParaHospitalizacion();
+        console.log("Devoluciones recibidas:", devoluciones);
+        
+        if (!tabulatorTable) return;
+        
+        // Obtener todas las filas de la tabla
+        let rows = tabulatorTable.getRows();
+        
+        rows.forEach(function(row) {
+            let rowData = row.getData();
+            // Dado que la columna "ID" en la tabla corresponde al HospitalizacionProductoAplicacionId
+            let hpaId = rowData.Id;  
+            console.log("Procesando fila con HPA ID:", hpaId);
+            
+            // Buscar si existe una devolución para este HospitalizacionProductoAplicacionId (cualquier estado)
+            let match = devoluciones.find(function(d) {
+                return d.hospitalizacionProductoAplicacionId === hpaId;
+            });
+
+            if (match) {
+                // Recorrer las celdas de la fila para ubicar la celda de "Acciones"
+                row.getCells().forEach(function(cell) {
+                    if (cell.getColumn().getField() === "hospitalizacionProductoAplicacionId") {
+                        let btn = cell.getElement().querySelector("button");
+                        if (btn) {
+                            // Determinar el color del estado
+                            let colorEstado;
+                            if (match.estado === "Aprobada") {
+                                colorEstado = "green";
+                                // Deshabilitar el botón si el estado es "Aprobada"
+                                btn.disabled = true;
+                            } else if (match.estado === "En espera") {
+                                colorEstado = "blue";
+                                // Deshabilitar el botón si el estado es "En espera"
+                                btn.disabled = true;
+                            } else if (match.estado === "Rechazada") {
+                                colorEstado = "red";
+                                // NO deshabilitamos el botón si el estado es "Rechazada"
+                                btn.disabled = false;
+                            } else {
+                                // Otros estados
+                                colorEstado = "black";
+                            }
+
+                            // Insertar el indicador de estado junto al botón
+                            btn.insertAdjacentHTML(
+                                "afterend",
+                                `<span style="margin-left: 5px;">
+                                    <span style="color: black;">Devolución</span> 
+                                    <span style="color: ${colorEstado};">${match.estado}</span>
+                                </span>`
+                            );
+
+                            console.log(`Indicador añadido para HPA ID ${hpaId} (estado: ${match.estado}, color: ${colorEstado})`);
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * Función: devolverMedicamento
+     * Toma los datos del item (ya mostrados en la tabla) y los envía al método que crea la devolución.
+     * {object} rowData - Objeto con la data del renglón (producto) a devolver.
+     */
+    function devolverMedicamento(rowData) {
+        console.log("Botón 'Devolver' pulsado. Datos del renglón:", rowData);
+
+        if (confirm("¿Está seguro que desea devolver este medicamento?")) {
+            // Se obtiene el identificador de la aplicación del producto
+            let hospitalizacionProductoAplicacionId = rowData.Id; 
+            // Se obtiene el identificador del producto
+            let productoId = rowData.ProductoId; 
+
+            console.log("HospitalizacionProductoAplicacionId seleccionado:", hospitalizacionProductoAplicacionId);
+            console.log("ProductoId seleccionado:", productoId);
+
+            // Construir el objeto de devolución usando los datos del item:
+            let devolucion = {
+                HospitalizacionId: Number(hospitalizacionIdGlobal),
+                ProductoId: parseInt(productoId), // Identificador real del producto
+                HospitalizacionProductoAplicacionId: parseInt(hospitalizacionProductoAplicacionId), // Nueva FK hacia la aplicación del producto
+                NombreProducto: rowData.Nombre,
+                CantidadDevuelta: rowData.Cantidad,
+                MotivoDevolucion: "Devolución solicitada", // Valor predeterminado, puede ajustarse
+                TipoProducto: "Medicamento"
+            };
+
+            console.log("Objeto 'devolucion' construido:", devolucion);
+
+            $.ajax({
+                url: "/DevolucionMedicamento/Add", // Asegúrate de que esta ruta coincida con la definida en el controller
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(devolucion),
+                dataType: "json",
+                success: function(response) {
+                    console.log("Respuesta del servidor:", response);
+                    if (response.exitoso) {
+                        cargarMedicamentosParaDevolucion();
+                    } else {
+                        console.error("Error en la devolución:", response.mensaje);
+                        mensajeEmergenteError(response.mensaje);
+                    }
+                },
+                error: function(xhr) {
+                    console.error("Error en la solicitud AJAX al crear la devolución:", xhr);
+                    mensajeEmergenteError("La unidad seleccionada ya tiene una solicitud de devolución.");
+                }
+            });
+        }
+    }
+
+    // Funciones auxiliares
+    function showLoading() {
+        console.log("Cargando...");
+    }
+    function hideLoading() {
+        console.log("Carga completada.");
+    }
+    function mensajeEmergenteError(mensaje) {
+        alert("Error: " + mensaje);
+    }
+
+    // Configurar el buscador global para Tabulator
+    $(document).ready(function(){
+        $("#global-search").on("keyup", function(){
+            var keyword = $(this).val();
+            if(tabulatorTable){
+                tabulatorTable.setFilter(globalFilter, {keyword: keyword});
+            }
+        });
+    });
+
+    // Función de filtro global personalizada para Tabulator
+    function globalFilter(data, filterParams) {
+        var keyword = filterParams.keyword.toLowerCase();
+        return (data.Nombre && data.Nombre.toLowerCase().includes(keyword)) ||
+               (data.Indicaciones && data.Indicaciones.toLowerCase().includes(keyword)) ||
+               (data.PersonaCrea && data.PersonaCrea.toLowerCase().includes(keyword));
+    }
+</script>

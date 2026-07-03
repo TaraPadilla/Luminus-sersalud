@@ -1,0 +1,54 @@
+@{
+    ViewData["Title"] = "Nuevo Proveedor";
+}
+<div class="app-page-title">
+    <div class="page-title-wrapper">
+
+        <div class="page-title-heading">
+            <div class="page-title-icon">
+                <i class="pe-7s-graph text-success">
+                </i>
+            </div>
+            <div>Proveedores
+                <div class="page-title-subheading">Agrega un proveedor
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+ @await Html.PartialAsync("_MensajeExito")
+<form asp-controller="Proveedor" asp-action="Nuevo" method="post">
+    @await Html.PartialAsync("_ProveedorForm")
+</form>
+
+
+@section Scripts
+{
+    <script>
+    $(function(){
+        $('.select2').select2({
+            tags: true
+        });
+        
+    $('.select2bs4').select2({
+      theme: 'bootstrap4',
+    })
+    });
+    
+</script>
+    <script>
+        $(document).ready(function () {
+            $('#SelectedTipoCompraId').change(function () {
+                var selectedValue = $(this).val();
+                if (selectedValue == "1") {
+                    $('#DiasCredito').prop('disabled', true);
+                } else {
+                    $('#DiasCredito').prop('disabled', false);
+                }
+            });
+
+            // Ejecutar al cargar la página para establecer el estado inicial
+            $('#SelectedTipoCompraId').trigger('change');
+        });
+    </script>
+}

@@ -1,0 +1,21 @@
+<div class="app-page-title">
+    <div class="page-title-wrapper">
+
+        <div class="page-title-heading">
+            <div class="page-title-icon">
+                <i class="pe-7s-graph text-success">
+                </i>
+            </div>
+            <div>Insertar nuevo Gasto
+                <div class="page-title-subheading">Agrega Tus Gastos.
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+ @await Html.PartialAsync("_MensajeExito")
+<form asp-controller="Gasto" asp-action="Nuevo"  method="post">
+@await Html.PartialAsync("_GastoForm")
+</form>

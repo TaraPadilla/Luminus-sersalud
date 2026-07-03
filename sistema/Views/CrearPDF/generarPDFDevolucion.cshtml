@@ -1,0 +1,256 @@
+@model Database.Shared.Models.DevolucionNacional
+@{
+    Layout = null;
+
+    var totalItems = Model.Detalles?.Count() ?? 0;
+    var cantidadTotal = Model.Detalles?.Sum(x => x.CantidadDevuelta) ?? 0;
+
+    var cultura = new System.Globalization.CultureInfo("es-GT");
+    var fechaExacta = Model.FechaSolicitud.HasValue 
+                        ? DateTime.SpecifyKind(Model.FechaSolicitud.Value, DateTimeKind.Unspecified)
+                        : (DateTime?)null;
+
+    var fecha = fechaExacta?.ToString("dd 'de' MMMM 'de' yyyy", cultura);
+    var hora  = fechaExacta?.ToString("hh:mm tt", cultura);
+    var numeroOficio = Model.NumeroOficio.HasValue
+                    ? Model.NumeroOficio.Value.ToString("D3") + "-" + (Model.FechaSolicitud?.Year ?? DateTime.Now.Year)
+                    : "-";
+}
+
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Devolución Nacional</title>
+</head>
+
+<body style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #222; margin: 0; padding: 0; line-height: 1.45;">
+
+    <div style="width: 210mm; min-height: 297mm; position: relative; box-sizing: border-box; margin: 0 auto; padding: 20mm 18mm 40mm 18mm;">
+
+        <!-- ENCABEZADO -->
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 35px;">
+            <tr>
+                <td style="width: 55%; text-align: left;">
+                    <img src="https://i.ibb.co/84MDSGfF/Ministerio-de-Salud-Publica.png" alt="Logo MSPAS"
+                         style="width: 320px; max-width: 100%; height: auto; display: block;" />
+                </td>
+                <td style="width: 45%; text-align: right; font-size: 12px; line-height: 1.2;">
+                    <div><strong>Oficio No.</strong> @numeroOficio</div>
+                    <div>Almacen de @Model.BodegaOrigen?.NombreBodega</div>
+                    <div>Aldea San Felipe de Jesús, Antigua Guatemala</div>
+                    <div>@fecha</div>
+                </td>
+            </tr>
+        </table>
+
+        <!-- DESTINATARIO -->
+        <div style="margin-top: 20px; margin-bottom: 22px; line-height: 1.4;">
+            <div><strong>@Model.Proveedor?.Nombre</strong></div>
+            <div><strong>@Model.Proveedor?.Direccion</strong></div>
+            <div><strong>Teléfono: @Model.Proveedor?.Telefono_1</strong></div>
+        </div>
+
+        <!-- PÁRRAFO -->
+        @* <div style="text-align: justify; margin-bottom: 14px;">
+            <span style="margin-left: 40px;"></span> Por medio de la presente se solicita efectuar el cambio de:
+            <strong>250 unidades de Clorhidrato de articaina + tantrato de adrenalina (anestésico
+                dental)-Concentracion:(40mg + 0.01mg)/ml 1/ 1000,000; Forma farmaceutica: Solucion inyectable; unidad 1
+                unidad fehca de vencimiento 01-2026,
+                lote:2401F1004 con factura seerie: 3A902DF4 No.3316795139 por un monto de Q. 1,275.00 </strong>
+        </div> *@
+
+<div style="text-align: justify; margin-bottom: 14px;">
+    <!-- PÁRRAFO -->
+    <span style="margin-left: 40px;"></span> Por medio de la presente se solicita efectuar el cambio de:
+    <strong>
+    @if (Model.Detalles != null && Model.Detalles.Any())
+    {
+        foreach (var detalle in Model.Detalles)
+        {
+            var inv            = detalle.ProductoInventario;
+            var nombreProducto = inv?.Producto?.NombreProducto ?? "-";
+            var cantidad       = detalle.CantidadDevuelta;
+            var unidad         = inv?.UnidadMedidaVenta?.Nombre ?? "unidad";
+            var lote           = !string.IsNullOrEmpty(inv?.Lote) ? inv.Lote : "";
+            var vencimiento    = (inv?.FechaVencimientoArticuloCompra.HasValue == true)
+                                    ? inv.FechaVencimientoArticuloCompra.Value.ToString("MM-yyyy")
+                                    : "";
+
+            <span>@cantidad @unidad de @nombreProducto</span>
+
+            @if (!string.IsNullOrEmpty(vencimiento))
+            {
+                <span>, fecha de vencimiento: @vencimiento</span>
+            }
+
+            @if (!string.IsNullOrEmpty(lote))
+            {
+                <span>, lote: @lote</span>
+            }
+
+            <span>; </span>
+        }
+
+        var montoTotal = Model.Detalles.Sum(d => d.CantidadDevuelta * (d.ProductoInventario?.PrecioCosto ?? 0));
+        var montoStr   = montoTotal > 0 ? "Q. " + montoTotal.ToString("N2") : "Q. 0.00";
+
+        <span>con factura serie: &nbsp;&nbsp;&nbsp;&nbsp; No. &nbsp;&nbsp;&nbsp;&nbsp; por un monto de @montoStr</span>
+    }
+    </strong>
+</div>
+
+        <!-- PÁRRAFO -->
+        <div style="text-align: justify; margin-bottom: 14px;">
+            <span style="margin-left: 40px;"></span>Se adjunta copia de factura, carta de compromiso original,
+            certificado de calidad y oficio en hoja membretada. <strong>Asi mismo se solicita enviar certificado de
+                calidad del nuevo cambio
+                y carta de envio respectiva describiendo cantidad, producto, precio unitaroio y total.</strong>
+        </div>
+
+        <!-- CIERRE -->
+        <div style="margin-top: 16px; margin-bottom: 34px;">
+            <span style="margin-left: 40px;"></span>Sin otro particular, me suscribo de usted, atentamente.
+        </div>
+
+        <!-- FIRMAS -->
+        <table style="width: 100%; border-collapse: collapse; margin-top: 70px; margin-bottom: 28px; table-layout: fixed;">
+            <tr>
+                <td style="width: 50%; vertical-align: top; text-align: center;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="height: 55px; vertical-align: bottom; text-align: center;">
+                                <img src="@Model.FirmaSolicitante" alt="Firma solicitante"
+                                     style="max-width: 120px; max-height: 45px; display: inline-block;" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: center; vertical-align: top;">
+                                <div style="width: 78%; margin: 8px auto 6px auto; border-top: 1px solid #000;"></div>
+                                <div style="font-weight: bold; font-size: 12px;">@Model.SolicitanteNombre</div>
+                                <div style="font-weight: bold; font-size: 11px; line-height: 1.35;">
+                                    Encargada de Bodega de Medicamentos<br />
+                                    Hospital Pedro de Bethancourt<br />
+                                    Tel. 77741414 ext. 109
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+
+                <td style="width: 50%; vertical-align: top; text-align: center;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="height: 55px; vertical-align: bottom; text-align: center;">
+                                <img src="@Model.FirmaAutorizacion" alt="Firma Autorizacion"
+                                     style="max-width: 120px; max-height: 45px; display: inline-block;" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: center; vertical-align: top;">
+                                <div style="width: 78%; margin: 8px auto 6px auto; border-top: 1px solid #000;"></div>
+                                <div style="font-weight: bold; font-size: 12px;">Vo.Bo. @Model.AutorizadoPor</div>
+                                <div style="font-weight: bold; font-size: 12px; line-height: 1.35;">
+                                    Gerente Administrativo Financiero
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <!-- RECEPCIÓN -->
+        <div style="margin-top: 60px; font-size: 11px;">
+            <div style="font-weight: bold; margin-bottom: 10px;">NOMBRE DE QUIEN RECIBE PRODUCTO:</div>
+
+            <!-- Nombre -->
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                <tr>
+                    <td style="border-bottom: 2px solid #000; height: 18px;"></td>
+                </tr>
+            </table>
+
+            <!-- DPI -->
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                <tr>
+                    <td style="width: 10%; vertical-align: bottom;">No. DPI:</td>
+                    <td style="width: 90%; border-bottom: 1px solid #000; height: 18px;"></td>
+                </tr>
+            </table>
+
+            <!-- Fecha y Hora -->
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                <tr>
+                    <td style="width: 10%; vertical-align: bottom;">Fecha:</td>
+                    <td style="width: 35%; border-bottom: 1px solid #000; height: 18px;">
+                        @* @fecha *@
+                    </td>
+
+                    <td style="width: 10%; vertical-align: bottom; padding-left: 20px;">Hora:</td>
+                    <td style="width: 45%; border-bottom: 1px solid #000; height: 18px;">
+                        @* @hora *@
+                    </td>
+                </tr>
+            </table>
+
+            <!-- Firma y Sello -->
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                <tr>
+                    <td style="width: 10%; vertical-align: bottom;">Firma:</td>
+                    <td style="width: 35%; border-bottom: 1px solid #000; height: 18px;"></td>
+
+                    <td style="width: 10%; vertical-align: bottom; padding-left: 20px;">Sello:</td>
+                    <td style="width: 45%; border-bottom: 1px solid #000; height: 18px;"></td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- FOOTER -->
+        <div style="position: absolute; left: 18mm; right: 18mm; bottom: 12mm; padding-top: 6px; border-top: 3px solid #57a6d8; font-family: Arial, Helvetica, sans-serif; color: #6b6b6b; background: #fff;">
+            <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
+                <tr>
+                    <!-- IZQUIERDA -->
+                    <td style="width: 43%; vertical-align: top; text-align: left; font-size: 11px; line-height: 1.15; padding-right: 10px;">
+                        <div>Aldea San Felipe de Jesús, Antigua Guatemala</div>
+                        <div>Correo: hospbethancourt@mspas.gob.gt</div>
+                        <div>Teléfono: 7774-1414 y 2279-0937</div>
+                    </td>
+
+                    <!-- DERECHA -->
+                    <td style="width: 30%; vertical-align: top; text-align: right; font-size: 11px; line-height: 1.1; padding-left: 10px;">
+                        <div style="margin-bottom: 8px;">www.mspas.gob.gt</div>
+
+                        <table style="margin-left: auto; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding-left: 8px;">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook"
+                                         style="width: 14px; height: 14px; display: block;" />
+                                </td>
+                                <td style="padding-left: 8px;">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" alt="X"
+                                         style="width: 14px; height: 14px; display: block;" />
+                                </td>
+                                <td style="padding-left: 8px;">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram"
+                                         style="width: 14px; height: 14px; display: block;" />
+                                </td>
+                                <td style="padding-left: 8px;">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/3046/3046121.png" alt="TikTok"
+                                         style="width: 14px; height: 14px; display: block;" />
+                                </td>
+                                <td style="padding-left: 8px;">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/1384/1384060.png" alt="YouTube"
+                                         style="width: 14px; height: 14px; display: block;" />
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+    </div>
+</body>
+</html>

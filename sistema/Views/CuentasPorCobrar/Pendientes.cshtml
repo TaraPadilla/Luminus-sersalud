@@ -1,0 +1,128 @@
+@{
+    ViewData["Title"] = "Cuentas pendientes";
+}
+
+<link rel="stylesheet" href="~/js/DataTables/datatables.css" />
+
+@await Html.PartialAsync("_MensajeExito")
+
+<!-- Botón desplegable -->
+<div class="dropdown mb-3">
+    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        Seleccionar Tabla
+    </button>
+    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+        <a class="dropdown-item" href="#" data-bind="click: mostrarCuentasPendientes">Clientes</a>
+        <a class="dropdown-item" href="#" data-bind="click: mostrarProveedores">Proveedor</a>
+    </div>
+</div>
+<!-- Tabla de Cuentas pendientes -->
+<div class="main-card mb-3 card" data-bind="visible: mostrarTablaCuentasPendientes">
+    <div class="card-body">
+        <div class="text-center">
+            <h4><b>Clientes</b></h4>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card" data-bind="visible: mostrarTablaCuentasPendientes">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="tabla-cuentas-por-cobrar">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Paciente</th>
+                        <th>Fecha límite de pago</th>
+                        <th>Valor</th>
+                        <th>Pagada</th>
+                        <th>Modificar</th>
+                        <th>Ver detalles</th>
+                        <th>Pagar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!--ko foreach: cuentasPorCobrar-->
+                    <tr>
+                        <td data-bind="text: id"></td>
+                        <td data-bind="text: paciente.nombre"></td>
+                        <td data-bind="text: $root.formatDate(fechaLimitePago)"></td>
+                        <td data-bind="text: valor"></td>
+                        <td data-bind="text: pagadaText"></td>
+                        <td>
+                            <button class="btn btn-primary" data-bind="click: $root.modificarCuenta">Modificar</button>
+                        </td>
+                        <td>
+                            <button class="btn btn-primary" data-bind="click: $root.verDetallesCuenta">Ver detalles</button>
+                        </td>
+                        <td>
+                            <button class="btn btn-primary" data-bind="click: $root.pagarCuenta">Pagar</button>
+                        </td>
+                    </tr>
+                    <!--/ko-->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de Proveedores -->
+<div class="main-card mb-3 card" data-bind="visible: mostrarTablaProveedores">
+    <div class="card-body">
+        <div class="text-center">
+            <h4><b>Proveedor</b></h4>
+        </div>
+    </div>
+</div>
+
+<div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel" data-bind="visible: mostrarTablaProveedores">
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="mb-0 table table-hover" id="tabla-proveedores">
+                    <thead>
+                        <tr>
+                            <th>Compra #</th>
+                            <th>Fecha Compra</th>
+                            <th>Proveedor</th>
+                            <th>NoComprobante</th>
+                            <th>Nombre Vendedor</th>
+                            <th>Fecha Recepcion</th>
+                            <th>Fecha Limite</th>
+                            <th>Gasto</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!--ko foreach: proveedores-->
+
+                        <tr>
+                            <td data-bind="text: id"></td>
+                            <td data-bind="text: fechaCompra"></td>
+                            <td data-bind="text: nombreProveedor"></td>
+                            <td data-bind="text: noComprobante"></td>
+                            <td data-bind="text: empleado"></td>
+                            <td data-bind="text: fechaRecepcion"></td>
+                            <td data-bind="text: fechaLimite"></td>
+                            <td data-bind="text: precioTotal"></td>
+                            <td>
+                                <button class="btn btn-primary" data-bind="click: $root.verDetallesProveedores">Ver Detalles</button>
+                            </td>
+                        </tr>
+                        <!--/ko-->
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://knockoutjs.com/downloads/knockout-3.5.1.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.js"></script>
+<script src="~/ViewModelKo/CuentasPorCobrarListaVM.js"></script>
+<!-- Bootstrap JS, Popper.js, and jQuery -->
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>

@@ -1,0 +1,580 @@
+@model farmamest.Models.ConsentimientoHospiVM
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Config
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"]              = "Consentimiento de Hospitalización";
+    ViewData["ImagenLogo"]         = Config["ImagenLogoBase64"];
+    ViewData["Direccion"]          = Config["EstablecimientoDireccion"];
+    ViewData["Telefono"]           = Config["EstablecimientoTelefono"];
+    ViewData["CorreoElectronico"]  = Config["EstablecimientoCorreoElectronico"];
+    ViewData["ImagenFirma"]        = Config["EstablecimientoImagenFirma"];
+    DateTime fecha                 = DateTime.Now;
+}
+
+@await Html.PartialAsync("_ReportStyles")
+
+<style>
+  /* Mantener títulos rojos y espaciados del original */
+  .super-spaced { margin-top:16px; margin-bottom:16px; }
+
+  .mask-req {
+    text-transform:uppercase; font-weight:800; text-align:center;
+    background:#f8f9fa; padding:10px; border-radius:6px;
+  }
+
+  /* Franja roja reutilizable (para depósito y nota) */
+  .texto-banner {
+    display:block;
+    text-align:center;
+    text-transform:uppercase;
+    font-weight:700;
+    font-size:.92rem;
+    line-height:1.25;
+    color:#d9534f;            /* rojo texto */
+    background:#f9e5e4;       /* rosado claro */
+    border:1px solid #d9534f; /* borde rojo */
+    border-radius:8px;
+    padding:10px 15px;
+    margin:14px 0;
+    letter-spacing:.3px;
+    box-shadow:0 2px 4px rgba(0,0,0,.08);
+  }
+
+  .keep { break-inside:avoid; page-break-inside:avoid; }
+  .doc-aux-title { text-align:center; font-weight:800; font-size:1.05rem; margin:8px 0 2px; }
+  .doc-aux-hr { height:2px; background:#e5e7eb; border:0; margin:8px auto 12px; width:60%; }
+  .encabezado-pagina h5 { margin:0; font-weight:800; color:#333; }
+  .encabezado-pagina img { float:left; margin-right:12px; }
+</style>
+
+<div class="doc">
+
+  <!-- Título principal y emisión -->
+  <div class="doc-title">REPORTE - @ViewData["Title"]</div>
+  <div class="doc-underline"></div>
+
+  <table class="table" style="border:0;">
+    <tbody>
+      <tr>
+        <td style="text-align:center; font-weight:700; border:0;">
+          Fecha y hora de emisión: @fecha
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Sección: Datos del Paciente -->
+  <table class="section-title red">
+    <tr>
+      <td><h5>Datos del Paciente</h5></td>
+    </tr>
+  </table>
+
+  <table class="block keep">
+    <tr>
+      <td style="padding:0;">
+        <table class="table">
+          <thead><tr><th>Nombre</th><th>Número de habitación</th></tr></thead>
+          <tbody>
+            <tr class="kv-row">
+              <td><span class="value">@(!string.IsNullOrEmpty(Model.NombreCompleto) ? Model.NombreCompleto : "No especificado")</span></td>
+              <td><span class="value">@(!string.IsNullOrEmpty(Model.NumeroHabitacion) ? Model.NumeroHabitacion : "No especificado")</span></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="table super-spaced">
+          <thead><tr><th>Bienvenida</th></tr></thead>
+          <tbody>
+            <tr class="kv-row">
+              <td class="notes">
+                <span class="value">
+                  Gracias por elegirnos para acompañarle en su proceso de recuperación de salud. Ponemos a su disposición
+                  nuestro equipo de trabajo, personas comprometidas y con el objetivo de ayudarle con sus cuidados para
+                  mejorar su salud.
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="table super-spaced">
+          <thead><tr><th>Reglas generales</th></tr></thead>
+          <tbody>
+            <tr class="kv-row">
+              <td class="notes">
+                <span class="value">
+                  Para que su estadía en nuestras instalaciones sea más confortable, a continuación, le presentamos las
+                  reglas, mismas que son generadas con el único objetivo de garantizar la seguridad de nuestros pacientes:
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="table super-spaced">
+          <thead><tr><th>Normas para el acompañante</th></tr></thead>
+          <tbody>
+            <tr class="kv-row">
+              <td class="notes">
+                <span class="value">
+                  • Se permite un (01) acompañante en el área de encamamiento.<br/><br><br>
+                  • El ingreso de alimentos está prohibido.
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="table super-spaced">
+          <thead><tr><th>Horarios de visita</th></tr></thead>
+          <tbody>
+            <tr class="kv-row">
+              <td class="notes">
+                <span class="value">
+                  • Solo puede ingresar mayores de trece (13) años.<br/><br><br>
+                  • <b>Encamamiento:</b> De 12:00 pm a 1:00 pm y de 6:00 pm a 7:00 pm (una persona a la vez).<br/>
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="table super-spaced">
+          <thead><tr><th>Amenidades disponibles</th></tr></thead>
+          <tbody>
+            <tr class="kv-row">
+              <td class="notes">
+                <span class="value">
+                  • <b>Llamado de enfermería:</b> Lo encuentra en la cabecera de la cama.<br/><br><br>
+                  • <b>Televisión y servicio de cable:</b> TIGO. Entregar el control en caja al egreso para su pase de salida.<br/><br><br>
+                  • <b>Política de pagos:</b> Sin seguro médico, se enviará estado de cuenta diario por WhatsApp al encargado. Debe realizar abonos diarios (débito, crédito, transferencia inmediata).
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="doc-aux-title" style="margin-top: 100px;">Atentamente</div>
+        <hr class="doc-aux-hr" />
+        <div style="text-align:center; font-weight:700;">La Administración</div>
+
+      </td>
+    </tr>
+  </table>
+
+  <!-- Salto de página visual -->
+  <div class="page" style="margin-top: 300px;"></div>
+
+  <!-- Encabezado fijo de la segunda página -->
+  <div class="encabezado-pagina super-spaced">
+    <h5>REGISTRO DE ADMISIÓN A HOSPITALIZACIÓN</h5>
+    <div style="clear:both;"></div>
+  </div>
+
+  <!-- Datos de ingreso -->
+  <table class="block keep">
+    <tr>
+      <td style="padding:0;">
+        <table class="table">
+          <thead><tr><th>Datos de ingreso</th></tr></thead>
+          <tbody>
+            <tr class="kv-row">
+              <td class="notes">
+                <span class="value">
+                  <b>Hora de ingreso:</b> @(!string.IsNullOrEmpty(Model.HoraIngreso) ? Model.HoraIngreso : "No especificado")<br/>
+                  <b># de Paciente:</b> @(!string.IsNullOrEmpty(Model.NumeroPaciente) ? Model.NumeroPaciente : "No especificado")<br/>
+                  <b># de Habitación:</b> @(!string.IsNullOrEmpty(Model.NumeroHabitacion) ? Model.NumeroHabitacion : "No especificado")
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Título rojo: Datos del Paciente -->
+  <table class="section-title red">
+    <tr><td class="bar"></td><td>Datos del Paciente</td></tr>
+  </table>
+
+  <table class="block keep">
+    <tr><td style="padding:0;">
+      <table class="table">
+        <tbody>
+          <tr>
+            <th style="width:25%;">Nombre</th>
+            <td style="width:25%; word-wrap:break-word; white-space:normal;">
+              @(!string.IsNullOrEmpty(Model.NombreCompleto) ? Model.NombreCompleto : "No especificado")
+            </td>
+            <th style="width:25%;">Tipos de Sangre</th>
+            <td style="width:25%; word-wrap:break-word; white-space:normal;">
+              @(!string.IsNullOrEmpty(Model.TipoSangre) ? Model.Direccion : "No especificado")
+            </td>
+          </tr>
+          <tr>
+            <th>Estado Civil</th>
+            <td>@(!string.IsNullOrEmpty(Model.EstadoCivil) ? Model.EstadoCivil : "No especificado")</td>
+            <th>DPI / Pasaporte</th>
+            <td>@(!string.IsNullOrEmpty(Model.DPI) ? Model.DPI : "No especificado")</td>
+          </tr>
+          <tr>
+            <th>Fecha de Nacimiento</th>
+            <td>@(!string.IsNullOrEmpty(Model.FechaNacimiento) ? Model.FechaNacimiento : "No especificado")</td>
+            <th>Dirección</th>
+            <td>@(!string.IsNullOrEmpty(Model.Direccion) ? Model.Direccion : "No especificado")</td>
+          </tr>
+          <tr>
+            <th>Teléfono / Celular</th>
+            <td>@(!string.IsNullOrEmpty(Model.Celular) ? Model.Celular : "No especificado")</td>
+            <th>Correo Electronico</th>
+            <td>@(!string.IsNullOrEmpty(Model.Email) ? Model.Email : "No especificado")</td>
+          </tr>
+          <tr>
+            <th>Tratamiento Medico</th>
+            <td colspan="3">@(!string.IsNullOrEmpty(Model.TratamientoMedico) ? Model.TratamientoMedico : "No especificado")</td>
+          </tr>
+        </tbody>
+      </table>
+    </td></tr>
+  </table>
+
+  <!-- Título rojo: Datos del Seguro -->
+  <table class="section-title red">
+    <tr><td class="bar"></td><td>Datos del Seguro</td></tr>
+  </table>
+
+  <table class="block keep">
+    <tr><td style="padding:0;">
+      <table class="table">
+        <tbody>
+          <tr>
+            <th style="width:25%;">¿Posee seguro médico?</th>
+            <td style="width:25%;">@(
+              !string.IsNullOrEmpty(Model.PoseeSeguroMedico)
+                ? (Model.PoseeSeguroMedico == "true" ? "Posee seguro médico." : "No posee seguro médico.")
+                : "No especificado"
+            )</td>
+            <th style="width:25%;">Aseguradora</th>
+            <td style="width:25%;">@(!string.IsNullOrEmpty(Model.Aseguradora) ? Model.Aseguradora : "No aplica")</td>
+          </tr>
+          <tr>
+            <th>Tipo de Póliza</th>
+            <td>@(
+              (bool.TryParse(Model.PoseeSeguroMedico, out bool poseeSeguro) && poseeSeguro)
+                ? (!string.IsNullOrEmpty(Model.TipoPoliza) ? Model.TipoPoliza : "No especificado")
+                : "No aplica"
+            )</td>
+            <th>Nombre de la Empresa</th>
+            <td>@(!string.IsNullOrEmpty(Model.NombreEmpresa) ? Model.NombreEmpresa : "No aplica")</td>
+          </tr>
+          <tr>
+            <th>¿Posee formulario pre autorización?</th>
+            <td colspan="3">@(
+              !string.IsNullOrEmpty(Model.FormularioPreAutorizacion)
+                ? (Model.FormularioPreAutorizacion == "true" ? "Posee formulario pre autorización." : "No posee formulario pre autorización.")
+                : "No especificado"
+            )</td>
+          </tr>
+        </tbody>
+      </table>
+    </td></tr>
+  </table>
+
+  <!-- Título rojo: Responsable de la cuenta -->
+  <table class="section-title red">
+    <tr><td class="bar"></td><td>Responsable de la cuenta</td></tr>
+  </table>
+
+  <table class="block keep">
+    <tr><td style="padding:0;">
+      <table class="table">
+        <tbody>
+          <tr>
+            <th style="width:25%;">Nombre</th>
+            <td style="width:25%;">@(!string.IsNullOrEmpty(Model.NombreResponsable) ? Model.NombreResponsable : "No especificado")</td>
+            <th style="width:25%;">DPI / Pasaporte</th>
+            <td style="width:25%;">@(!string.IsNullOrEmpty(Model.DPIResponsable) ? Model.DPIResponsable : "No especificado")</td>
+          </tr>
+          <tr>
+            <th>Edad</th>
+            <td>@(!string.IsNullOrEmpty(Model.EdadResponsable) ? Model.EdadResponsable : "No especificado")</td>
+            <th>Dirección</th>
+            <td>@(!string.IsNullOrEmpty(Model.DireccionResponsable) ? Model.DireccionResponsable : "No especificado")</td>
+          </tr>
+          <tr>
+            <th>Telefono / Celular</th>
+            <td>@(!string.IsNullOrEmpty(Model.CelularResponsable) ? Model.CelularResponsable : "No especificado")</td>
+            <th>Correo Electronico</th>
+            <td>@(!string.IsNullOrEmpty(Model.EmailResponsable) ? Model.EmailResponsable : "No especificado")</td>
+          </tr>
+          <tr>
+            <th>NIT para facturación</th>
+            <td>@(!string.IsNullOrEmpty(Model.NITResponsable) ? Model.NITResponsable : "No especificado")</td>
+            <th>Nombre para facturación</th>
+            <td>@(!string.IsNullOrEmpty(Model.NombreFacturacion) ? Model.NombreFacturacion : "No especificado")</td>
+          </tr>
+        </tbody>
+      </table>
+    </td></tr>
+  </table>
+
+  <!-- Aviso de Depósito (franja roja) -->
+  <div class="texto-banner keep">
+    POR POLITICAS DEL HOSPITAL SE LE ESTARA SOLICITANDO UN DEPÓSITO A LA CUENTA DEPENDIENDO DEL
+    MONTO INICIAL O REVISIONES DE CUENTA POSTERIORES
+  </div>
+
+  <!-- Título rojo: Contacto de Emergencia -->
+  <table class="section-title red">
+    <tr><td class="bar"></td><td>Contacto de Emergencia</td></tr>
+  </table>
+
+  <table class="block keep">
+    <tr><td style="padding:0;">
+      <table class="table">
+        <tbody>
+            @if (Model.ContactosEmergencia != null && Model.ContactosEmergencia.Any())
+            {
+                foreach (var contacto in Model.ContactosEmergencia)
+                {
+                    <!-- Fila 1: Nombre y Teléfono -->
+                    <tr>
+                        <th style="width:25%;">Nombre</th>
+                        <td style="width:25%;">
+                            @(!string.IsNullOrEmpty(contacto.Nombre) ? contacto.Nombre : "No especificado")
+                        </td>
+                        <th style="width:25%;">Teléfono / Celular</th>
+                        <td style="width:25%;">
+                            @(!string.IsNullOrEmpty(contacto.Telefono) ? contacto.Telefono : "No especificado")
+                        </td>
+                    </tr>
+                    <!-- Fila 2: Parentesco -->
+                    <tr>
+                        <th>Parentesco</th>
+                        <td>
+                            @(!string.IsNullOrEmpty(contacto.Parentesco) ? contacto.Parentesco : "No especificado")
+                        </td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <!-- Fila única con valores vacíos -->
+                <tr>
+                    <th style="width:25%;">Nombre</th>
+                    <td style="width:25%;">No especificado</td>
+                    <th style="width:25%;">Teléfono / Celular</th>
+                    <td style="width:25%;">No especificado</td>
+                </tr>
+                <tr>
+                    <th>Parentesco</th>
+                    <td>No especificado</td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    </td></tr>
+  </table>
+
+  <!-- Información adicional (solo si hay datos) -->
+  @if (!string.IsNullOrEmpty(Model.HospitalProporcionoMedico) ||
+       !string.IsNullOrEmpty(Model.MedicoAfiliado) ||
+       !string.IsNullOrEmpty(Model.NombreMedicoTratante) ||
+       !string.IsNullOrEmpty(Model.RecetaMedica))
+  {
+    <table class="section-title red">
+      <tr><td class="bar"></td><td>Información adicional</td></tr>
+    </table>
+    <table class="block keep">
+      <tr><td style="padding:0;">
+        <table class="table">
+          <tbody>
+            <tr>
+              <th style="width:25%;">El hospital le proporciono Médico Tratante</th>
+              <td style="width:25%;">@(
+                !string.IsNullOrEmpty(Model.HospitalProporcionoMedico)
+                  ? (Model.HospitalProporcionoMedico == "true" ? "Si." : "No.")
+                  : "No especificado"
+              )</td>
+              <th style="width:25%;">Cuenta con Médico Tratante afiliado al hospital</th>
+              <td style="width:25%;">@(
+                !string.IsNullOrEmpty(Model.MedicoAfiliado)
+                  ? (Model.MedicoAfiliado == "true" ? "Si." : "No.")
+                  : "No especificado"
+              )</td>
+            </tr>
+            <tr>
+              <th>Nombre del Medico</th>
+              <td>@(!string.IsNullOrEmpty(Model.NombreMedicoTratante) ? Model.NombreMedicoTratante : "No especificado")</td>
+              <th>Receta médica por ingresos programados</th>
+              <td>@(
+                !string.IsNullOrEmpty(Model.RecetaMedica)
+                  ? (Model.RecetaMedica == "true" ? "Si." : "No.")
+                  : "No especificado"
+              )</td>
+            </tr>
+          </tbody>
+        </table>
+      </td></tr>
+    </table>
+  }
+
+  <!-- NOTA (franja roja) -->
+  <div class="texto-banner keep">
+    NOTA: Al ingreso presente, el DPI o pasaporte del paciente y del responsable de la cuenta.
+  </div>
+
+  <!-- Título rojo: Condiciones de ingreso -->
+  <table class="section-title red">
+    <tr><td class="bar"></td><td>Condiciones de ingreso</td></tr>
+  </table>
+
+  <table class="block keep">
+    <tr><td style="padding:0;">
+      <table class="table">
+        <thead><tr><th>Detalle</th></tr></thead>
+        <tbody>
+          <tr class="kv-row">
+            <td class="notes">
+              <span class="value">
+                La sola admisión del paciente no obliga al Hospital a prestarle otros servicios. 
+                La institución se reserva el derecho de solicitar el retiro inmediato del paciente cuando lo considere conveniente para la seguridad 
+                o tranquilidad de los demás pacientes o de la empresa misma. La institución se reserva el derecho de admisión.<br/>
+                Estar conforme con las condiciones de pago y precios establecidos.<br/>
+                Cancelar la cuenta total, al momento de tener la autorización de egreso.<br/>
+                Depositar sus valores en una caja de seguridad dentro del Hospital. 
+                La Institución no se hace responsable por objetos olvidados en las habitaciones o extraviados en las instalaciones del mismo.<br/>
+                El Hospital se reserva el derecho de restringir las visitas a cualquier área dentro de las instalaciones.<br/>
+                El Hospital no se responsabiliza por la salida y traslado del paciente.<br/>
+                En general, regirse por las normas del reglamento interno del Hospital.
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </td></tr>
+  </table>
+
+  <!-- Firmas Paciente/Responsable -->
+  <table class="block keep">
+    <tr><td style="padding:0;">
+      <table class="table">
+        <thead><tr><th>Firma del Paciente</th><th>Firma del Responsable</th></tr></thead>
+        <tbody>
+          <tr class="kv-row">
+            <td style="text-align:center;">
+               @if (!string.IsNullOrWhiteSpace(Model.URLFirmaPaciente))
+                    {
+                        <img width="180" height="80" src="@Model.URLFirmaPaciente" alt="Firma del Paciente" />
+                        <br>
+                    } 
+                    else{
+                        <span style="color:#888; font-style:italic;">No se proporcionó firma del paciente.</span>
+                    }
+            </td>
+            <td style="text-align:center;">
+               @if (!string.IsNullOrWhiteSpace(Model.URLFirmaResponsable))
+                    {
+                        <img width="180" height="80" src="@Model.URLFirmaResponsable" alt="Firma del Responsable" />
+                        <br>
+                    }
+                    else{
+                        <span style="color:#888; font-style:italic;">No se proporcionó firma del responsable.</span>
+                    }
+            </td>
+          </tr>
+          <tr>
+            <td style="text-align:center;"><b>@(Model.NombreCompleto ?? "Nombre del Paciente")</b></td>
+            <td style="text-align:center;"><b>@(Model.NombreResponsable ?? "Nombre del Responsable")</b></td>
+          </tr>
+        </tbody>
+      </table>
+    </td></tr>
+  </table>
+
+  <!-- Declaración -->
+  <table class="block keep">
+    <tr><td style="padding:0;">
+      <table class="table">
+        <thead><tr><th>Declaración</th></tr></thead>
+        <tbody>
+          <tr class="kv-row">
+            <td class="notes">
+              <span class="value">
+                <b># de Paciente: </b>@(!string.IsNullOrEmpty(Model.NumeroPaciente) ? Model.NumeroPaciente : "No especificado")<br/>
+                Yo <b>@(!string.IsNullOrEmpty(Model.NombreCompleto) ? Model.NombreCompleto : "No especificado")</b> de <b>@(!string.IsNullOrEmpty(Model.Edad) ? Model.Edad : "No especificado")</b> años de edad, de estado civil <b>@(!string.IsNullOrEmpty(Model.Nacionalidad) ? Model.Nacionalidad : "No especificado")</b>, ocupación u oficio <b>@(!string.IsNullOrEmpty(Model.Ocupacion) ? Model.Ocupacion : "No especificado")</b>, domiciliado en <b>@(!string.IsNullOrEmpty(Model.Direccion) ? Model.Direccion : "No especificado")</b>. Dirección que señalo apta para recibir citaciones y notificaciones, por el presente documento hago constar que: <b>PRIMERO:</b> Autorizo expresamente al Servicios Médicos Integrados, S.A. para que me prescriba el tratamiento médico <b>@(!string.IsNullOrEmpty(Model.TratamientoMedico) ? Model.TratamientoMedico : "No especificado")</b> dentro de las instalaciones. <b>SEGUNDO:</b> Acepto que El Hospital designe la enfermera idónea para la atención personal del paciente dentro de las Instalaciones. <b>TERCERO:</b> Exonero al Hospital y su parqueo de toda responsabilidad por la pérdida de objetos de valor o dinero en efectivo que no se hubieren depositado en la Caja de Seguridad del Hospital. <b>CUARTO:</b> Me obligo expresamente a cancelar el monto total de la liquidación y las comisiones relacionadas al método de que utilice para liquidar la cuenta al Hospital, por sus servicios directos e indirectos sin requerimiento de cobro en el departamento de caja de esta institución, en moneda nacional (Transferencias bancarias inmediatas). Reconozco y acepto como buenas, exactas, líquidas, exigibles y de plazo vencido las cantidades que presente la liquidación relacionada. <b>QUINTO:</b> Me comprometo a realizar pagos correspondientes a cualquier tipo de daño a la propiedad del Hospital que haya sido realizado por el paciente, por mi persona o acompañantes del paciente referido anteriormente, así como también cualquier daño físico al personal que trabaje en la institución o daño al parqueo o propiedad privada. <b>SEXTO:</b> La falta de pago de la cantidad a que asciende la liquidación mencionada en los puntos tercero, cuarto y quinto, dará derecho al Hospital a cobrarme judicial o extrajudicialmente la misma, para cuyo efecto servirán de Título Ejecutivo el presente documento y las facturas y/o comprobantes en que conste la liquidación formulada por la entidad indicada. Para los efectos procesales renuncio al fuero de mi domicilio y me someto a la jurisdicción y competencia de los tribunales que elija el Hospital, así como desde ya acepto como correctas la citaciones y notificaciones que se me hagan en el lugar que arriba indiqué como mi residencia. <b>SEPTIMO:</b> Exonero al Hospital de toda responsabilidad civil y penal sobre cualquier contingencia que ocurriere si el paciente fuera retirado del Hospital, sin autorización médica ya sea por su voluntad o por terceras personas, familiares o no. Para constancia y seguridad de ambas partes, firmo este documento, en la ciudad de Guatemala:
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </td></tr>
+  </table>
+
+  <!-- Doy Fe -->
+  <table class="block keep">
+    <tr><td style="padding:0;">
+      <table class="table">
+        <thead><tr><th>Doy Fe</th></tr></thead>
+        <tbody>
+          <tr class="kv-row">
+            <td class="notes">
+              <span class="value">
+                En la ciudad de Guatemala, hoy <b>@fecha</b>, como Notaria <b>DOY FE</b>: que las firmas que en este documento constan, son auténticas por haber sido puestas el día de hoy en mi presencia por: 
+                </br><b>A) @(!string.IsNullOrEmpty(Model.NombreCompleto) ? Model.NombreCompleto : "No especificado")</b> quien se identifica con No. DPI <b>@(!string.IsNullOrEmpty(Model.DPI) ? Model.DPI : "No especificado")</b>, en su calidad de <b>Paciente</b>. 
+                </br><b>B) @(!string.IsNullOrEmpty(Model.NombreResponsable) ? Model.NombreResponsable : "No especificado")</b> quien se identifica con No. DPI <b>@(!string.IsNullOrEmpty(Model.DPIResponsable) ? Model.DPIResponsable : "No especificado")</b>, en su calidad de <b>Responsable de cuenta</b>. 
+                </br><b>C) @(!string.IsNullOrEmpty(Model.NombreRepresentanteNarajo) ? Model.NombreRepresentanteNarajo : "No especificado")</b>, en su calidad de <b>Representante del Hospital</b>. 
+                </br><b>D) La Notaria: @(!string.IsNullOrEmpty(Model.NombreNotaria) ? Model.NombreNotaria : "No especificado")</b> quien da fe de las firmas anteriormente mencionadas.</br>
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </td></tr>
+  </table>
+
+  <!-- Firmas Representante/Notaria -->
+  <table class="block keep">
+    <tr><td style="padding:0;">
+      <table class="table">
+        <thead><tr><th>Firma del Representante</th><th>Firma de la Notaria</th></tr></thead>
+        <tbody>
+          <tr class="kv-row">
+            @* <td style="text-align:center;">
+              <img width="450" height="200" src="data:image/png;base64:@Model.URLFirmaRepresentanteNaranjo" alt="Firma del Representante">
+            </td>
+            <td style="text-align:center;">
+              <img width="450" height="200" src="data:image/png;base64:@Model.URLFirmaNotaria" alt="Firma de la Notaria">
+            </td> *@
+
+            <td style="text-align:center; vertical-align: middle; height: 150px;">
+                @if (!string.IsNullOrEmpty(Model.URLFirmaRepresentanteNaranjo)) {
+                    <img src="data:image/png;base64,@Model.URLFirmaRepresentanteNaranjo" 
+                         style="max-width: 250px; max-height: 120px; width: auto; height: auto;">
+                }
+            </td>
+            <td style="text-align:center; vertical-align: middle; height: 150px;">
+              @if (!string.IsNullOrEmpty(Model.URLFirmaNotaria)) {
+                <img src="data:image/png;base64,@Model.URLFirmaNotaria" 
+                 style="max-width: 250px; max-height: 120px; width: auto; height: auto;">
+              }
+            </td>
+          </tr>
+          <tr>
+            <td style="text-align:center;"><b>@(Model.NombreRepresentanteNarajo ?? "Nombre del Representante del Hospital")</b></td>
+            <td style="text-align:center;"><b>@(Model.NombreNotaria ?? "Nombre de la Notaria")</b></td>
+          </tr>
+        </tbody>
+      </table>
+    </td></tr>
+  </table>
+
+</div>

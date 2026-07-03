@@ -1,0 +1,105 @@
+@model IEnumerable<Database.Shared.Models.Empleado>
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Reporte de empleados";
+
+    // Configuración estándar de membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+    int totalProfesionales = Model?.Count(e => e.TipoEmpleado == "Profesional") ?? 0;
+}
+
+<div class="doc">
+
+    <!-- Título del reporte -->
+    <div class="doc-title">REPORTE - @ViewData["Title"]</div>
+    <div class="doc-underline"></div>
+
+    <!-- Fecha de emisión -->
+    <table class="table" style="border:0;">
+        <tbody>
+            <tr>
+                <td style="text-align:right; border:0; font-size:12px;">
+                    <strong>Fecha y hora de emisión:</strong> @fecha
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Resumen -->
+    <table class="table" style="border:0; margin-top:4px;">
+        <tbody>
+            <tr>
+                <td style="text-align:center; border:0;">
+                    <strong>Total de médicos (tipo "Profesional"):</strong> @totalProfesionales
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Sección listado -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Listado de empleados profesionales</td>
+        </tr>
+    </table>
+
+    <!-- Tabla de empleados -->
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Apellido</th>
+                            <th>Teléfono</th>
+                            <th>Dirección</th>
+                            <th>DPI</th>
+                            <th>NIT</th>
+                            <th>Sucursal</th>
+                            <th>Colegiado</th>
+                            <th>Credenciales</th>
+                            <th>Dirección clínica</th>
+                            <th>Teléfono clínica</th>
+                            <th>Tipo régimen</th>
+                            <th>Tipo empleado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Where(em => em.TipoEmpleado == "Profesional"))
+                        {
+                            <tr class="kv-row">
+                                <td><span class="value">@item.Id</span></td>
+                                <td><span class="value">@item.Nombre</span></td>
+                                <td><span class="value">@item.Apellido</span></td>
+                                <td><span class="value">@item.Telefono</span></td>
+                                <td><span class="value">@item.Direccion</span></td>
+                                <td><span class="value">@item.Dpi</span></td>
+                                <td><span class="value">@item.Nit</span></td>
+                                <td><span class="value">@item.Sucursal</span></td>
+                                <td><span class="value">@item.Colegiado</span></td>
+                                <td><span class="value">@item.Credenciales</span></td>
+                                <td><span class="value">@item.DireccionClinica</span></td>
+                                <td><span class="value">@item.TelefonoClinica</span></td>
+                                <td></td> @* Tipo régimen (sin dato en el modelo original) *@
+                                <td><span class="value">@item.TipoEmpleado</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+</div>

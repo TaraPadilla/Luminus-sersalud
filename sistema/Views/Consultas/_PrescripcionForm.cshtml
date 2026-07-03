@@ -1,0 +1,428 @@
+@model sistema.Models.ConsultasViewModel
+
+<script>
+  $(document).ready(function () {
+    $('.select2bs4').select2({
+      theme: 'bootstrap4',
+      tags: true,
+      createTag: function (params) {
+        var term = $.trim(params.term);
+        if (term === '') return null;
+        return { id: term, text: term, newOption: true };
+      },
+      insertTag: function (data, tag) { data.push(tag); }
+    });
+  });
+
+  var MedicamentosOtrosData = @Html.Raw(Json.Serialize(Model.MedicamentosOtros));
+</script>
+
+<!-- Badge modo -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+  @if (Model.HabilitarEdicion)
+  {
+    <span class="oft-pill">MODO EDICIÓN</span>
+  }
+  else
+  {
+
+    <span class="oft-pill" style="background:#eaeef6;color:#475569">MODO LECTURA</span>
+  }
+  <div class="text-danger" asp-validation-summary="ModelOnly"></div>
+</div>
+
+
+<br />
+
+<div class="card">
+  <div class="card-body">
+    <div class="form-row">
+      <div class="col-md-10">
+        <h5><b>Receta m&eacute;dica</b></h5>
+        <hr />
+      </div>
+      @* @if (!Model.HabilitarEdicion && Model.HayPrescripcion)
+      { *@
+        <div class="col-md-2">
+          <button type="submit" class="btn btn-success btn-lg text-white" id="generateprespdf"
+                  onclick="generarPrescripcionPdf(@Model.PrescripcionId,@Model.PacienteId)">
+            Generar PDF ß &nbsp;<i class="fas fa-arrow-down"></i>
+          </button>
+        </div>
+      @* } *@
+
+      <div class="col-md-12 datos-edicion-consulta text-primary" id="texto-cargando-productos-existentes"
+           style="display:none">
+        Cargando productos...
+      </div>
+      <div class="col-md-12 datos-edicion-consulta text-danger" id="texto-error-consultar-productos-existentes"
+           style="display:none">
+        Error de conexion. <a href="#" data-bind="click:consultarProductosExistentesConStock">Reintentar</a>
+      </div>
+
+      <div class="col-md-12 form-row datos-edicion-consulta">
+        <br>
+        <div class="col-md-1">
+          <label class="text-white">Refresh</label>
+          <button class="btn btn-primary" data-bind="click: consultarProductosExistentesConStock">
+            <i class="fas fa-redo-alt"></i>
+          </button>
+        </div>
+        <div class="col-md-4">
+          <label>Seleccionar producto:</label>
+          <select class="form-control select2bs4"
+                  data-bind="options: productosExistentes, optionsText: 'ProductoNombreMostrar', value: productoSeleccionado"
+                  style="width: 100%;"></select>
+        </div>
+        <div class="col-md-2">
+          <label>Seleccionar unidad:</label>
+          <select class="form-control select2bs4"
+                  data-bind="options: unidadesVentaProducto, optionsText: 'UnidadMedidaVentaNombre', value: unidadVentaSeleccionadaProducto"
+                  style="width: 100%;"></select>
+        </div>
+        <div class="col-md-2">
+          <label>Seleccionar precio:</label>
+          <select class="form-control select2bs4"
+                  data-bind="options: preciosProducto, optionsText: 'Precio', value: precioSeleccionadoProducto"
+                  style="width: 100%;"></select>
+        </div>
+        <div class="col-md-1">
+          <label>Color:</label>
+          <input type="color" class="form-control" data-bind="value: Color" />
+        </div>
+        <div class="col-md-1">
+          <label class="text-white">Agregar</label>
+          <button class="btn btn-primary" data-bind="click: agregarProducto">
+            <i class="fas fa-plus"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLA: Receta médica (solo actuales: !Another) -->
+    <div class="form-row">
+      <div class="col-md-12">
+        <div class="table-responsive">
+          <table class="table table-sm table-striped table-hover mb-0">
+            <thead class="thead-light">
+              <tr>
+                <th>COD</th>
+                <th>Medicamento</th>
+                <th>Indicaciones</th>
+                <th>Cantidad</th>
+                <th>Precio</th>
+                <th>Valor</th>
+                <th>Total</th>
+                <th>Color</th>
+                @if (Model.CitaTipoAtencion == "SEGURO")
+                {
+                  <th>Valor cubierto seguro</th>
+                  <th>Valor copago</th>
+                }
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- ko foreach: productosPrescripcion -->
+              <!-- Visibles aquí: !Another y no Eliminado -->
+              <!-- ko if: !($data.Another || false) && !(Eliminado ? (ko.isObservable(Eliminado) ? Eliminado() : Eliminado) : false) -->
+              <tr data-bind="css: {
+                'table-success': ($data.Another || false) && ($data.Pagado || false),
+                'table-warning': ($data.Another || false) && !($data.Pagado || false)
+                }">
+                <td data-bind="text:ProductoCodigo"></td>
+                <td>
+                  <span data-bind="text:ProductoNombre"></span><br />
+                  <span data-bind="text:UnidadMedidaVentaNombre"></span>
+                </td>
+                <td>
+                  @if (!Model.HabilitarEdicion)
+                  {
+                    <span data-bind="text:ProductoIndicaciones"></span>
+                  }
+                  else
+                  {
+
+                    <input class="form-control dato-consulta-observable" data-bind="value:ProductoIndicaciones" />
+                  }
+                </td>
+                <td>
+                  @if (!Model.HabilitarEdicion)
+                  {
+                    <span data-bind="text:Cantidad"></span>
+                  }
+                  else
+                  {
+
+                    <input class="form-control" data-bind="value:Cantidad, event:{change:$root.actualizarTotales}" />
+                  }
+                </td>
+                <td><span data-bind="text:Precio"></span></td>
+                <td><span data-bind="text:PrecioValor"></span></td>
+                <td>Q <span data-bind="text:ValorTotal"></span></td>
+                <td>
+                  <span class="d-inline-block border rounded" style="width:20px;height:20px;vertical-align:middle;"
+                        data-bind="style:{ backgroundColor: Color }"></span>
+                </td>
+
+                @if (Model.CitaTipoAtencion == "SEGURO")
+                {
+                  <td>
+                    <!-- ko if: ProductoId != null -->
+                    @if (Model.HabilitarEdicion)
+                    {
+                      <input class="form-control" data-bind="value:ValorCubiertoSeguro" />
+                    }
+                    else
+                    {
+
+                      <span data-bind="text:ValorCubiertoSeguro"></span>
+                    }
+                    <!-- /ko -->
+                    <!-- ko if: ProductoId == null --><span>N/A</span><!-- /ko -->
+                  </td>
+                  <td>
+                    <!-- ko if: ProductoId != null --><span data-bind="text:ValorCopago"></span><!-- /ko -->
+                    <!-- ko if: ProductoId == null --><span>N/A</span><!-- /ko -->
+                  </td>
+                }
+                <td>
+                  @if (Model.HabilitarEdicion)
+                  {
+                    <!-- ko ifnot: Pagado -->
+                    <button class="btn btn-danger datos-edicion-consulta" data-bind="click:$root.quitarProducto">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                    <!-- /ko -->
+                  }
+                </td>
+              </tr>
+              <!-- /ko -->
+              <!-- /ko -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <br />
+
+    <!-- TABLA: Historial (solo Another == true). Solo lectura -->
+    <div class="form-row">
+      <div class="col-md-12">
+        <h5><b>Receta M&eacute;dica - Antecedentes (Historial)</b></h5>
+        <hr />
+      </div>
+      <div class="col-md-12">
+        <div class="table-responsive">
+          <table class="table table-sm table-striped table-hover mb-0">
+            <thead class="thead-light">
+              <tr>
+                <th>COD</th>
+                <th>Medicamento</th>
+                <th>Indicaciones</th>
+                <th>Cantidad</th>
+                <th>Precio</th>
+                <th>Valor</th>
+                <th>Total</th>
+                <th>Color</th>
+                @if (Model.CitaTipoAtencion == "SEGURO")
+                {
+                  <th>Valor cubierto seguro</th>
+                  <th>Valor copago</th>
+                }
+                <th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- ko foreach: productosPrescripcion -->
+              <!-- Visibles aquí: Another y no Eliminado -->
+              <!-- ko if: ($data.Another || false) && !(Eliminado ? (ko.isObservable(Eliminado) ? Eliminado() : Eliminado) : false) -->
+              <tr data-bind="css: {
+                'table-success': ($data.Another || false) && ($data.Pagado || false),
+                'table-warning': ($data.Another || false) && !($data.Pagado || false)
+                }">
+                <td data-bind="text:ProductoCodigo"></td>
+                <td>
+                  <span data-bind="text:ProductoNombre"></span><br />
+                  <span data-bind="text:UnidadMedidaVentaNombre"></span>
+                </td>
+                <td><span data-bind="text:ProductoIndicaciones"></span></td>
+                <td><span data-bind="text:Cantidad"></span></td>
+                <td><span data-bind="text:Precio"></span></td>
+                <td><span data-bind="text:PrecioValor"></span></td>
+                <td>Q <span data-bind="text:ValorTotal"></span></td>
+                <td>
+                  <span class="d-inline-block border rounded" style="width:20px;height:20px;vertical-align:middle;"
+                        data-bind="style:{ backgroundColor: Color }"></span>
+                </td>
+                @if (Model.CitaTipoAtencion == "SEGURO")
+                {
+                  <td><span data-bind="text:ValorCubiertoSeguro"></span></td>
+                  <td><span data-bind="text:ValorCopago"></span></td>
+                }
+                <th style="width:10%">
+                  <span data-bind="text: (function(v){
+                    if(!v) return '—';
+                    var s = (typeof v === 'string') ? v.replace(' ', 'T') : v;
+                    var d = new Date(s);
+                    if(isNaN(d)) return '—';
+                    var z = function(n){ return ('0'+n).slice(-2); };
+                    return z(d.getDate())+'-'+z(d.getMonth()+1)+'-'+d.getFullYear()
+                    +' '+z(d.getHours())+':'+z(d.getMinutes());
+                    })(FechaPrescripcion)">
+                  </span>
+                </th>
+
+              </tr>
+              <!-- /ko -->
+              <!-- /ko -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- OTROS MEDICAMENTOS -->
+<div class="card mt-4">
+  <div class="card-body">
+    <div class="form-row">
+      <div class="col-md-12">
+        <h5><b>Otros Medicamentos</b></h5>
+        <hr />
+      </div>
+
+      <div class="col-md-4">
+        <label>Nombre del medicamento:</label>
+        <input type="hidden" data-bind="value: medicamentoFechaOtros" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+        <input type="text" class="form-control" data-bind="value: medicamentoNombreOtros" @(!Model.HabilitarEdicion ?
+                                                                                                                                                                                                      "disabled" : "") />
+      </div>
+      <div class="col-md-4">
+        <label>Cantidad:</label>
+        <input type="number" class="form-control" data-bind="value: medicamentoCantidadOtros" @(!Model.HabilitarEdicion
+                                                                                                                                                                                                              ? "disabled" : "") />
+      </div>
+      <div class="col-md-4">
+        <label>Indicaciones:</label>
+        <input type="text" class="form-control" data-bind="value: medicamentoIndicacionesOtros"
+        @(!Model.HabilitarEdicion ? "disabled" : "") />
+      </div>
+
+      <div class="col-md-12 text-right mt-3">
+        @if (Model.HabilitarEdicion)
+        {
+          <button class="btn btn-primary" data-bind="click: agregarMedicamentoOtros">
+            <i class="fas fa-plus"></i> Agregar
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="form-row mt-4">
+      <div class="col-md-12">
+        <div class="table-responsive">
+          <table class="table table-sm table-striped table-hover">
+            <thead class="thead-light">
+              <tr>
+                <th style="width:25%">Id</th>
+                <th style="width:25%">Medicamento</th>
+                <th style="width:10%">Cantidad</th>
+                <th style="width:25%">Indicaciones</th>
+                <th style="width:20%">Fecha</th>
+                <th style="width:10%" class="text-right">Acciones</th>
+              </tr>
+            </thead>
+            <!-- ko foreach: medicamentosOtros -->
+            @* <tbody>
+              <tr>
+                <td data-bind="text: id"></td>
+                <td data-bind="text: nombre"></td>
+                <td data-bind="text: cantidad"></td>
+                <td data-bind="text: indicaciones"></td>
+                <td data-bind="text: (function(v){
+                    v = ko.unwrap(v);
+                    if(!v) return '';
+                    var d = new Date(v);
+                    if(isNaN(d)) return '';
+                    var dd = ('0'+d.getDate()).slice(-2);
+                    var mm = ('0'+(d.getMonth()+1)).slice(-2);
+                    var yyyy = d.getFullYear();
+                    var h = d.getHours(), m = ('0'+d.getMinutes()).slice(-2);
+                    var ampm = h >= 12 ? 'PM' : 'AM';
+                    h = h % 12; if (h === 0) h = 12;
+                    var hh = ('0'+h).slice(-2);
+                    return dd+'/'+mm+'/'+yyyy+' '+hh+':'+m+' '+ampm;
+                    })(fechaPrescripcion)">
+                </td>
+                <td class="text-right">
+                  @if (Model.HabilitarEdicion)
+                  {
+                    <button class="btn btn-sm btn-outline-danger datos-edicion-consulta"
+                      data-bind="click:$parent.eliminarMedicamentoOtros">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  }
+                </td>
+              </tr>
+            </tbody> *@
+            <tbody>
+              <tr>
+                <td data-bind="text: id"></td>
+                <td data-bind="text: nombre"></td>
+                <td data-bind="text: cantidad"></td>
+                <td data-bind="text: indicaciones"></td>
+                <td data-bind="text: $parent.formatearFechaPrescripcion(fechaPrescripcion)"></td>
+                <td class="text-right">
+                  @if (Model.HabilitarEdicion)
+                  {
+                    <button class="btn btn-sm btn-outline-danger datos-edicion-consulta"
+                            data-bind="click: $parent.eliminarMedicamentoOtros">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  }
+                </td>
+              </tr>
+            </tbody>
+            <!-- /ko -->
+          </table>
+          <div data-bind="visible: (medicamentosOtros && medicamentosOtros().length===0)" class="text-muted small">
+            No hay otros medicamentos agregados.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<br />
+
+<div class="card">
+  <div class="card-body">
+    <div class="form-row">
+      <div class="col-md-12">
+        <h5><b>Pr&oacute;xima cita</b></h5>
+        <hr />
+      </div>
+      <div class="col-md-12">
+        <div class="position-relative form-group">
+          <label>Fecha</label>
+          <input class="form-control dato-consulta" asp-for="FechaProximaConsulta">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  function generarPrescripcionPdf(prescripcionId, pacienteId) {
+    window.open(
+      "/CrearPDF/PrescripcionPDF?prescripcionId=" +
+      prescripcionId +
+      "&pacienteId=" +
+      pacienteId,
+      "_blank"
+    );
+  }
+</script>

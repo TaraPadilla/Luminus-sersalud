@@ -1,0 +1,26 @@
+@{
+    ViewData["Title"] = "Nueva Ruta";
+}
+
+<div class="app-page-title">
+    <div class="page-title-wrapper">
+
+        <div class="page-title-heading">
+            <div class="page-title-icon">
+                <i class="pe-7s-graph text-success">
+                </i>
+            </div>
+            <div>Insertar Nueva Ruta
+                <div class="page-title-subheading">Agrega servicios.
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+ @await Html.PartialAsync("_MensajeExito")
+ 
+<form asp-controller="Ruta" asp-action="Nuevo" enctype="multipart/form-data" method="post">
+@await Html.PartialAsync("_RutaForm")
+</form>

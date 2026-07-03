@@ -1,0 +1,387 @@
+@page
+@model LoginModel
+@inject Microsoft.Extensions.Configuration.IConfiguration Config
+
+@{
+    ViewData["Title"] = "Log in";
+    Layout = "_LoginLayout";
+    var logoBase64 = Config["ImagenLogoBase64"];
+}
+
+<style>
+    /* Fondo general del login (claro y sutil) */
+    .login-page {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        /* centra card + footer como bloque */
+        background: linear-gradient(135deg, #e7edf7 0%, #f5f7fb 55%, #e9eef6 100%);
+    }
+
+    .login-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        padding: 2.5rem 1rem 1rem;
+        /* bottom menor para acercar al footer */
+    }
+
+    /* Tarjeta de login */
+    .card-signin {
+        border: none;
+        border-radius: 1.25rem;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.25);
+        background: #ffffff;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card-signin:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 22px 55px rgba(15, 23, 42, 0.3);
+    }
+
+    .card-signin .card-body {
+        padding: 2.3rem 2.4rem;
+    }
+
+    @@media (max-width: 576px) {
+        .card-signin .card-body {
+            padding: 2rem 1.6rem;
+        }
+    }
+
+    /* Logo */
+    .login-logo {
+        margin-bottom: 0.75rem;
+    }
+
+    /* Título principal más grande / protagonista */
+    .login-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        text-align: center;
+        color: #111827;
+        margin-bottom: 0.35rem;
+    }
+
+    .login-subtitle {
+        font-size: 0.95rem;
+        color: #6b7280;
+        margin-bottom: 1.8rem;
+        text-align: center;
+    }
+
+    /* Labels e inputs formales */
+    .login-label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.35rem;
+    }
+
+    .login-input {
+        border-radius: 0.7rem;
+        padding: 0.75rem 0.9rem;
+        border: 1px solid #d1d5db;
+        background-color: #f9fafb;
+        transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+    }
+
+    .login-input:focus {
+        background-color: #ffffff;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 0.16rem rgba(37, 99, 235, 0.25);
+    }
+
+    /* Grupo del input de contraseña + ojo (un solo control visual) */
+    .login-input-group {
+        position: relative;
+    }
+
+    .login-input-group .form-control {
+        border-radius: 0.7rem 0 0 0.7rem;
+        border-right: none;
+    }
+
+    .login-input-group .input-group-text {
+        border-radius: 0 0.7rem 0.7rem 0;
+        border: 1px solid #d1d5db;
+        border-left: none;
+        background-color: #f9fafb;
+        color: #6b7280;
+        transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+    }
+
+    .login-input-group .input-group-text:hover {
+        background-color: #e5edff;
+        color: #2563eb;
+        cursor: pointer;
+    }
+
+    /* Sombra/borde para todo el grupo cuando algo está en focus */
+    .login-input-group:focus-within .form-control {
+        background-color: #ffffff;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 0.16rem rgba(37, 99, 235, 0.25);
+    }
+
+    .login-input-group:focus-within .input-group-text {
+        background-color: #ffffff;
+        border-color: #2563eb;
+    }
+
+    /* Alinear visualmente el borde derecho del input con el ojo */
+    .login-input-group .form-control:focus {
+        box-shadow: none;
+    }
+
+    /* Checkbox */
+    .form-check-label {
+        font-size: 0.9rem;
+        color: #374151;
+    }
+
+    /* Botones a todo el ancho del card, mismo tamaño base */
+    .btn-login-primary,
+    .btn-login-secondary {
+        width: 100%;
+        border-radius: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #ffffff !important;
+        border: none;
+        padding: 0.8rem 1rem;
+        /* altura base igual en ambos */
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+    }
+
+    .btn-login-primary {
+        background-color: #0f172a;
+    }
+
+    .btn-login-primary:hover {
+        background-color: #111827;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.55);
+        transform: translateY(-1px);
+    }
+
+    /* Botón de huella con padding un poco menor para no crecer de más */
+    .btn-login-secondary {
+        background-color: #2563eb;
+        padding: 0.65rem 1rem;
+    }
+
+    .btn-login-secondary:hover {
+        background-color: #1d4ed8;
+        box-shadow: 0 10px 30px rgba(37, 99, 235, 0.5);
+        transform: translateY(-1px);
+    }
+
+    /* Huella más grande y visible pero sin aumentar la altura del botón */
+    .btn-login-secondary i {
+        margin-right: 0.5rem;
+        font-size: 1.4rem;
+        line-height: 1;
+        vertical-align: middle;
+    }
+
+    /* Mensajes de validación */
+    #mensajeLogin {
+        font-size: 0.9rem;
+    }
+
+    /* Footer dentro de login-page, cerca del card y sin scroll extra */
+    .login-footer-global {
+        margin-top: 0.5rem;
+        background-color: transparent;
+        padding: 0.25rem 1.5rem 0.75rem;
+        text-align: center;
+        font-size: 0.8rem;
+        color: #4b5563;
+    }
+</style>
+
+<div class="login-page">
+    <div class="login-wrapper">
+        <div class="container">
+            <div class="row justify-content-center">
+                <!-- Card centrado y ancho cómodo -->
+                <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+                    <div class="card card-signin my-3">
+                        <div class="card-body">
+                            <h5 class="card-title text-center login-logo">
+                                <img src="@logoBase64" width="230" class="img-fluid" alt="Logo" />
+                            </h5>
+
+                            <h2 class="login-title">Iniciar Sesión</h2>
+                            <p class="login-subtitle">
+                                Bienvenido. Ingresa tus credenciales para continuar.
+                            </p>
+
+                            <form id="account" class="form-signin" method="post">
+                                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                                <!-- Usuario -->
+                                <div class="mb-3">
+                                    <label for="inputUserame" class="login-label">Usuario</label>
+                                    <input type="text" id="inputUserame" class="form-control login-input"
+                                           asp-for="Input.Email" placeholder="Usuario" required autofocus />
+                                </div>
+
+                                <!-- Contraseña con input-group (un solo control visual) -->
+                                <div class="mb-3">
+                                    <label for="inputPassword" class="login-label">Contraseña</label>
+                                    <div class="input-group login-input-group">
+                                        <input type="password" id="inputPassword" class="form-control login-input"
+                                               placeholder="Contraseña" asp-for="Input.Password" required />
+                                        <span class="input-group-text bi bi-eye-slash toggle-password"
+                                              toggle="#inputPassword"></span>
+                                    </div>
+                                </div>
+
+                                <!-- Recordarme -->
+                                <div class="mb-3 d-flex justify-content-between align-items-center">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" asp-for="Input.RememberMe"
+                                               id="rememberMe" />
+                                        <label class="form-check-label" for="rememberMe">
+                                            Recuérdame
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Botón iniciar sesión -->
+                                <div class="mb-3">
+                                    <button class="btn btn-lg btn-login-primary" type="submit">
+                                        INICIAR SESION
+                                    </button>
+                                </div>
+
+                                <hr class="my-3" />
+
+                                <!-- Botón iniciar sesión con huella -->
+                                <div class="mb-2">
+                                    <button id="btnLoginHuella" type="button" class="btn btn-lg btn-login-secondary">
+                                        <i class="bi bi-fingerprint"></i> INICIAR SESIÓN CON HUELLA
+                                    </button>
+                                </div>
+
+                                <!-- Mensajes de error de WebAuthn -->
+                                <div id="mensajeLogin" class="mt-3 text-center fw-semibold text-danger"></div>
+                            </form>
+                        </div>
+                    </div>
+                </div> <!-- /col -->
+            </div>
+        </div>
+    </div>
+
+    <footer class="login-footer-global">
+        <p><strong>Integrado con Al Alyssa</strong></p>
+        © 2026 AVM Enterprise. Todos los derechos reservados.
+    </footer>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.getElementById("btnLoginHuella").addEventListener("click", async function () {
+            const mensaje = document.getElementById("mensajeLogin");
+            mensaje.innerText = "";
+
+            try {
+                // ✅ CORRECCIÓN MÍNIMA: leer el email del input visible
+                const email = (document.getElementById("inputUserame")?.value || "").trim();
+                if (!email) {
+                    mensaje.innerText = "Debe ingresar el usuario/correo para iniciar sesión con huella.";
+                    return;
+                }
+
+                // ✅ CORRECCIÓN MÍNIMA: BeginLogin por querystring, sin body y sin headers JSON
+                const beginResponse = await fetch(`/api/WebAuthn/BeginLogin?email=${encodeURIComponent(email)}`, {
+                    method: "POST",
+                    credentials: "include"
+                });
+
+                if (!beginResponse.ok) throw new Error("Error iniciando autenticación.");
+                const options = await beginResponse.json();
+
+                // Decodificar datos base64 → ArrayBuffer
+                options.challenge = Uint8Array.from(atob(options.challenge), c => c.charCodeAt(0)).buffer;
+
+                // Asegurarse de que allowCredentials sea un array y procesar cada credencial
+                if (options.allowCredentials && Array.isArray(options.allowCredentials)) {
+                    options.allowCredentials = options.allowCredentials.map(cred => ({
+                        ...cred,
+                        id: Uint8Array.from(atob(cred.id), c => c.charCodeAt(0)).buffer
+                    }));
+                }
+
+                // Paso 2: usar WebAuthn para obtener el "assertion"
+                const assertion = await navigator.credentials.get({ publicKey: options });
+
+                // Paso 3: Preparar los datos para enviar al servidor
+                const assertionResponse = {
+                    id: assertion.id,
+                    rawId: btoa(String.fromCharCode.apply(null, new Uint8Array(assertion.rawId))),
+                    type: assertion.type,
+                    response: {
+                        authenticatorData: btoa(String.fromCharCode.apply(null, new Uint8Array(assertion.response.authenticatorData))),
+                        clientDataJSON: btoa(String.fromCharCode.apply(null, new Uint8Array(assertion.response.clientDataJSON))),
+                        signature: btoa(String.fromCharCode.apply(null, new Uint8Array(assertion.response.signature))),
+                        userHandle: assertion.response.userHandle ? btoa(String.fromCharCode.apply(null, new Uint8Array(assertion.response.userHandle))) : null
+                    }
+                };
+
+                // Paso 4: Enviar la assertion al servidor para validación y completar el login
+                const completeResponse = await fetch("/api/WebAuthn/CompleteLogin", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify(assertionResponse)
+                });
+
+                if (!completeResponse.ok) {
+                    const errorData = await completeResponse.json();
+                    throw new Error(errorData.message || "Error al completar la autenticación");
+                }
+
+                const result = await completeResponse.json();
+
+                if (result.status === "ok") {
+                    // Ahora sí podemos redirigir, la sesión ha sido iniciada correctamente
+                    window.location.href = "/Home/Index";
+                } else {
+                    mensaje.innerText = result.message || "Error desconocido durante autenticación.";
+                }
+
+            } catch (error) {
+                console.error("Error de autenticación:", error);
+
+                if (error.message.includes('The operation either timed out or was not allowed')) {
+                    mensaje.innerText = "Error durante la autenticación. Intenta nuevamente.";
+                } else {
+                    mensaje.innerText = error.message || "Error desconocido durante autenticación.";
+                }
+            }
+        });
+    </script>
+    <script>
+        document.querySelectorAll(".toggle-password").forEach(function (el) {
+            el.addEventListener("click", function () {
+                const input = document.querySelector(this.getAttribute("toggle"));
+                const type = input.getAttribute("type") === "password" ? "text" : "password";
+                input.setAttribute("type", type);
+                this.classList.toggle("bi-eye");
+                this.classList.toggle("bi-eye-slash");
+            });
+        });
+    </script>
+}

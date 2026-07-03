@@ -1,0 +1,344 @@
+@* #Region Pestañas Hospitalización *@
+
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+
+@{
+    string cliente = Configuration["Cliente"]; 
+}
+
+<div class="mb-3 card tabs-hosp-card">
+    <div class="card-body tabs-hosp-card__body">
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+                <li class="nav-item">
+                    <a role="tab" class="nav-link active" id="tab-0" data-toggle="tab" href="#tab-content-0">
+                        <i class="tab-icn fa fa-list-alt" aria-hidden="true"></i>
+                        <span>Cargos Enfermeria</span>
+                    </a>
+                </li>
+            <li class="nav-item">
+                <a role="tab" class="nav-link" id="tab-historia-clinica" data-toggle="tab" href="#tab-content-historia-clinica">
+                    <i class="tab-icn fa fa-folder-open" aria-hidden="true"></i>
+                    <span>Historica Clinica</span>
+                </a>
+            </li>
+            @* @if (!User.IsInRole("Enfermeria"))
+            {
+                <li class="nav-item">
+                    <a role="tab" class="nav-link" id="tab-historia-clinica-pediatria" data-toggle="tab" href="#tab-content-historia-clinica-pediatria">
+                    <i class="tab-icn fa-child" aria-hidden="true"></i>
+                        <span>Historica Clinica Pediatria</span>
+                    </a>
+                </li>
+            } *@
+            @* @if (!User.IsInRole("Medico General") && !User.IsInRole("Enfermeria"))
+            {
+                <li class="nav-item">
+                    <a role="tab" class="nav-link" id="tab-ginecologia" data-toggle="tab" href="#tab-content-ginecologia">
+                    <i class="tab-icn fa-venus" aria-hidden="true"></i>
+                        <span>Ginecologia</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a role="tab" class="nav-link" id="tab-obstetrica" data-toggle="tab" href="#tab-content-obstetrica">
+                    <i class="tab-icn fa-female" aria-hidden="true"></i>
+                        <span>Obstetrica</span>
+                    </a>
+                </li>
+            } *@
+            @if (Model.AutorizacionTabSignosVitales)
+            {
+                <li class="nav-item">
+                    <a role="tab" class="nav-link" id="tab-evolucion" data-toggle="tab" href="#tab-content-evolucion" data-bind="click:abrirTabSignosVitales">
+                        <i class="tab-icn fa fa-heartbeat" aria-hidden="true"></i>
+                        <span>Signos vitales</span>
+                    </a>
+                </li>
+            }
+            
+            @if (Model.AutorizacionTabIncretaExcreta)
+            {
+                <li class="nav-item">
+                    <a role="tab" class="nav-link" id="tab-increta-excreta" data-toggle="tab"
+                    href="#tab-content-increta-excreta" data-bind="click:abrirTabIncretaExcreta">
+                    <i class="tab-icn fa fa-tint" aria-hidden="true"></i>
+                        <span>Ingesta / Excreta</span>
+                    </a>
+                </li>
+            }
+            @if (User.IsInRole("Administrador"))
+            {
+                @if (Model.AutorizacionTabControlGlucometria)
+                {
+                    @if(cliente != "SS"){
+                    <li class="nav-item">
+                        <a role="tab" class="nav-link" id="tab-control-glucometria" data-toggle="tab"
+                        href="#tab-content-control-glucometria" data-bind="click:abrirTabGlucometria">
+                        <i class="tab-icn fa fa-thermometer-half" aria-hidden="true"></i>
+                            <span>Control de glucometr&iacute;a</span>
+                        </a>
+                    </li>
+                    }
+                }
+            } 
+
+            @if(cliente != "SS"){ 
+
+                <li class="nav-item">
+                    <a role="tab" class="nav-link" id="tab-examenes-complementarios" data-toggle="tab" href="#tab-content-examenes-complementarios">
+                        <i class="tab-icn fa fa-flask" aria-hidden="true"></i>
+                        <span>Examenes Complementarios</span>
+                    </a>
+                </li>
+            }
+            <li class="nav-item">
+                <a role="tab" class="nav-link" id="tab-orden-medica" data-toggle="tab" href="#tab-content-orden-medica">
+                    <i class="tab-icn fa fa-stethoscope" aria-hidden="true"></i>
+                    <span>Orden Medica</span>
+                </a>
+            </li>
+
+            @if(cliente != "SS"){ 
+
+                <li class="nav-item">
+                    <a role="tab" class="nav-link" id="tab-devolucion-medicamentos" data-toggle="tab" href="#tab-content-devolucion-medicamentos">
+                        <i class="tab-icn fa fa-undo" aria-hidden="true"></i>
+                        <span>Devolución de Medicamentos</span>
+                    </a>
+                </li>
+            }
+
+            @* @if (!User.IsInRole("Medico Interno") && !User.IsInRole("Enfermeria") && !User.IsInRole("Jefatura Medica") && !User.IsInRole("Medico General") && !User.IsInRole("Enfermeria"))
+            {
+                <li class="nav-item">
+                    <a role="tab" class="nav-link" id="tab-3" data-toggle="tab" href="#tab-content-3">
+                    <i class="tab-icn fa fa-calculator" aria-hidden="true"></i>
+                        <span>Estado de Cuenta</span>
+                    </a>
+                </li>
+            } *@
+            
+            @* @if (Model.AutorizacionTabEnfermeria)
+            {
+                <li class="nav-item">
+                    <a role="tab" class="nav-link" id="tab-enfermeria" data-toggle="tab"
+                    href="#tab-content-enfermeria" data-bind="click:abrirTabEnfermeria">
+                    <i class="tab-icn fa fa-medkit" aria-hidden="true"></i>
+                <span>Control de administraci&oacute;n de medicamentos</span>
+                    </a>
+                </li>
+            } *@
+            
+            
+
+            @* @if (Model.AutorizacionTabDietas)
+            {
+                <li class="nav-item">
+                    <a role="tab" class="nav-link" id="tab-enfermeria" data-toggle="tab"
+                    href="#tab-content-receta" data-bind="click:abrirTabDietas">
+                    <i class="tab-icn fa fa-cutlery" aria-hidden="true"></i>
+                        <span>Dietas</span>
+                    </a>
+                </li>
+            } *@
+            @if(cliente != "SS"){ 
+
+            <li class="nav-item">
+                <a role="tab" class="nav-link" id="tab-enfermeria" data-toggle="tab" href="#tab-content-cirugia">
+                    <i class="tab-icn fa fa-scissors" aria-hidden="true"></i>
+                    <span>Cirug&iacute;a - Paquete</span>
+                </a>
+            </li>
+            }
+            @if (Model.AutorizacionTabNotaMedica)
+            {
+                <li class="nav-item">
+                    <a role="tab" class="nav-link" id="tab-nota-medica" data-toggle="tab"
+                        href="#tab-content-nota-medica" data-bind="click:abrirTabNotaMedica2">
+                        <i class="fas fa-file-medical" aria-hidden="true"></i>
+                        <span>Nota de evoluci&oacute;n</span>
+                    </a>
+                </li>
+            }
+          
+            <li class="nav-item">
+                <a role="tab" class="nav-link" id="tab-nota-operatoria" data-toggle="tab"
+                    href="#tab-content-nota-operatoria" data-bind="click:abrirTabNotaOperatoria">
+                    <i class="fas fa-procedures" aria-hidden="true"></i>
+                    <span>Nota operatoria</span>
+                </a>
+            </li>
+            @if (Model.AutorizacionTabNotaEnfermeria)
+            {
+                <li class="nav-item">
+                    <a role="tab" class="nav-link" id="tab-nota-enfermeria" data-toggle="tab" 
+                        href="#tab-content-nota-enfermeria">
+                        <i class="tab-icn fa fa-user-md" aria-hidden="true"></i>
+                        <span>Nota de enfermer&iacute;a</span>
+                    </a>
+                </li>
+            }
+            
+            @if (!User.IsInRole("Medico General") && !User.IsInRole("Enfermeria"))
+            {
+                @if (!Model.HospitalizacionFinalizada)
+                {
+                    @if (Model.AutorizacionTabActualizarEstadia)
+                    {
+                        
+                        @if(cliente != "SS" && cliente != "M14"){ 
+
+                        <li class="nav-item">
+                            <a role="tab" class="nav-link" id="tab-2" data-toggle="tab" href="#tab-content-2">
+                                <i class="tab-icn fa fa-bed" aria-hidden="true"></i>
+                                <span>Actualizar estad&iacute;a</span>
+                            </a>
+                        </li>
+                        }
+                    }
+                }
+            }
+            
+            @if (Model.AutorizacionTabPagos)
+            {
+                @if (!User.IsInRole("Enfermeria") && !User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
+                {       
+                    @if(cliente != "SS"){ 
+     
+                    <li class="nav-item">
+                        <a role="tab" class="nav-link" id="tab-pagos" data-toggle="tab"
+                        href="#tab-content-pagos" data-bind="click:abrirTabPagos">
+                        <i class="tab-icn fa fa-hand-holding-usd" aria-hidden="true"></i>
+                            <span>Adelantos</span>
+                        </a>
+                    </li>
+                    }
+                }
+            }
+            @* @if (Model.AutorizacionTabNotaEvolucion)
+            {
+                <li class="nav-item">
+                    <a role="tab" class="nav-link" id="tab-nota-evolucion" data-toggle="tab" 
+                        href="#tab-content-nota-evolucion">
+                        <i class="tab-icn fa fa-file-text-o" aria-hidden="true"></i>
+                        <span>Nota de evoluci&oacute;n</span>
+                    </a>
+                </li>
+            } *@
+            
+            
+            @if (User.IsInRole("Administrador") && !User.IsInRole("Enfermeria"))
+            {
+                <li class="nav-item">
+                    <a role="tab" class="nav-link" id="tab-usuarios-acceso" data-toggle="tab" href="#tab-content-usuarios-acceso">
+                        <i class="tab-icn text-left fa fa-user" aria-hidden="true"></i>
+                        <span>Usuarios con acceso</span>
+                    </a>
+                </li>
+            } 
+            
+            
+            @if (!User.IsInRole("Enfermeria"))
+            {
+                <li class="nav-item">
+                    <a role="tab" class="nav-link" id="tab-archivos"
+                    data-toggle="tab" href="#tab-content-archivos" data-bind="click:abrirTabArchivos">
+                    <i class="tab-icn text-left fa fa-paperclip" aria-hidden="true"></i>
+                        <span>Paciente - Archivos</span>
+                    </a>
+                </li>
+            } 
+            @if (!User.IsInRole("Enfermeria"))
+            {
+                <li class="nav-item">
+                    <a role="tab" class="nav-link" id="tab-historial-consultas" data-bind="click:abrirTabHistorialConsultas"
+                    data-toggle="tab" href="#tab-content-historial-consultas">
+                    <i class="tab-icn text-left fa fa-search" aria-hidden="true"></i>
+                        <span>Paciente - Consultas</span>
+                    </a>
+                </li>
+            } 
+            @if (!User.IsInRole("Enfermeria"))
+            {
+                <li class="nav-item">
+                    <a role="tab" class="nav-link" id="tab-historial-hospitalizaciones" data-bind="click:abrirTabHistorialHospitalizaciones"
+                    data-toggle="tab" href="#tab-content-historial-hospitalizaciones">
+                    <i class="tab-icn text-left fa fa-hospital-user" aria-hidden="true"></i>
+                        <span>Paciente - Hospitalizaciones</span>
+                    </a>
+                </li>
+            }
+
+            @if(cliente != "M14"){
+                <li class="nav-item">
+                    <a role="tab" class="nav-link" id="tab-historial-hospitalizaciones" data-bind="click:"
+                    data-toggle="tab" href="#tab-content-historial-autorizaciones">
+                    <i class="tab-icn text-left fa fa-lock" aria-hidden="true"></i>
+                        <span>Autorizaciones</span>
+                    </a>
+                </li>
+            }
+            
+            @if(cliente != "SS" && cliente != "M14"){ 
+
+                <li class="nav-item">
+                    <a role="tab" class="nav-link" id="tab-ambulancias" data-bind="click:"
+                    data-toggle="tab" href="#tab-content-ambulancias">
+                    <i class="tab-icn text-left fa fa-ambulance" aria-hidden="true"></i>
+                        <span>Ambulancias</span>
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a role="tab" class="nav-link" id="tab-emergencias" data-bind="click:"
+                    data-toggle="tab" href="#tab-content-emergencias">
+                    <i class="tab-icn text-left fa fa-user-md" aria-hidden="true"></i>
+                        <span>Emergencias</span>
+                    </a>
+                </li>
+            }
+            <li class="nav-item">
+                <a role="tab" class="nav-link" id="tab-chequeo" data-bind="click: abrirTabChequeo"
+                data-toggle="tab" href="#tab-content-chequeo">
+                <i class="tab-icn text-left fa fa-shield" aria-hidden="true"></i>
+                    <span>Lista de Chequeo</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a role="tab" class="nav-link" id="tab-kit-ingreso" data-bind="click: abrirTabKitIngreso"
+                data-toggle="tab" href="#tab-content-kitIngreso">
+                <i class="tab-icn text-left fa fa-clipboard" aria-hidden="true"></i>
+                    <span>Kit de Ingreso</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a role="tab" class="nav-link" id="tab-preanestesico" data-bind="click: abrirTabPreanestesico"
+                data-toggle="tab" href="#tab-content-preanestesico">
+                <i class="tab-icn text-left fa fa-edit" aria-hidden="true"></i>
+                    <span>Cuestionario Pre-Anestesico</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a role="tab" class="nav-link" id="tab-anestesia" data-toggle="tab" href="#tab-content-anestesia">
+                    <i class="tab-icn text-left fa fa-user-md" aria-hidden="true"></i>
+                    <span>Registro de Anestesia</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a role="tab" class="nav-link" id="tab-carga-documentos" data-toggle="tab" href="#tab-content-carga-documentos">
+                    <i class="tab-icn text-left fa fa-cloud-upload" aria-hidden="true"></i>
+                    <span>Carga de Documentos</span>
+                </a>
+            </li>
+            
+            @if(cliente != "M14"){ 
+            <li class="nav-item">
+                <a role="tab" class="nav-link" id="tab-medicamentos-no-contralados" 
+                data-toggle="tab" href="#tab-content-medicamentos-no-controlados" data-bind="click: abrirTabMedicamentosNoControlados">
+                    <i class="tab-icn text-left fa fa-pills" aria-hidden="true"></i>
+                    <span>Medicamentos Controlados</span>
+                </a>
+            </li>
+            }
+        </ul>
+    </div>
+</div>

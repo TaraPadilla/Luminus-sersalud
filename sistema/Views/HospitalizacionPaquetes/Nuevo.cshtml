@@ -1,0 +1,53 @@
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    // Leer el valor del appsettings.json. 
+    string sufijoLayout = Configuration["Cliente"]; 
+    
+    // Concatenar para formar el nombre del Layout (ejemplo: "_Layout" + "SS")
+    // Si la clave trae el nombre completo (ej. "_LayoutSS"), simplemente asignalo directo.
+    Layout = $"_Layout{sufijoLayout}";
+    ViewData["Title"] = "Nuevo paquete";
+}
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <h4><b>Nuevo paquete de hospitalizacion</b></h4>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_HospitalizacionPaqueteForm")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div>
+            <button class="btn btn-danger" data-bind="click: cancelarRegistroPaquete">
+                Cancelar
+            </button>
+            <button class="btn btn-success" data-bind="click: registrarPaquete">
+                Registrar paquete
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+<script type="text/javascript" src="~/ViewModelKo/HospitalizacionPaqueteVM.js"></script>
+}
+
+@section css{
+<style>
+    .seccion-header {
+        background-color: #f5f5f5;
+        padding: 15px;
+        border-bottom: 2px solid darkgray;
+    }
+
+        .seccion-header:hover {
+            background-color: darkgray;
+            cursor: pointer;
+        }
+</style>
+}

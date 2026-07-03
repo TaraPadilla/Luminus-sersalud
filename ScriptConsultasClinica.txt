@@ -1,0 +1,6 @@
+ALTER TABLE "DetalleVentas" 
+ADD COLUMN "Cargo" NUMERIC(18,2);
+
+
+ALTER TABLE "DetalleVentas" 
+ADD COLUMN "DescuentoPorcentaje" NUMERIC(18,2);

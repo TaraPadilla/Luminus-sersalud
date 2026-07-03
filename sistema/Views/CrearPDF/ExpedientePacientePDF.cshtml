@@ -1,0 +1,443 @@
+@using Database.Shared.Models
+@model Hospitalizacion
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Expediente del Paciente";
+
+   // Flags de visibilidad
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+}
+
+@* Si tu layout ya coloca cabecera/membrete, no modifico eso. Me concentro en la primera página. *@
+
+<style>
+    /* ====== SCOPEAMOS AL CONTENEDOR PARA NO AFECTAR OTROS REPORTES ====== */
+    .doc {
+        padding: 10px 16px 22px 16px;
+    }
+
+    .doc .doc-title {
+        font-size: 18px;
+        font-weight: 800;
+        text-align: center;
+        margin: 4px 0 8px;
+    }
+
+    .doc .doc-underline {
+        height: 2px;
+        background: #0a47a3;
+        opacity: .25;
+        margin: 6px 0 14px;
+    }
+
+    /* Barra de sección */
+    .doc .section-bar {
+        margin-top: 18px;
+        margin-bottom: 8px;
+        border-top: 4px solid #0a47a3;
+        padding: 8px 10px 6px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .3px;
+        background: #f7f9ff;
+    }
+
+    /* Tablas Key→Value de la primera página */
+    .doc .kv {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .doc .kv th,
+    .doc .kv td {
+        padding: 8px 10px;
+        vertical-align: top;
+        border-bottom: 1px solid #e6e9f2;
+    }
+
+    .doc .kv tr:last-child th,
+    .doc .kv tr:last-child td {
+        border-bottom: 0;
+    }
+
+    .doc .kv th {
+        width: 32%;
+        font-weight: 700;
+        color: #1f2a44;
+        white-space: nowrap;
+    }
+
+    .doc .kv td {
+        color: #0f172a;
+    }
+
+    /* Tabla-línea para “Fecha y hora de emisión” como en el guía */
+    .doc .header-line {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .doc .header-line td {
+        border: 0;
+        text-align: center;
+        font-weight: 700;
+        padding: 6px 0 10px;
+    }
+
+    /* Tablas listadas (medicamentos/servicios/exámenes/órdenes) – segunda página */
+    .doc .list {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .doc .list th,
+    .doc .list td {
+        padding: 8px 10px;
+        border: 1px solid #e6e9f2;
+    }
+
+    .doc .list thead th {
+        background: #eef3ff;
+        color: #0a47a3;
+        font-weight: 800;
+    }
+
+    .doc .list tbody tr:nth-child(odd) {
+        background: #fafbff;
+    }
+
+    /* Utilitarios */
+    .doc .muted {
+        color: #64748b;
+    }
+
+    .doc .text-start {
+        text-align: start;
+    }
+
+    .doc .sp-8 {
+        height: 8px;
+    }
+
+    .doc .sp-12 {
+        height: 12px;
+    }
+
+    .doc .sp-16 {
+        height: 16px;
+    }
+
+    .doc pre {
+        white-space: pre-wrap;
+        margin: 0;
+    }
+
+    /* Evitar que las filas queden demasiado comprimidas cuando hay muchos datos */
+    .doc .kv td,
+    .doc .kv th {
+        line-height: 1.35;
+    }
+
+    th {
+        text-align: start;
+    }
+</style>
+
+<div class="doc">
+
+    <!-- Título y línea como el guía -->
+    <div class="doc-title">REPORTE - @ViewData["Title"]</div>
+    <div class="doc-underline"></div>
+
+    <!-- Fecha y hora de emisión (tabla sin bordes, centrado) -->
+    <table class="header-line">
+        <tbody>
+            <tr>
+                <td>Fecha y hora de emisión: @fecha.ToString("dd/MM/yyyy HH:mm")</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ====== EXPEDIENTE ====== -->
+    <div class="section-bar">Reporte - Expediente Paciente</div>
+    <table class="kv">
+        <tbody>
+            <tr>
+                <th>Expediente</th>
+                <td>CLÍNICO</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ====== INFORMACIÓN DEL PACIENTE ====== -->
+    <div class="section-bar">Información del paciente</div>
+    <table class="kv">
+        <tbody>
+            <tr>
+                <th>Nombre completo</th>
+                <td>@Model.Paciente.Nombre</td>
+            </tr>
+            <tr>
+                <th>Fecha de nacimiento</th>
+                <td>@(Model.Paciente.FechaNacimiento?.ToString("dd/MM/yyyy") ?? "-")</td>
+            </tr>
+            <tr>
+                <th>Edad</th>
+                <td>@Model.Paciente.EdadString</td>
+            </tr>
+            <tr>
+                <th>Sexo</th>
+                <td>@Model.Paciente.sexoText</td>
+            </tr>
+            <tr>
+                <th>Tipo de sangre</th>
+                <td>@Model.Paciente.TipoDeSangre</td>
+            </tr>
+            <tr>
+                <th>No. Identificación</th>
+                <td>@(Model.Paciente.Dpi ?? "-")</td>
+            </tr>
+            <tr>
+                <th>Dirección</th>
+                <td>@(Model.Paciente.Direccion ?? "-")</td>
+            </tr>
+            <tr>
+                <th>Teléfono</th>
+                <td>@(Model.Paciente.Telefono ?? "-")</td>
+            </tr>
+            <tr>
+                <th>Correo electrónico</th>
+                <td>@(Model.Paciente.Email ?? "-")</td>
+            </tr>
+            <tr>
+                <th>Alergias conocidas</th>
+                <td>@(Model.Paciente?.AlergiasResumen ?? "No disponible")</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ====== RESPONSABLE ====== -->
+    <div class="section-bar">Datos del acompañante/responsable</div>
+    <table class="kv">
+        <tbody>
+            <tr>
+                <th>Nombre completo (responsable)</th>
+                <td>@(Model.Paciente.ResponsableNombre ?? "No registrado")</td>
+            </tr>
+            <tr>
+                <th>No. Identificación (responsable)</th>
+                <td>@(Model.Paciente.ResponsableDPI ?? "-")</td>
+            </tr>
+            <tr>
+                <th>Teléfono (responsable)</th>
+                <td>@(Model.Paciente.ResponsableTelefono ?? "-")</td>
+            </tr>
+            <tr>
+                <th>Correo electrónico (responsable)</th>
+                <td>@(Model.Paciente.ResponsableCorreo ?? "-")</td>
+            </tr>
+            <tr>
+                <th>Dirección (responsable)</th>
+                <td>@(Model.Paciente.ResponsableDireccion ?? "-")</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ====== SEGURO ====== -->
+    <div class="section-bar">Información de seguro</div>
+    <table class="kv">
+        <tbody>
+            <tr>
+                <th>Compañía aseguradora</th>
+                <td>@(Model.Consultas?.FirstOrDefault()?.Citas.CodigoDeCita ?? "-")</td>
+            </tr>
+        </tbody>
+    </table>
+    <br><br><br>
+    <!-- ====== HOSPITALIZACIÓN ====== -->
+    <div class="section-bar">Datos de la hospitalización</div>
+    <table class="kv">
+        <tbody>
+            <tr>
+                <th>Fecha de ingreso</th>
+                <td>@Model.FechaInicio.ToString("dd/MM/yyyy HH:mm")</td>
+            </tr>
+            <tr>
+                <th>Fecha de egreso</th>
+                <td>@(Model.FechaFin != DateTime.MinValue ? Model.FechaFin.ToString("dd/MM/yyyy HH:mm") : "-")</td>
+            </tr>
+            <tr>
+                <th>Duración (noches)</th>
+                <td>@Model.NochesInt.ToString()</td>
+            </tr>
+            <tr>
+                <th>Habitación</th>
+                <td>@(Model.Habitacion.NombreNumeroHabitacion ?? "-")</td>
+            </tr>
+            <tr>
+                <th>Tipo de habitación</th>
+                <td>@(Model.Habitacion.CategoriaHabitacion.NombreCategoria ?? "-")</td>
+            </tr>
+            <tr>
+                <th>Estado actual</th>
+                <td>@(Model.Habitacion.EstadoHabitacion.NombreEstado ?? "-")</td>
+            </tr>
+            <tr>
+                <th>Motivo de ingreso</th>
+                <td>@(Model.Consultas?.FirstOrDefault()?.Citas?.Motivo ?? "-")</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ====== MÉDICOS TRATANTES ====== -->
+    <div class="section-bar">Médicos tratantes</div>
+    <table class="kv">
+        <tbody>
+            <tr>
+                <th>Médico especialista principal</th>
+                <td>@(Model.Consultas?.FirstOrDefault()?.Citas.EmpleadoText ?? "-")</td>
+            </tr>
+            <tr>
+                <th>Especialidad</th>
+                <td>@(Model.Consultas?.FirstOrDefault()?.Citas?.Empleado?.Especialidad?.NombreEspecialidad ?? "-")</td>
+            </tr>
+            <tr>
+                <th>No. Colegiado</th>
+                <td>@(Model.Consultas?.FirstOrDefault()?.Citas.Empleado.Colegiado ?? "-")</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ====== SEGUNDA PÁGINA: LISTADOS ====== -->
+    <div class="sp-16"></div>
+
+    <div class="section-bar">Medicamentos e insumos</div>
+    <table class="list">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Cantidad</th>
+                <th>Frecuencia</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.HospitalizacionesProductos != null && Model.HospitalizacionesProductos.Count() > 0)
+            {
+                foreach (var medicamento in Model.HospitalizacionesProductos)
+                {
+                    <tr>
+                        <td>@medicamento.Producto.NombreProducto</td>
+                        <td>@medicamento.Cantidad</td>
+                        <td>@medicamento.FrecuenciaAdministracion</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="3" class="text-start muted">No hay medicamentos registrados</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="section-bar">Servicios</div>
+    <table class="list">
+        <thead>
+            <tr>
+                <th>Nombre del servicio</th>
+                <th>Cantidad</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.HospitalizacionesServicios != null && Model.HospitalizacionesServicios.Count() > 0)
+            {
+                foreach (var servicio in Model.HospitalizacionesServicios)
+                {
+                    <tr>
+                        <td>@servicio.Servicio.NombreServicio</td>
+                        <td>@servicio.Cantidad</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="2" class="text-start muted">No hay servicios registrados</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="section-bar">Exámenes</div>
+    <table class="list">
+        <thead>
+            <tr>
+                <th>Nombre del examen</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.HospitalizacionesExamenes != null && Model.HospitalizacionesExamenes.Count() > 0)
+            {
+                foreach (var examen in Model.HospitalizacionesExamenes)
+                {
+                    <tr>
+                        <td>@(examen?.Examen?.DetalleExamenes?.FirstOrDefault()?.ExamenLabClinico?.NombreExamen ?? "N/A")</td>
+                        <td>@(examen?.FechaAplicacionFormateada ?? "")</td>
+                        <td>@(examen?.Examen?.EstadoExamen?.Nombre ?? "N/A")</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="3" class="text-start muted">No hay exámenes registrados</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="section-bar">Órdenes médicas</div>
+    <table class="list">
+        <thead>
+            <tr>
+                <th>Fecha/Hora</th>
+                <th>Descripción</th>
+                <th>Médico</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.OrdenesMedicas != null && Model.OrdenesMedicas.Count() > 0)
+            {
+                foreach (var orden in Model.OrdenesMedicas)
+                {
+                    <tr>
+                        <td>@orden.FechaHora.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@orden.Descripcion</td>
+                        <td>@orden.Profesional</td>
+                        <td>@(orden.Realizada ? "Realizada" : "Pendiente")</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="4" class="text-start muted">No hay órdenes médicas registradas</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+</div>

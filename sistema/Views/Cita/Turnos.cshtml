@@ -1,0 +1,191 @@
+@using Database.Shared.Paginacion;
+@model PaginacionList<Database.Shared.Models.Citas>
+
+@{
+    ViewData["Title"] = "TURNOS";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body form-row">
+        <div class="text-center col-md-12">
+            <h4><b>TURNOS</b></h4>
+        </div>
+    </div>
+</div>
+
+
+
+<br />
+
+<div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel">
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="mb-0 table table-hover ">
+                    <thead>
+                        <tr>
+
+                            <th>Fecha</th>
+                            <th>Hora</th>
+                            <th>Especialdad</th>
+                            <th>Doctor</th>
+                            <th>Servicio</th>
+                            @*<th>Prioridad</th>*@
+                            <th>No Turno</th>
+                            <th>Estado</th>
+                            @*<th>Observaciones</th>
+                            <th>Usuario</th>
+                            <th>Menor de edad</th>
+                            <th>Nombre encargado</th>*@
+                            <th>Acciones</th>
+
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            var cliente = item.Paciente == null ? "" : item.Paciente.Nombre;
+                            var telefono = item.Paciente == null ? "" : item.Paciente.Telefono;
+                            var celular = item.Paciente == null ? "" : item.Paciente.Celular;
+                            var sexo = item.Paciente == null ? "" : item.Paciente.sexoText;@* var persona = item.User == null ? "" : item.PersonText; *@ @* var empleado = item.Empleado == null ? "" : item.Empleado.NombreYApellidos; *@ var background = "";
+                            var backgroundTurno = "";
+                            var color = "";
+
+                            @if (item.EspecialidadText == "Medicina general")
+                            {
+                                background = "#2fb9e7";
+                                color = "black";
+                            }
+                            else if (item.EspecialidadText == "Medicina estética")
+                            {
+                                background = "#A02B4E";
+                                color = "white";
+                            }
+                            else if (item.EspecialidadText == "Ginecología y Obstetricia")
+                            {
+                                background = "#e660c3";
+                                color = "white";
+                            }
+                            else if (item.EspecialidadText == "Pediatría")
+                            {
+                                background = "#ffa500";
+                                color = "black";
+                            }
+                            else if (item.EspecialidadText == "Cirugía")
+                            {
+                                background = "#808080";
+                                color = "white";
+                            }
+
+                            else if (item.EspecialidadText == "Traumatología")
+                            {
+                                background = "#000000";
+                                color = "white";
+                            }
+
+                            else if (item.EspecialidadText == "Medicina interna")
+                            {
+                                background = "#8B4513";
+                                color = "white";
+                            }
+
+
+                            else if (item.EspecialidadText == "Laboratorio clínico")
+                            {
+                                background = "#008000";
+                                color = "white";
+                            }
+                            else
+                            {
+                                background = "#808080";
+                                color = "white";
+
+                            }
+
+                            @if (item.EstadoTurno == "ACTIVO")
+                            {
+                                backgroundTurno = "#008000";
+                                color = "white";
+                            }
+                            else if (item.EstadoTurno == "PENDIENTE")
+                            {
+                                backgroundTurno = "#2fb9e7";
+                                color = "black";
+                            }
+                            else if (item.EstadoTurno == "ENCURSO")
+                            {
+                                backgroundTurno = "#2fb9e7";
+                                color = "black";
+                            }
+
+                            else
+                            {
+
+                                color = "white";
+                                backgroundTurno = "#808080";
+                            }
+
+                            <tr>
+                                <td>@(((DateTime)item.FechaInicio).ToString("dd/MM/yyyy"))</td>
+                                <td>@(((DateTime)item.FechaInicio).ToString("HH:mm"))</td>
+                                <td style="background: @background; color: @color">@item.EspecialidadText</td>
+                                <td>@item.EmpleadoText</td>
+                                @*<td>@item.ServicioText</td>*@
+                                <td>@item.NivelPrioridadCita</td>
+                                <td style="background: @backgroundTurno; color: @color; font-size: 40px; font-weight: bold;">
+                                    @item.NumeroTurno - @item.Especialidad.Descripcion
+                                </td>
+                                <td style="background: @backgroundTurno; color: @color; font-weight: bold;">@item.EstadoTurno</td>
+                                @*<td>@item.EstadoCita</td>*@
+                                @*<td>@item.Motivo</td>*@
+                                <td>@item.PersonText</td>
+                                <td>@item.EsMenorDeEdadText</td>
+                                <td>@item.NombreEncargado</td>
+                                @*<td style="max-width:150px; word-wrap: break-word;">@item.Motivo</td>*@
+                                <td>
+                                    @*<div class="col-md-12 p-1">
+                                <a href="@Url.Action("EditarCita","Cita", new {id = @item.Id})" class="btn btn-warning btn-sm col-md-12">
+                                Terminar
+                                </a>
+                                </div>*@
+                                    <div class="col-md-12 p-1">
+                                        <a class="btn btn-danger text-white col-md-12" onclick="terminarTurno(@item.Id)">
+                                            Finalizar
+                                        </a>
+                                    </div>
+                                    <div class="col-md-12 p-1">
+                                        <a href="/CrearPDF/TicketPdf/@item.Id" class="btn btn-primary text-white col-md-12" target="_blank">
+                                            <i class="fas fa-file-pdf"></i> Imprimir
+                                        </a>
+                                        @*<a class="btn btn-primary text-white col-md-12" asp-controller="Cita" asp-action="ReprogramarCita" asp-route-citaId="@item.Id">
+                                    Imprimir
+                                    </a>*@
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@{
+    var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+}
+
+
+
+
+
+
+@section Scripts
+    {
+    <script src="~/ViewModelKo/Turnos.js"></script>
+
+}

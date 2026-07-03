@@ -1,0 +1,33 @@
+@{
+    ViewData["Title"] = "Modificar Seguro";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <h4><b>Modificar Seguro</b></h4>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_SeguroForm")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div>
+            <button class="btn btn-danger" data-bind="click: cancelarRegistroSeguro">
+                Cancelar
+            </button>
+            <button class="btn btn-primary" data-bind="click:modificarSeguro">
+                Guardar Seguro
+            </button>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts{
+    <script src="~/ViewModelKo/SeguroVM.js"></script>
+}

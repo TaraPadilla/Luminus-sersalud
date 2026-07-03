@@ -1,0 +1,45 @@
+@model IEnumerable<Database.Shared.Models.Servicio>
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Listado de servicios";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+}
+
+<div class="text-right" style="font-size: 12px;">
+    <label><strong>Fecha y hora de emisión:</strong> @fecha</label>
+    <br />
+</div>
+
+<h4 class="text-center">Servicios registrados</h4>
+<hr />
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Nombre servicio</th>
+            <th>Precio</th>
+            <th>Descripción</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.NombreServicio</td>
+                <td>@item.Precio</td>
+                <td>@item.Descripcion</td>
+            </tr>
+        }
+    </tbody>
+</table>

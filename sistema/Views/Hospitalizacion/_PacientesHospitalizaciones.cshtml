@@ -1,0 +1,44 @@
+@model sistema.Models.HospitalizacionDetallesViewModel
+@{
+    var usuarioAdmisiones = User.IsInRole("Admisiones");
+}
+<div class="tab-pane tabs-animation fade show " id="tab-content-historial-hospitalizaciones" role="tabpanel">
+    <div class="main-card mb-3 card" style="border-radius: 10px">
+        <div class="card-body">
+            <div class="form-row">
+                <div class="col-md-12">
+                    <h5><b>Historial de hospitalizaciones</b></h5>
+                </div>
+                <div class="col-md-12 text-primary" style="display:none"
+                     id="texto-cargando-historial-hospitalizaciones">
+                    Cargando historial de hospitalizaciones...
+                </div>
+                <div class="col-md-12 text-danger" style="display:none"
+                     id="texto-error-consultar-historial-hospitalizaciones">
+                    Error de conexion.
+                    <a href="#" data-bind="click: consultarHistorialHospitalizaciones">Reintentar</a>
+                </div>
+                <div class="col-md-12 table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Fecha inicio</th>
+                                <th>Fecha fin</th>
+                                <th>Habitacion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!--ko foreach: historialHospitalizacionesPaciente-->
+                            <tr>
+                                <td data-bind="text:HospitalizacionFechaInicio"></td>
+                                <td data-bind="text:HospitalizacionFechaFin"></td>
+                                <td data-bind="text:HabitacionNumeroNombre"></td>
+                            </tr>
+                            <!--/ko-->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

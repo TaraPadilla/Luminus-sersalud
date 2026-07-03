@@ -1,0 +1,15 @@
+CREATE TABLE IF NOT EXISTS "ControlGlucometria2" (
+    "Id" SERIAL PRIMARY KEY,
+    "FechaHora" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "GMT" VARCHAR(50) NULL,
+    "Insulina" VARCHAR(100) NULL,
+    "Unidades" VARCHAR(50) NULL,
+    "Medicamento" VARCHAR(150) NULL,
+    "Dosis" DECIMAL(10,2) NOT NULL,
+    "Firma" VARCHAR(150) NULL,
+    "HospitalizacionId" INT NOT NULL,
+
+    -- Relaciones
+    CONSTRAINT "fk_hospitalizacion" FOREIGN KEY ("HospitalizacionId")
+        REFERENCES "Hospitalizaciones" ("Id") ON DELETE CASCADE
+);

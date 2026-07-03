@@ -1,0 +1,255 @@
+﻿@{
+    Layout = null;
+}
+
+
+<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
+<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap-grid.css" />
+<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap-reboot.css" />
+
+<style>
+    * {
+        /*border: 1px solid red;*/
+    }
+
+    body {
+        background-color: #e5e5e5 !important;
+    }
+
+    .header {
+        padding-left: 25% !important;
+        padding-right: 25% !important;
+        padding-top: 30px !important;
+        padding-bottom: 30px !important;
+        background-color: rgb(16, 25, 40);
+        color: white;
+    }
+
+    .rounded-1 {
+        border-radius: 10px;
+    }
+
+    .rounded-1-top {
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+    }
+
+    .service-hover {
+        padding: 30px;
+        border-bottom: 1px solid lightgray;
+    }
+
+        .service-hover:hover {
+            cursor: pointer;
+        }
+
+    .p-2 {
+        padding: 25px;
+    }
+
+    .p-3 {
+        padding: 50%;
+    }
+
+    .text-gray {
+        color: gray;
+    }
+
+    .btn-categoria-servicios.selected {
+        background-color: rgb(16, 25, 40);
+        color: white;
+    }
+
+    .btn-categoria-servicios {
+        background-color: white;
+        color: black;
+        border-radius: 30px;
+    }
+
+        .btn-categoria-servicios:hover {
+            background-color: lightgray;
+        }
+</style>
+
+
+<head>
+    <title>Nail Bar - Reserva tu cita</title>
+</head>
+
+<body>
+    <div class="form-row">
+        <div class="col-md-12 header">
+            <h2><b>Seleccionar servicios</b></h2>
+        </div>
+    </div>
+
+    <div class="form-row" style="padding-left:25%;padding-right:25%">
+
+        <div class="col-md-8 form-row p-2">
+            <div class="col-md-12 form-row bg-white rounded-1 shadow p-3">
+                <button class="btn btn-categoria-servicios selected">Destacados</button>&nbsp;&nbsp;
+                <button class="btn btn-categoria-servicios">Promo mayo</button>&nbsp;&nbsp;
+                <button class="btn btn-categoria-servicios">Retiros</button>&nbsp;&nbsp;
+            </div>
+            <div class="col-md-12">
+                <br /><br />
+                <h4><b>Retiros</b></h4>
+            </div>
+            <div class="col-md-12 form-row bg-white rounded-1 shadow">
+                <div class="col-md-12 form-row service-hover">
+                    <div class="col-md-2">
+                        <input class="form-control" type="checkbox" />
+                    </div>
+                    <div class="col-md-7">
+                        <h6><b>Retiro de gel permanente</b></h6>
+                        <span class="h6 text-gray">15 minutos</span>
+                    </div>
+                    <div class="col-md-3">
+                        <h6>60 GTQ</h6>
+                        <span class="text-success">Ahorras el 15%</span>
+                    </div>
+                </div>
+                <div class="col-md-12 form-row service-hover">
+                    <div class="col-md-2">
+                        <input class="form-control" type="checkbox" />
+                    </div>
+                    <div class="col-md-7">
+                        <h6><b>Retiro de gel permanente</b></h6>
+                        <span class="h6 text-gray">15 minutos</span>
+                    </div>
+                    <div class="col-md-3">
+                        <h6>60 GTQ</h6>
+                        <span class="text-success">Ahorras el 15%</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <br /><br />
+                <h4><b>Promo mayo</b></h4>
+            </div>
+            <div class="col-md-12 form-row bg-white rounded-1 shadow">
+                <div class="col-md-12 form-row service-hover">
+                    <div class="col-md-2">
+                        <input class="form-control" type="checkbox" />
+                    </div>
+                    <div class="col-md-7">
+                        <h6><b>Uñas semipermanente</b></h6>
+                        <span class="h6 text-gray">45 minutos</span>
+                    </div>
+                    <div class="col-md-3">
+                        <h6>60 GTQ</h6>
+                        <span class="text-success">Ahorras el 15%</span>
+                    </div>
+                </div>
+                <div class="col-md-12 form-row service-hover">
+                    <div class="col-md-2">
+                        <input class="form-control" type="checkbox" />
+                    </div>
+                    <div class="col-md-7">
+                        <h6><b>Uñas tradicional</b></h6>
+                        <span class="h6 text-gray">15 minutos</span>
+                    </div>
+                    <div class="col-md-3">
+                        <h6>60 GTQ</h6>
+                        <span class="text-success">Ahorras el 15%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8 form-row p-2 d-none">
+            <div class="col-md-12 form-row bg-white rounded-1 shadow p-3">
+                <button class="btn btn-categoria-servicios selected">Destacados</button>&nbsp;&nbsp;
+                <button class="btn btn-categoria-servicios">Promo mayo</button>&nbsp;&nbsp;
+                <button class="btn btn-categoria-servicios">Retiros</button>&nbsp;&nbsp;
+            </div>
+            <div class="col-md-12">
+                <br /><br />
+                <h4><b>Retiros</b></h4>
+            </div>
+            <div class="col-md-12 form-row bg-white rounded-1 shadow">
+                <div class="col-md-12 form-row service-hover">
+                    <div class="col-md-2">
+                        <input class="form-control" type="checkbox" />
+                    </div>
+                    <div class="col-md-7">
+                        <h6><b>Retiro de gel permanente</b></h6>
+                        <span class="h6 text-gray">15 minutos</span>
+                    </div>
+                    <div class="col-md-3">
+                        <h6>60 GTQ</h6>
+                        <span class="text-success">Ahorras el 15%</span>
+                    </div>
+                </div>
+                <div class="col-md-12 form-row service-hover">
+                    <div class="col-md-2">
+                        <input class="form-control" type="checkbox" />
+                    </div>
+                    <div class="col-md-7">
+                        <h6><b>Retiro de gel permanente</b></h6>
+                        <span class="h6 text-gray">15 minutos</span>
+                    </div>
+                    <div class="col-md-3">
+                        <h6>60 GTQ</h6>
+                        <span class="text-success">Ahorras el 15%</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <br /><br />
+                <h4><b>Promo mayo</b></h4>
+            </div>
+            <div class="col-md-12 form-row bg-white rounded-1 shadow">
+                <div class="col-md-12 form-row service-hover">
+                    <div class="col-md-2">
+                        <input class="form-control" type="checkbox" />
+                    </div>
+                    <div class="col-md-7">
+                        <h6><b>Uñas semipermanente</b></h6>
+                        <span class="h6 text-gray">45 minutos</span>
+                    </div>
+                    <div class="col-md-3">
+                        <h6>60 GTQ</h6>
+                        <span class="text-success">Ahorras el 15%</span>
+                    </div>
+                </div>
+                <div class="col-md-12 form-row service-hover">
+                    <div class="col-md-2">
+                        <input class="form-control" type="checkbox" />
+                    </div>
+                    <div class="col-md-7">
+                        <h6><b>Uñas tradicional</b></h6>
+                        <span class="h6 text-gray">15 minutos</span>
+                    </div>
+                    <div class="col-md-3">
+                        <h6>60 GTQ</h6>
+                        <span class="text-success">Ahorras el 15%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 form-row p-2">
+            <div class="col-md-12">
+                <div class="bg-white col-md-12 rounded-1-top p-3 shadow text-center border-bottom">
+                    <b>Nail Bar Cayala</b><br /><br />
+                    <span class="text-gray">Lirios de Cayalá, 2D oficina 5, Guatemala City (Zone 16), Guatemala Department</span>
+                </div>
+                <div class="bg-white col-md-12 shadow text-center p-3 border-bottom">
+                    <span class="text-gray">Todavía no hay servicios agregados</span>
+                </div>
+                <div class="bg-white col-md-12 shadow p-3">
+                    <b>Total</b>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <div class="col-md-12 bg-white text-right border-top" style="position:fixed;bottom:0;
+                                                    padding-left:25%;padding-right:25%;
+                                            padding-top:20px;padding-bottom:20px;">
+        <button class="btn text-light p-3" style="background-color:black"><b>Reservar ahora</b></button>
+    </div>
+</body>

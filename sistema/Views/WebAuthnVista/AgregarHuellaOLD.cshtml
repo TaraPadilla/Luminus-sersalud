@@ -1,0 +1,132 @@
+@{
+    ViewData["Title"] = "Registrar Huella";
+    @* Layout = "~/Views/Shared/_LoginLayout.cshtml"; *@
+}
+
+<div class="container mt-5">
+    <div class="card shadow rounded p-4" style="max-width: 600px; margin: auto;">
+        <h2 class="text-center mb-4 text-primary">Registrar Huella</h2>
+
+        <div class="text-center">
+            <button id="btnRegistrar" class="btn btn-lg btn-success px-5 mb-3">
+                <i class="bi bi-fingerprint"></i> Registrar Huella
+            </button>
+            <div id="mensaje" class="mt-3 text-center fw-semibold"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+document.getElementById("btnRegistrar").addEventListener("click", async () => {
+    try {
+        const res1 = await fetch("/api/WebAuthn/BeginRegister", { 
+            method: "POST",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+        
+        if (!res1.ok) {
+            document.getElementById("mensaje").innerText = "Error al iniciar el registro: " + await res1.text();
+            return;
+        }
+
+        const optionsFromServer = await res1.json();
+        console.log("Opciones recibidas del servidor:", optionsFromServer);
+
+        const publicKeyOptions = {
+            challenge: Uint8Array.from(atob(optionsFromServer.challenge), c => c.charCodeAt(0)),
+            rp: optionsFromServer.rp,
+            user: {
+                id: Uint8Array.from(atob(optionsFromServer.user.id), c => c.charCodeAt(0)),
+                name: optionsFromServer.user.name,
+                displayName: optionsFromServer.user.displayName
+            },
+            pubKeyCredParams: optionsFromServer.pubKeyCredParams.map(param => {
+                return {
+                    type: "public-key",
+                    alg: param.alg
+                };
+            }),
+            timeout: optionsFromServer.timeout,
+            excludeCredentials: Array.isArray(optionsFromServer.excludeCredentials) 
+                ? optionsFromServer.excludeCredentials.map(cred => {
+                    let transports = cred.transports;
+                    if (transports && !Array.isArray(transports)) {
+                        if (typeof transports === 'string') {
+                            transports = transports.split(',').map(t => t.trim());
+                        } else {
+                            transports = undefined;
+                        }
+                    }
+                    return {
+                        id: Uint8Array.from(atob(cred.id), c => c.charCodeAt(0)),
+                        type: "public-key",
+                        transports: transports
+                    };
+                }) 
+                : [],
+            authenticatorSelection: {
+                authenticatorAttachment: "platform",
+                requireResidentKey: optionsFromServer.authenticatorSelection.requireResidentKey,
+                userVerification: "preferred"
+            },
+            attestation: "direct"
+        };
+
+        console.log("Opciones formateadas para WebAuthn:", publicKeyOptions);
+
+        const credential = await navigator.credentials.create({ publicKey: publicKeyOptions });
+        console.log("Credencial creada:", credential);
+
+        function arrayBufferToBase64(buffer) {
+            const bytes = new Uint8Array(buffer);
+            let binary = '';
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary);
+        }
+
+        const attestationResponse = {
+            id: arrayBufferToBase64(credential.rawId),
+            rawId: arrayBufferToBase64(credential.rawId),
+            type: credential.type,
+            response: {
+                clientDataJSON: arrayBufferToBase64(credential.response.clientDataJSON),
+                attestationObject: arrayBufferToBase64(credential.response.attestationObject)
+            },
+            extensions: {}
+        };
+
+        console.log("Respuesta para enviar al servidor:", attestationResponse);
+
+        const res2 = await fetch("/api/WebAuthn/CompleteRegister", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(attestationResponse)
+        });
+
+        if (res2.ok) {
+            document.getElementById("mensaje").innerText = "✅ Huella registrada correctamente.";
+            document.getElementById("mensaje").classList.add("text-success");
+            document.getElementById("mensaje").classList.remove("text-danger");
+        } else {
+            const errorText = await res2.text();
+            console.error("Error del servidor:", errorText);
+            document.getElementById("mensaje").innerText = "❌ Error: " + errorText;
+            document.getElementById("mensaje").classList.add("text-danger");
+            document.getElementById("mensaje").classList.remove("text-success");
+        }
+    } catch (error) {
+        console.error("Error en el proceso de registro WebAuthn:", error);
+        document.getElementById("mensaje").innerText = "❌ Error: " + error.message;
+        document.getElementById("mensaje").classList.add("text-danger");
+        document.getElementById("mensaje").classList.remove("text-success");
+    }
+});
+    </script>
+}

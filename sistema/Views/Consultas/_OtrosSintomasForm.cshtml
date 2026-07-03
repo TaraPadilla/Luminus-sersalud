@@ -1,0 +1,84 @@
+@model sistema.Models.ConsultasViewModel
+@Html.HiddenFor(a => a.CitaId)
+@Html.HiddenFor(a => a.PacienteId)
+@Html.HiddenFor(a => a.ConsultaId)
+@Html.HiddenFor(a => a.PrimeraConsulta)
+@Html.HiddenFor(a => a.HistoriaId)
+@Html.HiddenFor(a => a.ExamenFisicoId)
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-12">
+                <h5><b>Otros síntomas</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-12 table-responsive">
+                <table class="table table-hover">
+                    <tbody>
+                        <tr>
+                            <td><input class="form-control" type="checkbox" /></td>
+                            <td>Estreñimiento</td>
+                        </tr>
+                        <tr>
+                            <td><input class="form-control" type="checkbox" /></td>
+                            <td>Edema en extremidades</td>
+                        </tr>
+                        <tr>
+                            <td><input class="form-control" type="checkbox" /></td>
+                            <td>Palpitaciones</td>
+                        </tr>
+                        <tr>
+                            <td><input class="form-control" type="checkbox" /></td>
+                            <td>Sincope</td>
+                        </tr>
+                        <tr>
+                            <td><input class="form-control" type="checkbox" /></td>
+                            <td>Incontinencia urinaria</td>
+                        </tr>
+                        <tr>
+                            <td><input class="form-control" type="checkbox" /></td>
+                            <td>Retencion urinaria</td>
+                        </tr>
+                        <tr>
+                            <td><input class="form-control" type="checkbox" /></td>
+                            <td>Prurito</td>
+                        </tr>
+                        <tr>
+                            <td><input class="form-control" type="checkbox" /></td>
+                            <td>Disforesis</td>
+                        </tr>
+                        <tr>
+                            <td><input class="form-control" type="checkbox" /></td>
+                            <td>Hemorragia</td>
+                            <td>
+                                Describa:
+                                <input class="form-control" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><input class="form-control" type="checkbox" /></td>
+                            <td>Alucinaciones</td>
+                        </tr>
+                        <tr>
+                            <td><input class="form-control" type="checkbox" /></td>
+                            <td>Confusión</td>
+                        </tr>
+                        <tr>
+                            <td><input class="form-control" type="checkbox" /></td>
+                            <td>Mioclonus</td>
+                        </tr>
+                        <tr>
+                            <td><input class="form-control" type="checkbox" /></td>
+                            <td>Otros</td>
+                            <td>
+                                Describa:
+                                <input class="form-control" />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

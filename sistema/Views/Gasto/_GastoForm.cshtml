@@ -1,0 +1,78 @@
+@model sistema.Models.GastoBaseViewModel
+
+<div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel">
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+
+            <div class="form-row">
+
+                <div class="col-md-6">
+                    <div class="position-relative form-group"><label for="exampleEmail11" class="">Nombre
+                            Gasto</label>
+                        @* <input placeholder="Descripción Producto" class="form-control"> *@
+                        @Html.TextBoxFor(a => a.Gasto.NombreGasto, new {@class="form-control",
+                                       @placeholder="Nombre Gasto"})
+                        @Html.ValidationMessageFor(a => a.Gasto.NombreGasto, "", new { @class = "text-danger"})
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <label>Categoría</label>
+                    <select class="form-control select2bs4" style="width: 100%;" asp-for="Gasto.CategoriaGastoId"
+                        asp-items="@Model.ListCategorias">
+
+                    </select>
+                    @Html.ValidationMessageFor(a => a.Gasto.CategoriaGastoId, "", new { @class = "text-danger"})
+                </div>
+
+
+            </div>
+            <div class="form-row">
+                <div class="col-md-12">
+                    <div class="position-relative form-group"><label for="exampleEmail11" class="">Costo</label>
+                        @* <input placeholder="Precio" class="form-control"> *@
+                     @Html.TextBoxFor(a => a.Gasto.Costo, new{ type="number",step="any", @class="form-control",
+                                       @placeholder="Costo"})
+                        @* @Html.EditorFor(a => a.Producto.Precio, new { htmlAttributes = new { @type = "number",
+                            @class="form-control", @placeholder="Precio"}}) *@
+                        @Html.ValidationMessageFor(a => a.Gasto.Costo, "", new { @class = "text-danger"})
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="position-relative form-group">
+                            <label class="">Descripcion</label>
+                            @* <textarea class="form-control" placeholder="Ingredientes"></textarea> *@
+                            @Html.TextAreaFor(a => a.Gasto.Descripcion,5,500 ,htmlAttributes : new {
+                                               @class="form-control ", @placeholder="Descripcion", @style="max-width:100% !important;"})
+                            @* @Html.TextAreaFor(a => a.Producto.Descripcion, new { htmlAttributes = new { @class =
+                                "form-control"} }) *@
+                            @Html.ValidationMessageFor(a => a.Gasto.Descripcion, "", new { @class = "text-danger"})
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="position-relative form-group">
+                            <button class="btn btn-primary">Guardar</button>
+                        </div>
+                    </div>
+
+                </div>
+                @* <div class="form-row">
+                    <div class="form-md-12">
+                    <div class="position-relative form-group">
+                    <label>Archivo</label>
+                    <input type="file" class="form-control-file">
+
+                    </div>
+                    </div>
+                    </div> *@
+
+
+
+
+
+            </div>
+        </div>
+    </div>

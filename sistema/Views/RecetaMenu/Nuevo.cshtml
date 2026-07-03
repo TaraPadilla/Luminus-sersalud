@@ -1,0 +1,52 @@
+@model sistema.Models.RecetaMenuCrudViewModel
+@{
+    ViewData["Title"] = "Gestión de Menú";
+}
+
+<div class="container-fluid animated fadeIn">
+    @await Html.PartialAsync("_MensajeExito")
+
+    <div class="card shadow-sm border-0 mb-4">
+        @* Encabezado unificado *@
+        <div class="card-header bg-white py-3">
+            <h5 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-utensils mr-2"></i>@(Model.Id == 0 ? "Nuevo Menú Dietético" : "Modificar Menú")
+            </h5>
+        </div>
+
+        @using (Html.BeginForm(Model.Id == 0 ? "Nuevo" : "Modificar", "RecetaMenu", FormMethod.Post, new { @class = "needs-validation" }))
+        {
+            @Html.AntiForgeryToken()
+            
+            <div class="card-body px-lg-5 py-4">
+                @* Inyección del Parcial Optimizado *@
+                @await Html.PartialAsync("_RecetaMenuForm", Model)
+
+                <hr class="my-4" style="border-top: 1px dashed #e3e6f0;">
+
+                <div class="d-flex justify-content-end align-items-center">
+                    <a class="btn btn-light border px-4 mr-2 text-secondary" asp-action="Lista" asp-controller="RecetaMenu">
+                        <i class="fas fa-times mr-1"></i> Cancelar
+                    </a>
+                    <button class="btn btn-primary px-5 shadow-sm font-weight-bold" type="submit">
+                        <i class="fas fa-save mr-1"></i> Guardar Menú
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            // Efecto visual en inputs
+            $('.form-control').focus(function() {
+                $(this).prev('label').addClass('text-primary font-weight-bold');
+            }).blur(function() {
+                $(this).prev('label').removeClass('text-primary font-weight-bold');
+            });
+        });
+    </script>
+}

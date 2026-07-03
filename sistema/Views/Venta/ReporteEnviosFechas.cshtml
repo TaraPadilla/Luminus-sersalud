@@ -1,0 +1,180 @@
+@model sistema.Models.VentaBaseViewModel
+
+<div class="app-page-title">
+    <div class="page-title-wrapper">
+
+        <div class="page-title-heading">
+            <div class="page-title-icon">
+                <i class="pe-7s-graph text-success">
+                </i>
+            </div>
+            <div>Reporte de Envios
+                <div class="page-title-subheading">Ventas
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<ul class="body-tabs body-tabs-layout tabs-animated body-tabs-animated nav">
+    <li class="nav-item">
+        <a role="tab" class="nav-link active" id="tab-0" data-toggle="tab" href="#tab-content-0">
+            <span>Reporte Excel</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a role="tab" class="nav-link" id="tab-2" data-toggle="tab" href="#tab-content-2">
+            <span>Reporte Pdf</span>
+        </a>
+    </li>
+   
+</ul>
+
+<div class="form-row">
+    <div class="col-md-12">
+
+
+        <div class="tab-content">
+
+            <div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel">
+                <div class="form">
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card">
+                          <div class="card-body">
+
+                               <form asp-controller="Reportes" asp-action="ReporteEnvios" method="post">
+                     <div class="form-row">
+                    <div class="col-md-12">
+                       <label>Rango de fechas: </label>
+                        <div class="input-group">
+                            <input type="text" class="form-control float-right" id="reservationtime" name="fecha">
+                        </div>
+                    </div>
+                    @* <div class="col-md-12">
+                        <label>Vendedor</label>
+                        <select class="form-control select2bs4" style="width: 100%;"
+                            name="empleadoid" asp-items="@Model.ListaEmpleados" id="empleadoselect">
+                            <option selected value="">Sin asignar</option>
+                        </select>
+
+                    </div> *@
+                    
+                </div>
+
+                <br/>
+                <button type="submit" class="btn btn-primary">Ver Excel</button>
+                </form>
+
+
+
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+            </div>
+
+            <div class="tab-pane tabs-animation fade show" id="tab-content-2" role="tabpanel">
+                <div class="form">
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card">
+                            <div class="card-body">
+
+                     <form asp-controller="CrearPDF" asp-action="EnviosPdf" method="post">
+                     <div class="form-row">
+                    <div class="col-md-12">
+                       <label>Rango de fechas: </label>
+                        <div class="input-group">
+                            <input type="text" class="form-control float-right" id="reservationtime2" name="fecha">
+                        </div>
+                    </div>
+                    @* <div class="col-md-12">
+                        <label>Vendedor</label>
+                        <select class="form-control select2bs4" style="width: 100%;"
+                            name="empleadoid" asp-items="@Model.ListaEmpleados" id="empleadoselect">
+                            <option selected value="">Sin asignar</option>
+                        </select>
+
+                    </div> *@
+                    
+                </div>
+
+                <br/>
+                <button type="submit" class="btn btn-primary">Ver Pdf</button>
+                </form>
+
+                               
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+            </div>
+
+
+
+
+
+           
+            
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+@section Scripts
+{
+
+<script type="text/javascript" src="~/js/moment.min.js"></script>
+<script type="text/javascript" src="~/js/daterangepicker.js"></script>
+<script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+
+<script>
+   $(function(){
+        $('.select2').select2({
+            tags: true
+        });
+        
+    $('.select2bs4').select2({
+      theme: 'bootstrap4',
+      tags: true,
+    });
+
+          $('#reservationtime').daterangepicker({
+                    timePicker: true,
+                    timePickerIncrement: 30,
+                    locale: {
+                        format: 'MM/DD/YYYY hh:mm A'
+                    }
+                });
+             $('#reservationtime2').daterangepicker({
+                    timePicker: true,
+                    timePickerIncrement: 30,
+                    locale: {
+                        format: 'MM/DD/YYYY hh:mm A'
+                    }
+                });
+    });
+
+
+    
+</script>
+}
+
+@section css
+{
+    <link href="~/css/daterangepicker.css" rel="stylesheet">
+}

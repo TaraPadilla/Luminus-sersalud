@@ -1,0 +1,76 @@
+@using Database.Shared.Models
+@model List<Sucursal>
+@{
+    ViewData["Title"] = "Sucursales";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <center><h4><b>Sucursales</b></h4></center>
+                <hr />
+                <a class="btn btn-danger" asp-action="Nueva" asp-controller="Sucursales">
+                    Nueva sucursal
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="tabla-sucursales">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Dirección</th>
+                        <th>Horario</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Count() > 0)
+                    {
+                        foreach (var sucursal in Model)
+                        {
+                            <tr>
+                                <td>@sucursal.NombreSucursal</td>
+                                <td></td>
+                                <td></td>
+                                <td>
+                                    <a class="btn btn-warning" asp-controller="Sucursales"
+                               asp-action="Modificar"
+                               asp-route-id="@sucursal.Id">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button class="btn btn-danger" onclick="eliminarSucursal(@sucursal.Id)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td><i>No hay sucursales registradas</i></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+<script src="~/ViewModelKo/SucursalesListaVM.js"></script>
+}

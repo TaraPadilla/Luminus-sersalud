@@ -1,0 +1,83 @@
+@* @{
+    Layout = "_HojaLayout";
+
+    DateTime fecha = DateTime.Now;
+    decimal sumatoriaTotal = 0.00m;
+
+}
+
+@model sistema.Models.VentaBaseViewModel
+
+<div>
+<img width="40"  src="/assets/images/farmamestlogo.png" alt="">
+<h5>Fecha Emision : @fecha</h5>
+<h5>Usuario: (pendiente) </h5>
+<hr>
+</div>
+<div class="col-md-12">
+                <br/>
+                <h4>Listado Utilidad</h4>
+                <br/>
+                             <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Venta #</th>
+                                        <th>Fecha Venta</th>
+                                        <th>Cliente</th>
+                                        <th>Vendedor</th>
+                                        <th>Precio Venta</th>
+                                        <th>Precio Adquisicion</th>
+                                        <th>Utilidad</th>
+
+                                    </tr>
+                                </thead>
+                                <tbody>
+
+                            @foreach (var item in Model.ListaVentas)
+                                    {
+                                        decimal utilidad=0.00m;
+                                        decimal pventa=0.00m;
+                                        decimal pcosto=0.00m;
+                                        decimal ventat=0.00m;
+                                        decimal costot=0.00m;
+                                        
+                                        int cantidad = 0;
+                                     <tr>
+
+                                    @foreach (var det in item.DetalleVenta)
+                                    {
+                                        pcosto = det.Producto.PrecioCosto;
+                                        costot += det.Producto.PrecioCosto;
+                                        pventa = det.Precio;
+                                        ventat += det.Precio;
+                                        cantidad = det.Cantidad;
+                                        utilidad += cantidad * (pventa - pcosto);
+
+                                        total += cantidad * (pventa - pcosto);
+                                        sumatoriaTotal += total;
+
+                                    }
+
+                                            <td>@item.Id</td>
+                                            <td>@item.FechaVenta</td>
+                                            <td>@item.Cliente.Nombre</td>
+                                            <td>@item.Empleado.Nombre</td>
+                                            <td>@ventat</td>
+                                            <td>@costot</td>
+                                            <td>@utilidad</td>
+                                        </tr>
+
+                                }
+
+                                 </tbody>
+                            </table>
+                   
+                    <div class="text-right" style="font-size: 17px;">
+                    <span>_____________________</span><br/>
+                    Qs <span>@total</span>
+                  </div> 
+</div>
+
+
+
+ *@

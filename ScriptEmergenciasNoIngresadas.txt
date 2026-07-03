@@ -1,0 +1,8 @@
+ALTER TABLE "Ventas" 
+ADD COLUMN "Origen" VARCHAR(255);
+
+ALTER TABLE "Emergencias" 
+ADD COLUMN "Pagado" BOOLEAN DEFAULT FALSE;
+
+ALTER TABLE "Emergencias"  
+ADD COLUMN "Observaciones" TEXT;

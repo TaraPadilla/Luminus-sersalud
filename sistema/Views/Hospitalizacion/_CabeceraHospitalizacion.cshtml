@@ -1,0 +1,1721 @@
+@model sistema.Models.HospitalizacionDetallesViewModel
+@inject Microsoft.Extensions.Configuration.IConfiguration Config
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+
+@{
+    var logoBase64 = Config["ImagenLogoBase64"];
+    var idHospi = @Model.HospitalizacionId.ToString();
+    string cliente = Configuration["Cliente"]; 
+    var usuarioMedicoExterno = User.IsInRole("Medico Externo");
+    bool quitarDataTarget = (cliente == "M14" && usuarioMedicoExterno);
+
+
+}
+
+
+<input type="hidden" id="MedicoAsignadoNombre"       value="@(Model.MedicoAsignado ?? "")" />
+<input type="hidden" id="CitaCirujanoId"              value="@Model.CitaIdPDF" />
+<input type="hidden" id="CodigoSeguro"                value="@(Model.CodigoSeguro ?? "")" />
+<input type="hidden" id="CitaPrimerAyudanteNombre"    value="@(Model.CitaPrimerAyudante ?? "")" />
+
+<input type="hidden" id="HospitalizacionPagada" value="@Model.Pagada.ToString().ToLower()" />
+<input type="hidden" id="HospitalizacionFinalizada" value="@Model.HospitalizacionFinalizada.ToString().ToLower()" />
+<input type="hidden" id="CuentaPagada" value="@Model.Pagada.ToString().ToLower()" />
+
+@* #Region Cabecera Hospitalización *@
+<div class="main-card mb-3 card">
+    <div class="d-flex flex-column align-items-center pt-4" style="height: auto;">
+        <img src="@logoBase64" alt="Logo" style="width: 350px; max-width: 90%; height: auto;" class="d-block"> 
+        <div class="text-center mb-2">
+            <h4 class="display-5 font-weight-bold text-primary mb-1">
+                Admisión #@Model.HospitalizacionId
+            </h4>
+        </div>
+    </div>
+    <hr />
+
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-12">
+
+
+@if (!Model.Pagada)
+{
+    <div class="mb-4 p-3 border rounded" style="background-color: #f8f9fa; border-left: 5px solid #28a745 !important;">
+        <h6 class="text-success small text-uppercase font-weight-bold">Acciones de Cuenta</h6>
+        <div class="d-flex flex-wrap mt-2" style="gap: 12px;">
+            
+            @if (!User.IsInRole("Enfermeria"))
+            {
+                <button class="btn btn-shadow btn-success btn-lg px-4" data-bind="click:pagarCuenta">
+                    <i class="fas fa-money-check-alt mr-2"></i>
+                    Pagar Q <span data-bind="text:totalPagar" class="font-weight-bold"></span>
+                </button>
+            }
+
+               @if (!User.IsInRole("Enfermeria") && !User.IsInRole("Medico Interno") 
+                    || (User.IsInRole("Enfermeria") && (cliente == "SS" || cliente == "M14"))
+                    || (User.IsInRole("Medico Interno") && cliente == "M14"))
+                {
+                    <button class="btn btn-shadow btn-outline-primary btn-lg px-4" data-bind="click:verModalCambioHabitacion">
+                        <i class="fas fa-exchange-alt mr-2"></i> Cambiar habitación
+                    </button>
+                }
+
+                @if (!User.IsInRole("Enfermeria"))
+                {
+                   
+                        <button class="btn btn-shadow btn-outline-success btn-lg px-4" data-bind="click:verModalDetalleTotales">
+                            <i class="fas fa-list-alt mr-2"></i> Detalle de totales
+                        </button>
+                    
+
+
+                    
+
+
+                    <button class="btn btn-danger" onclick="enviarHospitalizacionEmail('@Model.HospitalizacionId', '@Model.PacienteNombre', 'carloskpote.25@gmail.com', '@Model.PacienteIdPDF', '@Model.HabitacionIdPDF', '@Context.Request.Query["citaId"]')" title="Enviar por Correo">
+                        <i class="fas fa-envelope"></i>
+                    </button>
+
+                    <button class="btn btn-danger" onclick="enviarAlertaInventarioEmail('carloskpote.25@gmail.com')" title="Enviar por Correo">
+                        <i class="fas fa-envelope"></i>
+                    </button>
+
+                    <button class="btn btn-success" onclick="enviarResultadosLaboratorioWhatsApp('@Model.HospitalizacionId','@Model.PacienteNombre','+584120122517')" title="Enviar por WhatsApp">
+                        <i class="fab fa-whatsapp"></i>
+                    </button>
+                }
+                    <button class="btn btn-shadow btn-outline-info btn-lg px-4"
+                            data-bind="click: verModalHistorialMedicamentos">
+                        <i class="fas fa-pills mr-2"></i> Historial Medicamentos
+                    </button>
+
+                    <button class="btn btn-shadow btn-outline-info btn-lg px-4"
+                            data-bind="click: verModalHistorialServicios">
+                        <i class="fas fa-hand-holding-medical mr-2"></i> Historial Servicios
+                    </button>
+
+                    <button class="btn btn-shadow btn-outline-info btn-lg px-4"
+                            data-bind="click: verModalHistorialExamenes">
+                        <i class="fas fa-microscope mr-2"></i> Historial Exámenes
+                    </button>
+        </div>
+    </div>
+}
+else
+{
+    <div class="mb-4 p-3 border rounded" style="background-color: #f0fff4; border-left: 5px solid #28a745 !important;">
+        <div class="d-flex align-items-center flex-wrap mb-2" style="gap: 10px;">
+            <span class="badge badge-success px-3 py-2" style="font-size: 1rem;">
+                <i class="fas fa-check-circle mr-1"></i> HOSPITALIZACIÓN PAGADA
+            </span>
+            <small class="text-muted">Esta cuenta ya fue liquidada. Solo puede visualizarla.</small>
+        </div>
+        <div class="d-flex flex-wrap" style="gap: 12px;">
+            @if (!User.IsInRole("Enfermeria"))
+            {
+                <button class="btn btn-shadow btn-outline-success btn-lg px-4" data-bind="click: verPagosCuenta">
+                    <i class="fas fa-receipt mr-2"></i> Ver pagos realizados
+                </button>
+            }
+
+            <button class="btn btn-shadow btn-outline-info btn-lg px-4"
+                    data-bind="click: verModalHistorialMedicamentos">
+                <i class="fas fa-pills mr-2"></i> Historial Medicamentos
+            </button>
+
+            <button class="btn btn-shadow btn-outline-info btn-lg px-4"
+                    data-bind="click: verModalHistorialServicios">
+                <i class="fas fa-hand-holding-medical mr-2"></i> Historial Servicios
+            </button>
+
+            <button class="btn btn-shadow btn-outline-info btn-lg px-4"
+                    data-bind="click: verModalHistorialExamenes">
+                <i class="fas fa-microscope mr-2"></i> Historial Exámenes
+            </button>
+        </div>
+    </div>
+}
+
+@* @if (!Model.Pagada)
+{
+    <div class="mb-4 p-3 border rounded" style="background-color: #f8f9fa; border-left: 5px solid #28a745 !important;">
+        <h6 class="text-success small text-uppercase font-weight-bold">Acciones de Cuenta</h6>
+        <div class="d-flex flex-wrap mt-2" style="gap: 12px;">
+            
+            @if (!User.IsInRole("Enfermeria"))
+            {
+                <button class="btn btn-shadow btn-success btn-lg px-4" data-bind="click:pagarCuenta">
+                    <i class="fas fa-money-check-alt mr-2"></i>
+                    Pagar Q <span data-bind="text:totalPagar" class="font-weight-bold"></span>
+                </button>
+            }
+
+               @if (!User.IsInRole("Enfermeria") && !User.IsInRole("Medico Interno") 
+                    || (User.IsInRole("Enfermeria") && (cliente == "SS" || cliente == "M14"))
+                    || (User.IsInRole("Medico Interno") && cliente == "M14"))
+                {
+                    <button class="btn btn-shadow btn-outline-primary btn-lg px-4" data-bind="click:verModalCambioHabitacion">
+                        <i class="fas fa-exchange-alt mr-2"></i> Cambiar habitación
+                    </button>
+                }
+
+                @if (!User.IsInRole("Enfermeria"))
+                {
+                    if (cliente != "SS")
+                    {
+                        <button class="btn btn-shadow btn-outline-success btn-lg px-4" data-bind="click:verModalDetalleTotales">
+                            <i class="fas fa-list-alt mr-2"></i> Detalle de totales
+                        </button>
+                    }
+
+
+                    
+
+
+                    <button class="btn btn-danger" onclick="enviarHospitalizacionEmail('@Model.HospitalizacionId', '@Model.PacienteNombre', 'carloskpote.25@gmail.com', '@Model.PacienteIdPDF', '@Model.HabitacionIdPDF', '@Context.Request.Query["citaId"]')" title="Enviar por Correo">
+                        <i class="fas fa-envelope"></i>
+                    </button>
+
+                    <button class="btn btn-danger" onclick="enviarAlertaInventarioEmail('carloskpote.25@gmail.com')" title="Enviar por Correo">
+                        <i class="fas fa-envelope"></i>
+                    </button>
+
+                    <button class="btn btn-success" onclick="enviarResultadosLaboratorioWhatsApp('@Model.HospitalizacionId','@Model.PacienteNombre','+584120122517')" title="Enviar por WhatsApp">
+                        <i class="fab fa-whatsapp"></i>
+                    </button>
+                }
+                    <button class="btn btn-shadow btn-outline-info btn-lg px-4"
+                            data-bind="click: verModalHistorialMedicamentos">
+                        <i class="fas fa-pills mr-2"></i> Historial Medicamentos
+                    </button>
+
+                    <button class="btn btn-shadow btn-outline-info btn-lg px-4"
+                            data-bind="click: verModalHistorialServicios">
+                        <i class="fas fa-hand-holding-medical mr-2"></i> Historial Servicios
+                    </button>
+
+                    <button class="btn btn-shadow btn-outline-info btn-lg px-4"
+                            data-bind="click: verModalHistorialExamenes">
+                        <i class="fas fa-microscope mr-2"></i> Historial Exámenes
+                    </button>
+        </div>
+    </div>
+}
+else
+{
+    <div class="mb-4 p-3 border rounded" style="background-color: #f0fff4; border-left: 5px solid #28a745 !important;">
+        <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap: 12px;">
+            <div class="d-flex align-items-center" style="gap: 10px;">
+                <span class="badge badge-success px-3 py-2" style="font-size: 1rem;">
+                    <i class="fas fa-check-circle mr-1"></i> HOSPITALIZACIÓN PAGADA
+                </span>
+                <small class="text-muted">Esta cuenta ya fue liquidada. Solo puede visualizarla.</small>
+            </div>
+            @if (!User.IsInRole("Enfermeria"))
+            {
+                <button class="btn btn-shadow btn-outline-success btn-lg px-4" data-bind="click: verPagosCuenta">
+                    <i class="fas fa-receipt mr-2"></i> Ver pagos realizados
+                </button>
+            }
+        </div>
+    </div>
+} *@
+
+                <div class="mb-4">
+                    <h6 class="text-muted small text-uppercase font-weight-bold mb-3">Documentos y Reportes PDF</h6>
+                    <div class="d-flex flex-wrap" style="gap: 10px;">
+                        @if (!User.IsInRole("Enfermeria"))
+                        {
+                            <button class="btn btn-hover-shine btn-outline-danger" data-bind="click:verInformeGeneral">
+                                <i class="fas fa-file-pdf mr-1"></i> Informe Gral.
+                            </button>
+                            <button class="btn btn-hover-shine btn-outline-danger" data-bind="click:verExpedientePaciente">
+                                <i class="fas fa-notes-medical mr-1"></i> Expediente
+                            </button>
+                        }
+                        
+                       <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
+   href="@Url.Action("GenerarPDFConsentimientoHospi", "CrearPDF", new { idPaciente = Model.PacienteIdPDF, idHabitacion = Model.HabitacionIdPDF, idHospi = 0, citaId = Context.Request.Query["citaId"] })">
+    <i class="fas fa-file-signature mr-1"></i> Consentimiento
+</a>
+
+                         <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
+                           href="@Url.Action("GenerarPDFHospiReports","CrearPDF", new { idPaciente = @Model.PacienteIdPDF, idHabitacion = @Model.HabitacionIdPDF, idHospi = @idHospi, report = 1, citaId = Context.Request.Query["citaId"] })">
+                            <i class="fas fa-print mr-1"></i> Autorizacion a Sala
+                        </a>
+
+                         <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
+                           href="@Url.Action("GenerarPDFHospiReports","CrearPDF", new { idPaciente = @Model.PacienteIdPDF, idHabitacion = @Model.HabitacionIdPDF, idHospi = @idHospi, report = 2, citaId = Context.Request.Query["citaId"] })">
+                            <i class="fas fa-print mr-1"></i> Asignacion de medico Anes.
+                        </a>
+
+                         @* <a class="btn btn-hover-shine btn-outline-danger" target="_blank"
+                           href="@Url.Action("GenerarPDFHospiReports","CrearPDF", new { idPaciente = @Model.PacienteIdPDF, idHabitacion = @Model.HabitacionIdPDF, idHospi = @idHospi, report = 3, citaId = Context.Request.Query["citaId"] })">
+                            <i class="fas fa-print mr-1"></i> Medicamentos Controlados
+                        </a> *@
+
+                        @if(cliente != "M14"){
+                        <a class="btn btn-hover-shine btn-outline-success" target="_blank"
+                           href="@Url.Action("MedicamentosControladosHospiExcel", "CrearExcel", new { hospitalizacionId = @Model.HospitalizacionId })">
+                            <i class="fas fa-file-excel mr-1"></i> Medicamentos Controlados
+                        </a>
+                        }
+                        else{
+
+                            @if(!usuarioMedicoExterno){ 
+                            <a class="btn btn-hover-shine btn-outline-success" target="_blank"
+                                href="@Url.Action("MedicamentosControladosHospiExcel", "CrearExcel", new { hospitalizacionId = @Model.HospitalizacionId })">
+                                 <i class="fas fa-file-excel mr-1"></i> Medicamentos Controlados
+                            </a>
+                            }
+                        }
+                    </div>
+                </div>
+
+                <div class="row no-gutters border-top pt-4">
+                    <div class="col-sm-4 pr-sm-2 mb-2">
+                        <div class="p-3 border rounded shadow-sm bg-white" style="border-left: 4px solid #17a2b8 !important;">
+                            <small class="text-muted d-block text-uppercase font-weight-bold">Seguro del Paciente</small>
+                            <span class="h5 font-weight-bold text-info mb-0 d-block text-truncate">
+                                <i class="fas fa-shield-alt mr-2"></i>
+                                @(string.IsNullOrEmpty(Model.CodigoSeguro) ? "SIN SEGURO" : Model.CodigoSeguro)
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-sm-4 px-sm-1 mb-2">
+                        <div class="p-3 border rounded shadow-sm bg-white" style="border-left: 4px solid #6c757d !important;">
+                            <small class="text-muted d-block text-uppercase font-weight-bold">Médico Asignado (Cirujano)</small>
+                            <span class="h5 font-weight-bold text-secondary mb-0 d-block text-truncate">
+                                <i class="fas fa-user-md mr-2"></i>
+                                @(string.IsNullOrEmpty(Model.MedicoAsignado) ? "SIN MÉDICO ASIGNADO" : Model.MedicoAsignado)
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-sm-4 pl-sm-2 mb-2">
+                        <div class="p-3 border rounded shadow-sm bg-white" style="border-left: 4px solid #f7b924 !important; overflow-y: auto; max-height: 150px;"> 
+                            <small class="text-muted d-block text-uppercase font-weight-bold">Médico Secundario</small>
+                            @* @if (Model.MedicosSecundarios != null && Model.MedicosSecundarios.Any())
+                            {
+                                foreach (var secundario in Model.MedicosSecundarios)
+                                {
+                                    <div class="d-flex justify-content-between align-items-center" id="medico-secundario-@secundario.Id">
+                                        <span class="h5 font-weight-bold text-dark mb-0 text-truncate" style="max-width: 85%;" title="@secundario.NombreCompleto">
+                                            <i class="fas fa-user-plus mr-2 text-warning"></i>@secundario.NombreCompleto
+                                        </span>
+                                        @if (!User.IsInRole("Medico General") && !User.IsInRole("Enfermeria"))
+                                        {
+                                            <button class="btn btn-link text-danger p-0 ml-2" 
+                                                    onclick="quitarMedicoSecundario(@Model.CitaIdPDF, @secundario.Id, this)">
+                                                <i class="fas fa-times-circle fa-lg hover-scale"></i>
+                                            </button>
+                                        }
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <span class="h5 font-weight-bold text-muted mb-0 d-block">
+                                    <i class="fas fa-user-slash mr-2"></i> NINGUNO
+                                </span>
+                            } *@
+                            <div id="listaMedicosSecundarios">
+                @if (Model.MedicosSecundarios != null && Model.MedicosSecundarios.Any())
+                {
+                    foreach (var medico in Model.MedicosSecundarios)
+                    {
+                        <div class="d-flex justify-content-between align-items-center" id="medico-secundario-@medico.Id">
+                            <span class="h5 font-weight-bold mb-0 text-muted" title="@medico.NombreCompleto">
+                                <i class="fas fa-user-plus mr-2 text-warning"></i>@medico.NombreCompleto
+                            </span>
+                           
+                        </div>
+                    }
+                }
+                else
+                {
+                    <span class="text-muted">NINGUNO</span>
+                }
+            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (!User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio") && !User.IsInRole("Enfermeria"))
+{
+    <div class="row">
+        <div class="col-12 col-md-4">
+            <div class="main-card mb-3 card border-info shadow-sm">
+                <div class="card-body p-3">
+                    <h6 class="text-info small text-uppercase font-weight-bold mb-2">Actualizar Seguro</h6>
+                    <select id="seguroSelect" class="form-control select2bs4" style="width: 100%;">
+                        <option value="">Seleccionar seguro...</option>
+                        @foreach (var item in Model.SegurosSelectListItem)
+                        {
+                            <option value="@item.Text">@item.Text</option>
+                        }
+                    </select>
+                    <button class="btn btn-info btn-block mt-2 font-weight-bold" onclick="actualizarSeguro(@Model.CitaIdPDF, @Model.HospitalizacionId)">
+                        <i class="fas fa-sync-alt mr-1"></i> Cambiar seguro
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <div class="main-card mb-3 card border-secondary shadow-sm">
+                <div class="card-body p-3">
+                    <h6 class="text-secondary small text-uppercase font-weight-bold mb-2">Médico Principal</h6>
+                    <select id="medicoAsignadoSelect" class="form-control select2bs4" style="width: 100%;">
+                        <option value="">Seleccionar médico principal...</option>
+                        @foreach (var item in Model.DoctoresSelectListItem)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
+                    <button class="btn btn-secondary btn-block mt-2 font-weight-bold" onclick="actualizarMedicoAsignado(@Model.CitaIdPDF)">
+                        <i class="fas fa-user-md mr-1"></i> Cambiar Médico
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <div class="main-card mb-3 card border-warning shadow-sm">
+                <div class="card-body p-3">
+                    <h6 class="text-warning small text-uppercase font-weight-bold mb-2">Gestión de Secundarios</h6>
+                    <select id="medicoSecundarioSelect" class="form-control select2bs4" style="width: 100%;">
+                        <option value="">Seleccionar médico secundario...</option>
+                        @foreach (var item in Model.DoctoresSelectListItem)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
+                    <button class="btn btn-warning btn-block mt-2 font-weight-bold text-white" onclick="agregarMedicoSecundario(@Model.CitaIdPDF)">
+                        <i class="fas fa-plus-circle mr-1"></i> Agregar Secundario
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="main-card mb-3 card">
+    <div class="d-flex flex-column align-items-center pt-4" style="height: auto;">
+        <div class="text-center mb-2">
+            <h4 class="display-5 font-weight-bold text-primary mb-1">
+                <i class="fas fa-user-circle mr-2"></i>Información del Paciente
+            </h4>
+        </div>
+    </div>
+    <hr />
+
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-12">
+                @if(cliente != "M14"){
+                <div class="mb-4 p-3 border rounded" style="background-color: #f8f9fa; border-left: 5px solid #007bff !important;">
+                    <h6 class="text-primary small text-uppercase font-weight-bold">Acciones de Expediente</h6>
+                    <div class="d-flex flex-wrap mt-2">
+                        <button class="btn btn-shadow btn-primary btn-lg px-4" onclick="irADetallesPaciente(@Model.PacienteId)">
+                            <i class="fas fa-external-link-alt mr-2"></i> Ver Perfil Completo
+                        </button>
+                    </div>
+                </div>
+                }
+                else{
+                    @if(!usuarioMedicoExterno){
+                        <div class="mb-4 p-3 border rounded" style="background-color: #f8f9fa; border-left: 5px solid #007bff !important;">
+                            <h6 class="text-primary small text-uppercase font-weight-bold">Acciones de Expediente</h6>
+                            <div class="d-flex flex-wrap mt-2">
+                                <button class="btn btn-shadow btn-primary btn-lg px-4" onclick="irADetallesPaciente(@Model.PacienteId)">
+                                    <i class="fas fa-external-link-alt mr-2"></i> Ver Perfil Completo
+                                </button>
+                            </div>
+                        </div>
+                    }
+                }
+
+                <h6 class="text-muted small text-uppercase font-weight-bold mb-3">Datos Generales</h6>
+                
+                <div class="row no-gutters">
+                    <div class="col-md-4 p-1">
+                        <div class="p-3 border rounded shadow-sm bg-white" style="border-left: 4px solid #6c757d !important;">
+                            <small class="text-muted d-block text-uppercase font-weight-bold">Nombre Completo</small>
+                            <span class="h6 font-weight-bold text-dark mb-0">@Model.PacienteNombre</span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 p-1">
+                        <div class="p-3 border rounded shadow-sm bg-white" style="border-left: 4px solid #17a2b8 !important;">
+                            <small class="text-muted d-block text-uppercase font-weight-bold">Edad</small>
+                            <span class="h6 font-weight-bold text-info mb-0">
+                                <i class="fas fa-birthday-cake mr-2"></i>@Model.EdadPaciente
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 p-1">
+                        <div class="p-3 border rounded shadow-sm bg-white" style="border-left: 4px solid #6c757d !important;">
+                            <small class="text-muted d-block text-uppercase font-weight-bold">Sexo</small>
+                            <span class="h6 font-weight-bold text-dark mb-0">
+                                <i class="fas fa-venus-mars mr-2"></i>@Model.PacienteSexo
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 p-1">
+                        <div class="p-3 border rounded shadow-sm bg-white" style="border-left: 4px solid #28a745 !important;">
+                            <small class="text-muted d-block text-uppercase font-weight-bold">Teléfono</small>
+                            <span class="h6 font-weight-bold text-success mb-0">
+                                <i class="fas fa-phone mr-2"></i>@Model.PacienteTelefono
+                            </span>
+                        </div>
+                    </div>
+
+                    @* <div class="col-md-4 p-1">
+                        <div class="p-3 border rounded shadow-sm bg-white" style="border-left: 4px solid #dc3545 !important;">
+                            <small class="text-muted d-block text-uppercase font-weight-bold">Tipo de Sangre</small>
+                            <span class="h6 font-weight-bold text-danger mb-0">
+                                <i class="fas fa-tint mr-2"></i>@Model.PacienteTipoSangre
+                            </span>
+                        </div>
+                    </div> *@
+
+                    <div class="col-md-4 p-1">
+
+                        <div class="p-3 border rounded shadow-sm bg-white collapsible-card" style="border-left: 4px solid #dc3545 !important; cursor:pointer"  
+                        
+                        
+                        @if (!(cliente == "M14" && usuarioMedicoExterno))
+                        {
+                            @:data-target="collapseBloodType"
+                        }>
+                        
+                            <small class="text-muted d-block text-uppercase font-weight-bold">Tipo de Sangre</small>
+                            <span class="h6 font-weight-bold text-danger mb-0" id="spanTipoSangre">
+                                <i class="fas fa-tint mr-2"></i>@Model.PacienteTipoSangre
+                            </span>
+                            <div class="collapse mt-2" id="collapseBloodType">
+                                <select id="bloodTypeSelect" class="form-control form-control-sm">
+                                    <option value="A+">A+</option>
+                                    <option value="A-">A-</option>
+                                    <option value="B+">B+</option>
+                                    <option value="B-">B-</option>
+                                    <option value="AB+">AB+</option>
+                                    <option value="AB-">AB-</option>
+                                    <option value="O+">O+</option>
+                                    <option value="O-">O-</option>
+                                </select>
+                                <button class="btn btn-sm btn-danger mt-2 w-100" onclick="event.stopPropagation(); actualizarTipoSangre(@Model.PacienteId)">Guardar cambios</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 p-1">
+                        <div class="p-3 border rounded shadow-sm bg-white" style="border-left: 4px solid #f7b924 !important;">
+                            <small class="text-muted d-block text-uppercase font-weight-bold">Especialidad</small>
+                            <span class="h6 font-weight-bold text-warning mb-0">
+                                <i class="fas fa-stethoscope mr-2"></i>@Model.EspecialidadNombre
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 p-1">
+                        <div class="p-3 border rounded shadow-sm bg-white" style="border-left: 4px solid #6c757d !important;">
+                            <small class="text-muted d-block text-uppercase font-weight-bold">Fecha de Nacimiento</small>
+                            <span class="h6 font-weight-bold text-dark mb-0">
+                                <i class="fas fa-calendar-alt mr-2"></i>@Model.FechaNacimientoPaciente
+                            </span>
+                        </div>
+                    </div>
+
+                    @* <div class="col-md-4 p-1">
+                        <div class="p-3 border rounded shadow-sm bg-white" style="border-left: 4px solid #6c757d !important;">
+                            <small class="text-muted d-block text-uppercase font-weight-bold">Peso</small>
+                            <span class="h6 font-weight-bold text-dark mb-0">
+                                <i class="fas fa-weight mr-2"></i>@Model.PacientePeso
+                            </span>
+                        </div>
+                    </div> *@
+
+                    <div class="col-md-4 p-1">
+                        <div class="p-3 border rounded shadow-sm bg-white collapsible-card" style="border-left: 4px solid #6c757d !important; cursor: pointer;" 
+                        
+                        @if (!(cliente == "M14" && usuarioMedicoExterno))
+                        {
+                            @:data-target="collapsePeso"
+                        }
+                        >
+                            <small class="text-muted d-block text-uppercase font-weight-bold">Peso</small>
+                            <span class="h6 font-weight-bold text-dark mb-0" id="spanPeso">
+                                <i class="fas fa-weight mr-2"></i>@Model.PacientePeso
+                            </span>
+                            <div class="collapse mt-2" id="collapsePeso">
+                                <div class="input-group input-group-sm">
+                                    <input type="number" id="pesoInput" step="0.1" value="@Model.PacientePeso" class="form-control" placeholder="Peso en kg">
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">kg</span>
+                                    </div>
+                                </div>
+                                <button class="btn btn-sm btn-dark mt-2 w-100" onclick="event.stopPropagation(); actualizarPeso(@Model.PacienteId)">Guardar cambios</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* <div class="col-md-4 p-1">
+                        <div class="p-3 border rounded shadow-sm bg-white" style="border-left: 4px solid #6c757d !important;">
+                            <small class="text-muted d-block text-uppercase font-weight-bold">Estatura</small>
+                            <span class="h6 font-weight-bold text-dark mb-0">
+                                <i class="fas fa-ruler-vertical mr-2"></i>@Model.PacienteTalla
+                            </span>
+                        </div>
+                    </div> *@
+
+                    <div class="col-md-4 p-1">
+                        <div class="p-3 border rounded shadow-sm bg-white collapsible-card" style="border-left: 4px solid #6c757d !important; cursor: pointer;" 
+                                                
+                        @if (!(cliente == "M14" && usuarioMedicoExterno))
+                        {
+                            @:data-target="collapseEstatura"
+                        }
+                        >
+                            <small class="text-muted d-block text-uppercase font-weight-bold">Estatura</small>
+                            <span class="h6 font-weight-bold text-dark mb-0" id="spanEstatura">
+                                <i class="fas fa-ruler-vertical mr-2"></i>@Model.PacienteTalla
+                            </span>
+                            <div class="collapse mt-2" id="collapseEstatura">
+                                <div class="input-group input-group-sm">
+                                    <input type="number" id="estaturaInput" step="0.01" value="@Model.PacienteTalla" class="form-control" placeholder="Estatura en metros">
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">m</span>
+                                    </div>
+                                </div>
+                                <button class="btn btn-sm btn-dark mt-2 w-100" onclick="event.stopPropagation(); actualizarEstatura(@Model.PacienteId)">Guardar cambios</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    window.EmpresaConfig = {
+        Nombre: "@Config["EstablecimientoNombreEmpresa"]",
+        Logo: "@Config["ImagenLogoBase64"]",
+        Direccion: "@Config["EstablecimientoDireccion"]",
+        Telefono: "@Config["EstablecimientoTelefono"]"
+    };
+</script>
+
+<script>
+    document.querySelectorAll('.collapsible-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            if (e.target.closest('.collapse') || e.target.closest('button') || e.target.closest('select') || e.target.closest('input')) {
+                return;
+            }
+            const targetId = this.getAttribute('data-target');
+            const collapseEl = document.getElementById(targetId);
+            if (collapseEl) {
+                $(collapseEl).collapse('toggle');
+            }
+        });
+    });
+
+    function actualizarTipoSangre(pacienteId) {
+        const nuevoValor = document.getElementById('bloodTypeSelect').value;
+        if (!nuevoValor) return;
+        $.ajax({
+            url: '/Pacientes/ActualizarCampo',
+            type: 'POST',
+            data: { pacienteId: pacienteId, campo: 'TipoSangre', valor: nuevoValor },
+            success: function(resp) {
+                if (resp.success) {
+                    document.getElementById('spanTipoSangre').innerHTML = '<i class="fas fa-tint mr-2"></i>' + nuevoValor;
+                    $('#collapseBloodType').collapse('hide');
+                    toastr.success('Tipo de sangre actualizado');
+                } else {
+                    toastr.error('Error al actualizar');
+                }
+            },
+            error: function() { toastr.error('Error de conexión'); }
+        });
+    }
+
+    function actualizarPeso(pacienteId) {
+        const nuevoValor = document.getElementById('pesoInput').value;
+        if (!nuevoValor) return;
+        $.ajax({
+            url: '/Pacientes/ActualizarCampo',
+            type: 'POST',
+            data: { pacienteId: pacienteId, campo: 'Peso', valor: nuevoValor },
+            success: function(resp) {
+                if (resp.success) {
+                    document.getElementById('spanPeso').innerHTML = '<i class="fas fa-weight mr-2"></i>' + nuevoValor;
+                    $('#collapsePeso').collapse('hide');
+                    toastr.success('Peso actualizado');
+                } else {
+                    toastr.error('Error al actualizar');
+                }
+            },
+            error: function() { toastr.error('Error de conexión'); }
+        });
+    }
+
+    function actualizarEstatura(pacienteId) {
+        const nuevoValor = document.getElementById('estaturaInput').value;
+        if (!nuevoValor) return;
+        $.ajax({
+            url: '/Pacientes/ActualizarCampo',
+            type: 'POST',
+            data: { pacienteId: pacienteId, campo: 'Estatura', valor: nuevoValor },
+            success: function(resp) {
+                if (resp.success) {
+                    document.getElementById('spanEstatura').innerHTML = '<i class="fas fa-ruler-vertical mr-2"></i>' + nuevoValor;
+                    $('#collapseEstatura').collapse('hide');
+                    toastr.success('Estatura actualizada');
+                } else {
+                    toastr.error('Error al actualizar');
+                }
+            },
+            error: function() { toastr.error('Error de conexión'); }
+        });
+    }
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════
+     MODAL — HISTORIAL DE MEDICAMENTOS E INSUMOS (CON PAGINACIÓN Y BADGES CORREGIDOS)
+══════════════════════════════════════════════════════════════ -->
+<div id="mdl-historial-medicamentos" title="Historial de Medicamentos e Insumos" style="display:none;">
+    <div class="mb-3 d-flex align-items-center" style="gap:10px; flex-wrap:wrap;">
+        <!-- Filtros de estado -->
+        <div class="btn-group btn-group-sm" role="group">
+            <button type="button" class="btn btn-outline-secondary active" id="btnFiltroTodos"
+                    onclick="filtrarHistorialMed('todos')">
+                <i class="fas fa-list mr-1"></i> Todos
+            </button>
+            <button type="button" class="btn btn-outline-success" id="btnFiltroAplicados"
+                    onclick="filtrarHistorialMed('aplicados')">
+                <i class="fas fa-check mr-1"></i> Aplicados
+            </button>
+            <button type="button" class="btn btn-outline-danger" id="btnFiltroPendientes"
+                    onclick="filtrarHistorialMed('pendientes')">
+                <i class="fas fa-clock mr-1"></i> Pendientes
+            </button>
+        </div>
+        <!-- Filtro por origen -->
+        <select id="selectFiltroOrigenMed" class="form-control form-control-sm" style="width:220px;"
+                onchange="filtrarHistorialMed(getFiltroEstadoActivo())">
+            <option value="">Todos los orígenes</option>
+            <option value="Control de Medicamentos">Control de Medicamentos</option>
+            <option value="Control de Insumos">Control de Insumos</option>
+        </select>
+        <!-- Contadores (badges) sobre el TOTAL de datos (sin filtros) -->
+        <span class="badge badge-secondary ml-auto" id="badgeTotalMed">Total: 0</span>
+        <span class="badge badge-success" id="badgeAplicadosMed">Aplicados: 0</span>
+        <span class="badge badge-danger" id="badgePendientesMed">Pendientes: 0</span>
+    </div>
+
+    <div class="table-responsive">
+        <table id="tablaHistorialMedicamentos" class="table table-hover table-sm" style="font-size:0.85rem;">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Origen</th>
+                    <th>Medicamento / Insumo</th>
+                    <th>Indicaciones</th>
+                    <th>Vía</th>
+                    <th>Frecuencia</th>
+                    <th>Cant. Registrada</th>
+                    <th>Cant. Aplicada</th>
+                    <th>Estado</th>
+                    <th>Fecha de Aplicación</th>
+                    <th>Fecha Registro</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tablaHistorialMedicamentosBody">
+                <tr>
+                    <td colspan="11" class="text-center text-muted py-3">
+                        <i class="fas fa-spinner fa-spin mr-2"></i> Cargando...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- PAGINACIÓN -->
+    <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+        <div class="d-flex align-items-center" style="gap: 8px;">
+            <span class="text-muted small">Registros por página:</span>
+            <select id="selectPageSize" class="form-control form-control-sm" style="width: 70px;"
+                    onchange="cambiarPageSize(parseInt(this.value))">
+                <option value="5">5</option>
+                <option value="10" selected>10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+            </select>
+        </div>
+        <div class="d-flex align-items-center" style="gap: 5px;">
+            <button class="btn btn-sm btn-outline-secondary" id="btnPrimeraPagina" onclick="cambiarPagina('primera')" disabled>
+                <i class="fas fa-angle-double-left"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" id="btnAnteriorPagina" onclick="cambiarPagina('anterior')" disabled>
+                <i class="fas fa-angle-left"></i>
+            </button>
+            <span class="mx-2 small" id="paginacionInfo">Página 1 de 1</span>
+            <button class="btn btn-sm btn-outline-secondary" id="btnSiguientePagina" onclick="cambiarPagina('siguiente')" disabled>
+                <i class="fas fa-angle-right"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" id="btnUltimaPagina" onclick="cambiarPagina('ultima')" disabled>
+                <i class="fas fa-angle-double-right"></i>
+            </button>
+        </div>
+        <div class="text-muted small" id="rangoRegistrosInfo"></div>
+    </div>
+
+
+    <!-- Panel inline de devolución (oculto por defecto) -->
+<div id="panelDevolucion" style="display:none;" class="mt-3 p-3 border rounded bg-light border-warning">
+    <div class="d-flex align-items-center mb-2" style="gap:8px;">
+        <i class="fas fa-undo-alt text-warning fa-lg"></i>
+        <strong class="text-dark">Devolver insumo a Pendiente</strong>
+    </div>
+    <p class="text-muted small mb-2">
+        Seleccione el motivo. El insumo volverá a estado <span class="badge badge-warning text-dark">Pendiente</span> y se devolverá el stock.
+    </p>
+    <select id="selectMotivoDevolucion" class="form-control form-control-sm mb-2">
+        <option value="">-- Seleccione un motivo --</option>
+        <option>Error en registro de aplicación</option>
+        <option>Insumo aplicado al paciente incorrecto</option>
+        <option>Duplicidad en la aplicación</option>
+        <option>Orden médica cancelada o modificada</option>
+        <option>El paciente rechazó el insumo</option>
+        <option>Insumo no era el indicado</option>
+        <option>Error en la cantidad aplicada</option>
+        <option>Cambio de tratamiento por médico</option>
+        <option>Insumo aplicado fuera de horario programado</option>
+    </select>
+    <div class="d-flex" style="gap:8px;">
+        <button class="btn btn-warning btn-sm font-weight-bold" id="btnConfirmarDevolucion" onclick="confirmarDevolucionInsumo()">
+            <i class="fas fa-undo-alt mr-1"></i> Confirmar
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="cerrarPanelDevolucion()">
+            <i class="fas fa-times mr-1"></i> Cancelar
+        </button>
+    </div>
+</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     MODAL — HISTORIAL DE SERVICIOS (CON PAGINACIÓN Y BADGES)
+══════════════════════════════════════════════════════════════ -->
+<div id="mdl-historial-servicios" title="Historial de Servicios" style="display:none;">
+    <div class="mb-3 d-flex align-items-center" style="gap:10px; flex-wrap:wrap;">
+        <!-- Filtros de estado -->
+        <div class="btn-group btn-group-sm" role="group">
+            <button type="button" class="btn btn-outline-secondary active" id="btnFiltroServTodos"
+                    onclick="filtrarHistorialServ('todos')">
+                <i class="fas fa-list mr-1"></i> Todos
+            </button>
+            <button type="button" class="btn btn-outline-success" id="btnFiltroServAplicados"
+                    onclick="filtrarHistorialServ('aplicados')">
+                <i class="fas fa-check mr-1"></i> Aplicados
+            </button>
+            <button type="button" class="btn btn-outline-danger" id="btnFiltroServPendientes"
+                    onclick="filtrarHistorialServ('pendientes')">
+                <i class="fas fa-clock mr-1"></i> Pendientes
+            </button>
+        </div>
+
+        <!-- Contadores (badges) -->
+        <span class="badge badge-secondary ml-auto" id="badgeTotalServ">Total: 0</span>
+        <span class="badge badge-success" id="badgeAplicadosServ">Aplicados: 0</span>
+        <span class="badge badge-danger" id="badgePendientesServ">Pendientes: 0</span>
+    </div>
+
+    <div class="table-responsive">
+        <table id="tablaHistorialServicios" class="table table-hover table-sm" style="font-size:0.85rem;">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Nombre del Servicio</th>
+                    <th>Indicaciones</th>
+                    <th>Cantidad</th>
+                    <th>Precio</th>
+                    <th>Estado</th>
+                    <th>Fecha Aplicación</th>
+                    <th>Aplicado por</th>
+                    <th>Fecha Registro</th>
+                    <th>Registrado por</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tablaHistorialServiciosBody">
+                <tr>
+                    <td colspan="10" class="text-center text-muted py-3">
+                        <i class="fas fa-spinner fa-spin mr-2"></i> Cargando...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+        <div class="d-flex align-items-center" style="gap: 8px;">
+            <span class="text-muted small">Registros por página:</span>
+            <select id="selectPageSizeServ" class="form-control form-control-sm" style="width: 70px;"
+                    onchange="cambiarPageSizeServ(parseInt(this.value))">
+                <option value="5">5</option>
+                <option value="10" selected>10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+            </select>
+        </div>
+        <div class="d-flex align-items-center" style="gap: 5px;">
+            <button class="btn btn-sm btn-outline-secondary" id="btnPrimeraPaginaServ" onclick="cambiarPaginaServ('primera')" disabled>
+                <i class="fas fa-angle-double-left"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" id="btnAnteriorPaginaServ" onclick="cambiarPaginaServ('anterior')" disabled>
+                <i class="fas fa-angle-left"></i>
+            </button>
+            <span class="mx-2 small" id="paginacionInfoServ">Página 1 de 1</span>
+            <button class="btn btn-sm btn-outline-secondary" id="btnSiguientePaginaServ" onclick="cambiarPaginaServ('siguiente')" disabled>
+                <i class="fas fa-angle-right"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" id="btnUltimaPaginaServ" onclick="cambiarPaginaServ('ultima')" disabled>
+                <i class="fas fa-angle-double-right"></i>
+            </button>
+        </div>
+        <div class="text-muted small" id="rangoRegistrosInfoServ"></div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     MODAL — HISTORIAL DE EXÁMENES / LABORATORIOS
+══════════════════════════════════════════════════════════════ -->
+<div id="mdl-historial-examenes" title="Historial de Exámenes y Laboratorios" style="display:none;">
+    <div class="mb-3 d-flex align-items-center" style="gap:10px; flex-wrap:wrap;">
+        <!-- Filtros de estado -->
+        <div class="btn-group btn-group-sm" role="group">
+            <button type="button" class="btn btn-outline-secondary active" id="btnFiltroExaTodos"
+                    onclick="filtrarHistorialExa('todos')">
+                <i class="fas fa-list mr-1"></i> Todos
+            </button>
+            <button type="button" class="btn btn-outline-success" id="btnFiltroExaAplicados"
+                    onclick="filtrarHistorialExa('aplicados')">
+                <i class="fas fa-check mr-1"></i> Realizados
+            </button>
+            <button type="button" class="btn btn-outline-danger" id="btnFiltroExaPendientes"
+                    onclick="filtrarHistorialExa('pendientes')">
+                <i class="fas fa-clock mr-1"></i> Pendientes
+            </button>
+        </div>
+
+        <!-- Contadores -->
+        <span class="badge badge-secondary ml-auto" id="badgeTotalExa">Total: 0</span>
+        <span class="badge badge-success" id="badgeAplicadosExa">Realizados: 0</span>
+        <span class="badge badge-danger" id="badgePendientesExa">Pendientes: 0</span>
+    </div>
+
+    <div class="table-responsive">
+        <table id="tablaHistorialExamenes" class="table table-hover table-sm" style="font-size:0.85rem;">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Nombre del Examen</th>
+                    <th>Estado</th>
+                    <th>Fecha Solicitud</th>
+                    <th>Solicitado por</th>
+                    <th>Fecha Realización</th>
+                    <th>Realizado por</th>
+                    <th>Resultados / Observaciones</th>
+                            <th>Acciones</th>
+
+                </tr>
+            </thead>
+            <tbody id="tablaHistorialExamenesBody">
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-3">
+                        <i class="fas fa-spinner fa-spin mr-2"></i> Cargando...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- PAGINACIÓN -->
+    <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+        <div class="d-flex align-items-center" style="gap: 8px;">
+            <span class="text-muted small">Registros por página:</span>
+            <select id="selectPageSizeExa" class="form-control form-control-sm" style="width: 70px;"
+                    onchange="cambiarPageSizeExa(parseInt(this.value))">
+                <option value="5">5</option>
+                <option value="10" selected>10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+            </select>
+        </div>
+        <div class="d-flex align-items-center" style="gap: 5px;">
+            <button class="btn btn-sm btn-outline-secondary" id="btnPrimeraPaginaExa" onclick="cambiarPaginaExa('primera')" disabled>
+                <i class="fas fa-angle-double-left"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" id="btnAnteriorPaginaExa" onclick="cambiarPaginaExa('anterior')" disabled>
+                <i class="fas fa-angle-left"></i>
+            </button>
+            <span class="mx-2 small" id="paginacionInfoExa">Página 1 de 1</span>
+            <button class="btn btn-sm btn-outline-secondary" id="btnSiguientePaginaExa" onclick="cambiarPaginaExa('siguiente')" disabled>
+                <i class="fas fa-angle-right"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" id="btnUltimaPaginaExa" onclick="cambiarPaginaExa('ultima')" disabled>
+                <i class="fas fa-angle-double-right"></i>
+            </button>
+        </div>
+        <div class="text-muted small" id="rangoRegistrosInfoExa"></div>
+    </div>
+</div>
+
+
+<script>
+    let currentPage = 1;
+    let pageSize = 10;
+    let currentFilteredData = [];
+    let allData = [];
+
+    // ── Devolución inline ──────────────────────────────────
+    let _aplicacionIdADevolver = null;
+
+    function abrirPanelDevolucion(aplicacionId, btn) {
+        if (_aplicacionIdADevolver === aplicacionId) {
+            cerrarPanelDevolucion();
+            return;
+        }
+        _aplicacionIdADevolver = aplicacionId;
+        document.getElementById('selectMotivoDevolucion').value = '';
+        const panel = document.getElementById('panelDevolucion');
+        panel.style.display = 'block';
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function cerrarPanelDevolucion() {
+        _aplicacionIdADevolver = null;
+        document.getElementById('panelDevolucion').style.display = 'none';
+        document.getElementById('selectMotivoDevolucion').value = '';
+    }
+
+    function confirmarDevolucionInsumo() {
+        const motivo = document.getElementById('selectMotivoDevolucion').value;
+        if (!motivo) {
+            toastr.warning('Debe seleccionar un motivo de devolución.');
+            return;
+        }
+
+        const btn = document.getElementById('btnConfirmarDevolucion');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Procesando...';
+
+        $.ajax({
+            url: '/Hospitalizacion/DevolverInsumoAplicadoAPendiente',
+            method: 'POST',
+            data: { aplicacionId: _aplicacionIdADevolver, motivoDevolucion: motivo },
+            success: function(resp) {
+                const data = (typeof resp === 'string') ? JSON.parse(resp) : resp;
+                if (data.Exitoso) {
+                    const idx = allData.findIndex(r => r.Id === _aplicacionIdADevolver && r.Origen === 'Control de Insumos');
+                    if (idx !== -1) {
+                        allData[idx].Aplicado         = false;
+                        allData[idx].FechaAplicacion  = '-';
+                        allData[idx].MotivoDevolucion = motivo;
+                    }
+                    actualizarBadges();
+                    aplicarFiltros();
+                    renderizarHistorialMedPaginated();
+                    cerrarPanelDevolucion();
+                    toastr.success('Insumo devuelto a Pendiente correctamente.');
+                } else {
+                    toastr.error('Error: ' + (data.Mensaje || 'No se pudo devolver.'));
+                }
+            },
+            error: function() {
+                toastr.error('Error de conexión.');
+            },
+            complete: function() {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-undo-alt mr-1"></i> Confirmar';
+            }
+        });
+    }
+    // ──────────────────────────────────────────────────────
+
+    function getFiltroEstadoActivo() {
+        const activeBtn = document.querySelector('.btn-group .active');
+        if (!activeBtn) return 'todos';
+        const id = activeBtn.id;
+        if (id === 'btnFiltroTodos') return 'todos';
+        if (id === 'btnFiltroAplicados') return 'aplicados';
+        if (id === 'btnFiltroPendientes') return 'pendientes';
+        return 'todos';
+    }
+
+    function actualizarBadges() {
+        const total      = allData.length;
+        const aplicados  = allData.filter(r => r.Aplicado).length;
+        const pendientes = total - aplicados;
+        document.getElementById('badgeTotalMed').textContent     = `Total: ${total}`;
+        document.getElementById('badgeAplicadosMed').textContent  = `Aplicados: ${aplicados}`;
+        document.getElementById('badgePendientesMed').textContent = `Pendientes: ${pendientes}`;
+    }
+
+    function aplicarFiltros() {
+        const estadoFiltro = getFiltroEstadoActivo();
+        const origenFiltro = document.getElementById('selectFiltroOrigenMed').value;
+        currentFilteredData = allData.filter(r => {
+            const pasaOrigen = !origenFiltro || r.Origen === origenFiltro;
+            let pasaEstado = true;
+            if (estadoFiltro === 'aplicados')  pasaEstado = r.Aplicado === true;
+            else if (estadoFiltro === 'pendientes') pasaEstado = r.Aplicado === false;
+            return pasaOrigen && pasaEstado;
+        });
+    }
+
+    function renderizarHistorialMedPaginated() {
+        const totalRegistros = currentFilteredData.length;
+        const totalPages     = Math.ceil(totalRegistros / pageSize) || 1;
+        if (currentPage < 1) currentPage = 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        const start       = (currentPage - 1) * pageSize;
+        const end         = start + pageSize;
+        const datosPagina = currentFilteredData.slice(start, end);
+        const tbody       = document.getElementById('tablaHistorialMedicamentosBody');
+        tbody.innerHTML   = '';
+
+        if (datosPagina.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted py-3">No hay registros con este filtro.</td></tr>';
+        } else {
+            datosPagina.forEach(r => {
+                const estadoBadge = r.Aplicado
+                    ? '<span class="badge badge-success"><i class="fas fa-check mr-1"></i>Aplicado</span>'
+                    : '<span class="badge badge-warning text-dark"><i class="fas fa-clock mr-1"></i>Pendiente</span>';
+
+                const origenBadge = r.Origen === 'Control de Medicamentos'
+                    ? '<span class="badge badge-primary" style="font-size:0.72rem;">Control de Medicamentos</span>'
+                    : '<span class="badge badge-info"    style="font-size:0.72rem;">Control de Insumos</span>';
+
+                const hospitalizacionPagada = document.getElementById('HospitalizacionPagada')?.value === 'true';
+                let accionesCell = '-';
+                if (!hospitalizacionPagada && r.Origen === 'Control de Insumos') {
+                    if (!r.Aplicado) {
+                        accionesCell = `<button class="btn btn-danger btn-sm" title="Eliminar"
+                                            onclick="eliminarInsumoDirectoHistorial(${r.Id}, this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>`;
+                    } else {
+                        accionesCell = `<button class="btn btn-warning btn-sm text-dark font-weight-bold"
+                                            onclick="abrirPanelDevolucion(${r.Id}, this)">
+                                            <i class="fas fa-undo-alt mr-1"></i>Devolver
+                                        </button>`;
+                    }
+                }
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${origenBadge}</td>
+                        <td><strong>${escapeHtml(r.Nombre || '-')}</strong></td>
+                        <td>${escapeHtml(r.Indicaciones || '-')}</td>
+                        <td>${escapeHtml(r.Via || '-')}</td>
+                        <td>${escapeHtml(r.Frecuencia || '-')}</td>
+                        <td class="text-center">${r.CantidadTotal || 0}</td>
+                        <td class="text-center">${r.Cantidad || 0}</td>
+                        <td class="text-center">${estadoBadge}</td>
+                        <td>${escapeHtml(r.FechaAplicacion || '-')}</td>
+                        <td>${escapeHtml(r.FechaRegistro || '-')}</td>
+                        <td class="text-center">${accionesCell}</td>
+                    </tr>`;
+            });
+        }
+
+        document.getElementById('btnPrimeraPagina').disabled  = (currentPage === 1);
+        document.getElementById('btnAnteriorPagina').disabled = (currentPage === 1);
+        document.getElementById('btnSiguientePagina').disabled = (currentPage === totalPages);
+        document.getElementById('btnUltimaPagina').disabled   = (currentPage === totalPages);
+        document.getElementById('paginacionInfo').innerHTML   = `Página ${currentPage} de ${totalPages}`;
+        const desde = totalRegistros === 0 ? 0 : start + 1;
+        const hasta = Math.min(end, totalRegistros);
+        document.getElementById('rangoRegistrosInfo').innerHTML = `Mostrando ${desde} a ${hasta} de ${totalRegistros} registros`;
+    }
+
+    function filtrarHistorialMed(estado) {
+        document.querySelectorAll('.btn-group .btn').forEach(btn => btn.classList.remove('active'));
+        let btnActivo = null;
+        if (estado === 'todos')      btnActivo = document.getElementById('btnFiltroTodos');
+        else if (estado === 'aplicados')  btnActivo = document.getElementById('btnFiltroAplicados');
+        else if (estado === 'pendientes') btnActivo = document.getElementById('btnFiltroPendientes');
+        if (btnActivo) btnActivo.classList.add('active');
+        aplicarFiltros();
+        currentPage = 1;
+        renderizarHistorialMedPaginated();
+    }
+
+    function cambiarPagina(direccion) {
+        const totalPages = Math.ceil(currentFilteredData.length / pageSize) || 1;
+        let nuevaPagina = currentPage;
+        switch (direccion) {
+            case 'primera':   nuevaPagina = 1; break;
+            case 'anterior':  nuevaPagina = Math.max(1, currentPage - 1); break;
+            case 'siguiente': nuevaPagina = Math.min(totalPages, currentPage + 1); break;
+            case 'ultima':    nuevaPagina = totalPages; break;
+            default: return;
+        }
+        if (nuevaPagina !== currentPage) {
+            currentPage = nuevaPagina;
+            renderizarHistorialMedPaginated();
+        }
+    }
+
+    function cambiarPageSize(nuevoTamanio) {
+        pageSize = nuevoTamanio;
+        currentPage = 1;
+        renderizarHistorialMedPaginated();
+    }
+
+    function eliminarInsumoDirectoHistorial(insumoId, btn) {
+        if (!confirm('¿Está seguro de que desea eliminar este insumo pendiente?')) return;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        $.ajax({
+            url: '/Hospitalizacion/EliminarInsumoDirectoAplicacion',
+            method: 'POST',
+            data: { aplicacionId: insumoId },
+            success: function(resp) {
+                const data = (typeof resp === 'string') ? JSON.parse(resp) : resp;
+                if (data.Exitoso) {
+                    allData = allData.filter(r => !(r.Id === insumoId && r.Origen === 'Control de Insumos'));
+                    actualizarBadges();
+                    aplicarFiltros();
+                    const totalPages = Math.ceil(currentFilteredData.length / pageSize) || 1;
+                    if (currentPage > totalPages) currentPage = totalPages;
+                    renderizarHistorialMedPaginated();
+                    toastr.success('Insumo eliminado');
+                } else {
+                    alert('Error: ' + (data.Mensaje || 'No se pudo eliminar.'));
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-trash"></i>';
+                }
+            },
+            error: function() {
+                alert('Error de conexión al intentar eliminar el insumo.');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-trash"></i>';
+            }
+        });
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    window.cargarDatosHistorial = function(datosDesdeServidor) {
+        cerrarPanelDevolucion();
+        allData = datosDesdeServidor.map(item => ({
+            Id:               item.Id,
+            Origen:           item.Origen,
+            Nombre:           item.Nombre,
+            CantidadTotal:    item.CantidadTotal,
+            Cantidad:         item.Cantidad,
+            Indicaciones:     item.Indicaciones,
+            Via:              item.Via,
+            Frecuencia:       item.Frecuencia,
+            Aplicado:         item.Aplicado,
+            FechaAplicacion:  item.FechaAplicacion,
+            FechaRegistro:    item.FechaRegistro,
+            MotivoDevolucion: item.MotivoDevolucion 
+        }));
+        actualizarBadges();
+        aplicarFiltros();
+        currentPage = 1;
+        renderizarHistorialMedPaginated();
+    };
+</script>
+
+
+<script>
+    // ===================== HISTORIAL DE SERVICIOS =====================
+let currentPageServ = 1;
+let pageSizeServ = 10;
+let currentFilteredDataServ = [];
+let allDataServ = [];
+
+function actualizarBadgesServ() {
+    const total      = allDataServ.length;
+    const aplicados  = allDataServ.filter(s => s.Aplicado).length;
+    const pendientes = total - aplicados;
+    document.getElementById('badgeTotalServ').textContent     = `Total: ${total}`;
+    document.getElementById('badgeAplicadosServ').textContent  = `Aplicados: ${aplicados}`;
+    document.getElementById('badgePendientesServ').textContent = `Pendientes: ${pendientes}`;
+}
+
+function aplicarFiltrosServ() {
+    const estadoFiltro = getFiltroEstadoActivoServ();
+    currentFilteredDataServ = allDataServ.filter(s => {
+        let pasaEstado = true;
+        if (estadoFiltro === 'aplicados')  pasaEstado = s.Aplicado === true;
+        else if (estadoFiltro === 'pendientes') pasaEstado = s.Aplicado === false;
+        return pasaEstado;
+    });
+}
+
+function getFiltroEstadoActivoServ() {
+    const activeBtn = document.querySelector('#mdl-historial-servicios .btn-group .active');
+    if (!activeBtn) return 'todos';
+    const id = activeBtn.id;
+    if (id === 'btnFiltroServTodos') return 'todos';
+    if (id === 'btnFiltroServAplicados') return 'aplicados';
+    if (id === 'btnFiltroServPendientes') return 'pendientes';
+    return 'todos';
+}
+
+
+function renderizarHistorialServPaginated() {
+    const totalRegistros = currentFilteredDataServ.length;
+    const totalPages     = Math.ceil(totalRegistros / pageSizeServ) || 1;
+    if (currentPageServ < 1) currentPageServ = 1;
+    if (currentPageServ > totalPages) currentPageServ = totalPages;
+
+    const start = (currentPageServ - 1) * pageSizeServ;
+    const end   = start + pageSizeServ;
+    const datosPagina = currentFilteredDataServ.slice(start, end);
+    const tbody = document.getElementById('tablaHistorialServiciosBody');
+    tbody.innerHTML = '';
+
+    if (datosPagina.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-3">No hay servicios con este filtro.</td></tr>';
+    } else {
+        datosPagina.forEach(s => {
+            const estadoBadge = s.Aplicado
+                ? '<span class="badge badge-success"><i class="fas fa-check mr-1"></i>Aplicado</span>'
+                : '<span class="badge badge-warning text-dark"><i class="fas fa-clock mr-1"></i>Pendiente</span>';
+
+            // Botón eliminar SOLO si está pendiente y la hospitalización no está pagada
+            const hospitalizacionPagadaServ = document.getElementById('HospitalizacionPagada')?.value === 'true';
+            let acciones = '';
+            if (!hospitalizacionPagadaServ && !s.Aplicado) {
+                acciones = `<button class="btn btn-danger btn-sm" onclick="eliminarServicioHistorial(${s.Id})" title="Eliminar servicio">
+                                <i class="fas fa-trash"></i>
+                            </button>`;
+            } else {
+                acciones = '<span class="text-muted">—</span>';
+            }
+
+            tbody.innerHTML += `
+                <tr>
+                    <td><strong>${escapeHtml(s.Nombre || '-')}</strong></td>
+                    <td>${escapeHtml(s.Indicaciones || '-')}</td>
+                    <td class="text-center">${s.Cantidad || 1}</td>
+                    <td class="text-right">${(s.Precio || 0).toFixed(2)}</td>
+                    <td class="text-center">${estadoBadge}</td>
+                    <td class="text-center">${escapeHtml(s.FechaHoraAplicacion || '-')}</td>
+                    <td class="text-center">${escapeHtml(s.PersonaAplica || '-')}</td>
+                    <td class="text-center">${escapeHtml(s.FechaHoraAplicacionManual || s.FechaRegistro || '-')}</td>
+                    <td class="text-center">${escapeHtml(s.PersonaCrea || '-')}</td>
+                    <td class="text-center">${acciones}</td>
+                </tr>
+            `;
+        });
+    }
+
+    // Actualizar controles de paginación
+    document.getElementById('btnPrimeraPaginaServ').disabled  = (currentPageServ === 1);
+    document.getElementById('btnAnteriorPaginaServ').disabled = (currentPageServ === 1);
+    document.getElementById('btnSiguientePaginaServ').disabled = (currentPageServ === totalPages);
+    document.getElementById('btnUltimaPaginaServ').disabled   = (currentPageServ === totalPages);
+    document.getElementById('paginacionInfoServ').innerHTML   = `Página ${currentPageServ} de ${totalPages}`;
+    const desde = totalRegistros === 0 ? 0 : start + 1;
+    const hasta = Math.min(end, totalRegistros);
+    document.getElementById('rangoRegistrosInfoServ').innerHTML = `Mostrando ${desde} a ${hasta} de ${totalRegistros} registros`;
+}
+
+function cambiarPaginaServ(direccion) {
+    const totalPages = Math.ceil(currentFilteredDataServ.length / pageSizeServ) || 1;
+    let nuevaPagina = currentPageServ;
+    switch (direccion) {
+        case 'primera':   nuevaPagina = 1; break;
+        case 'anterior':  nuevaPagina = Math.max(1, currentPageServ - 1); break;
+        case 'siguiente': nuevaPagina = Math.min(totalPages, currentPageServ + 1); break;
+        case 'ultima':    nuevaPagina = totalPages; break;
+        default: return;
+    }
+    if (nuevaPagina !== currentPageServ) {
+        currentPageServ = nuevaPagina;
+        renderizarHistorialServPaginated();
+    }
+}
+
+function cambiarPageSizeServ(nuevoTamanio) {
+    pageSizeServ = nuevoTamanio;
+    currentPageServ = 1;
+    renderizarHistorialServPaginated();
+}
+
+function filtrarHistorialServ(estado) {
+    document.querySelectorAll('#mdl-historial-servicios .btn-group .btn').forEach(btn => btn.classList.remove('active'));
+    let btnActivo = null;
+    if (estado === 'todos')      btnActivo = document.getElementById('btnFiltroServTodos');
+    else if (estado === 'aplicados')  btnActivo = document.getElementById('btnFiltroServAplicados');
+    else if (estado === 'pendientes') btnActivo = document.getElementById('btnFiltroServPendientes');
+    if (btnActivo) btnActivo.classList.add('active');
+    aplicarFiltrosServ();
+    currentPageServ = 1;
+    renderizarHistorialServPaginated();
+}
+
+function cargarHistorialServicios() {
+    const hospitalizacionId = document.getElementById('HospitalizacionId')?.value;
+    if (!hospitalizacionId) return;
+    $.ajax({
+        url: '/Hospitalizacion/ConsultarServiciosHospitalizacion',
+        method: 'POST',
+        data: { hospitalizacionId: hospitalizacionId },
+        success: function(response) {
+            let data = (typeof response === 'string') ? JSON.parse(response) : response;
+            if (data.Exitoso && data.Resultado) {
+                // Mapear campos para mantener consistencia
+                allDataServ = data.Resultado.map(s => ({
+                    Id: s.Id,
+                    Nombre: s.Nombre,
+                    Indicaciones: s.Indicaciones || '',
+                    Cantidad: s.Cantidad || 1,
+                    Precio: s.Precio || 0,
+                    Aplicado: s.Aplicado,
+                    FechaHoraAplicacion: s.FechaHoraAplicacion || '-',
+                    PersonaAplica: s.PersonaAplica || '-',
+                    FechaRegistro: s.FechaHoraAplicacionManual || '-',
+                    PersonaCrea: s.PersonaCrea || '-'
+                }));
+                actualizarBadgesServ();
+                aplicarFiltrosServ();
+                currentPageServ = 1;
+                renderizarHistorialServPaginated();
+            } else {
+                document.getElementById('tablaHistorialServiciosBody').innerHTML =
+                    '<tr><td colspan="10" class="text-center text-danger">Error al cargar servicios.</td></tr>';
+            }
+        },
+        error: function() {
+            document.getElementById('tablaHistorialServiciosBody').innerHTML =
+                '<tr><td colspan="10" class="text-center text-danger">Error de conexión al cargar servicios.</td></tr>';
+        }
+    });
+}
+
+// Función para abrir el modal (debes agregarla al viewmodel o llamarla directamente)
+function verModalHistorialServicios() {
+    cargarHistorialServicios();
+    $('#mdl-historial-servicios').dialog({
+        modal: true,
+        width: 1300,
+        buttons: {
+            "Cerrar": function() {
+                $(this).dialog("close");
+            }
+        }
+    });
+}
+
+// Evento delegado para aplicar servicio desde el historial
+$(document).on('click', '.aplicarServicioDesdeHistorial', function() {
+    const servicioId = $(this).data('id');
+    if (!servicioId) return;
+    if (!confirm('¿Aplicar este servicio ahora?')) return;
+
+    $.ajax({
+        url: '/Hospitalizacion/AplicarServicio',
+        method: 'POST',
+        data: {
+            hospitalizacionServicioId: servicioId,
+            cuentaId: document.getElementById('CuentaId')?.value || 0
+        },
+        success: function(response) {
+            let data = (typeof response === 'string') ? JSON.parse(response) : response;
+            if (data.Exitoso) {
+                // Recargar el historial para reflejar cambio
+                cargarHistorialServicios();
+                // También actualizar el modal de control de servicios si está abierto
+                if (typeof consultarServiciosHospitalizacion === 'function') {
+                    consultarServiciosHospitalizacion();
+                }
+                // Actualizar totales si está disponible
+                if (typeof detallesVm !== 'undefined' && detallesVm.actualizarTotales) {
+                    detallesVm.actualizarTotales();
+                }
+                toastr.success('Servicio aplicado correctamente');
+            } else {
+                toastr.error(data.Mensaje || 'Error al aplicar servicio');
+            }
+        },
+        error: function() {
+            toastr.error('Error de comunicación al aplicar servicio');
+        }
+    });
+});
+</script>
+
+
+<script>
+    // ===================== HISTORIAL DE EXÁMENES / LABORATORIOS =====================
+let currentPageExa = 1;
+let pageSizeExa = 10;
+let currentFilteredDataExa = [];
+let allDataExa = [];
+
+function actualizarBadgesExa() {
+    const total      = allDataExa.length;
+    const realizados = allDataExa.filter(e => e.Aplicado).length;
+    const pendientes = total - realizados;
+    document.getElementById('badgeTotalExa').textContent     = `Total: ${total}`;
+    document.getElementById('badgeAplicadosExa').textContent  = `Realizados: ${realizados}`;
+    document.getElementById('badgePendientesExa').textContent = `Pendientes: ${pendientes}`;
+}
+
+function aplicarFiltrosExa() {
+    const estadoFiltro = getFiltroEstadoActivoExa();
+    currentFilteredDataExa = allDataExa.filter(e => {
+        let pasaEstado = true;
+        if (estadoFiltro === 'aplicados')  pasaEstado = e.Aplicado === true;
+        else if (estadoFiltro === 'pendientes') pasaEstado = e.Aplicado === false;
+        return pasaEstado;
+    });
+}
+
+function getFiltroEstadoActivoExa() {
+    const activeBtn = document.querySelector('#mdl-historial-examenes .btn-group .active');
+    if (!activeBtn) return 'todos';
+    const id = activeBtn.id;
+    if (id === 'btnFiltroExaTodos') return 'todos';
+    if (id === 'btnFiltroExaAplicados') return 'aplicados';
+    if (id === 'btnFiltroExaPendientes') return 'pendientes';
+    return 'todos';
+}
+
+function renderizarHistorialExaPaginated() {
+    const totalRegistros = currentFilteredDataExa.length;
+    const totalPages     = Math.ceil(totalRegistros / pageSizeExa) || 1;
+    if (currentPageExa < 1) currentPageExa = 1;
+    if (currentPageExa > totalPages) currentPageExa = totalPages;
+
+    const start = (currentPageExa - 1) * pageSizeExa;
+    const end   = start + pageSizeExa;
+    const datosPagina = currentFilteredDataExa.slice(start, end);
+    const tbody = document.getElementById('tablaHistorialExamenesBody');
+    tbody.innerHTML = '';
+
+    if (datosPagina.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">No hay exámenes con este filtro.</td></tr>';
+    } else {
+        datosPagina.forEach(e => {
+            const estadoBadge = e.Aplicado
+                ? '<span class="badge badge-success"><i class="fas fa-check mr-1"></i>Realizado</span>'
+                : '<span class="badge badge-warning text-dark"><i class="fas fa-clock mr-1"></i>Pendiente</span>';
+
+            // Botón eliminar SOLO si está pendiente y la hospitalización no está pagada
+            const hospitalizacionPagadaExa = document.getElementById('HospitalizacionPagada')?.value === 'true';
+            let acciones = '';
+            if (!hospitalizacionPagadaExa && !e.Aplicado) {
+                acciones = `<button class="btn btn-danger btn-sm" onclick="eliminarExamenHistorial(${e.Id})" title="Eliminar examen">
+                                <i class="fas fa-trash"></i>
+                            </button>`;
+            } else {
+                acciones = '<span class="text-muted">—</span>';
+            }
+
+            tbody.innerHTML += `
+                <tr>
+                    <td><strong>${escapeHtml(e.Nombre || '-')}</strong></td>
+                    <td class="text-center">${estadoBadge}</td>
+                    <td class="text-center">${escapeHtml(e.FechaSolicitud || '-')}</td>
+                    <td class="text-center">${escapeHtml(e.SolicitadoPor || '-')}</td>
+                    <td class="text-center">${escapeHtml(e.FechaRealizacion || '-')}</td>
+                    <td class="text-center">${escapeHtml(e.RealizadoPor || '-')}</td>
+                    <td class="text-center">${escapeHtml(e.Observaciones || '-')}</td>
+                    <td class="text-center">${acciones}</td>
+                </tr>
+            `;
+        });
+    }
+
+    document.getElementById('btnPrimeraPaginaExa').disabled  = (currentPageExa === 1);
+    document.getElementById('btnAnteriorPaginaExa').disabled = (currentPageExa === 1);
+    document.getElementById('btnSiguientePaginaExa').disabled = (currentPageExa === totalPages);
+    document.getElementById('btnUltimaPaginaExa').disabled   = (currentPageExa === totalPages);
+    document.getElementById('paginacionInfoExa').innerHTML   = `Página ${currentPageExa} de ${totalPages}`;
+    const desde = totalRegistros === 0 ? 0 : start + 1;
+    const hasta = Math.min(end, totalRegistros);
+    document.getElementById('rangoRegistrosInfoExa').innerHTML = `Mostrando ${desde} a ${hasta} de ${totalRegistros} registros`;
+}
+
+function cambiarPaginaExa(direccion) {
+    const totalPages = Math.ceil(currentFilteredDataExa.length / pageSizeExa) || 1;
+    let nuevaPagina = currentPageExa;
+    switch (direccion) {
+        case 'primera':   nuevaPagina = 1; break;
+        case 'anterior':  nuevaPagina = Math.max(1, currentPageExa - 1); break;
+        case 'siguiente': nuevaPagina = Math.min(totalPages, currentPageExa + 1); break;
+        case 'ultima':    nuevaPagina = totalPages; break;
+        default: return;
+    }
+    if (nuevaPagina !== currentPageExa) {
+        currentPageExa = nuevaPagina;
+        renderizarHistorialExaPaginated();
+    }
+}
+
+function cambiarPageSizeExa(nuevoTamanio) {
+    pageSizeExa = nuevoTamanio;
+    currentPageExa = 1;
+    renderizarHistorialExaPaginated();
+}
+
+function filtrarHistorialExa(estado) {
+    document.querySelectorAll('#mdl-historial-examenes .btn-group .btn').forEach(btn => btn.classList.remove('active'));
+    let btnActivo = null;
+    if (estado === 'todos')      btnActivo = document.getElementById('btnFiltroExaTodos');
+    else if (estado === 'aplicados')  btnActivo = document.getElementById('btnFiltroExaAplicados');
+    else if (estado === 'pendientes') btnActivo = document.getElementById('btnFiltroExaPendientes');
+    if (btnActivo) btnActivo.classList.add('active');
+    aplicarFiltrosExa();
+    currentPageExa = 1;
+    renderizarHistorialExaPaginated();
+}
+
+function cargarHistorialExamenes() {
+    const hospitalizacionId = document.getElementById('HospitalizacionId')?.value;
+    if (!hospitalizacionId) return;
+
+    $.ajax({
+        url: '/Hospitalizacion/ConsultarExamenesHospitalizacion',
+        method: 'POST',
+        data: { hospitalizacionId: hospitalizacionId },
+        success: function(response) {
+            let data = (typeof response === 'string') ? JSON.parse(response) : response;
+            if (data.Exitoso && data.Resultado) {
+             
+                allDataExa = (data.Resultado || []).map(ex => ({
+                        Id: ex.Id,  
+                    Nombre: ex.Nombre || '-',
+                    Aplicado: false, 
+                    FechaSolicitud: ex.FechaHora || '-',
+                    SolicitadoPor: 'Sistema', 
+                    FechaRealizacion: '-',
+                    RealizadoPor: '-',
+                    Observaciones: ''
+                }));
+                actualizarBadgesExa();
+                aplicarFiltrosExa();
+                currentPageExa = 1;
+                renderizarHistorialExaPaginated();
+            } else {
+                document.getElementById('tablaHistorialExamenesBody').innerHTML =
+                    '<tr><td colspan="7" class="text-center text-danger">Error al cargar exámenes.</td></tr>';
+            }
+        },
+        error: function() {
+            document.getElementById('tablaHistorialExamenesBody').innerHTML =
+                '<tr><td colspan="7" class="text-center text-danger">Error de conexión al cargar exámenes.</td></tr>';
+        }
+    });
+}
+
+function verModalHistorialExamenes() {
+    cargarHistorialExamenes();
+    $('#mdl-historial-examenes').dialog({
+        modal: true,
+        width: 1200,
+        buttons: {
+            "Cerrar": function() {
+                $(this).dialog("close");
+            }
+        }
+    });
+}
+
+
+
+
+function eliminarServicioHistorial(servicioId) {
+    if (!confirm('¿Eliminar este servicio? Se eliminará lógicamente (no podrá aplicarse después).')) return;
+
+    $.ajax({
+        url: '/Hospitalizacion/EliminarServicio',
+        method: 'POST',
+        data: { hospitalizacionServicioId: servicioId },
+        success: function(response) {
+            let data = (typeof response === 'string') ? JSON.parse(response) : response;
+            if (data.Exitoso) {
+                toastr.success('Servicio eliminado correctamente');
+                cargarHistorialServicios();  
+                if (typeof consultarServiciosHospitalizacion === 'function') {
+                    consultarServiciosHospitalizacion();
+                }
+                if (typeof detallesVm !== 'undefined' && detallesVm.actualizarTotales) {
+                    detallesVm.actualizarTotales();
+                }
+            } else {
+                toastr.error(data.Mensaje || 'Error al eliminar servicio');
+            }
+        },
+        error: function() {
+            toastr.error('Error de conexión al eliminar servicio');
+        }
+    });
+}
+
+// Delegar evento para los botones de eliminar (se agregan dinámicamente)
+$(document).on('click', '.eliminarServicioHistorial', function() {
+    const servicioId = $(this).data('id');
+    if (servicioId) eliminarServicioHistorial(servicioId);
+});
+
+
+function eliminarExamenHistorial(examenId) {
+    if (!confirm('¿Eliminar este examen? Se eliminará lógicamente y no se podrá recuperar.')) return;
+
+    $.ajax({
+        url: '/Hospitalizacion/EliminarExamen',
+        method: 'POST',
+        data: { hospitalizacionExamenId: examenId },
+        success: function(response) {
+            let data = (typeof response === 'string') ? JSON.parse(response) : response;
+            if (data.Exitoso) {
+                toastr.success('Examen eliminado correctamente');
+                cargarHistorialExamenes();
+                if (typeof detallesVm !== 'undefined' && detallesVm.actualizarTotales) {
+                    detallesVm.actualizarTotales();
+                }
+            } else {
+                toastr.error(data.Mensaje || 'Error al eliminar examen');
+            }
+        },
+        error: function() {
+            toastr.error('Error de conexión al eliminar examen');
+        }
+    });
+}
+
+$(document).on('click', '.eliminarExamenHistorial', function() {
+    const examenId = $(this).data('id');
+    if (examenId) eliminarExamenHistorial(examenId);
+});
+</script>
+
+<script src="~/js-utilidades-wp-email/SendEmail.js"></script>
+<script src="~/js-utilidades-wp-email/SendWhatsApp.js"></script>

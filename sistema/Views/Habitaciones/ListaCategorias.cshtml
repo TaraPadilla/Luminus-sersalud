@@ -1,0 +1,79 @@
+@model List<Database.Shared.Models.CategoriaHabitacion>
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    // Leer el valor del appsettings.json. 
+    string sufijoLayout = Configuration["Cliente"]; 
+    
+    // Concatenar para formar el nombre del Layout (ejemplo: "_Layout" + "SS")
+    // Si la clave trae el nombre completo (ej. "_LayoutSS"), simplemente asignalo directo.
+    Layout = $"_Layout{sufijoLayout}"; 
+    ViewData["Title"] = "Categorias";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12 text-center">
+                <h4><b>Categorias</b></h4>
+                <hr />
+            </div>
+            <div class="col-md-12">
+                <a class="btn btn-primary text-white"
+                   href="@Url.Action("NuevaCategoria","Habitaciones")">
+                    Nueva categor&iacute;a
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="tabla-categorias">
+                <thead>
+                    <tr>
+                        <th>Nombre Categor&iacute;a</th>
+                        <th>Tarifas</th>
+                        <th>Acciones</th>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.NombreCategoria</td>
+                            <td>
+                                @if (item.CategoriaHabitacionTarifas != null && item.CategoriaHabitacionTarifas.Count() > 0)
+                                {
+                                    foreach (var tarifa in item.CategoriaHabitacionTarifas)
+                                    {
+                                        <b>@tarifa.NombreTarifa: </b> @tarifa.ValorTarifa
+                                        <br />
+                                    }
+                                }
+                                else
+                                {
+                                    <i>No hay tarifas registradas</i>
+                                }
+                            </td>
+                            <td>
+                                <a href="@Url.Action("ModificarCategoria","Habitaciones", new {categoriaId = @item.Id})" class="btn btn-warning">
+                                    <i class="fa fa-edit"></i>
+                                </a>
+                                <a class="btn btn-danger text-white" onclick="eliminarCategoria(@item.Id)">
+                                    <i class="fa fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+<script src="~/ViewModelKo/HabitacionesCategoriasListaVM.js"></script>
+}

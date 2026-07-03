@@ -1,0 +1,472 @@
+@using sistema.Models
+@model InventarioProductoViewModel
+@Html.HiddenFor(p=>p.Id)
+@Html.HiddenFor(p=>p.CategoriaId)
+@Html.HiddenFor(p=>p.MarcaId)
+@Html.HiddenFor(p=>p.GrupoId)
+@Html.HiddenFor(p=>p.PresentacionId)
+@Html.HiddenFor(p=>p.PresentacionId2)
+@Html.HiddenFor(p=>p.PresentacionId3)
+@Html.HiddenFor(p=>p.PresentacionId4)
+@Html.HiddenFor(p=>p.PresentacionId5)
+@Html.HiddenFor(p=>p.ViadminId)
+@Html.HiddenFor(p=>p.LaboratorioId)
+@Html.HiddenFor(p=>p.AmbienteId)
+@Html.HiddenFor(p=>p.TipoProductoId)
+
+@{
+    var tipoProducto = Model.TipoProductoId.ToString();
+}
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <h5><b>Datos del producto</b></h5>
+                        <hr />
+                    </div>
+                    <div class="col-md-12 form-row">
+                        <div class="col-md-6">
+                            <div class="position-relative form-group">
+                                <label>Tipo de producto</label>
+                                <select asp-items="Model.TipoProductoSelectListItems"
+                                        asp-for="TipoProductoId" class="form-control">
+                                    <option value="">Seleccione...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="position-relative form-group">
+                                <label>Código de referencia</label>
+                                @Html.TextBoxFor(a => a.CodigoReferencia, new
+                                {
+                                    @class = "form-control",
+                                @placeholder = "Código de referencia"
+                                })
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label>@(tipoProducto == "3" ? "Nombre del equipo medico" : "Nombre comercial")</label>
+                            @Html.TextBoxFor(a => a.Nombre, new { @class = "form-control", @placeholder = "Nombre comercial" })
+                        </div>
+                        <div class="col-md-6 ">
+                            @*<label>Fecha de Vencimiento</label>
+            <input type="date" class="form-control" asp-for="Nombre">*@
+                            @*@Html.TextBoxFor(a => a.Nombre, new {@class="form-control", @placeholder="Nombre comercial"})*@
+                        </div>
+                        <div class="col-md-6 ">
+                            <label>.</label>
+                            @*<input type="date" class="form-control" asp-for="Nombre">*@
+                            @*@Html.TextBoxFor(a => a.Nombre, new {@class="form-control", @placeholder="Nombre comercial"})*@
+@*                             <input type="hidden" id="AmbienteId" value="@Convert.ToInt32(Model.AmbienteId)" />
+ *@                            @Html.TextBoxFor(a => a.AmbienteId, new { @class = "form-control", @value= Convert.ToInt32(Model.AmbienteId), @type="hidden", @id="AmbienteId" })
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-6 form-row">
+                        <div class="col-md-12">
+                            <label>Categoría</label>
+                        </div>
+                        <div class="col-md-12">
+                            <select class="form-control" data-bind="options: categorias,
+                                                                        optionsText: 'NombreCategoria',
+                                                                        value: categoriaSeleccionada,
+                                                                         optionsCaption:'Seleccione...'">
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body form-row">
+                                    <div class="col-md-12">
+                                        <b>Agregar categoría</b>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <input class="form-control" placeholder="Nueva categoría" data-bind="value:nombreNuevaCategoria" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button class="btn btn-success" data-bind="click:registrarNuevaCategoria">Agregar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 form-row">
+                        <div class="col-md-12">
+                            <label>Marca</label>
+                        </div>
+                        <div class="col-md-12">
+                            <select class="form-control" data-bind="options: marcas,
+                                                                        optionsText: 'NombreMarca',
+                                                                        value: marcaSeleccionada,
+                                                                         optionsCaption:'Seleccione...'">
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body form-row">
+                                    <div class="col-md-12">
+                                        <b>Agregar marca</b>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <input class="form-control" placeholder="Nueva marca" data-bind="value:nombreNuevaMarca" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button class="btn btn-success" data-bind="click:registrarNuevaMarca">Agregar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col-md-6 form-row @(tipoProducto != "3" ? "" : "d-none")">
+                        <div class="col-md-12">
+                            <label>Grupo terapéutico</label>
+                        </div>
+                        <div class="col-md-12">
+                            <select class="form-control" data-bind="options: gruposT,
+                                                                        optionsText: 'NombreGrupoT',
+                                                                        value: grupoTSeleccionado,
+                                                                        optionsCaption:'Seleccione...'">
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body form-row">
+                                    <div class="col-md-12">
+                                        <b>Agregar grupo</b>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <input class="form-control" placeholder="Nuevo grupo" data-bind="value:nombreNuevoGrupoT" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button class="btn btn-success" data-bind="click:registrarNuevoGrupoT">Agregar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 form-row @(tipoProducto != "3" ? "" : "d-none")">
+                        <div class="col-md-12">
+                            <label>Presentación 1</label>
+                        </div>
+                        <div class="col-md-12">
+                            <!-- Selección de presentaciones existentes -->
+                            <select class="form-control" data-bind="options: presentaciones,
+                                                                    optionsText: 'PresentProducto',
+                                                                    value: presentacionSeleccionada,
+                                                                    optionsCaption:'Seleccione...'">
+                            </select>
+                        </div>
+                        <!-- Presentación 2 -->
+                        <div class="col-md-12" data-bind="visible: showSelect2">
+                            <label>Presentación 2</label>
+                        </div>
+                        <div class="col-md-12" data-bind="visible: showSelect2">
+                            <select class="form-control" data-bind="options: presentaciones,
+                                                                    optionsText: 'PresentProducto',
+                                                                    value: presentacionSeleccionada2,
+                                                                    optionsCaption:'Seleccione...'">
+                            </select>
+                        </div>
+                        <!-- Presentación 3 -->
+                        <div class="col-md-12" data-bind="visible: showSelect3">
+                            <label>Presentación 3</label>
+                        </div>
+                        <div class="col-md-12" data-bind="visible: showSelect3">
+                            <select class="form-control" data-bind="options: presentaciones,
+                                                                    optionsText: 'PresentProducto',
+                                                                    value: presentacionSeleccionada3,
+                                                                    optionsCaption:'Seleccione...'">
+                            </select>
+                        </div>
+                        <!-- Presentación 4 -->
+                        <div class="col-md-12" data-bind="visible: showSelect4">
+                            <label>Presentación 4</label>
+                        </div>
+                        <div class="col-md-12" data-bind="visible: showSelect4">
+                            <select class="form-control" data-bind="options: presentaciones,
+                                                                    optionsText: 'PresentProducto',
+                                                                    value: presentacionSeleccionada4,
+                                                                    optionsCaption:'Seleccione...'">
+                            </select>
+                        </div>
+                        <!-- Presentación 5 -->
+                        <div class="col-md-12" data-bind="visible: showSelect5">
+                            <label>Presentación 5</label>
+                        </div>
+                        <div class="col-md-12" data-bind="visible: showSelect5">
+                            <select class="form-control" data-bind="options: presentaciones,
+                                                                    optionsText: 'PresentProducto',
+                                                                    value: presentacionSeleccionada5,
+                                                                    optionsCaption:'Seleccione...'">
+                            </select>
+                        </div>
+                        <br>
+                        <!-- Botones para agregar o quitar selectores -->
+                        <div class="col-md-12">
+                            <button class="btn btn-success" data-bind="click: addSelect">+</button>
+                            <button class="btn btn-danger" data-bind="click: removeSelect">-</button>
+                        </div>
+                        <div class="col-md-12">
+                            <!-- Botón para agregar una nueva presentación -->
+                            <div class="main-card mb-3 card">
+                                <div class="card-body form-row">
+                                    <div class="col-md-12">
+                                        <b>Agregar nueva presentación</b>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <input class="form-control" placeholder="Nueva presentación" data-bind="value:nombreNuevaPresentacion" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button class="btn btn-success" data-bind="click: registrarNuevaPresentacion">Agregar presentación</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 form-row @(tipoProducto != "3" ? "" : "d-none")">
+                        <div class="col-md-12">
+                            <label>Vía de administración</label>
+                        </div>
+                        <div class="col-md-12">
+                            <select class="form-control" data-bind="options: viasAdministracion,
+                                                                        optionsText: 'NombreViadmin',
+                                                                        value: viaAdministracionSeleccionada,
+                                                                        optionsCaption:'Seleccione...'">
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body form-row">
+                                    <div class="col-md-12">
+                                        <b>Agregar vía de administración</b>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <input class="form-control" placeholder="Nueva via de administración"
+                                            data-bind="value:nombreNuevaViaAdministracion" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button class="btn btn-success" data-bind="click:registrarNuevaViaAdministracion">Agregar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 form-row @(tipoProducto != "3" ? "" : "d-none")">
+                        <div class="col-md-12">
+                            <label>Casa medica</label>
+                        </div>
+                        <div class="col-md-12">
+                            <select class="form-control" data-bind="options: laboratorios,
+                                                                        optionsText: 'NombreLaboratorioProducto',
+                                                                        value: laboratorioSeleccionado,
+                                                                        optionsCaption:'Seleccione...'">
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="main-card mb-3 card">
+                                <div class="card-body form-row">
+                                    <div class="col-md-12">
+                                        <b>Agregar laboratorio</b>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <input class="form-control" placeholder="Nueva via de administración"
+                                            data-bind="value:nombreNuevoLaboratorio" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button class="btn btn-success" data-bind="click:registrarNuevoLaboratorio">Agregar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col-md-12">
+                        <label class="">Ubicación</label>
+                        @Html.TextBoxFor(a => a.Ubicacion, new
+                        {
+                            @class = "form-control",
+                        @placeholder = "Ubicación"
+                        })
+                    </div>
+                    <div class="col-md-12 @(tipoProducto != "3" ? "" : "d-none")">
+                        <label class="">Activo y concentración</label>
+                        @Html.TextBoxFor(a => a.ActivoConcentracion, new
+                        {
+                            @class = "form-control",
+                        @placeholder = "Activo y concentración"
+                        })
+                    </div>
+                    <div class="col-md-12">
+                        <label class="">Imagen de referencia</label>
+                        @Html.TextBoxFor(a => a.UrlImagen, new
+                        {
+                            @class = "form-control",
+                        @placeholder = "Pegar link imagen..."
+                        })
+                    </div>
+                    <div class="col-md-12">
+                        <label>Descripción</label>
+                        @Html.TextAreaFor(a => a.Descripcion, new
+                        {
+                            @class = "form-control ",
+                            @placeholder = "Descripción"
+                        })
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <h5><b>Tabla de equivalencias</b></h5>
+                        <hr />
+                    </div>
+                    <div class="col-md-12">
+                        <h6><b>Seleccione la unidad de compra:</b></h6>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-row">
+                            <!--ko foreach: unidadesCompra-->
+                            <div class="p-1">
+                                <div class="unidad-compra" data-bind="attr: {id:'unidad-compra-'+Id}, click: $root.seleccionarUnidadCompra">
+                                    <center>
+                                        <span data-bind="text: Nombre"></span> (<span data-bind="text: Abreviatura"></span>)
+                                    </center>
+                                </div>
+                            </div>
+                            <!--/ko-->
+                        </div>
+                        <hr />
+                    </div>
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card">
+                            <div class="card-body form-row">
+                                <div class="col-md-12">
+                                    <b>Agregar unidad de compra</b>
+                                </div>
+                                <div class="col-md-4">
+                                    <label>Nombre</label>
+                                    <input class="form-control" placeholder="Nombre" data-bind="value:nombreNuevaUnidadCompra" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label>Abreviatura</label>
+                                    <input class="form-control" placeholder="Abreviatura" data-bind="value:abreviaturaNuevaUnidadCompra" />
+                                </div>
+                                <div class="col-md-4">
+                                    <button class="btn btn-success" data-bind="click:registrarNuevaUnidadCompra">Agregar</button>
+                                </div>
+                            </div>
+                        </div>
+                        <hr />
+                    </div>
+                    <div class="col-md-12">
+                        <h6><b>Seleccione la unidad de venta:</b></h6>
+                    </div>
+                    <div class="col-md-10">
+                        <div class="form-row">
+                            <!--ko foreach: unidadesVenta-->
+                            <div class="p-1">
+                                <div class="unidad-venta" data-bind="attr: {id:'unidad-venta-'+Id}, click: $root.seleccionarUnidadVenta">
+                                    <center>
+                                        <span data-bind="text: Nombre"></span> (<span data-bind="text: Abreviatura"></span>)
+                                    </center>
+                                </div>
+                            </div>
+                            <!--/ko-->
+                        </div>
+                        <hr />
+                    </div>
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card">
+                            <div class="card-body form-row">
+                                <div class="col-md-12">
+                                    <b>Agregar unidad de venta</b>
+                                </div>
+                                <div class="col-md-4">
+                                    <label>Nombre</label>
+                                    <input class="form-control" placeholder="Nombre" data-bind="value:nombreNuevaUnidadVenta" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label>Abreviatura</label>
+                                    <input class="form-control" placeholder="Abreviatura" data-bind="value:abreviaturaNuevaUnidadVenta" />
+                                </div>
+                                <div class="col-md-4">
+                                    <button class="btn btn-success" data-bind="click:registrarNuevaUnidadVenta">Agregar</button>
+                                </div>
+                            </div>
+                        </div>
+                        <hr />
+                    </div>
+                    <div class="col-md-12">
+                        <br />
+                        <button class="btn btn-primary" data-bind="click: agregarEquivalencia">Agregar equivalencia</button>
+                    </div>
+                    <div class="col-md-12">
+                        <br />
+                        <table class="table-hover mb-0 table">
+                            <thead>
+                                <tr>
+                                    <th><b>Unidad de compra</b></th>
+                                    <th><b>Unidad de venta</b></th>
+                                    <th><b>Cantidad equivalente</b></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- ko foreach: equivalenciasProducto -->
+                                <tr>
+                                    <td data-bind="text: UnidadMedidaCompraNombre"></td>
+                                    <td data-bind="text: UnidadMedidaVentaNombre"></td>
+                                    <td>
+                                        <input type="number" step=".01" class="form-control" 
+                                            data-bind="value: CantidadEquivalente, uniqueName: true" />
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-danger" 
+                                                data-bind="click: $root.quitarEquivalencia">
+                                            Quitar
+                                        </button>
+                                    </td>
+                                </tr>
+                                <!-- /ko -->
+                            </tbody>
+
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .unidad-compra.unidad-seleccionada,
+    .unidad-venta.unidad-seleccionada {
+        background-color: lightgray;
+    }
+
+    .unidad-compra,
+    .unidad-venta {
+        background-color: white;
+        border: 1px solid gray;
+        padding: 5px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+</style>
+
+<script>
+    console.log("Tipo de producto desde la URL: @tipoProducto");
+</script>

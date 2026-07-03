@@ -1,0 +1,299 @@
+@model sistema.Areas.Identity.Pages.Account.RegisterModel.InputModel
+
+<div class="form-row">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12">
+
+                        <form asp-controller="Account" asp-action="ModificarRole" method="post">
+                            @Html.HiddenFor(a => a.Id)
+                            @Html.HiddenFor(a => a.User.Id)
+                            <div class="d-flex justify-content-between">
+                                    <button formaction="@Url.Action("AgregarHuella", "WebAuthnVista", new { userId = Model.User.Id })" class="btn btn-secondary">
+                                        Agregar Huella Dactilar
+                                    </button>
+                                    <button type="button" id="btnGenerarQR" class="btn btn-info" onclick="generarQR('@Model.User.Id')">
+                                        <i class="bi bi-qr-code"></i> Generar QR para el empleado
+                                    </button>
+                            </div>
+                            <div id="qrContainer" class="mt-4 text-center d-none border p-3 rounded bg-light">
+                                <h5>Escanea este código para registrar tu huella</h5>
+                                <p class="text-muted small">Este código es válido por 15 minutos y solo se puede usar una vez.</p>
+                                <div id="qrcode" class="d-flex justify-content-center my-3"></div>
+                            </div>
+                            <div class="col-md-12">
+                                @if (Model.OldRoleName != null)
+                                {
+
+                                    <label>Rol Actual: @Model.OldRoleName</label>
+                                }
+                                else
+                                {
+
+                                    <label>Rol Actual: Sin asignar</label>
+                                }
+
+
+                            </div>
+
+                            <hr />
+
+                            <div class="col-md-12">
+                                <label>Role</label>
+                                <select class="form-control select2bs4-user" style="width: 100%;" asp-for="RolesId"
+                                        asp-items="@Model.ListaRoles" id="roleselect">
+                                    @* <option selected value="">Sin asignar</option> *@
+                                </select>
+
+                            </div>
+                            </br>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+
+
+
+                        </form>
+
+                        @* <a href="@Url.Action("Modificar","Account", new {username = Model.Input.Email , pass = Model.Input.Password})" class="btn btn-warning">
+                            Guardar
+                            </a> *@
+
+                        @* <a href="/Account/Modificar?username=@Model.Input.Email&pass=@Model.Input.Password" class="btn btn-primary">
+                            Guardar
+                            </a> *@
+
+                    </div>
+                    <div class="col-md-6 col-md-offset-2">
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="form-row">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12">
+
+
+
+                        <hr />
+                        @* <div asp-validation-summary="All" class="text-danger"></div> // aqui esta *@
+                        <form asp-controller="Account" asp-action="ModificarUser" method="post">
+
+                            @Html.HiddenFor(a => a.Id)
+                            @Html.HiddenFor(a => a.User.Id)
+                            <div class="col-md-12">
+                                <label>Correo</label>
+                                @* <input asp-for="" class="form-control" /> // ESTO ES LO MISMO QUE ESTO *@
+                                @Html.TextBoxFor(a => a.User.Email, new {@class="form-control"})
+
+                                @* <span asp-validation-for="User.Email" class="text-danger" name="username"></span> *@
+                                @Html.ValidationMessageFor(a => a.User.Email, "", new { @class =
+                                "text-danger"})
+                            </div>
+
+                            </br>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+
+                        </form>
+
+
+                        @* <a href="@Url.Action("ModificarUser","Account", new {username = Model.User.Email})" class="btn btn-warning">
+                            Guardar
+                            </a> *@
+
+                        @* <a href="/Account/Modificar?username=@Model.Input.Email&pass=@Model.Input.Password" class="btn btn-primary">
+                            Guardar
+                            </a> *@
+
+                    </div>
+                    <div class="col-md-6 col-md-offset-2">
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="form-row">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12">
+
+                        <form asp-controller="Account" asp-action="ModificarPass" method="post">
+                            @Html.HiddenFor(a => a.Id)
+                            @Html.HiddenFor(a => a.User.Id)
+                            <div class="col-md-12">
+                                <label>Contraseña</label>
+                                <input asp-for="NewPassword" class="form-control" />
+                                <span asp-validation-for="NewPassword" class="text-danger"></span>
+
+                            </div>
+                            <div class="col-md-12">
+                                <label>Confirmar contraseña</label>
+                                <input asp-for="ConfirmedPassword" class="form-control" />
+                                <span asp-validation-for="ConfirmedPassword" class="text-danger"></span>
+
+                            </div>
+                            </br>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+
+                        </form>
+
+
+                        @* <a href="@Url.Action("Modificar","Account", new {username = Model.Input.Email , pass = Model.Input.Password})" class="btn btn-warning">
+                            Guardar
+                            </a> *@
+
+                        @* <a href="/Account/Modificar?username=@Model.Input.Email&pass=@Model.Input.Password" class="btn btn-primary">
+                            Guardar
+                            </a> *@
+
+                    </div>
+                    <div class="col-md-6 col-md-offset-2">
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="form-row">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12">
+
+                        <form asp-controller="Account" asp-action="ModificarEmpleado" method="post">
+                            @Html.HiddenFor(a => a.Id)
+                            @Html.HiddenFor(a => a.User.Id)
+                            @* <div class="col-md-12">
+                                @if(Model.OldRoleName != null){
+
+                                <label >Rol Actual: @Model.OldRoleName</label>
+                                }
+                                else
+                                {
+
+                                <label >Rol Actual: Sin asignar</label>
+                                }
+
+
+                                </div> *@
+
+                            <hr />
+
+                            <div class="col-md-12">
+                                <label>Empleado</label>
+                                <select class="form-control select2bs4-emp" style="width: 100%;" asp-for="User2.EmpleadoId"
+                                        id="empleadoselect">
+                                    if(Model.User2.EmpleadoId == null)
+                                    {
+                                    <option selected value="">Sin asignar</option>
+                                    }
+                                    @foreach (var item in Model.ListaEmpleados2)
+                                    {
+
+
+                                        if (Model.User2.EmpleadoId == item.Id)
+                                        {
+                                            <option selected value="@item.Id">@item.Nombre</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@item.Id">@item.Nombre</option>
+                                        }
+
+
+
+
+                                    }
+                                    @* <option selected value="">Sin asignar</option> *@
+                                </select>
+
+                            </div>
+                            </br>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+
+
+
+                        </form>
+
+ 
+
+
+                        @* <a href="@Url.Action("Modificar","Account", new {username = Model.Input.Email , pass = Model.Input.Password})" class="btn btn-warning">
+                            Guardar
+                            </a> *@
+
+                        @* <a href="/Account/Modificar?username=@Model.Input.Email&pass=@Model.Input.Password" class="btn btn-primary">
+                            Guardar
+                            </a> *@
+
+                    </div>
+                    <div class="col-md-6 col-md-offset-2">
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.0.1/js/toastr.js"></script>
+
+<script type="text/javascript" src="~/js/moment.min.js"></script>
+<script type="text/javascript" src="~/js/daterangepicker.js"></script>
+<script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+
+<script>
+    $(function(){
+        $('.select2').select2({
+            tags: true
+        });
+
+    $('.select2bs4-user').select2({
+      theme: 'bootstrap4',
+      placeholder: 'Sin asignar',
+      allowClear: true   // Shows an X to allow the user to clear the value.
+    });
+    $('.select2bs4-emp').select2({
+      theme: 'bootstrap4',
+      placeholder: 'Sin asignar',
+      allowClear: true   // Shows an X to allow the user to clear the value.
+    });
+
+          $('#reservationtime').daterangepicker({
+                    timePicker: true,
+                    timePickerIncrement: 30,
+                    locale: {
+                        format: 'MM/DD/YYYY hh:mm A'
+                    }
+                });
+    });
+
+
+
+</script>
+}
+
+@section css
+{
+<link href="~/css/daterangepicker.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.0.1/css/toastr.css" rel="stylesheet" />
+<link href="~/css/select2.min.css" rel="stylesheet">
+<link href="~/css/select2-bootstrap4.min.css" rel="stylesheet">
+}

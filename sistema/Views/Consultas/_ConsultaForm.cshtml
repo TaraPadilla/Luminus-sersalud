@@ -1,0 +1,1442 @@
+@model sistema.Models.ConsultasViewModel
+
+@functions {
+    public int GetEdadEnAños(string edad)
+    {
+        // Extraer la parte de los años de la cadena "19 Años, 6 Meses y 15 Días"
+        if (!string.IsNullOrEmpty(edad))
+        {
+            var partes = edad.Split(' ');
+            if (int.TryParse(partes[0], out int años))
+            {
+                return años;
+            }
+        }
+        // Si no se puede extraer, devolver 0 como valor predeterminado
+        return 0;
+    }
+}
+
+@{
+    int edadEnAños = GetEdadEnAños(Model.PacienteEdad);
+}
+<style>
+    /* Estilos para asegurar suavidad y simetría */
+    .info-card {
+        border: 1px solid #e3e6f0 !important;
+        border-radius: 0.35rem;
+        transition: all 0.2s ease;
+        background: #fff;
+    }
+
+    .header-section {
+        border-bottom: 2px solid #f8f9fc;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Forzar que las columnas de una fila tengan la misma altura */
+    .row-equal-height {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .row-equal-height>[class*='col-'] {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .row-equal-height .card {
+        flex: 1 0 auto;
+    }
+
+    /* Estilo para los labels para que no ocupen tanto espacio */
+    .label-custom {
+        font-size: 0.7rem;
+        letter-spacing: 0.5px;
+        color: #858796;
+        margin-bottom: 0.5rem;
+    }
+</style>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div id="tabs">
+            <ul class="nav nav-tabs flex-wrap" id="consultaTabs" role="tablist">
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#tab-datos-generales" data-toggle="tooltip" data-placement="bottom"
+                        title="Datos generales">
+                        <i class="fas fa-id-card mr-1"></i> Datos
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#tab-resumen" data-toggle="tooltip" data-placement="bottom"
+                        title="Resumen">
+                        <i class="fas fa-clipboard-list mr-1"></i> Resumen
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#tab-historia-clinica" data-toggle="tooltip" data-placement="bottom"
+                        title="Historia clínica">
+                        <i class="fas fa-notes-medical mr-1"></i> HC
+                    </a>
+                </li>
+
+                @if (edadEnAños < 13)
+                {
+                    <li class="nav-item">
+                        <a class="nav-link" href="#tab-pediatricos" data-toggle="tooltip" data-placement="bottom"
+                            title="Pediátricos">
+                            <i class="fas fa-baby mr-1"></i> Peds
+                        </a>
+                    </li>
+                }
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#tab-ginecologicos" data-toggle="tooltip" data-placement="bottom"
+                        title="Ginecología">
+                        <i class="fas fa-venus mr-1"></i> Gine
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#tab-obstetricia" data-toggle="tooltip" data-placement="bottom"
+                        title="Obstetricia">
+                        <i class="fas fa-baby-carriage mr-1"></i> Obs
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#tab-examenesLaboratorioRealizar" data-toggle="tooltip"
+                        data-placement="bottom" title="Examenes complementarios y Servicios">
+                        <i class="fas fa-vials mr-1"></i> Comp.
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#tab-prescripcion" data-toggle="tooltip" data-placement="bottom"
+                        title="Receta medica">
+                        <i class="fas fa-prescription-bottle-alt mr-1"></i> Receta
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#tab-archivos" data-bind="click:abrirTabArchivos" data-toggle="tooltip"
+                        data-placement="bottom" title="Archivos">
+                        <i class="fas fa-paperclip mr-1"></i> Arch.
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#tab-hospitalizacion" data-bind="click:abrirTabHospitalizacion"
+                        data-toggle="tooltip" data-placement="bottom" title="Hospitalizacion">
+                        <i class="fas fa-hospital mr-1"></i> Hosp
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#tab-ultrasonido" data-toggle="tooltip" data-placement="bottom"
+                        title="Ultrasonido">
+                        <i class="fas fa-wave-square mr-1"></i> US
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#tab-oftalmologia" data-toggle="tooltip" data-placement="bottom"
+                        title="Oftalmología">
+                        <i class="fas fa-eye mr-1"></i> Oft
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#tab-podologia" data-toggle="tooltip" data-placement="bottom"
+                        title="Podología">
+                        <i class="fas fa-shoe-prints mr-1"></i> Podo
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#tab-hce" data-toggle="tooltip" data-placement="bottom"
+                        title="Historia Clínica de Enfermería">
+                        <i class="fas fa-user-nurse mr-1"></i> HCE
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#tab-vie" data-toggle="tooltip" data-placement="bottom"
+                        title="Valoración Inicial de Enfermeria">
+                        <i class="fas fa-clipboard-check mr-1"></i> VIE
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#tab-sueroterapia" data-toggle="tooltip" data-placement="bottom"
+                        title="Sueroterapia">
+                        <i class="fas fa-syringe mr-1"></i> Suero
+                    </a>
+                </li>
+
+                @* <li><a href="#tab-mapa-dental">Mapa Dental</a></li>
+    <li><a href="#tab-presupuesto-dental">Presupuesto dental</a></li> *@
+
+                @*Estos TABS no se utilizan, por ello llevan la clase d-none*@
+                <li class="nav-item d-none"><a class="nav-link" href="#tab-entrevista-dental">Entrevista </a></li>
+                <li class="nav-item d-none"><a class="nav-link" href="#tab-NotaOperatoria">Nota Operatoria</a></li>
+                <li class="nav-item d-none"><a class="nav-link" href="#tab-estetico">Estético</a></li>
+                <li class="nav-item d-none"><a class="nav-link" href="#tab-terapeutico">Área terapéutica</a></li>
+                <li class="nav-item d-none"><a class="nav-link" href="#tab-neurologicos">Neurológicos</a></li>
+                <li class="nav-item d-none"><a class="nav-link" href="#tab-rev-sistemas">Rev. por sistemas</a></li>
+                <li class="nav-item d-none"><a class="nav-link" href="#tab-nutricional">Nutricional</a></li>
+                <li class="nav-item d-none"><a class="nav-link" href="#tab-examenes">Exámenes de laboratorio</a></li>
+
+            </ul>
+
+
+            <div id="tab-obstetricia">
+
+                <div class="border rounded p-3 bg-white shadow-sm">
+
+                    <!-- Header -->
+                    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                        <h6 class="m-0 font-weight-bold text-primary text-uppercase">
+                            <i class="fas fa-baby-carriage mr-2"></i> Obstetricia
+                        </h6>
+
+                        @if (!Model.HabilitarEdicion)
+                        {
+                            <button type="submit" class="btn btn-success btn-sm text-white" id="generarObstetricaPdf"
+                                onclick="generarObstetricaPDF(@Model.ConsultaId)">
+                                Generar PDF &nbsp;<i class="fas fa-arrow-down"></i>
+                            </button>
+                        }
+                    </div>
+
+                    <!-- Toggle 1 -->
+                    <div class="border rounded mb-2">
+                        <button type="button"
+                            class="btn btn-outline-primary btn-sm btn-block text-left d-flex align-items-center justify-content-between"
+                            onclick="toggleContent('obstetriciaPartial1')">
+                            <span class="font-weight-bold">
+                                <i class="fas fa-clipboard-list mr-2"></i> Mostrar/Ocultar - Antecedentes Obstétricos
+                            </span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div id="obstetriciaPartial1" class="p-3 border-top" style="display: none;">
+                            @await Html.PartialAsync("_ObstetriciaAntecedentes")
+                        </div>
+                    </div>
+
+                    <!-- Toggle 2 -->
+                    <div class="border rounded mb-2">
+                        <button type="button"
+                            class="btn btn-outline-primary btn-sm btn-block text-left d-flex align-items-center justify-content-between"
+                            onclick="toggleContent('obstetriciaPartial2')">
+                            <span class="font-weight-bold">
+                                <i class="fas fa-stethoscope mr-2"></i> Mostrar/Ocultar - Evaluación Obstétrica
+                            </span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div id="obstetriciaPartial2" class="p-3 border-top" style="display: none;">
+                            @await Html.PartialAsync("_GinecoObstetriciaEvaluacionObstetrica")
+                        </div>
+                    </div>
+
+                    <!-- Toggle 3 -->
+                    <div class="border rounded mb-2">
+                        <button type="button"
+                            class="btn btn-outline-primary btn-sm btn-block text-left d-flex align-items-center justify-content-between"
+                            onclick="toggleContent('obstetriciaPartial3')">
+                            <span class="font-weight-bold">
+                                <i class="fas fa-wave-square mr-2"></i> Mostrar/Ocultar - Ecografía Obstétrica
+                            </span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div id="obstetriciaPartial3" class="p-3 border-top" style="display: none;">
+                            @await Html.PartialAsync("_ObstetriciaEcografiaObstetrica")
+                        </div>
+                    </div>
+
+                    <!-- Toggle 4 -->
+                    <div class="border rounded">
+                        <button type="button"
+                            class="btn btn-outline-primary btn-sm btn-block text-left d-flex align-items-center justify-content-between"
+                            onclick="toggleContent('obstetriciaPartial4')">
+                            <span class="font-weight-bold">
+                                <i class="fas fa-ruler-combined mr-2"></i> Mostrar/Ocultar - Biometría Obstétrica
+                            </span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div id="obstetriciaPartial4" class="p-3 border-top" style="display: none;">
+                            @await Html.PartialAsync("_GinecoObstetriciaBiometria")
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div id="tab-prescripcion">
+                @await Html.PartialAsync("_PrescripcionForm")
+            </div>
+
+            <div id="tab-hospitalizacion">
+                @if (Model.Hospitalizada)
+                {
+                    @await Html.PartialAsync("_ConsultaDetallesHospitalizacion")
+                }
+                else
+                {
+                    @await Html.PartialAsync("_ConsultaHabitacionesDisponibles")
+                }
+            </div>
+            <div id="tab-archivos">
+                @await Html.PartialAsync("_ConsultaArchivos")
+            </div>
+
+            <div id="tab-datos-generales" class="p-3">
+                <div>
+                    <div class="border rounded bg-white p-3 shadow-sm">
+                        <!-- Header -->
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                            <h6 class="m-0 font-weight-bold text-primary text-uppercase">
+                                <i class="fas fa-clipboard-list mr-2"></i> Información del Turno
+                            </h6>
+                            <small class="font-italic border rounded-pill px-3 py-1 bg-danger text-white">
+                                <i class="fas fa-info-circle mr-1"></i> Estado, tiempos y trazabilidad del turno
+                            </small>
+                        </div>
+
+                        <!-- Top info -->
+                        <div class="row mb-3">
+
+                            <div class="col-md-4 mb-3 mb-md-0">
+                                <div class="border rounded p-3 bg-white">
+                                    <div class="font-weight-bold text-dark text-uppercase mb-2">
+                                        <i class="fas fa-exclamation-triangle text-primary mr-1"></i> Nivel prioridad
+                                    </div>
+
+                                    @if (Model.NivelPrioridadCita == "ALTO")
+                                    {
+                                        <div class="alert alert-danger m-0 py-1 text-center font-weight-bold small">
+                                            <i class="fas fa-arrow-up mr-1"></i> ALTO
+                                        </div>
+                                    }
+                                    else if (Model.NivelPrioridadCita == "MEDIO")
+                                    {
+                                        <div class="alert alert-success m-0 py-1 text-center font-weight-bold small">
+                                            <i class="fas fa-minus mr-1"></i> MEDIO
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="alert alert-secondary m-0 py-1 text-center font-weight-bold small">
+                                            <i class="fas fa-question-circle mr-1"></i> SIN DEFINIR
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="col-md-4 mb-3 mb-md-0">
+                                <div class="border rounded p-3 bg-white">
+                                    <div class="font-weight-bold text-dark text-uppercase mb-2">
+                                        <i class="fas fa-hashtag text-primary mr-1"></i> Número de turno
+                                    </div>
+                                    <div class="input-group input-group-sm">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text bg-white">
+                                                <i class="fas fa-ticket-alt text-primary"></i>
+                                            </span>
+                                        </div>
+                                        <input type="text" class="form-control font-weight-bold text-center"
+                                            value="@Model.NumeroTurno" readonly>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="border rounded p-3 bg-white">
+                                    <div class="font-weight-bold text-dark text-uppercase mb-2">
+                                        <i class="fas fa-toggle-on text-primary mr-1"></i> Estado del turno
+                                    </div>
+                                    <select asp-for="EstadoTurno"
+                                        class="custom-select custom-select-sm font-weight-bold border-primary text-primary bg-white">
+                                        <option value="ACTIVO">ACTIVO</option>
+                                        <option value="ENCURSO">EN CURSO</option>
+                                        <option value="FINALIZADO">FINALIZADO</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Timestamps -->
+                        <div class="row mb-3">
+
+                            <div class="col-md-4 mb-3 mb-md-0">
+                                <div class="border rounded p-3 bg-white">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="badge badge-info">
+                                            <i class="far fa-calendar-alt mr-1"></i> CITA AGENDADA
+                                        </span>
+                                        <i class="far fa-clock text-muted"></i>
+                                    </div>
+                                    <div class="h6 font-weight-bold mb-0" data-bind="text: citaAgendadaHaceTexto"></div>
+                                    <small class="text-muted d-block" data-bind="text: citaAgendadaFechaTexto"></small>
+                                    <small class="text-muted d-block" data-bind="text: citaAgendadaHoraTexto"></small>
+
+                                </div>
+                            </div>
+
+                            <div class="col-md-4 mb-3 mb-md-0">
+                                <div class="border rounded p-3 bg-white">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="badge badge-primary">
+                                            <i class="fas fa-play mr-1"></i> CITA INICIADA
+                                        </span>
+                                        <i class="fas fa-stopwatch text-muted"></i>
+                                    </div>
+                                    <div class="h6 font-weight-bold mb-0" data-bind="text: citaIniciadaHaceTexto"></div>
+                                    <small class="text-muted d-block" data-bind="text: citaIniciadaFechaTexto"></small>
+                                    <small class="text-muted d-block" data-bind="text: citaIniciadaHoraTexto"></small>
+
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="border rounded p-3 bg-white">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-check-circle mr-1"></i> CITA FINALIZADA
+                                        </span>
+                                        <i class="fas fa-flag-checkered text-muted"></i>
+                                    </div>
+                                    <div class="h6 font-weight-bold mb-0" data-bind="text: citaFinalizadaHaceTexto">
+                                    </div>
+                                    <small class="text-muted d-block" data-bind="text: citaFinalizadaFechaTexto"></small>
+                                    <small class="text-muted d-block" data-bind="text: citaFinalizadaHoraTexto"></small>
+
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Durations -->
+                        <div class="row mb-4">
+
+                            <div class="col-md-4 mb-3 mb-md-0">
+                                <div class="border rounded text-center bg-white">
+                                    <div class="border-bottom py-2 small font-weight-bold text-muted text-uppercase">
+                                        <i class="fas fa-calendar-plus mr-1"></i> Agendar → Iniciar
+                                    </div>
+                                    <div class="p-3 d-flex align-items-center justify-content-center">
+                                        <span class="h6 font-weight-bold text-info mb-0"
+                                            data-bind="text: tiempoAgendarIniciarTexto"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4 mb-3 mb-md-0">
+                                <div class="border rounded text-center bg-white">
+                                    <div class="border-bottom py-2 small font-weight-bold text-muted text-uppercase">
+                                        <i class="fas fa-stopwatch mr-1"></i> Iniciar → Finalizar
+                                    </div>
+                                    <div class="p-3 d-flex align-items-center justify-content-center">
+                                        <span class="h6 font-weight-bold text-info mb-0"
+                                            data-bind="text: tiempoIniciarFinalizarTexto"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="border rounded text-center bg-primary text-white">
+                                    <div class="py-2 small font-weight-bold text-uppercase"
+                                        style="background: rgba(0,0,0,0.08)">
+                                        <i class="fas fa-clock mr-1"></i> Tiempo Total
+                                    </div>
+                                    <div class="p-3 d-flex align-items-center justify-content-center">
+                                        <span class="h5 font-weight-bold mb-0"
+                                            data-bind="text: tiempoTotalTexto"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Separator before Datos Personales -->
+                    <div class="border-top">
+                        @await Html.PartialAsync("_DatosPersonalesPaciente")
+                    </div>
+
+                </div>
+            </div>
+
+            <div id="tab-resumen">
+                @await Html.PartialAsync("_InformacionGeneralConsulta")
+
+                @*MANANTIALES NO UTILIZA EL APARTADO BEBIDAS ALCOHOLICAS*@
+                @* @await Html.PartialAsync("_BebidasAlcoholicas") *@
+            </div>
+
+            <div id="tab-examenesLaboratorioRealizar">
+                @await Html.PartialAsync("_ConsultaExamenes")
+                @await Html.PartialAsync("_ConsultaServicios")
+            </div>
+
+
+
+            @*MANANTIALES NO UTILIZA ESTAS SECCIONES. Por ellos se utiliza la clase 'd-none'*@
+            <div class="d-none">
+                @await Html.PartialAsync("_CageConsultaForm")
+                @await Html.PartialAsync("_PadecimientoActualForm")
+                @await Html.PartialAsync("_UsoActualMedicamentosForm")
+                @await Html.PartialAsync("_HistoriaMedicamentosAnalgesicosForm")
+                @await Html.PartialAsync("_OtrosSintomasForm")
+                @await Html.PartialAsync("_ExamenCognoscitivoForm")
+                @await Html.PartialAsync("_DiagnosticoForm")
+            </div>
+        </div>
+        @if (edadEnAños < 13)
+        {
+
+            <div id="tab-pediatricos">
+
+                <div class="toggle-container">
+                    <button class="toggle-button" onclick="toggleContent('pediatriaPartial1')">Mostrar/Ocultar - Historia
+                        Clínica Pediátrica</button>
+                    <div id="pediatriaPartial1" class="toggle-content" style="display: none;">
+                        @await Html.PartialAsync("_HistoriaClinicaPediatria")
+                    </div>
+                </div>
+
+                <div class="toggle-container">
+                    <button class="toggle-button" onclick="toggleContent('pediatriaPartial2')">Mostrar/Ocultar -
+                        Antecedentes Patológicos Pediátricos</button>
+                    <div id="pediatriaPartial2" class="toggle-content" style="display: none;">
+                        @await Html.PartialAsync("_AntPatologicosPacientePediatria")
+                    </div>
+                </div>
+
+                <div class="toggle-container">
+                    <button class="toggle-button" onclick="toggleContent('pediatriaPartial3')">Mostrar/Ocultar -
+                        Antecedentes No Patológicos Pediátricos</button>
+                    <div id="pediatriaPartial3" class="toggle-content" style="display: none;">
+                        @await Html.PartialAsync("_ApnpPediatricos")
+                    </div>
+                </div>
+
+                <div class="toggle-container">
+                    <button class="toggle-button" onclick="toggleContent('pediatriaPartial4')">Mostrar/Ocultar - Signos
+                        Vitales Pediátrico</button>
+                    <div id="pediatriaPartial4" class="toggle-content" style="display: none;">
+                        @await Html.PartialAsync("_ExamenFisicoPediatria")
+                    </div>
+                </div>
+
+                <div class="toggle-container">
+                    <button class="toggle-button" onclick="toggleContent('pediatriaPartial5')">Mostrar/Ocultar - Examen
+                        Físico Pediátrica</button>
+                    <div id="pediatriaPartial5" class="toggle-content" style="display: none;">
+                        @await Html.PartialAsync("_RevisionSistemasPediatria")
+                    </div>
+                </div>
+
+                <div class="toggle-container">
+                    <button class="toggle-button" onclick="toggleContent('pediatriaPartial6')">Mostrar/Ocultar - Comentarios
+                        Pediátricos</button>
+                    <div id="pediatriaPartial6" class="toggle-content" style="display: none;">
+                        @await Html.PartialAsync("_HistoriaClinicaComentarioPediatria")
+                    </div>
+                </div>
+
+                <div class="toggle-container">
+                    <button class="toggle-button" onclick="toggleContent('pediatriaPartial7')">Mostrar/Ocultar - Impresión
+                        Clínica Pediátrica</button>
+                    <div id="pediatriaPartial7" class="toggle-content" style="display: none;">
+                        @await Html.PartialAsync("_HistoriaClinicaImpresionClinicaPediatria")
+                    </div>
+                </div>
+
+
+
+
+            </div>
+        }
+
+        <div id="tab-ginecologicos">
+
+            @*MANANTIALES no utiliza este input*@
+            @* <div class="form-row">
+        <div class="col-md-12">
+        <h5><b>Examen ginecológico</b></h5>
+        <hr />
+        </div>
+        <div class="col-md-12">
+        Examen ginecológico<br />
+        @Html.TextAreaFor(m => m.ExamenGinecologico, new { @class = "form-control" })
+        </div>
+        </div> *@
+
+            <div class="border rounded bg-white shadow-sm p-3">
+
+                <!-- Header -->
+                <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                    <h6 class="m-0 font-weight-bold text-primary text-uppercase">
+                        <i class="fas fa-venus mr-2"></i> Ginecología
+                    </h6>
+                    <span class="badge badge-light border text-muted">
+                        <i class="fas fa-layer-group mr-1"></i> Secciones
+                    </span>
+                </div>
+
+                @if (!Model.HabilitarEdicion)
+                {
+                    <div class="form-row mb-3">
+                        <div class="col-md-12">
+                            <button type="submit" class="btn btn-success btn-lg text-white" id="generateGinecologiapdf"
+                                onclick="generarGinecologiaPdf(@Model.ConsultaId)">
+                                <i class="fas fa-file-pdf mr-2"></i> Generar PDF <i class="fas fa-arrow-down ml-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                }
+
+                <!-- Toggle 1 -->
+                <div class="border rounded mb-2">
+                    <button type="button"
+                        class="btn btn-outline-primary btn-sm btn-block text-left d-flex align-items-center justify-content-between"
+                        onclick="toggleContent('ginecologiaPartial1')">
+                        <span class="font-weight-bold">
+                            <i class="fas fa-comment-medical mr-2"></i> Mostrar/Ocultar - Motivo de Consulta
+                            Ginecológica
+                        </span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div id="ginecologiaPartial1" class="p-3 border-top bg-white" style="display: none;">
+                        @await Html.PartialAsync("_GinecologiaMotivoDeConsulta.cshtml")
+                    </div>
+                </div>
+
+                <!-- Toggle 2 -->
+                <div class="border rounded mb-2">
+                    <button type="button"
+                        class="btn btn-outline-primary btn-sm btn-block text-left d-flex align-items-center justify-content-between"
+                        onclick="toggleContent('ginecologiaPartial2')">
+                        <span class="font-weight-bold">
+                            <i class="fas fa-clipboard-list mr-2"></i> Mostrar/Ocultar - Antecedentes No Patológicos
+                            Ginecológicos
+                        </span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div id="ginecologiaPartial2" class="p-3 border-top bg-white" style="display: none;">
+                        @await Html.PartialAsync("_GinecologiaAntNoPatologicos")
+                    </div>
+                </div>
+
+                <!-- Toggle 3 -->
+                <div class="border rounded mb-2">
+                    <button type="button"
+                        class="btn btn-outline-primary btn-sm btn-block text-left d-flex align-items-center justify-content-between"
+                        onclick="toggleContent('ginecologiaPartial3')">
+                        <span class="font-weight-bold">
+                            <i class="fas fa-notes-medical mr-2"></i> Mostrar/Ocultar - Antecedentes Patológicos
+                            Ginecológicos
+                        </span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div id="ginecologiaPartial3" class="p-3 border-top bg-white" style="display: none;">
+                        @await Html.PartialAsync("_GinecologiaAntPatologicos")
+                    </div>
+                </div>
+
+                <!-- Toggle 4 -->
+                <div class="border rounded mb-2">
+                    <button type="button"
+                        class="btn btn-outline-primary btn-sm btn-block text-left d-flex align-items-center justify-content-between"
+                        onclick="toggleContent('ginecologiaPartial4')">
+                        <span class="font-weight-bold">
+                            <i class="fas fa-stethoscope mr-2"></i> Mostrar/Ocultar - Examen Físico Ginecológico
+                        </span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div id="ginecologiaPartial4" class="p-3 border-top bg-white" style="display: none;">
+                        @await Html.PartialAsync("_GinecologiaExamenFisico")
+                    </div>
+                </div>
+
+                <!-- Toggle 5 -->
+                <div class="border rounded">
+                    <button type="button"
+                        class="btn btn-outline-primary btn-sm btn-block text-left d-flex align-items-center justify-content-between"
+                        onclick="toggleContent('ginecologiaPartial5')">
+                        <span class="font-weight-bold">
+                            <i class="fas fa-wave-square mr-2"></i> Mostrar/Ocultar - Ecografía Endocavitaria
+                        </span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div id="ginecologiaPartial5" class="p-3 border-top bg-white" style="display: none;">
+                        @await Html.PartialAsync("_GinecoObstetriciaEcografiaEndocavitaria")
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div id="tab-neurologicos" style="display: none;">
+            <div class="form-row">
+                <div class="col-md-12">
+                    <h5><b>Examen neurológico</b></h5>
+                    <hr />
+                </div>
+                <div class="col-md-12">
+                    Examen neurológico<br />
+                    @Html.TextAreaFor(m => m.ExamenNeurologico, new { @class = "form-control" })
+                </div>
+            </div>
+        </div>
+        <div id="tab-NotaOperatoria">
+            @await Html.PartialAsync("_NuevaNotaOperatoriaForm")
+        </div>
+        <div id="tab-nutricional" class="d-none">
+            <div class="main-card mb-3 card">
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="col-md-12">
+                            <h5><b>Fase del tratamiento</b></h5>
+                            <hr>
+                        </div>
+                        <div class="col-md-12">
+                            <label>Seleccione la fase del tratamiento en que clasifica al paciente</label>
+                            <select class="form-control" asp-for="FaseTratamientoId"
+                                asp-items="@Model.FasesTratamientoSelectListItems"></select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="col-11">
+                    <h5><b>Seguimiento nutricional</b></h5>
+                    <hr>
+                </div>
+                <div class="col-md-1">
+                    <button class="btn btn-primary" data-bind="click: agregarSeguimientoNutricional">Agregar</button>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="table-responsive">
+                    <table class="mb-0 table table-hover">
+                        <thead>
+                            <tr>
+                                <td>
+                                    <center><b>Fecha</b></center>
+                                </td>
+                                <td>
+                                    <center><b>Peso</b></center>
+                                </td>
+                                <td>
+                                    <center><b>IMC</b></center>
+                                </td>
+                                <td>
+                                    <center><b>PGC</b></center>
+                                </td>
+                                <td>
+                                    <center><b>Cuello</b></center>
+                                </td>
+                                <td>
+                                    <center><b>Busto</b></center>
+                                </td>
+                                <td>
+                                    <center><b>Cintura/Abdomen</b></center>
+                                </td>
+                                <td>
+                                    <center><b>Cadera</b></center>
+                                </td>
+                                <td>
+                                    <center><b>Muslo</b></center>
+                                </td>
+                                <td>
+                                    <center><b>Brazo</b></center>
+                                </td>
+                                <td>
+                                    <center><b>Muñeca</b></center>
+                                </td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!--ko foreach: seguimientosNutricionales-->
+                            <tr>
+                                <td>
+                                    <input type="date" class="form-control" data-bind="value: Fecha" />
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control" data-bind="value: Peso" />
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control" data-bind="value: IMC" />
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control" data-bind="value: PGC" />
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control" data-bind="value: Cuello" />
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control" data-bind="value: Busto" />
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control" data-bind="value: CinturaAbdomen" />
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control" data-bind="value: Cadera" />
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control" data-bind="value: Muslo" />
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control" data-bind="value: Brazo" />
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control" data-bind="value: Munneca" />
+                                </td>
+                            </tr>
+                            <!--/ko-->
+                        </tbody>
+                    </table><br><br>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="col-md-11">
+                    <h5><b>Rangos saludables</b></h5>
+                    <hr>
+                </div>
+                <div class="col-md-1">
+                    <button class="btn btn-primary" data-bind="click:agregarRangoSaludable">Agregar</button>
+                </div>
+                <!--ko foreach: rangosSaludables-->
+                <div class="col-md-4">
+                    <label>IMC saludable</label><br />
+                    <input type="text" class="form-control" data-bind="value:IMC" />
+                </div>
+                <div class="col-md-4">
+                    <label>Peso saludable</label><br />
+                    <input type="text" class="form-control" data-bind="value:Peso" />
+                </div>
+                <div class="col-md-4">
+                    <label>Porcentaje (%) de grasa corporal saludable</label><br />
+                    <input type="text" class="form-control" data-bind="value:PorcentajeGrasaCorporal" />
+                </div>
+                <!--/ko-->
+                <div class="col-md-12">
+                    <h5><b>Historial rangos saludables</b></h5>
+                    <hr />
+                </div>
+                <div class="col-md-12">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>IMC</th>
+                                <th>Peso</th>
+                                <th>Porcentaje de grasa corporal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.RangosSaludablesHistorico == null)
+                            {
+                                <tr>
+                                    <td colspan="4">No hay registros para mostrar</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var historico in Model.RangosSaludablesHistorico)
+                                {
+                                    <tr>
+                                        <td>@historico.Fecha</td>
+                                        <td>@historico.IMC</td>
+                                        <td>@historico.Peso</td>
+                                        <td>@historico.PorcentajeGrasaCorporal</td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+            <br /><br />
+            <div class="form-row">
+                <div class="col-12">
+                    <h5><b>Seguimiento de dieta</b></h5>
+                    <hr>
+                </div>
+                <div class="col-md-12">
+                    <label>Seguimiento de dieta</label><br />
+                    <input type="text" class="form-control" />
+                </div>
+                <div class="col-md-12">
+                    <label>Ejercicio</label><br />
+                    <input type="text" class="form-control" />
+                </div>
+                <div class="col-md-12">
+                    <label>Observaciones generales</label><br />
+                    <input type="text" class="form-control" />
+                </div>
+            </div>
+        </div>
+        <div id="tab-examenes" class="d-none">
+            @await Html.PartialAsync("_ExamenesLaboratorioForm")
+        </div>
+        <div id="tab-estetico">
+            <div class="form-row">
+                <div class="col-md-12">
+                    <h5><b>Estética</b></h5>
+                    <hr>
+                </div>
+                <div class="col-md-4">
+                    @Html.LabelFor(m => m.Metabolismo)
+                    @Html.TextBoxFor(m => m.Metabolismo, new { @class = "form-control", @placeholder = "Metabolismo" })
+                </div>
+                <div class="col-md-4">
+                    @Html.LabelFor(m => m.Grasa)
+                    @Html.TextBoxFor(m => m.Grasa, new { @class = "form-control", @placeholder = "Grasa" })
+                </div>
+                <div class="col-md-4">
+                    @Html.LabelFor(m => m.IMC)
+                    @Html.TextBoxFor(m => m.IMC, new { @class = "form-control", @placeholder = "IMC", @readonly = "true" })
+                </div>
+                <div class="col-md-4">
+                    @Html.LabelFor(m => m.Agua)
+                    @Html.TextBoxFor(m => m.Agua, new { @class = "form-control", @placeholder = "Agua" })
+                </div>
+                <div class="col-md-4">
+                    @Html.LabelFor(m => m.Obesidad)
+                    @Html.TextBoxFor(m => m.Obesidad, new { @class = "form-control", @placeholder = "Obesidad" })
+                </div>
+                <div class="col-md-4">
+                    Contorno de brazos<br>
+                    @Html.TextBoxFor(m => m.ContornoBrazos, new { @class = "form-control", @placeholder = "Contorno de                    brazos" })
+                </div>
+                <div class="col-md-4">
+                    Contorno de busto<br>
+                    @Html.TextBoxFor(m => m.ContornoBusto, new { @class = "form-control", @placeholder = "Contorno de                    busto" })
+                </div>
+                <div class="col-md-4">
+                    Contorno de abdomen<br>
+                    @Html.TextBoxFor(m => m.ContornoAbdomen, new { @class = "form-control", @placeholder = "Contorno de                    abdomen" })
+                </div>
+                <div class="col-md-4">
+                    Contorno de cadera<br>
+                    @Html.TextBoxFor(m => m.ContornoCadera, new { @class = "form-control", @placeholder = "Contorno de                    cadera" })
+                </div>
+                <div class="col-md-4">
+                    Contorno de piernas<br>
+                    @Html.TextBoxFor(m => m.ContornoPiernas, new { @class = "form-control", @placeholder = "Contorno de                    piernas" })
+                </div>
+                <div class="col-md-4">
+                    Estatura (m)<br>
+                    @Html.TextBoxFor(m => m.Estatura, new
+                    {
+                        @class = "form-control",
+                                        @placeholder = "Estatura",
+                                        @onchange = "actualizarVista()",
+                                        @onkeyup = "actualizarVista()"
+                                        })
+                </div>
+            </div>
+        </div>
+        <div id="tab-rev-sistemas">
+            <div class="form-row">
+                <div class="col-md-12">
+                    <h5><b>Sistema cardiopulmonar</b></h5>
+                    <hr />
+                </div>
+                <div class="col-md-12">
+                    Sistema cardiopulmonar<br />
+                    @Html.TextAreaFor(m => m.SistemaCardiopulmonar, new { @class = "form-control" })
+                </div>
+            </div>
+            <br /><br />
+            <div class="form-row">
+                <div class="col-md-12">
+                    <h5><b>Sistema osteoarticular</b></h5>
+                    <hr />
+                </div>
+                <div class="col-md-12">
+                    Sistema osteoarticular<br />
+                    @Html.TextAreaFor(m => m.SistemaOsteoarticular, new { @class = "form-control" })
+                </div>
+            </div>
+            <br /><br />
+            <div class="form-row">
+                <div class="col-md-12">
+                    <h5><b>Sistema hematológico</b></h5>
+                    <hr />
+                </div>
+                <div class="col-md-12">
+                    Sistema hematológico<br />
+                    @Html.TextAreaFor(m => m.SistemaHematologico, new { @class = "form-control" })
+                </div>
+            </div>
+        </div>
+        <div id="tab-terapeutico">
+            <div class="main-card mb-3 card">
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="col-md-12">
+                            <h5><b>Área terapéutica</b></h5>
+                            <hr />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        @if (Model.PrimeraConsulta)
+                        {
+                            <div class="col-md-6">
+                                <label>Datos generales</label><br>
+                                @Html.TextAreaFor(m => m.TerapeuticoDatosGenerales, new { @class = "form-control",
+                                @placeholder = "Datos generales" })
+                        </div>
+                        <div class="col-md-6">
+                            <label>Actividades diarias (horarios, rutinas)</label><br>
+                            @Html.TextAreaFor(m => m.TerapeuticoActividadesDiarias, new { @class = "form-control",
+                                                        @placeholder = "Actividades diarias" })
+                        </div>
+                        <div class="col-md-6">
+                            <label>¿Con quién vive?</label>
+                            @Html.TextAreaFor(m => m.TerapeuticoConQuienVive, new { @class = "form-control",
+                                                        @placeholder = "¿Con quién vive?" })
+                        </div>
+                        <div class="col-md-6">
+                            <label>Hábitos alimenticios (horarios, quién cocina, super)</label>
+                            @Html.TextAreaFor(m => m.TerapeuticoHabitosAlimenticios, new { @class = "form-control",
+                                                        @placeholder = "Hábitos alimenticios" })
+                        </div>
+                        <div class="col-md-6">
+                            <label>Ejercicio (deporte)</label>
+                            @Html.TextAreaFor(m => m.TerapeuticoEjercicio, new { @class = "form-control", @placeholder =
+                                                        "Ejercicio" })
+                        </div>
+                        <div class="col-md-6">
+                            <label>Fines de semana</label>
+                            @Html.TextAreaFor(m => m.TerapeuticoFinesSemana, new { @class = "form-control", @placeholder
+                                                        = "Fines de semana" })
+                        </div>
+                        <div class="col-md-6">
+                            <label>Historia médica</label>
+                            @Html.TextAreaFor(m => m.TerapeuticoHistoriaMedica, new { @class = "form-control",
+                                                        @placeholder = "Historia médica" })
+                        </div>
+                        <div class="col-md-6">
+                            <label>Historia con el peso</label>
+                            @Html.TextAreaFor(m => m.TerapeuticoHistoriaPeso, new { @class = "form-control",
+                                                        @placeholder = "Historia con el peso" })
+                        </div>
+                                                }
+                                                else
+                        {
+                        <div class="col-md-6">
+                            <label>Datos generales</label>
+                            @Html.TextAreaFor(m => m.TerapeuticoDatosGenerales, new { @class = "form-control", @readonly
+                                                        = "true" })
+                        </div>
+                        <div class="col-md-6">
+                            <label>Actividades diarias (horarios, rutinas)</label>
+                            @Html.TextAreaFor(m => m.TerapeuticoActividadesDiarias, new { @class = "form-control",
+                                                        @readonly = "true" })
+                        </div>
+                        <div class="col-md-6">
+                            <label>¿Con quién vive?</label>
+                            @Html.TextAreaFor(m => m.TerapeuticoConQuienVive, new { @class = "form-control", @readonly =
+                                                        "true" })
+                        </div>
+                        <div class="col-md-6">
+                            <label>Hábitos alimenticios (horarios, quién cocina, super)</label>
+                            @Html.TextAreaFor(m => m.TerapeuticoHabitosAlimenticios, new { @class = "form-control",
+                                                        @readonly = "true" })
+                        </div>
+                        <div class="col-md-6">
+                            <label>Ejercicio (deporte)</label>
+                            @Html.TextAreaFor(m => m.TerapeuticoEjercicio, new { @class = "form-control", @readonly =
+                                                        "true" })
+                        </div>
+                        <div class="col-md-6">
+                            <label>Fines de semana</label>
+                            @Html.TextAreaFor(m => m.TerapeuticoFinesSemana, new { @class = "form-control", @readonly =
+                                                        "true" })
+                        </div>
+                        <div class="col-md-6">
+                            <label>Historia médica</label>
+                            @Html.TextAreaFor(m => m.TerapeuticoHistoriaMedica, new { @class = "form-control", @readonly
+                                                        = "true" })
+                        </div>
+                        <div class="col-md-6">
+                            <label>Historia con el peso</label>
+                            @Html.TextAreaFor(m => m.TerapeuticoHistoriaPeso, new { @class = "form-control", @readonly =
+                                                        "true" })
+                        </div>
+                        <div class="col-md-12">
+                            <label>Observaciones</label>
+                            @Html.TextAreaFor(m => m.TerapeuticoObservaciones, new { @class = "form-control",
+                                                        @placeholder = "Observaciones" })
+                        </div>
+                        <div class="col-md-12">
+                            <h5><b>Historial observaciones</b></h5>
+                            <hr />
+                        </div>
+                        <div class="col-md-12">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha y hora</th>
+                                        <th>Observaciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.TerapeuticoHistoricoObservaciones != null)
+                                    {
+                                        @foreach (var historico in Model.TerapeuticoHistoricoObservaciones)
+                                        {
+                                            var observaciones = historico.Observaciones ?? "-";
+                                            <tr>
+                                                <td>@historico.Fecha</td>
+                                                <td>@observaciones</td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                                                }
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="tab-oftalmologia">
+            @await Html.PartialAsync("_OftalmologiaForm")
+        </div>
+        <div id="tab-podologia">
+            @await Html.PartialAsync("_PodologiaForm")
+        </div>
+        <div id="tab-hce">
+            @await Html.PartialAsync("_HistoriaClinicaEnfermeriaForm")
+        </div>
+        <div id="tab-vie">
+            @await Html.PartialAsync("_ValoracionInicialEnfermeriaForm")
+        </div>
+        <div id="tab-sueroterapia">
+            @await Html.PartialAsync("_SueroterapiaForm")
+        </div>
+
+
+
+        <div id="tab-historia-clinica" class="p-3">
+
+            <div class="border rounded p-3 bg-white shadow-sm">
+
+                <!-- Header -->
+                <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
+                    <h6 class="mb-0 font-weight-bold text-primary text-uppercase">
+                        <i class="fas fa-notes-medical mr-2"></i> Historia clínica
+                    </h6>
+                </div>
+
+                <!-- Toggle 1 -->
+                <div class="border rounded mb-2">
+                    <button type="button"
+                        class="btn btn-outline-primary btn-sm btn-block text-left d-flex align-items-center justify-content-between"
+                        onclick="toggleContent('partial1')">
+                        <span class="font-weight-bold">
+                            <i class="fas fa-file-medical mr-2"></i> Mostrar/Ocultar - Historia clínica
+                        </span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div id="partial1" class="p-3 border-top" style="display: none;">
+                        @await Html.PartialAsync("_HistoriaClinica")
+                    </div>
+                </div>
+
+                <!-- Toggle 2 -->
+                <div class="border rounded mb-2">
+                    <button type="button"
+                        class="btn btn-outline-primary btn-sm btn-block text-left d-flex align-items-center justify-content-between"
+                        onclick="toggleContent('partial2')">
+                        <span class="font-weight-bold">
+                            <i class="fas fa-female mr-2"></i> Mostrar/Ocultar - Solo para Mujeres
+                        </span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div id="partial2" class="p-3 border-top" style="display: none;">
+                        @await Html.PartialAsync("_SoloParaMujeres")
+                    </div>
+                </div>
+
+                <!-- Toggle 3 -->
+                <div class="border rounded mb-2">
+                    <button type="button"
+                        class="btn btn-outline-primary btn-sm btn-block text-left d-flex align-items-center justify-content-between"
+                        onclick="toggleContent('partial3')">
+                        <span class="font-weight-bold">
+                            <i class="fas fa-notes-medical mr-2"></i> Mostrar/Ocultar - Antecedentes Patológicos
+                        </span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div id="partial3" class="p-3 border-top" style="display: none;">
+                        @await Html.PartialAsync("_AntPatologicosPaciente")
+                    </div>
+                </div>
+
+                <!-- Toggle 4 -->
+                <div class="border rounded mb-2">
+                    <button type="button"
+                        class="btn btn-outline-primary btn-sm btn-block text-left d-flex align-items-center justify-content-between"
+                        onclick="toggleContent('partial4')">
+                        <span class="font-weight-bold">
+                            <i class="fas fa-heartbeat mr-2"></i> Mostrar/Ocultar - Signos Vitales
+                        </span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div id="partial4" class="p-3 border-top" style="display: none;">
+                        @await Html.PartialAsync("_ExamenFisicoForm")
+                    </div>
+                </div>
+
+                <!-- Toggle 5 -->
+                <div class="border rounded mb-2">
+                    <button type="button"
+                        class="btn btn-outline-primary btn-sm btn-block text-left d-flex align-items-center justify-content-between"
+                        onclick="toggleContent('partial5')">
+                        <span class="font-weight-bold">
+                            <i class="fas fa-user-md mr-2"></i> Mostrar/Ocultar - Examen Físico
+                        </span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div id="partial5" class="p-3 border-top" style="display: none;">
+                        @await Html.PartialAsync("_RevisionSistemas")
+                    </div>
+                </div>
+
+                <!-- Toggle 6 -->
+                <div class="border rounded mb-2">
+                    <button type="button"
+                        class="btn btn-outline-primary btn-sm btn-block text-left d-flex align-items-center justify-content-between"
+                        onclick="toggleContent('partial6')">
+                        <span class="font-weight-bold">
+                            <i class="fas fa-project-diagram mr-2"></i> Mostrar/Ocultar - Revisión por Sistemas
+                        </span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div id="partial6" class="p-3 border-top" style="display: none;">
+                        @await Html.PartialAsync("_RevisionSistemasNew")
+                    </div>
+                </div>
+
+                <!-- Toggle 7 -->
+                <div class="border rounded mb-2">
+                    <button type="button"
+                        class="btn btn-outline-primary btn-sm btn-block text-left d-flex align-items-center justify-content-between"
+                        onclick="toggleContent('partial7')">
+                        <span class="font-weight-bold">
+                            <i class="fas fa-comments mr-2"></i> Mostrar/Ocultar - Comentarios
+                        </span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div id="partial7" class="p-3 border-top" style="display: none;">
+                        @await Html.PartialAsync("_HistoriaClinicaComentario")
+                    </div>
+                </div>
+
+                <!-- Toggle 8 -->
+                <div class="border rounded">
+                    <button type="button"
+                        class="btn btn-outline-primary btn-sm btn-block text-left d-flex align-items-center justify-content-between"
+                        onclick="toggleContent('partial8')">
+                        <span class="font-weight-bold">
+                            <i class="fas fa-stamp mr-2"></i> Mostrar/Ocultar - Impresión Clínica
+                        </span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div id="partial8" class="p-3 border-top" style="display: none;">
+                        @await Html.PartialAsync("_HistoriaClinicaImpresionClinica")
+                    </div>
+                </div>
+
+                <!-- Ultrasonido -->
+                <div id="tab-ultrasonido" class="pt-3 mt-3 border-top">
+                    @await Html.PartialAsync("_ConsultaExamenes")
+                    @await Html.PartialAsync("_ConsultaServicios")
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </div>
+</div>
+
+<style>
+    /* Estilos generales para los contenedores */
+    .toggle-container {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        border: 1px solid #e5e5e5;
+        /* Color más claro para armonizar */
+        border-radius: 6px;
+        /* Bordes más suaves */
+        background-color: #ffffff;
+        /* Fondo blanco para integrarse con el diseño */
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        /* Sombra ligera */
+    }
+
+    /* Estilos para los botones */
+    .toggle-button {
+        display: inline-block;
+        padding: 0.6rem 1.5rem;
+        /* Tamaño ligeramente más pequeño */
+        font-size: 0.9rem;
+        /* Tamaño de fuente reducido */
+        font-weight: 700;
+        /* Peso de fuente más ligero */
+        letter-spacing: 2px;
+        color: #000000;
+        background-color: #007bff;
+        /* Azul principal del sistema */
+        border: none;
+        border-radius: 4px;
+        /* Bordes menos redondeados */
+        cursor: pointer;
+        transition: all 0.2s ease;
+        /* Transiciones más rápidas */
+        box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+        /* Sombra más sutil */
+    }
+
+    /* Hover y focus para botones */
+    .toggle-button:hover {
+        background-color: #0056b3;
+        /* Azul más oscuro */
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+        /* Sombra más pronunciada */
+    }
+
+    .toggle-button:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(38, 132, 255, 0.3);
+        /* Anillo de enfoque */
+    }
+
+    /* Estados de botón presionado */
+    .toggle-button:active {
+        transform: translateY(1px);
+        /* Efecto de presión */
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        /* Sombra más ligera */
+    }
+
+    /* Estilos para el contenido oculto/visible */
+    .toggle-content {
+        margin-top: 1rem;
+        padding: 1rem;
+        border: 1px solid #ddd;
+        /* Color de borde más tenue */
+        border-radius: 6px;
+        background-color: #f8f9fa;
+        /* Fondo gris claro */
+        box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+        /* Sombra ligera */
+        display: none;
+        /* Ocultar por defecto */
+    }
+</style>
+
+<script>
+    function toggleContent(id) {
+        const content = document.getElementById(id);
+        if (content.style.display === "none") {
+            content.style.display = "block";
+        } else {
+            content.style.display = "none";
+        }
+    }
+</script>
+<script>
+    (function () {
+        var storageKey = "consultaTabs:activeHref";
+        var $tabsRoot = $("#tabs");
+        var $tabLinks = $('#consultaTabs a[href^="#tab-"]');
+
+        // Tooltips Bootstrap 4.3
+        $tabLinks.filter('[data-toggle="tooltip"]').tooltip({ container: 'body' });
+
+        function ensureTabsInitialized() {
+            // Si ya está inicializado, ok. Si no, inicializa sin pisar active aún.
+            if (!$tabsRoot.data("ui-tabs")) {
+                $tabsRoot.tabs();
+            }
+        }
+
+        function setActiveByHref(href) {
+            if (!href) return false;
+
+            ensureTabsInitialized();
+
+            var $a = $tabsRoot.find('> ul > li:visible > a[href="' + href + '"]');
+            if (!$a.length) return false;
+
+            var idx = $a.parent().index();
+            $tabsRoot.tabs("option", "active", idx);
+
+            // Sincronizar clase Bootstrap
+            $('#consultaTabs a.nav-link').removeClass('active');
+            $a.addClass('active');
+
+            return true;
+        }
+
+        // Guardar tab activo con jQuery UI
+        $tabsRoot.on("tabsactivate", function (event, ui) {
+            var href = ui.newTab && ui.newTab.find("a").attr("href");
+            if (href) localStorage.setItem(storageKey, href);
+
+            // Bootstrap active
+            $('#consultaTabs a.nav-link').removeClass('active');
+            ui.newTab.find('a.nav-link').addClass('active');
+        });
+
+        // Restaurar al cargar: prioridad hash > localStorage
+        $(function () {
+            ensureTabsInitialized();
+
+            var target = (window.location.hash && window.location.hash.indexOf("#tab-") === 0)
+                ? window.location.hash
+                : localStorage.getItem(storageKey);
+
+            // IMPORTANTE: forzar restore al final para que no lo pise otro script global
+            setTimeout(function () {
+                if (!setActiveByHref(target)) {
+                    // Si no existe (ej pediátricos ya no está), caer al primero
+                    $tabsRoot.tabs("option", "active", 0);
+                    var $first = $tabsRoot.find('> ul > li:visible:first > a');
+                    $('#consultaTabs a.nav-link').removeClass('active');
+                    $first.addClass('active');
+                }
+            }, 0);
+        });
+
+    })();
+</script>
+
+
+@* <script src="~/js/voicetotext/voicetotext.js"></script>
+    <script>
+        window.voiceToTextFields =
+            ['ConsultaMotivo', 'HistoriaEnfermedadActual', 'HistoriaClinicaImpresionClinica', 'HistoriaClinicaComentario',
+                'GinecologiaConsultaMotivo'
+            ];
+    </script> *@

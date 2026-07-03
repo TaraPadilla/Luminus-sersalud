@@ -1,0 +1,404 @@
+@model sistema.Models.HospitalizacionDetallesViewModel
+<div class="tab-pane tabs-animation fade show" id="tab-content-emergencias" role="tabpanel">
+    <div class="main-card mb-3 card" style="border-radius: 10px">
+        <div class="card-body">
+
+
+            <!-- ko if: emergenciaId() == 0 -->
+            <div class="alert text-center p-5">
+                <i class="fas fa-exclamation-triangle fa-3x mb-3 text-warning"></i>
+                <h4>No hay emergencia asociada</h4>
+                <p class="mb-0">Esta hospitalización no tiene una emergencia vinculada.</p>
+            </div>
+            <!-- /ko -->
+            
+
+            <!-- ko if: emergenciaId() > 0 -->
+            <div class="form-row p-4">
+                <div class="col-md-12">
+                    
+                    <!-- Sección: Información de Emergencia -->
+                    <div class="mb-3 border rounded p-3" style="background-color: #f8f9fa;">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <h6 class="mb-0 font-weight-bold">
+                                <i class="fas fa-ambulance mr-2"></i>Emergencia Asociada
+                            </h6>
+                            <span class="badge badge-info" data-bind="text: 'ID: ' + emergenciaId()"></span>
+                        </div>
+                        
+                        <!-- Botón para actualizar datos -->
+                        <button class="btn btn-sm btn-info mb-3" data-bind="click: consultarElementosEmergencia">
+                            <i class="fas fa-sync-alt mr-1"></i> Actualizar datos de emergencia
+                        </button>
+                    </div>
+
+                    <!-- ========================================== -->
+                    <!-- PRODUCTOS DE EMERGENCIA                    -->
+                    <!-- ========================================== -->
+                    <div class="mb-3 border rounded p-3" style="background-color: #f8f9fa;">
+                        <div class="d-flex align-items-center justify-content-center mb-3">
+                            <h6 class="mb-0 font-weight-bold">Productos de Emergencia</h6>
+                        </div>
+
+                        @if (!User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio") && !User.IsInRole("Enfermeria"))
+                        {
+                            if (!Model.HospitalizacionFinalizada)
+                            {
+                                <div class="mt-3 p-3 bg-white border rounded">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <label class="font-weight-bold mb-1">Agregar producto</label>
+                                        </div>
+                                        
+                                        <div class="col-md-3">
+                                            <label class="mb-1">Producto</label>
+                                            <select class="form-control"
+                                                    data-bind="options: productosExistentesEmergencia,
+                                                               value: productoEmergenciaSeleccionado,
+                                                               optionsText: 'ProductoNombreMostrar',
+                                                               optionsCaption: 'Seleccione producto'">
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="col-md-3">
+                                            <label class="mb-1">Unidad de venta</label>
+                                            <select class="form-control"
+                                                    data-bind="options: unidadesVentaProductoEmergencia,
+                                                               value: unidadVentaSeleccionadaProductoEmergencia,
+                                                               optionsText: 'UnidadMedidaVentaNombre',
+                                                               optionsCaption: 'Seleccione unidad'">
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="col-md-3">
+                                            <label class="mb-1">Precio</label>
+                                            <select class="form-control"
+                                                    data-bind="options: preciosProductoEmergencia,
+                                                               value: precioSeleccionadoProductoEmergencia,
+                                                               optionsText: 'Precio',
+                                                               optionsCaption: 'Seleccione precio'">
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="col-md-2">
+                                            <label class="mb-1">Cantidad</label>
+                                            <input class="form-control"
+                                                   type="number"
+                                                   min="1"
+                                                   data-bind="value: cantidadProductoEmergenciaAgregar" />
+                                        </div>
+                                        
+                                        <div class="col-md-1 d-flex align-items-end">
+                                            <button class="btn btn-primary w-100"
+                                                    data-bind="click: agregarProductoEmergencia">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+
+                        <!-- Tabla de productos -->
+                        <!-- ko if: productosEmergenciaHospi().length > 0 -->
+                        <div class="table-responsive mt-3">
+                            <table class="table table-hover table-sm table-bordered" style="background-color: #ffffff;">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Unidad</th>
+                                        <th>Cantidad</th>
+                                        <th>Precio Unit.</th>
+                                        <th>Subtotal</th>
+                                        <th>Descuento</th>
+                                        <th>Total</th>
+                                        @if (!User.IsInRole("Enfermeria") && !User.IsInRole("Medico General"))
+                                        {
+                                            <th>Acciones</th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- ko foreach: productosEmergenciaHospi -->
+                                    <!-- ko ifnot: Eliminado -->
+                                    <tr>
+                                        <td data-bind="text: ProductoNombre"></td>
+                                        <td data-bind="text: UnidadMedidaVentaNombre"></td>
+                                        <td data-bind="text: Cantidad"></td>
+                                        <td data-bind="text: 'Q ' + ValorUnitario().toFixed(2)"></td>
+                                        <td data-bind="text: 'Q ' + ValorSubtotal().toFixed(2)"></td>
+                                        <td data-bind="text: 'Q ' + DescuentoValor().toFixed(2)"></td>
+                                        <td data-bind="text: 'Q ' + ValorTotal().toFixed(2)"></td>
+                                        @if (!User.IsInRole("Enfermeria") && !User.IsInRole("Medico General"))
+                                        {
+                                            <td>
+                                                <button class="btn btn-sm btn-danger"
+                                                        data-bind="click: function() { $root.quitarElementoEmergencia($data, 'producto') }">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        }
+                                    </tr>
+                                    <!-- /ko -->
+                                    <!-- /ko -->
+                                </tbody>
+                            </table>
+                            <!-- Subtotal de productos -->
+                            <div class="text-right mt-2">
+    <strong>Subtotal Productos: Q <span data-bind="text: (totalProductosEmergencia() || 0).toFixed(2)"></span></strong>
+</div>
+
+                        </div>
+                        <!-- /ko -->
+
+                        <!-- ko ifnot: productosEmergenciaHospi().length > 0 -->
+                        <div class="alert alert-info mt-3 mb-0" role="alert">
+                            No hay productos agregados a esta emergencia.
+                        </div>
+                        <!-- /ko -->
+                    </div>
+
+                    <!-- ========================================== -->
+                    <!-- SERVICIOS DE EMERGENCIA                    -->
+                    <!-- ========================================== -->
+                    <div class="mb-3 border rounded p-3" style="background-color: #f8f9fa;">
+                        <div class="d-flex align-items-center justify-content-center mb-3">
+                            <h6 class="mb-0 font-weight-bold">Servicios de Emergencia</h6>
+                        </div>
+
+                        @if (!User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio") && !User.IsInRole("Enfermeria"))
+                        {
+                            if (!Model.HospitalizacionFinalizada)
+                            {
+                                <div class="mt-3 p-3 bg-white border rounded">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <label class="font-weight-bold mb-1">Agregar servicio</label>
+                                        </div>
+                                        
+                                        <div class="col-md-5">
+                                            <label class="mb-1">Servicio</label>
+                                            <select class="form-control"
+                                                    data-bind="options: serviciosExistentesEmergencia,
+                                                               value: servicioEmergenciaSeleccionado,
+                                                               optionsText: 'ServicioNombre',
+                                                               optionsCaption: 'Seleccione servicio'">
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="col-md-4">
+                                            <label class="mb-1">Precio</label>
+                                            <select class="form-control"
+                                                    data-bind="options: preciosServicioEmergencia,
+                                                               value: precioSeleccionadoServicioEmergencia,
+                                                               optionsText: function(item) { 
+                                                                   return item.PrecioNombre + ' - Q ' + item.PrecioValor; 
+                                                               },
+                                                               optionsCaption: 'Seleccione precio'">
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="col-md-2">
+                                            <label class="mb-1">Cantidad</label>
+                                            <input class="form-control"
+                                                   type="number"
+                                                   min="1"
+                                                   data-bind="value: cantidadServicioEmergenciaAgregar" />
+                                        </div>
+                                        
+                                        <div class="col-md-1 d-flex align-items-end">
+                                            <button class="btn btn-primary w-100"
+                                                    data-bind="click: agregarServicioEmergenciaHospi">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+
+                        <!-- Tabla de servicios -->
+                        <!-- ko if: serviciosEmergenciaHospi().length > 0 -->
+                        <div class="table-responsive mt-3">
+                            <table class="table table-hover table-sm table-bordered" style="background-color: #ffffff;">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Servicio</th>
+                                        <th>Cantidad</th>
+                                        <th>Precio Unit.</th>
+                                        <th>Subtotal</th>
+                                        <th>Descuento</th>
+                                        <th>Total</th>
+                                        @if (!User.IsInRole("Enfermeria") && !User.IsInRole("Medico General"))
+                                        {
+                                            <th>Acciones</th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- ko foreach: serviciosEmergenciaHospi -->
+                                    <!-- ko ifnot: Eliminado -->
+                                    <tr>
+                                        <td data-bind="text: ServicioNombre"></td>
+                                        <td data-bind="text: Cantidad"></td>
+                                        <td data-bind="text: 'Q ' + (ValorUnitario ? ValorUnitario.toFixed(2) : '0.00')"></td>
+                                        <td data-bind="text: 'Q ' + (ValorSubtotal() ? ValorSubtotal().toFixed(2) : '0.00')"></td>
+                                        <td data-bind="text: 'Q ' + (DescuentoValor() ? DescuentoValor().toFixed(2) : '0.00')"></td>
+                                        <td data-bind="text: 'Q ' + (ValorTotal() ? ValorTotal().toFixed(2) : '0.00')"></td>
+                                        @if (!User.IsInRole("Enfermeria") && !User.IsInRole("Medico General"))
+                                        {
+                                            <td>
+                                                <button class="btn btn-sm btn-danger"
+                                                        data-bind="click: function() { $root.quitarElementoEmergencia($data, 'servicio') }">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        }
+                                    </tr>
+                                    <!-- /ko -->
+                                    <!-- /ko -->
+                                </tbody>
+                            </table>
+                            <!-- Subtotal de servicios -->
+                            <div class="text-right mt-2">
+    <strong>Subtotal Servicios: Q <span data-bind="text: (totalServiciosEmergencia() || 0).toFixed(2)"></span></strong>
+</div>
+                        </div>
+                        <!-- /ko -->
+
+                        <!-- ko ifnot: serviciosEmergenciaHospi().length > 0 -->
+                        <div class="alert alert-info mt-3 mb-0" role="alert">
+                            No hay servicios agregados a esta emergencia.
+                        </div>
+                        <!-- /ko -->
+                    </div>
+
+                    <!-- ========================================== -->
+                    <!-- EXÁMENES DE EMERGENCIA                     -->
+                    <!-- ========================================== -->
+                    <div class="mb-3 border rounded p-3" style="background-color: #f8f9fa;">
+                        <div class="d-flex align-items-center justify-content-center mb-3">
+                            <h6 class="mb-0 font-weight-bold">Exámenes de Emergencia</h6>
+                        </div>
+
+                        @if (!User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio") && !User.IsInRole("Enfermeria"))
+                        {
+                            if (!Model.HospitalizacionFinalizada)
+                            {
+                                <div class="mt-3 p-3 bg-white border rounded">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <label class="font-weight-bold mb-1">Agregar examen</label>
+                                        </div>
+                                        
+                                        <div class="col-md-5">
+                                            <label class="mb-1">Examen</label>
+                                            <select class="form-control"
+                                                    data-bind="options: examenesExistentesEmergencia,
+                                                               value: examenEmergenciaSeleccionado,
+                                                               optionsText: 'ExamenNombre',
+                                                               optionsCaption: 'Seleccione examen'">
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="col-md-4">
+                                            <label class="mb-1">Precio</label>
+                                            <select class="form-control"
+                                                    data-bind="options: preciosExamenEmergencia,
+                                                               value: precioSeleccionadoExamenEmergencia,
+                                                               optionsText: function(item) { 
+                                                                   return item.PrecioNombre + ' - Q ' + item.PrecioValor; 
+                                                               },
+                                                               optionsCaption: 'Seleccione precio'">
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="col-md-2">
+                                            <label class="mb-1">Cantidad</label>
+                                            <input class="form-control"
+                                                   type="number"
+                                                   min="1"
+                                                   data-bind="value: cantidadExamenEmergenciaAgregar" />
+                                        </div>
+                                        
+                                        <div class="col-md-1 d-flex align-items-end">
+                                            <button class="btn btn-primary w-100"
+                                                    data-bind="click: agregarExamenEmergencia">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+
+                        <!-- Tabla de exámenes -->
+                        <!-- ko if: examenesEmergenciaHospi().length > 0 -->
+                        <div class="table-responsive mt-3">
+                            <table class="table table-hover table-sm table-bordered" style="background-color: #ffffff;">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Examen</th>
+                                        <th>Cantidad</th>
+                                        <th>Precio Unit.</th>
+                                        <th>Subtotal</th>
+                                        <th>Descuento</th>
+                                        <th>Total</th>
+                                        @if (!User.IsInRole("Enfermeria") && !User.IsInRole("Medico General"))
+                                        {
+                                            <th>Acciones</th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- ko foreach: examenesEmergenciaHospi -->
+                                    <!-- ko ifnot: Eliminado -->
+                                    <tr>
+                                        <td data-bind="text: ExamenNombre"></td>
+                                        <td data-bind="text: Cantidad"></td>
+                                        <td data-bind="text: 'Q ' + (ValorUnitario ? ValorUnitario.toFixed(2) : '0.00')"></td>
+                                        <td data-bind="text: 'Q ' + (ValorSubtotal() ? ValorSubtotal().toFixed(2) : '0.00')"></td>
+                                        <td data-bind="text: 'Q ' + (DescuentoValor() ? DescuentoValor().toFixed(2) : '0.00')"></td>
+                                        <td data-bind="text: 'Q ' + (ValorTotal() ? ValorTotal().toFixed(2) : '0.00')"></td>
+                                        @if (!User.IsInRole("Enfermeria") && !User.IsInRole("Medico General"))
+                                        {
+                                            <td>
+                                                <button class="btn btn-sm btn-danger"
+                                                        data-bind="click: function() { $root.quitarElementoEmergencia($data, 'examen') }">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        }
+                                    </tr>
+                                    <!-- /ko -->
+                                    <!-- /ko -->
+                                </tbody>
+                            </table>
+                            <!-- Subtotal de exámenes -->
+                            <div class="text-right mt-2">
+    <strong>Subtotal Exámenes: Q <span data-bind="text: (totalExamenesEmergencia() || 0).toFixed(2)"></span></strong>
+</div>
+                        </div>
+                        <!-- /ko -->
+
+                        <!-- ko ifnot: examenesEmergenciaHospi().length > 0 -->
+                        <div class="alert alert-info mt-3 mb-0" role="alert">
+                            No hay exámenes agregados a esta emergencia.
+                        </div>
+                        <!-- /ko -->
+                    </div>
+
+                    <!-- TOTAL GENERAL DE EMERGENCIAS -->
+                   <div class="mt-4 p-3 bg-dark text-white rounded text-right">
+                        <h4 class="mb-0">
+                            <strong>TOTAL EMERGENCIAS: <span data-bind="text: valorTotalEmergenciasTexto"></span></strong>
+                        </h4>
+                    </div>
+
+                </div>
+            </div>
+            <!-- /ko -->
+
+        </div>
+    </div>
+</div>

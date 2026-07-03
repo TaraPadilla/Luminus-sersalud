@@ -1,0 +1,256 @@
+@{
+    ViewData["Title"] = "Login con Huella";
+    Layout = "~/Views/Shared/_LoginLayout.cshtml";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="mr-3">
+                            <span class="badge badge-primary p-3">
+                                <i class="bi bi-fingerprint" style="font-size: 1.5rem;"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <h4 class="mb-1">Iniciar sesión con biometría</h4>
+                            <small class="text-muted">
+                                Usa el autenticador del dispositivo (Windows Hello / Touch ID / PIN / Biometría).
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-light border mb-4" role="alert">
+                        <div class="d-flex">
+                            <div class="mr-2">
+                                <span class="badge badge-secondary">Info</span>
+                            </div>
+                            <div class="small text-muted mb-0">
+                                Este método usa WebAuthn/FIDO2. Tu huella no se envía al servidor; solo se valida una firma criptográfica.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="emailLoginHuella" class="font-weight-bold mb-1">Correo</label>
+                        <input id="emailLoginHuella"
+                               type="email"
+                               class="form-control"
+                               placeholder="correo@dominio.com"
+                               autocomplete="username"
+                               required />
+                        <small class="form-text text-muted">
+                            Ingresa el correo para obtener las credenciales registradas del usuario.
+                        </small>
+                    </div>
+
+                    <button id="btnLoginHuella" type="button" class="btn btn-primary btn-block btn-lg">
+                        <i class="bi bi-shield-lock mr-2"></i> Iniciar sesión
+                    </button>
+
+                    <div class="mt-3">
+                        <div id="mensajeLogin" class="alert d-none mb-0" role="alert"></div>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <div class="small text-muted">
+                        <div class="mb-2">
+                            <strong>Requisitos:</strong>
+                            <ul class="mb-0">
+                                <li>Conexión segura (HTTPS).</li>
+                                <li>Navegador compatible con WebAuthn.</li>
+                                <li>Credencial registrada previamente.</li>
+                            </ul>
+                        </div>
+                        <div>
+                            Si tienes problemas, intenta nuevamente o registra la credencial desde “Agregar Huella”.
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    const btn = document.getElementById("btnLoginHuella");
+    const alertBox = document.getElementById("mensajeLogin");
+    const emailInput = document.getElementById("emailLoginHuella");
+
+    function escapeHtml(str) {
+        return String(str ?? "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#39;");
+    }
+
+    function setAlert(type, title, details) {
+        alertBox.className = "alert alert-" + type;
+        alertBox.classList.remove("d-none");
+
+        const safeTitle = escapeHtml(title);
+        const safeDetails = details ? escapeHtml(details) : "";
+
+        alertBox.innerHTML = `
+            <div class="d-flex">
+                <div class="mr-2"><strong>${safeTitle}</strong></div>
+            </div>
+            ${safeDetails ? `<pre class="small text-monospace mb-0 mt-2">${safeDetails}</pre>` : ""}
+        `;
+    }
+
+    function clearAlert() {
+        alertBox.className = "alert d-none";
+        alertBox.innerHTML = "";
+    }
+
+    function setBusy(isBusy) {
+        btn.disabled = isBusy;
+        btn.classList.toggle("disabled", isBusy);
+
+        btn.innerHTML = isBusy
+            ? `<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Verificando...`
+            : `<i class="bi bi-shield-lock mr-2"></i> Iniciar sesión`;
+    }
+
+    function arrayBufferToBase64(buffer) {
+        const bytes = new Uint8Array(buffer);
+        let binary = '';
+        for (let i = 0; i < bytes.byteLength; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return btoa(binary);
+    }
+
+    function base64ToUint8Array(base64) {
+        return Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    }
+
+    async function safeReadText(response) {
+        try { return await response.text(); }
+        catch { return ""; }
+    }
+
+    btn.addEventListener("click", async () => {
+        clearAlert();
+
+        const email = (emailInput.value || "").trim();
+        if (!email) {
+            setAlert("warning", "Correo requerido", "Ingresa el correo del usuario.");
+            emailInput.focus();
+            return;
+        }
+
+        if (!window.PublicKeyCredential) {
+            setAlert("warning", "Navegador no compatible", "Este navegador no soporta WebAuthn/FIDO2.");
+            return;
+        }
+
+        if (!window.isSecureContext) {
+            setAlert("danger", "Se requiere HTTPS", "WebAuthn necesita un contexto seguro. Abre el sitio con HTTPS.");
+            return;
+        }
+
+        setBusy(true);
+
+        try {
+            // ✅ BeginLogin sin body: /api/WebAuthn/BeginLogin?email=...
+            const res1 = await fetch(`/api/WebAuthn/BeginLogin?email=${encodeURIComponent(email)}`, {
+                method: "POST",
+                credentials: "include"
+            });
+
+            if (!res1.ok) {
+                const errorText = await safeReadText(res1);
+                setAlert("danger", "Error al iniciar autenticación", `HTTP ${res1.status}\n${errorText}`);
+                return;
+            }
+
+            const optionsFromServer = await res1.json();
+
+            const serverAllowCreds = Array.isArray(optionsFromServer.allowCredentials)
+                ? optionsFromServer.allowCredentials
+                : [];
+
+            const publicKeyOptions = {
+                challenge: base64ToUint8Array(optionsFromServer.challenge),
+                allowCredentials: serverAllowCreds.map(cred => ({
+                    id: base64ToUint8Array(cred.id),
+                    type: "public-key",
+                    transports: cred.transports
+                })),
+                timeout: optionsFromServer.timeout,
+                userVerification: "preferred"
+            };
+
+            if (!publicKeyOptions.allowCredentials || publicKeyOptions.allowCredentials.length === 0) {
+                setAlert("warning", "Sin credenciales registradas", "No se encontraron credenciales WebAuthn para este usuario.");
+                return;
+            }
+
+            let assertion;
+            try {
+                assertion = await navigator.credentials.get({ publicKey: publicKeyOptions });
+            } catch (error) {
+                if (error && error.name === "NotAllowedError") {
+                    setAlert("warning", "Autenticación cancelada", "Se canceló o no se completó la verificación.");
+                    return;
+                }
+                if (error && error.name === "SecurityError") {
+                    setAlert("danger", "Bloqueado por seguridad", "Verifica que estés en HTTPS y con un origen válido.");
+                    return;
+                }
+                setAlert("danger", "Error al obtener credenciales", error && error.message ? error.message : "Error desconocido.");
+                return;
+            }
+
+            const assertionResponse = {
+                id: arrayBufferToBase64(assertion.rawId),
+                rawId: arrayBufferToBase64(assertion.rawId),
+                type: assertion.type,
+                response: {
+                    clientDataJSON: arrayBufferToBase64(assertion.response.clientDataJSON),
+                    authenticatorData: arrayBufferToBase64(assertion.response.authenticatorData),
+                    signature: arrayBufferToBase64(assertion.response.signature),
+                    userHandle: assertion.response.userHandle ? arrayBufferToBase64(assertion.response.userHandle) : null
+                },
+                extensions: {}
+            };
+
+            const res2 = await fetch("/api/WebAuthn/CompleteLogin", {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(assertionResponse)
+            });
+
+            if (res2.ok) {
+                setAlert("success", "Autenticación exitosa", "Redirigiendo...");
+                window.location.href = "/";
+                return;
+            }
+
+            const errorText2 = await safeReadText(res2);
+            setAlert("danger", "Credenciales inválidas", `HTTP ${res2.status}\n${errorText2}`);
+        }
+        catch (error) {
+            setAlert("danger", "Error inesperado", error && error.message ? error.message : "Error desconocido.");
+        }
+        finally {
+            setBusy(false);
+        }
+    });
+})();
+</script>
+}

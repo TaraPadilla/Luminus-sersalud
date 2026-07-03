@@ -1,0 +1,22 @@
+@{
+    ViewData["Title"] = "Nueva Categoría";
+}
+<div class="app-page-title">
+    <div class="page-title-wrapper">
+
+        <div class="page-title-heading">
+            <div class="page-title-icon">
+                <i class="pe-7s-graph text-success">
+                </i>
+            </div>
+            <div>Insertar nueva Categoría
+                <div class="page-title-subheading">Agrega Categorías
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+ @await Html.PartialAsync("_MensajeExito")
+<form asp-controller="CategoriaGasto" asp-action="Nuevo" method="post">
+    @await Html.PartialAsync("_CategoriaGastoForm")
+</form>

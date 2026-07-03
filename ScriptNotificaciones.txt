@@ -1,0 +1,8 @@
+
+CREATE TABLE "Notificaciones" (
+    "Id" SERIAL PRIMARY KEY,
+    "Titulo" VARCHAR(200),
+    "Mensaje" VARCHAR(500),
+    "FechaCreacion" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    "Leida" BOOLEAN DEFAULT FALSE
+);

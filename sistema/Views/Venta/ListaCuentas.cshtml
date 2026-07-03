@@ -1,0 +1,112 @@
+@using Database.Shared.Paginacion;
+@model PaginacionList<Database.Shared.Models.Venta> 
+
+@{
+    ViewData["Title"] = "Lista Cuentas";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+<br/>
+<form asp-action="ListaCuentas" method="get">
+    <div class="col-md-12">
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <input type="submit" value="Buscar" class="btn btn-success"></input>
+            </div>
+            <input type="text" name="buscar" value="@ViewData["CurrentFilter"]" class="form-control" placeholder="Buscar cuenta...">
+        </div>
+    </div>
+</form>
+<br/>
+<div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel">
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="table-responsive">
+                    <table class="mb-0 table table-hover ">
+                        <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Codigo cliente #</th>
+                            <th>Cliente</th>
+                            <th>Tipo</th>
+                            <th>Paciente</th>
+                            <th>Nit</th>
+                            <th>Forma de Pago</th>
+                            <th>Monto Por Pagar</th>
+                            <th>Acciones</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td>02/25/2023 14:20:43</td>
+                            <td>2341</td>
+                            <td>master@redowlsoft.com</td>
+                            <td>Por cobrar</td>
+                            <td>Tavo Barcenas</td>
+                            <td>1238497670</td>
+                            <td>Efectivo</td>
+                            <td>Q 20.00</td>
+                            @* <td>Q @item.Vuelto</td> *@
+
+                            <td> 
+                                 <a href="@Url.Action("VerDetallesCuenta","VerDetallesCuenta", new {id = 34})" class="btn btn-primary">
+                                    Ver detalles
+                                </a> 
+                                <a href="@Url.Action("Modificar","Venta", new {id = 34})" class="btn btn-primary">
+                                     Pagar
+                                </a>
+                                <a href="@Url.Action("ReciboVentaPdf","CrearPDF", new {id = 34})" class="btn btn-danger">
+                                    <i class="fas fa-file-pdf"></i> Imprimir pdf
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>02/25/2023 14:20:43</td>
+                            <td>2341</td>
+                            <td>master@redowlsoft.com</td>
+                            <td>Por cobrar</td>
+                            <td>CAMILA MONTES</td>
+                            <td>1238497670</td>
+                            <td>Transferencia</td>
+                            <td>Q 20.00</td>
+                            @* <td>Q @item.Vuelto</td> *@
+
+                            <td> 
+                                <a href="@Url.Action("VerDetallesCuenta","Venta", new {id = 32})" class="btn btn-primary">
+                                    Ver detalles
+                                </a>
+                                <a href="@Url.Action("Modificar","Venta", new {id = 32})" class="btn btn-primary">
+                                    <i class="fas fa-file-pdf"></i> Pagar
+                                </a>
+                                <a href="@Url.Action("ReciboVentaPdf","CrearPDF", new {id = 32})" class="btn btn-danger">
+                                    <i class="fas fa-file-pdf"></i> Imprimir pdf
+                                </a>
+                            </td>
+                        </tr>
+                            
+                        </tbody>
+                    </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+}
+
+<a asp-action="ListaVentasClinica"
+   asp-route-sortOrder="@ViewData["CurrentSort"]"
+   asp-route-pageNumber="@(Model.PageIndex - 1)"
+   asp-route-currentFilter="@ViewData["CurrentFilter"]"
+   class="btn btn-danger btn-sm @prevDisabled">
+    Anterior
+</a>
+<a asp-action="ListaVentasClinica"
+   asp-route-sortOrder="@ViewData["CurrentSort"]"
+   asp-route-pageNumber="@(Model.PageIndex + 1)"
+   asp-route-currentFilter="@ViewData["CurrentFilter"]"
+   class="btn btn-danger btn-sm @nextDisabled" class="">
+    Siguiente
+</a>

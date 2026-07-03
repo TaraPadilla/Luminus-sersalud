@@ -1,0 +1,104 @@
+@{
+    ViewData["Title"] = "Vacaciones de Empleados";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12 text-center">
+                <h4><b>Vacaciones de Empleados</b></h4>
+                <hr />
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="tabla-vacaciones" class="table table-striped table-bordered">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Fecha de Vacaciones</th>
+                    </tr>
+                </thead>
+                <tbody data-bind="foreach: vacaciones">
+                    <tr>
+                        <td data-bind="text: nombre"></td>
+                        <td data-bind="text: vacacionesProgramadas"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.5.1/knockout-min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            function cargarVacaciones() {
+                fetch('/Empleado/VacacionesLista', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log("Datos recibidos:", data);
+
+                        var viewModel = {
+                            vacaciones: ko.observableArray(data)
+                        };
+
+                        ko.cleanNode(document.body);
+                        ko.applyBindings(viewModel);
+
+                        setTimeout(() => {
+                            $('#tabla-vacaciones').DataTable({
+                                "destroy": true,
+                                "paging": true,
+                                "lengthMenu": [5, 10, 25, 50],
+                                "pageLength": 10,
+                                "searching": true,
+                                "ordering": true,
+                                "order": [[1, "desc"]], // Ordena por la segunda columna (fecha) en orden descendente
+                                "info": true,
+                                "autoWidth": false,
+                                "responsive": true,
+                                "language": {
+                                    "lengthMenu": "Mostrar _MENU_ registros por página",
+                                    "zeroRecords": "No hay registros disponibles",
+                                    "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                                    "infoEmpty": "No hay registros disponibles",
+                                    "infoFiltered": "(filtrado de _MAX_ registros en total)",
+                                    "search": "Buscar:",
+                                    "paginate": {
+                                        "first": "Primero",
+                                        "last": "Último",
+                                        "next": "Siguiente",
+                                        "previous": "Anterior"
+                                    }
+                                }
+                            });
+                        }, 300);
+                    })
+                    .catch(error => console.error('Error al cargar vacaciones:', error));
+            }
+
+            cargarVacaciones();
+        });
+    </script>
+}
+
+<style>
+.dataTables_wrapper .dataTables_filter {
+    float: right !important;
+    text-align: right !important;
+    margin-right: 30px; /* Ajusta este valor según lo cerca que lo quieras */
+}
+
+
+</style>

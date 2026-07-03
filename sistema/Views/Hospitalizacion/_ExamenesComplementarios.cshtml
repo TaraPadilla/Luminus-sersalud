@@ -1,0 +1,127 @@
+@model sistema.Models.HospitalizacionDetallesViewModel
+@{
+    var usuarioAdmisiones = User.IsInRole("Admisiones");
+} 
+<div class="tab-pane tabs-animation fade" id="tab-content-examenes-complementarios" role="tabpanel">
+                <div class="main-card mb-3 card">
+                    <div class="form-row p-4">
+                        <div class="col-md-12">
+
+                            <!-- Sección: Laboratorio -->
+                            <div class="mb-3 border rounded p-3" style="background-color: #f8f9fa;">
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <h6 class="mb-0 font-weight-bold">Laboratorio</h6>
+                                </div>
+
+                                <div class="mt-3">
+                                    <div class="alert alert-info py-2 mb-2" id="texto-cargando-examenes-hospitalizacion" style="display:none">
+                                        Cargando examenes agregados a hospitalizacion...
+                                    </div>
+
+                                    <div class="alert alert-danger py-2 mb-2" id="texto-error-consultar-examenes-hospitalizacion" style="display:none">
+                                        Error de conexion.
+                                        <a href="#" data-bind="click:consultarExamenesHospitalizacion">Reintentar</a>
+                                    </div>
+
+                                    @* Sección oculta que contendrá las tarjetas con tablas *@
+                                    <div id="pdfSection" style="display: none; margin-top: 15px;"></div>
+
+                                    <!--ko if: ko.utils.unwrapObservable(examenesHospitalizacion).length > 0 -->
+                                    <div class="table-responsive mt-3">
+                                        <table class="table table-hover table-sm table-bordered tabla-producto-laboratorios-exam-medicos"
+                                            id="tabla-producto-laboratorio"
+                                            style="background-color: #ffffff;">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Fecha y hora</th>
+                                                    <th>Nombre del examen</th>
+                                                    @if (!User.IsInRole("Enfermeria"))
+                                                    {
+                                                        <th>Precio</th>
+                                                    }
+                                                    <th>Descargar resultados</th>
+                                                    @if (!usuarioAdmisiones)
+                                                    {
+                                                        @if (!User.IsInRole("Enfermeria") && !User.IsInRole("Medico Externo"))
+                                                        {
+                                                            <th>Modificar resultados</th>
+                                                            <th>Eliminar</th>
+                                                        }
+                                                    }
+                                                </tr>
+                                            </thead>
+
+                                            <tbody id="tabla-producto-body" data-bind="foreach: examenesHospitalizacion">
+                                                <tr>
+                                                    <td data-bind="text: FechaHora"></td>
+                                                    <td data-bind="text: Nombre"></td>
+
+                                                    @if (!User.IsInRole("Enfermeria"))
+                                                    {
+                                                        <td data-bind="text: Precio"></td>
+                                                    }
+
+                                                    <td class="text-center">
+                                                        <button class="btn btn-sm btn-danger"
+                                                                data-bind="click: $root.descargarResultadosExamen"
+                                                                title="Descargar resultados">
+                                                            <i class="fas fa-file-pdf"></i>
+                                                        </button>
+                                                    </td>
+
+                                                    @if (!usuarioAdmisiones)
+                                                    {
+                                                        @if (!User.IsInRole("Enfermeria") && !User.IsInRole("Medico Externo"))
+                                                        {
+                                                            <td class="text-center">
+                                                                <button class="btn btn-sm btn-primary"
+                                                                        data-bind="click: $root.modificarResultadosExamen"
+                                                                        title="Modificar resultados">
+                                                                    <i class="fa fa-edit"></i>
+                                                                </button>
+                                                            </td>
+                                                            <td class="text-center">
+                                                                <button class="btn btn-sm btn-danger"
+                                                                        data-bind="click: $root.eliminarExamen"
+                                                                        title="Eliminar examen">
+                                                                    <i class="fa fa-trash"></i>
+                                                                </button>
+                                                            </td>
+                                                        }
+                                                    }
+                                                </tr>
+                                            </tbody>
+
+                                            @if (!User.IsInRole("Enfermeria"))
+                                            {
+                                                <tfoot>
+                                                    <tr class="bg-dark">
+                                                        <td colspan="2" class="table-dark"><b>TOTAL</b></td>
+                                                        <td class="table-dark">
+                                                            <b><span data-bind="text: totalExamenesComplementariosTexto"></span></b>
+                                                        </td>
+                                                        <td class="table-dark"></td>
+                                                        @if (!usuarioAdmisiones)
+                                                        {
+                                                            <td class="table-dark"></td>
+                                                            <td class="table-dark"></td>
+                                                        }
+                                                    </tr>
+                                                </tfoot>
+                                            }
+                                        </table>
+                                    </div>
+                                    <!--/ko-->
+
+                                    <!--ko ifnot: ko.utils.unwrapObservable(examenesHospitalizacion).length > 0 -->
+                                    <div class="alert alert-info mt-3 mb-0" role="alert">
+                                        No hay exámenes complementarios agregados a esta hospitalización.
+                                    </div>
+                                    <!--/ko-->
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>

@@ -1,0 +1,46 @@
+﻿@page
+@model LogoutModel
+@{
+    ViewData["Title"] = "Cerrar sesión";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-body text-center p-5">
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <div class="mb-4">
+                            <i class="fas fa-sign-out-alt fa-3x text-danger"></i>
+                        </div>
+                        <h2 class="card-title h4 mb-3">¿Deseas finalizar tu sesión?</h2>
+                        <p class="text-muted mb-4">
+                            Al hacer clic en el botón, saldrás de forma segura de la aplicación.
+                        </p>
+                        
+                        <form class="form-inline justify-content-center" 
+                              asp-area="Identity" 
+                              asp-page="/Account/Logout" 
+                              asp-route-returnUrl="@Url.Page("/", new { area = "" })" 
+                              method="post">
+                            <button type="submit" class="btn btn-danger btn-lg px-4 shadow-sm">
+                                Confirmar salida
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <div class="mb-4">
+                            <i class="fas fa-check-circle fa-3x text-success"></i>
+                        </div>
+                        <h2 class="card-title h4 mb-3">Sesión finalizada</h2>
+                        <p class="card-text lead">Has cerrado sesión exitosamente en la aplicación.</p>
+                        <hr />
+                        <a href="/" class="btn btn-primary mt-3">Volver al inicio</a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

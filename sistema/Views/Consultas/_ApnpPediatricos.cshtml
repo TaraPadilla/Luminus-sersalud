@@ -1,0 +1,33 @@
+@model sistema.Models.ConsultasViewModel
+
+<br />
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Antecedentes NO patologicos</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-4">
+                <b>PARTO:</b><br />
+                @Html.TextBoxFor(a => a.PediatricoApnpParto, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-4">
+                <b>ATENDIDO POR:</b><br />
+                @Html.TextBoxFor(a => a.PediatricoApnpAtendidoPor, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-4">
+                <b>PESO AL NACER:</b><br />
+                @Html.TextBoxFor(a => a.PediatricoApnpPesoAlNacer, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-4">
+                <b>INMUNIZACIONES:</b><br />
+                @Html.TextBoxFor(a => a.PediatricoApnpInmunizaciones, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-4">
+                <b>GESTA:</b><br />
+                @Html.TextBoxFor(a => a.PediatricoApnpGesta, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+    </div>
+</div>

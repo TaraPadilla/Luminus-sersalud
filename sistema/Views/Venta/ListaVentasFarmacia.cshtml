@@ -1,0 +1,104 @@
+@using Database.Shared.Paginacion;
+@model PaginacionList<Database.Shared.Models.Venta>
+
+@{
+    ViewData["Title"] = "Lista Ventas Farmacia";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+<br />
+<form asp-action="ListaVentasFarmacia" method="get">
+    <div class="col-md-12">
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <input type="submit" value="Buscar" class="btn btn-success"></input>
+            </div>
+            <input type="text" name="buscar" value="@ViewData["CurrentFilter"]" class="form-control"
+                placeholder="Buscar por vendedor, nombre cliente o número de venta">
+        </div>
+    </div>
+</form>
+<br />
+<div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel">
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="mb-0 table table-hover ">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Venta #</th>
+                            <th>Vendedor</th>
+                            <th>NoComprobante</th>
+                            <th>Nombre</th>
+                            <th>Nit</th>
+                            <th>Forma de Pago</th>
+                            <th>Total</th>
+                            <th>Monto Pagado</th>
+                            <th>Vuelto</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.FechaVenta</td>
+                                <td>@item.Id</td>
+                                <td>@(item.Empleado == null
+                                        ? "-"
+                                        : item.Empleado.Nombre)</td>
+                                <td>@item.NoComprobante</td>
+                                <td>@item.Nombres</td>
+                                <td>@item.Nit</td>
+                                <td>
+                                    @if (item.Pagos.Count() > 0)
+                                    {
+                                        foreach (var pago in item.Pagos)
+                                        {
+                                            <span>@pago.FormaPago.NombreFormaPago - Q @pago.Monto</span>
+                                        }
+                                    }
+
+                                </td>
+                                <td>Q @item.DetalleVenta.Sum(a => a.Total)</td>
+                                <td>Q @item.MontoPago</td>
+                                <td>Q @item.Vuelto</td>
+
+                                <td>
+                                    <a href="@Url.Action("Modificar","Venta", new {id = @item.Id})" class="btn btn-primary">
+                                        Ver detalles
+                                    </a>
+                                    <a href="@Url.Action("ReciboVentaPdf","CrearPDF", new {id = @item.Id})"
+                                        class="btn btn-danger" target="_blank">
+                                        <i class="fas fa-file-pdf"></i> Recibo
+                                    </a>
+                                    <a href="@Url.Action("AnularVenta", "Venta", new { id = @item.Id, returnAction = "ListaVentasFarmacia" })"
+                                        class="btn btn-danger">
+                                        <i class="fas fa-minus-circle"></i> Anular
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+}
+
+<a asp-action="ListaVentasFarmacia" asp-route-sortOrder="@ViewData["CurrentSort"]"
+    asp-route-pageNumber="@(Model.PageIndex - 1)" asp-route-currentFilter="@ViewData["CurrentFilter"]"
+    class="btn btn-danger btn-sm @prevDisabled">
+    Anterior
+</a>
+<a asp-action="ListaVentasFarmacia" asp-route-sortOrder="@ViewData["CurrentSort"]"
+    asp-route-pageNumber="@(Model.PageIndex + 1)" asp-route-currentFilter="@ViewData["CurrentFilter"]"
+    class="btn btn-danger btn-sm @nextDisabled" class="">
+    Siguiente
+</a>

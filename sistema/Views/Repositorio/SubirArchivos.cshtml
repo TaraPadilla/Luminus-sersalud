@@ -1,0 +1,71 @@
+@{
+    ViewData["Title"] = "Subir archivos";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <h4><b>Subir archivos</b></h4>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th colspan="3" style="text-align:right"><button class="btn btn-primary">Agregar</button></th>
+                        </tr>
+                        <tr>
+                            <th>Nombre de archivo</th>
+                            <th>Archivo</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Contrato prestación de servicios</td>
+                            <td><input type="file" class="form-control" /></td>
+                            <td><button class="btn btn-danger">Quitar</button></td>
+                        </tr>
+                        <tr>
+                            <td>Contrato prestación de servicios</td>
+                            <td><input type="file" class="form-control" /></td>
+                            <td><button class="btn btn-danger">Quitar</button></td>
+                        </tr>
+                        <tr>
+                            <td>Contrato prestación de servicios</td>
+                            <td><input type="file" class="form-control" /></td>
+                            <td><button class="btn btn-danger">Quitar</button></td>
+                        </tr>
+                        <tr>
+                            <td>Contrato prestación de servicios</td>
+                            <td><input type="file" class="form-control" /></td>
+                            <td><button class="btn btn-danger">Quitar</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <button class="btn btn-danger">Cancelar</button>
+                <button class="btn btn-primary">Subir archivos</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://knockoutjs.com/downloads/knockout-3.5.1.js"></script>
+<script type="text/javascript" src="~/ViewModelKo/RepositorioSubirArchivosVM.js"></script>

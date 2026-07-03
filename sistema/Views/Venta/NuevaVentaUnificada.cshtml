@@ -1,0 +1,111 @@
+@using sistema.Models
+@model VentaUnificadaViewModel
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    // Leer el valor del appsettings.json. 
+    string sufijoLayout = Configuration["Cliente"]; 
+    
+    // Concatenar para formar el nombre del Layout (ejemplo: "_Layout" + "SS")
+    // Si la clave trae el nombre completo (ej. "_LayoutSS"), simplemente asignalo directo.
+    Layout = $"_Layout{sufijoLayout}";
+    @if (Model.IsClinica)
+    {
+        ViewData["Title"] = "Clinica - Nueva venta";
+    }
+    @if (Model.IsFarmacia)
+    {
+        ViewData["Title"] = "Farmacia - Nueva venta";
+    }
+    @if (Model.IsLaboratorio)
+    {
+        ViewData["Title"] = "Laboratorio - Nueva venta";
+    }
+    @if (Model.IsEmergencia)
+    {
+        ViewData["Title"] = "Emergencia - Nueva Venta";
+    }
+}
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <center>
+            <h4>
+                <b>
+                    @if (Model.IsClinica)
+                    {
+                        <span>Cl&iacute;nica - Nueva venta</span>
+                    }
+                    @if (Model.IsFarmacia)
+                    {
+                        <span>Farmacia - Nueva venta</span>
+                    }
+                    @if (Model.IsLaboratorio)
+                    {
+                        <span>Laboratorio - Nueva venta</span>
+                    }
+                    @if (Model.IsEmergencia)
+                    {
+                        <span>Emergencia - Nueva Venta</span>
+                    }
+                </b>
+            </h4>
+        </center>
+    </div>
+</div>
+
+@await Html.PartialAsync("_VentaUnificadaForm")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                @if (Model.IsEmergencia)
+                {
+                    @* <button class="btn btn-success" data-bind="click:guardarEmergencia">
+                        Guardar emergencia ))))
+                    </button> *@
+
+                     <button class="btn btn-success" data-bind="click:registrarVenta">
+                        Registrar venta
+                    </button>
+                }
+                else
+                {
+                    <button class="btn btn-success" data-bind="click:registrarVenta">
+                        Registrar venta
+                    </button>
+                }
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+<script src="~/ViewModelKo/VentaUnificadaVM.js"></script>
+<script>
+    $(document).ready(function () {
+        // Simular cambio para forzar la carga de la información del cliente
+        let clienteId = $("#ClienteId").val();
+        if (clienteId) {
+            $("#ClienteId").val(clienteId).trigger('change');
+        }
+    });
+</script>
+
+}
+
+@section css{
+<style>
+    .seccion-header {
+        background-color: #f5f5f5;
+        padding: 15px;
+        border-bottom: 2px solid darkgray;
+    }
+
+        .seccion-header:hover {
+            background-color: darkgray;
+            cursor: pointer;
+        }
+</style>
+}

@@ -1,0 +1,112 @@
+@model sistema.Models.ConsultasViewModel
+
+<br />
+<div class="card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Obstetricia - Antecedentes</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-3">
+                <b>G:</b><br />
+                @Html.TextBoxFor(a => a.ObstetriciaAntNoPatologicosGestas, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-3">
+                <b>P:</b><br />
+                @Html.TextBoxFor(a => a.ObstetriciaAntNoPatologicosPartos, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-3">
+                <b>AB:</b><br />
+                @Html.TextBoxFor(a => a.ObstetriciaAntNoPatologicosAbortos, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-3">
+                <b>CSTP:</b><br />
+                @Html.TextBoxFor(a => a.ObstetriciaAntNoPatologicosCesareas, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-3">
+                <b>HV:</b><br />
+                @Html.TextBoxFor(a => a.ObstetriciaAntNoPatologicosHijosVivos, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-3">
+                <b>HM:</b><br />
+                @Html.TextBoxFor(a => a.ObstetriciaAntNoPatologicosHijosMuertos, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-3">
+                <b>FUR:</b><br />
+                @Html.TextBoxFor(a => a.ObstetriciaAntNoPatologicosFechaUltimaRegla, new { @class = "form-control dato-consulta", @type = "date", @id = "fur" })
+            </div>
+            <div class="col-md-3">
+                <b>FPP:</b><br />
+                @Html.TextBoxFor(a => a.ObstetriciaAntNoPatologicosFechaProbableParto, new { @class = "form-control dato-consulta", @type = "date", @id = "fpp" })
+            </div>
+
+
+            <div class="col-md-3">
+                <b>Cotarquia:</b><br />
+                @Html.TextBoxFor(a => a.ObstetriciaAntNoPatologicosCotarquia, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-3">
+                <b>Ultrasonido:</b><br />
+                @Html.TextBoxFor(a => a.ObstetriciaAntNoPatologicosUltrasonido, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-3">
+                <b>Número de Parejas:</b><br />
+                @Html.TextBoxFor(a => a.ObstetriciaAntNoPatologicosNumeroParejas, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+        <br />
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Obstetricia - Antecedentes (historial)</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-12 text-primary texto-cargando-historial" style="display:none">
+                Cargando historial...
+            </div>
+            <div class="col-md-12 text-danger texto-error-cargando-historial" style="display:none">
+                Error de servidor y/o conexion. <a href="#" data-bind="click:consultarHistorialConsultas">Reintentar</a>
+            </div>
+            <!--ko foreach:historialConsultas-->
+            <div class="col-md-12" style="background-color:lightgray"><b>Fecha: </b><span data-bind="text:Fecha"></span></div>
+            <div class="col-md-2"><b>G:</b><br /><span data-bind="text:ObstetriciaAntNoPatologicosGestas"></span></div>
+            <div class="col-md-2"><b>P:</b><br /><span data-bind="text:ObstetriciaAntNoPatologicosPartos"></span></div>
+            <div class="col-md-2"><b>AB:</b><br /><span data-bind="text:ObstetriciaAntNoPatologicosAbortos"></span></div>
+            <div class="col-md-2"><b>CSTP:</b><br /><span data-bind="text:ObstetriciaAntNoPatologicosCesareas"></span></div>
+            <div class="col-md-2"><b>HV:</b><br /><span data-bind="text:ObstetriciaAntNoPatologicosHijosVivos"></span></div>
+            <div class="col-md-2"><b>HM:</b><br /><span data-bind="text:ObstetriciaAntNoPatologicosHijosMuertos"></span></div>
+            <div class="col-md-2"><b>FUR:</b><br /><span data-bind="text:ObstetriciaAntNoPatologicosFechaUltimaRegla"></span></div>
+            <div class="col-md-2"><b>FPP:</b><br /><span data-bind="text:ObstetriciaAntNoPatologicosFechaProbableParto"></span></div>
+            <!--/ko-->
+            <!--ko if:historialConsultas().length==0-->
+            <div class="col-md-12">
+                No hay registro de consultas anteriores
+            </div>
+            <!--/ko-->
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const furInput = document.getElementById("fur");
+        const fppInput = document.getElementById("fpp");
+
+        furInput.addEventListener("change", function () {
+            const fur = new Date(furInput.value);
+            if (!isNaN(fur.getTime())) {
+                // Regla de Naegele: +1 año -3 meses +7 días
+                const fpp = new Date(fur);
+                fpp.setFullYear(fpp.getFullYear() + 1);
+                fpp.setMonth(fpp.getMonth() - 3);
+                fpp.setDate(fpp.getDate() + 7);
+
+                // Ajusta al formato yyyy-MM-dd
+                const yyyy = fpp.getFullYear();
+                const mm = (fpp.getMonth() + 1).toString().padStart(2, '0');
+                const dd = fpp.getDate().toString().padStart(2, '0');
+
+                fppInput.value = `${yyyy}-${mm}-${dd}`;
+            }
+        });
+    });
+</script>

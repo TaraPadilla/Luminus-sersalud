@@ -1,0 +1,31 @@
+@model sistema.Models.ServicioBaseViewModel
+
+@{
+    ViewData["Title"] = "Modificar Ruta";
+}
+
+<div class="app-page-title">
+    <div class="page-title-wrapper">
+
+        <div class="page-title-heading">
+            <div class="page-title-icon">
+                <i class="pe-7s-graph text-success">
+                </i>
+            </div>
+            <div>Modificar Ruta
+                <div class="page-title-subheading">Modifica Rutas.
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+     @await Html.PartialAsync("_MensajeExito")
+
+
+<br/>
+
+
+<form asp-controller="Ruta" asp-action="Modificar" method="post">  
+    @await Html.PartialAsync("_RutaForm")
+</form>

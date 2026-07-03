@@ -1,0 +1,167 @@
+@model sistema.Models.ModCategoriaListados
+
+@{
+    ViewData["Title"] = "Modificar";
+}
+
+ @await Html.PartialAsync("_MensajeExito")
+
+
+
+<form asp-controller="LaboratorioClinico" asp-action="ModificarCategoriaLab" method="post">
+    @await Html.PartialAsync("_CategoriaForm")
+
+</form>
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Campos</th>
+                        <th>Precio A</th>
+                        <th>Precio B</th>
+                        <th>Precio C</th>
+                        <th>Resultado</th>
+                        <th>Valor de Referencia</th>
+                        <th>Estado</th>
+                        <th style="width: 300px;;">Indicaciones</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach(var item in Model.NombresExamenes)
+                    {
+                        var activo = item.Activo == false ? "Activo" : "Inactivo";
+                        
+                        <tr>
+                            <th>@item.NombreExamen</th>
+                            <th>Q @item.Precio</th>
+                            <th>Q @item.PrecioB</th>
+                            <th>Q @item.PrecioC</th>
+                            <th> - - - </th>
+                            <th> - - - </th>
+                            <th> @activo </th>
+                            <th> @item.Indicaciones </th>
+                            <th>
+                                @* <a href="#" class="btn btn-primary">Desactivar</a> *@
+                                <a href="@Url.Action("ActivarODesactivarNombreExamenLab","LaboratorioClinico", new {id = @item.Id, cat2 = @item.CategoriaLabClinico.Id})" class="btn btn-warning">
+                                    @if(item.Activo == false)
+                                    {
+                                        <span>Desactivar</span>
+                                    }
+                                    else {
+                                        <span>Activar</span>
+                                    }    
+                                </a>
+                                <a href="@Url.Action("ModificarExamenLab","LaboratorioClinico", new {id = @item.Id})" class="btn btn-warning">Modificar</a>
+                                <a href="@Url.Action("EliminarExamen2","LaboratorioClinico", new {id = @item.Id, cat2 = @item.CategoriaLabClinico.Id})" class="btn btn-danger">Eliminar</a>
+                            </th>
+                        </tr>
+                    }
+                    <tr>
+                        <th class="text-center"> 
+                            @* <a href="#" id="agregarNuevo" class="btn btn-danger" data-toggle="modal" data-target="#exampleModalCenter">Nuevo</a> *@
+                          <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModalScrollable">
+                                NUEVO
+                        </button>
+                        </th>
+
+                        
+                    </tr>
+                </tbody>
+                
+            </table>
+
+            <br>
+            @* <div class="row">
+                <div class="col-md-12">
+                    <div class="position-relative form-group">
+                        <button class="btn btn-primary" type="submit">Guardar</button>
+                    </div>
+                </div>
+            </div> *@
+        </div>
+    </div>
+
+
+
+
+@section Scripts{
+    <script type="text/javascript" src="~/js/moment.min.js"></script>
+    <script type="text/javascript" src="~/js/daterangepicker.js"></script>
+    <script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+    }
+
+    @section css {
+         <link href="~/css/daterangepicker.css" rel="stylesheet">
+    }
+
+    @section Modales {
+    <form asp-controller="LaboratorioClinico" asp-action="CrearExamen2" method="post">
+        <div class="modal fade" id="exampleModalScrollable" tabindex="-1" role="dialog" aria-labelledby="exampleModalScrollableTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable" role="document">
+                <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalScrollableTitle">Nuevo registro</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    @* ocultar el id de categoria examen *@
+                    <div class="form-row">
+                        <input type="hidden" name="catid" value="@Model.CategoriaLabClinico.Id">
+                        <div class="col-12">
+                            <label>Nombre o Descripción del examen</label>
+                            <div class="position-relative form-group">
+                                <input type="text" class="form-control" asp-for="NombreExamen">
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label>Precio A</label>
+                            <div class="position-relative form-group">
+                                <input type="text" class="form-control" asp-for="Precio">
+                            </div>
+                        </div>
+                         <div class="col-6">
+                            <label>Precio B</label>
+                            <div class="position-relative form-group" >
+                                <input type="text" class="form-control" asp-for="PrecioB">
+                            </div>
+                        </div>
+                         <div class="col-6">
+                            <label>Precio C</label>
+                            <div class="position-relative form-group">
+                                <input type="text" class="form-control" asp-for="PrecioC">
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label>Código interno</label>
+                            <div class="position-relative form-group">
+                                <input type="text" class="form-control" asp-for="CodigoInterno">
+                            </div>
+                        </div>
+                         <div class="col-12">
+                            <label>Tipo de Examen</label>
+                            <div class="position-relative form-group">
+                                <input type="text" class="form-control" asp-for="TipoDeExamen">
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label>Indicaciones</label>
+                            <div class="position-relative form-group">
+                                <textarea type="text" class="form-control" asp-for="Indicaciones"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    }

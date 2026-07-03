@@ -1,0 +1,98 @@
+@model sistema.Models.HospitalizacionDetallesViewModel
+@{
+    var usuarioAdmisiones = User.IsInRole("Admisiones");
+} 
+<div class="tab-pane tabs-animation fade show " id="tab-content-pagos" role="tabpanel">
+    <div class="form-row">
+        <div class="col-md-12">
+            <div class="main-card mb-3 card" style="border-radius: 10px">
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="col-md-12">
+                            <h6><b>Dep&oacute;sitos</b></h6>
+                            <hr />
+                        </div>
+                        @if (!Model.HospitalizacionFinalizada)
+                        {
+                            <div class="col-md-12 form-row">
+                                <div class="col-md-12 form-row">
+                                    <label><b>Agregar dep&oacute;sito:</b></label>
+                                </div>
+                                <div class="col-md-4">
+                                    <label>Forma de pago</label>
+                                    <select class="select2bs4 form-control"
+                                            asp-for="@Model.FormaPagoId"
+                                            asp-items="@Model.FormaPagoSelectListItems">
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="">Moneda</label>
+                                    <select class="select2bs4 form-control"
+                                            asp-for="@Model.MonedaId"
+                                            asp-items="@Model.MonedaSelectListItems">
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Valor</label>
+                                    <input class="form-control" data-bind="value:valorDepositoAgregar" />
+                                </div>
+                                <div class="col-md-1">
+                                    <br />
+                                    <button class="btn btn-primary" data-bind="click:agregarDeposito">Agregar</button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <div class="form-row">
+                        <div class="col-md-12">
+                            <div class="table-responsive">
+                                <hr />
+                                <table class='table table-hover'>
+                                    <thead>
+                                        <tr>
+                                            <th>Ver comprobante</th>
+                                            <th>Fecha y hora</th>
+                                            <th>Forma de pago</th>
+                                            <th>Moneda</th>
+                                            <th>Monto</th>
+                                            <th>Eliminar</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!--ko foreach: depositosHospitalizacion-->
+                                        <tr>
+                                            <td>
+                                                <a class="btn btn-danger"
+                                                    data-bind="attr:{href:'/CrearPDF/CuentasPorCobrarReciboPagoPDF?pagoParcial=true&parcialPagoId='+Id}"
+                                                    target="_blank">
+                                                    <i class="fas fa-file-pdf"></i>
+                                                </a>
+                                            </td>
+                                            <td data-bind="text:FechaHora"></td>
+                                            <td data-bind="text:FormaPago"></td>
+                                            <td data-bind="text:Moneda"></td>
+                                            <td data-bind="text:Monto"></td>
+                                            <td>
+                                                <button class="btn btn-danger"
+                                                        data-bind="click:$root.eliminarDeposito">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <!--/ko-->
+                                        <tr class="fila-total">
+                                            <td colspan="3"><b>TOTAL</b></td>
+                                            <td><b>Q <span data-bind="text:valorTotalDepositosHospitalizacion"></span></b></td>
+                                            <th></th>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

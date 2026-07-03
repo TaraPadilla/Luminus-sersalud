@@ -1,0 +1,28 @@
+@model sistema.Models.ConsultasViewModel
+
+<br />
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Informacion de hospitalizacion</b></h5>
+            </div>
+            <div class="col-md-12">
+                <hr />
+            </div>
+            <div class="col-md-12">
+                <div class="form-row">
+                    <div class="col-md-6">
+                        <b>Numero o nombre de habitacion</b><br />
+                        @Model.HospitalizacionNumeroHabitacion
+                    </div>
+                    <div class="col-md-3">
+                        <a href="/Hospitalizacion/Detalles?hospitalizacionId=@Model.HospitalizacionId" class="btn btn-success" target="_blank">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

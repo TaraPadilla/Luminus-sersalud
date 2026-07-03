@@ -1,0 +1,135 @@
+@model List<sistema.Models.RecetaMenuListItemViewModel>
+
+@{
+    ViewData["Title"] = "Gestión de Menús";
+}
+
+<div class="container-fluid animated fadeIn">
+
+    @await Html.PartialAsync("_MensajeExito")
+
+    <div class="card shadow-sm border-0 mb-4">
+        @* Encabezado Estilizado *@
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-utensils mr-2"></i>Listado de Menús
+                </h5>
+                <small class="text-muted text-uppercase" style="letter-spacing: 1px;">Control dietético hospitalario</small>
+            </div>
+            <a class="btn btn-primary btn-sm shadow-sm px-4" asp-action="Nuevo" asp-controller="RecetaMenu">
+                <i class="fas fa-plus-circle mr-1"></i> Nuevo Menú
+            </a>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover w-100" id="tabla-menus">
+                    <thead class="thead-light">
+                        <tr>
+                            <th class="border-top-0">Categoría</th>
+                            <th class="border-top-0">Nombre del Menú</th>
+                            <th class="border-top-0">Ingredientes</th>
+                            <th class="border-top-0">Días</th>
+                            <th class="border-top-0 text-right" style="width:150px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null)
+                        {
+                            foreach (var menu in Model)
+                            {
+                                <tr>
+                                    <td class="align-middle">
+                                        <span class="badge badge-light border text-dark px-2 py-1">@menu.CategoriaNombre</span>
+                                    </td>
+                                    @* Texto de nombre e ingredientes más grande para legibilidad *@
+                                    <td class="align-middle font-weight-bold text-dark" style="font-size: 1.05rem;">
+                                        @menu.Nombre
+                                    </td>
+                                    <td class="align-middle text-secondary" style="font-size: 1rem; max-width: 300px;">
+                                        @menu.Ingredientes
+                                    </td>
+                                    <td class="align-middle">
+                                        <small class="text-muted font-italic">@menu.DiasTexto</small>
+                                    </td>
+                                    <td class="align-middle text-right">
+                                        <div class="btn-group" role="group">
+                                            @* Botón Editar *@
+                                            <a class="btn btn-light btn-sm text-warning mx-1 border shadow-sm" 
+                                               data-toggle="tooltip" 
+                                               title="Editar Menú"
+                                               asp-action="Modificar"
+                                               asp-controller="RecetaMenu"
+                                               asp-route-menuId="@menu.Id">
+                                                <i class="fas fa-edit fa-lg"></i>
+                                            </a>
+
+                                            @* Formulario Eliminar *@
+                                            <form asp-action="Eliminar"
+                                                  asp-controller="RecetaMenu"
+                                                  method="post"
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('¿Está seguro de eliminar este menú?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="menuId" value="@menu.Id" />
+                                                <button type="submit" 
+                                                        class="btn btn-light btn-sm text-danger mx-1 border shadow-sm" 
+                                                        data-toggle="tooltip" 
+                                                        title="Eliminar Menú">
+                                                    <i class="fas fa-trash-alt fa-lg"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Inicializar Tooltips
+            $('[data-toggle="tooltip"]').tooltip();
+
+            // Configuración DataTable en Español
+            $('#tabla-menus').DataTable({
+                "language": {
+                    "sProcessing":     "Procesando...",
+                    "sLengthMenu":     "Mostrar _MENU_ registros",
+                    "sZeroRecords":    "No se encontraron resultados",
+                    "sEmptyTable":     "Ningún dato disponible en esta tabla",
+                    "sInfo":           "Mostrando registros del _START_ al _END_ de un total de _TOTAL_",
+                    "sInfoEmpty":      "Mostrando 0 al 0 de 0 registros",
+                    "sInfoFiltered":   "(filtrado de _MAX_ registros)",
+                    "sSearch":         "Buscar:",
+                    "oPaginate": {
+                        "sFirst":    "Primero",
+                        "sLast":     "Último",
+                        "sNext":     "Sig.",
+                        "sPrevious": "Ant."
+                    }
+                },
+                "responsive": true,
+                "columnDefs": [
+                    { "orderable": false, "targets": 4 }
+                ],
+                "order": [[1, "asc"]], // Ordenar por nombre por defecto
+                "drawCallback": function() {
+                    // Reinicializar tooltips al cambiar de página
+                    $('[data-toggle="tooltip"]').tooltip();
+                }
+            });
+
+            if (typeof rememberMe === "function") {
+                rememberMe("receta-menu");
+            }
+        });
+    </script>
+}

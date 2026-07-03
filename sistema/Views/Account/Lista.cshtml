@@ -1,0 +1,104 @@
+@using Microsoft.AspNetCore.Identity
+@using Database.Shared.Models
+@inject SignInManager<User> SignInManager
+@inject UserManager<User> UserManager
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+
+@model sistema.Areas.Identity.Pages.Account.LogoutModel;
+
+@{
+    ViewData["Title"] = "Lista Usuarios";
+
+    bool aplicarFiltroM14MedicoExterno = false;
+    string currentUserId = null;
+
+    var currentUser = await UserManager.GetUserAsync(User);
+    if (currentUser != null)
+    {
+        currentUserId = currentUser.Id;
+
+        bool esMedicoExterno = await UserManager.IsInRoleAsync(currentUser, "Medico Externo");
+        string cliente = Configuration["Cliente"];
+
+        if (esMedicoExterno && cliente == "M14")
+        {
+            aplicarFiltroM14MedicoExterno = true;
+        }
+    }
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <center>
+            <h4><b>Usuarios</b></h4>
+        </center>
+    </div>
+</div>
+
+<div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel">
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="mb-0 table table-hover" id="tabla-usuarios">
+                    <thead>
+                        <tr>
+                            <th>Correo</th>
+                            <th>Empleado</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.ListaUsers)
+                        {
+                            // Solo mostrar el propio usuario si se aplica el filtro
+                            if (aplicarFiltroM14MedicoExterno && item.Id != currentUserId)
+                            {
+                                continue;
+                            }
+
+                            <tr>
+                                <td>@item.UserName</td>
+                                <td>
+                                    @if (item.Persona == null)
+                                    {
+                                        <span>Sin Asignar</span>
+                                    }
+                                    else
+                                    {
+                                        @item.Persona.Nombre
+                                    }
+                                </td>
+                                <td>@(item.LockoutEnabled ? "Activo" : "Inactivo")</td>
+                                <td>
+                                    <a href="@Url.Action("Modificar", "Account", new { id = item.Id })"
+                                       class="btn btn-warning">Modificar</a>
+
+                                    @if (!aplicarFiltroM14MedicoExterno)
+                                    {
+                                        if (item.LockoutEnabled)
+                                        {
+                                            <a href="@Url.Action("Desactivar", "Account", new { username = item.UserName })"
+                                               class="btn btn-danger">Desactivar</a>
+                                        }
+                                        else
+                                        {
+                                            <a href="@Url.Action("Desactivar", "Account", new { username = item.UserName })"
+                                               class="btn btn-warning">Activar</a>
+                                        }
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/ViewModelKo/UsuariosListaVM.js"></script>
+}

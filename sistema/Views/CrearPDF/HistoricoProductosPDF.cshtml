@@ -1,0 +1,187 @@
+@model sistema.Models.HistoricoProductosPDFVM
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Cardex productos";
+
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    var fecha = DateTime.Now;
+}
+
+<style>
+    /* =========================
+       FIX PDF: tablas anchas
+       ========================= */
+
+    /* Asegura que todos los elementos usen box-sizing estable (reduce desbordes) */
+    .pdf-cardex, .pdf-cardex * {
+        box-sizing: border-box !important;
+    }
+
+    .pdf-cardex table {
+        width: 100% !important;
+        table-layout: fixed !important;
+        border-collapse: collapse !important;
+    }
+
+    /* La tabla del reporte (evita herencias agresivas del layout) */
+    .pdf-cardex .table {
+        margin: 0 !important;
+        width: 100% !important;
+        table-layout: fixed !important;
+        border-collapse: collapse !important;
+    }
+
+    .pdf-cardex .table th,
+    .pdf-cardex .table td {
+        font-size: 9px !important;
+        line-height: 1.12 !important;
+        padding: 3px 3px !important;
+        vertical-align: top !important;
+
+        /* CLAVE: permitir quiebres y evitar solapamiento */
+        white-space: normal !important;
+        overflow-wrap: anywhere !important;
+        word-break: break-word !important;
+    }
+
+    /* Encabezado repetible por página */
+    .pdf-cardex thead {
+        display: table-header-group;
+    }
+
+    /* Si usas footer en tablas, mantenlo estable */
+    .pdf-cardex tfoot {
+        display: table-footer-group;
+    }
+
+    /* Evitar cortes de fila (no siempre lo respeta el motor) */
+    .pdf-cardex tr {
+        page-break-inside: avoid;
+    }
+
+    /* Mejora legibilidad del encabezado */
+    .pdf-cardex thead th {
+        font-weight: 700 !important;
+    }
+
+    /* Encabezado/estructura externa */
+    .pdf-cardex .doc-title {
+        margin-bottom: 6px;
+    }
+
+    /* Evita que tablas contenedoras metan espacio */
+    .pdf-cardex .block {
+        width: 100% !important;
+    }
+</style>
+
+<div class="doc pdf-cardex">
+    <!-- Encabezado -->
+    <div class="doc-title">REPORTE - @ViewData["Title"]</div>
+    <div class="doc-underline"></div>
+
+    <table class="table" style="border:0;">
+        <tbody>
+            <tr>
+                <td style="text-align:center; font-weight:700; border:0;">
+                    Fecha y hora de emisión: @fecha.ToString("dd/MM/yyyy HH:mm")
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Sección principal -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Cardex productos</td>
+        </tr>
+    </table>
+
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <!-- ANCHOS FIJOS POR COLUMNA -->
+                    <colgroup>
+                        <col style="width:6.5%;" />  @* Fecha *@
+                        <col style="width:5.5%;" />  @* Ambiente *@
+                        <col style="width:5.5%;" />  @* Bodega *@
+                        <col style="width:6.0%;" />  @* Tipo mov *@
+                        <col style="width:8.0%;" />  @* Descripción *@
+                        <col style="width:6.0%;" />  @* Tipo prod *@
+                        <col style="width:16.0%;" /> @* Producto *@
+                        <col style="width:5.0%;" />  @* Lote *@
+                        <col style="width:6.0%;" />  @* Vencimiento *@
+                        <col style="width:5.0%;" />  @* Unidad *@
+                        <col style="width:4.5%;" />  @* Cantidad *@
+                        <col style="width:6.0%;" />  @* Costo compra *@
+                        <col style="width:6.0%;" />  @* Costo venta *@
+                        <col style="width:4.5%;" />  @* Saldo *@
+                        <col style="width:3.5%;" />  @* Facturado *@
+                    </colgroup>
+
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Ambiente</th>
+                            <th>Bodega</th>
+                            <th>Tipo de<br />movimiento</th>
+                            <th>Descripción de movimiento</th>
+                            <th>Tipo de<br />producto</th>
+                            <th>Producto</th>
+                            <th>Lote</th>
+                            <th>Fecha de<br />vencimiento</th>
+                            <th>Unidad</th>
+                            <th>Cantidad</th>
+                            <th>Costo ponderado<br />de compra</th>
+                            <th>Costo ponderado<br />de venta</th>
+                            <th>Saldo final</th>
+                            <th>Facturado</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @if (Model.Movimientos != null)
+                        {
+                            foreach (var movimiento in Model.Movimientos)
+                            {
+                                var fechaVencimiento = "-";
+                                if (movimiento.FechaVencimientoLote != null)
+                                {
+                                    fechaVencimiento = ((DateTime)movimiento.FechaVencimientoLote).ToString("dd MMM yyyy");
+                                }
+
+                                <tr class="kv-row">
+                                    <td>@movimiento.Fecha.ToString("dd-MM-yyyy HH:mm")</td>
+                                    <td>@movimiento.AmbienteNombre</td>
+                                    <td>@movimiento.BodegaNombre</td>
+                                    <td>@movimiento.TipoMovimientoNombre</td>
+                                    <td>@movimiento.DescripcionMovimiento</td>
+                                    <td>@movimiento.TipoProductoNombre</td>
+                                    <td>@movimiento.Medicamento</td>
+                                    <td>@movimiento.Lote</td>
+                                    <td>@fechaVencimiento</td>
+                                    <td>@movimiento.UnidadNombre</td>
+                                    <td>@movimiento.Cantidad</td>
+                                    <td>@movimiento.CostoPonderadoCompra</td>
+                                    <td>@movimiento.CostoPonderadoVenta</td>
+                                    <td>@movimiento.SaldoActual</td>
+                                    <td>-</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+</div>

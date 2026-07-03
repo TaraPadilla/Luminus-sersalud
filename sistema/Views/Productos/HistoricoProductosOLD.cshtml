@@ -1,0 +1,220 @@
+﻿@using sistema.Models
+@using Microsoft.AspNetCore.Mvc.Rendering
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@model sistema.Models.MovimientoProductoViewModel
+
+@{
+    // Leer el valor del appsettings.json. 
+    string sufijoLayout = Configuration["Cliente"]; 
+    
+    // Concatenar para formar el nombre del Layout (ejemplo: "_Layout" + "SS")
+    // Si la clave trae el nombre completo (ej. "_LayoutSS"), simplemente asignalo directo.
+    Layout = $"_Layout{sufijoLayout}";
+    ViewData["Title"] = "Histórico de Productos";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <center><h4><b>Movimiento de productos</b></h4></center>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="col-md-12 form-row offset-md-2 mt-4 mb-3">
+                    <div class="col-md-12">
+                        <label>Rango de fechas: </label>
+                        <input type="text" class="form-control float-right" id="reservationtime" name="fecha">
+                    </div>
+                    <div class="col-md-12">
+                        <br />
+                    </div>
+                    <div class="col-md-4 form-row">
+                        <button class="btn btn-primary col-md-10" data-bind="click:showModalFiltrarTipoProducto">
+                            Filtrar<br />tipo de producto (2)
+                        </button>
+                    </div>
+                    <div class="col-md-2 form-row">
+                        <button class="btn btn-primary col-md-10" data-bind="click:showModalFiltrarProductos">
+                            Filtrar<br />ambientes (2)
+                        </button>
+                    </div>
+                    <div class="col-md-2 form-row">
+                        <button class="btn btn-primary col-md-10" data-bind="click:showModalFiltrarProductos">
+                            Filtrar<br />bodegas (2)
+                        </button>
+                    </div>
+                    <div class="col-md-2 form-row">
+                        <button class="btn btn-primary col-md-10" data-bind="click:showModalFiltrarProductos">
+                            Filtrar<br />productos (5)
+                        </button>
+                    </div>
+                    <div class="col-md-2 form-row">
+                        <button class="btn btn-primary col-md-10" data-bind="click:showModalFiltrarProductos">
+                            Filtrar<br />facturado (2)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <input type="submit" value="Consultar historico" data-bind="click:consultarHistorico" class="btn btn-primary">
+                        <button data-bind="click:generarReportePDF" class="btn btn-danger">Generar reporte PDF</button>
+                        <button data-bind="click:generarReporteExcel" class="btn btn-success">Generar reporte EXCEL</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<br />
+<div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel">
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="mb-0 table table-hover" >
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Ambiente</th>
+                            <th>Bodega</th>
+                            <th>Tipo de<br />movimiento</th>
+                            <th>Descripcion</th>
+                            <th>Tipo de<br />producto</th>
+                            <th>Producto</th>
+                            <th>Lote</th>
+                            <th>Unidad</th>
+                            <th>Cantidad</th>
+                            <th>Saldo final</th>
+                            <th>Facturado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!--ko foreach: movimientosProductos-->
+                        <tr>
+                            <td data-bind="text:moment(Fecha).format('DD-MM-YYYY HH:mm')"></td>
+                            <td data-bind="text:AmbienteNombre"></td>
+                            <td data-bind="text:BodegaNombre"></td>
+                            <td data-bind="text:TipoMovimientoNombre"></td>
+                            <td data-bind="text:DescripcionMovimiento"></td>
+                            <td data-bind="text:TipoProductoNombre"></td>
+                            <td data-bind="text:Medicamento"></td>
+                            <td data-bind="text:Lote"></td>
+                            <td data-bind="text:UnidadNombre"></td>
+                            <td data-bind="text:Cantidad"></td>
+                            <td data-bind="text:SaldoActual"></td>
+                            <td>-</td>
+                        </tr>
+                        <!--/ko-->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--Modales-->
+<div title="Filtrar productos" id="mdl-filtrar-productos" style="display:none">
+    <div class="form-row">
+        <div class="col-md-12 table-responsive">
+            <table id="tabla-filtrar-productos">
+                <thead>
+                    <tr>
+                        <th>Mostrar</th>
+                        <th>Nombre de producto</th>
+                        <th>Ambiente</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <input type="checkbox"/>
+                        </td>
+                        <td>Acetaminofen</td>
+                        <td>Farmacia</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <input type="checkbox"/>
+                        </td>
+                        <td>Cefalexina</td>
+                        <td>Farmacia</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <input type="checkbox"/>
+                        </td>
+                        <td>Loratadina</td>
+                        <td>Farmacia</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<div title="Filtrar Tipo de producto" id="mdl-filtrar-tipo-producto" style="display:none">
+    <div class="form-row">
+        <div class="col-md-12 table-responsive">
+            <table id="tabla-filtrar-tipo-producto">
+                <thead>
+                    <tr>
+                        <th>Mostrar</th>
+                        <th>Tipo de producto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <input type="checkbox"/>
+                        </td>
+                        <td>Medicamentos</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <input type="checkbox"/>
+                        </td>
+                        <td>Insumos medicos</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+
+@* <a href="#" class="btn btn-danger btn-sm disabled">Anterior</a>
+<a href="#" class="btn btn-danger btn-sm disabled">Siguiente</a> *@
+
+
+@section Scripts
+{
+    <script type="text/javascript" src="~/js/moment.min.js"></script>
+    <script type="text/javascript" src="~/js/daterangepicker.js"></script>
+    <script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+
+    <script type="text/javascript" src="~/ViewModelKo/HistoricoProductosVM.js"></script>
+
+    <script>
+        $(function () {
+            $('#reservationtime').daterangepicker({
+                timePicker: true,
+                timePickerIncrement: 30,
+                locale: {
+                    format: 'MM/DD/YYYY hh:mm A'
+                }
+            });
+        });
+    </script>
+}
+
+@section css
+{
+    <link href="~/css/daterangepicker.css" rel="stylesheet">
+}

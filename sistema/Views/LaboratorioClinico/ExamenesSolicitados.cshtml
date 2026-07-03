@@ -1,0 +1,114 @@
+@* @using Database.Shared.Paginacion;
+@model PaginacionList<Database.Shared.Models.Examen>
+
+@{
+    ViewData["Title"] = "Lista Examenes";
+    var todayDate = DateTime.Now;
+}
+
+
+@await Html.PartialAsync("_MensajeExito")
+
+
+@* <div class="col-md-12">
+    <a class="btn btn-danger btn-sm" asp-action="RealizarExamenClinico" asp-controller="LaboratorioClinico">
+        Nuevo Examen
+    </a>
+</div> 
+
+<br />
+
+<form asp-action="ListaExamenesRealizados" method="get">
+
+<br />
+    <div class="col-md-12">
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <input type="submit" value="Buscar" class="btn btn-success"></input>
+            </div>
+            <input type="text" name="buscar" value="@ViewData["CurrentFilter"]" class="form-control"
+                placeholder="Buscar por nombre...">
+        </div>
+    </div>
+</form>
+
+<br />
+
+<div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel">
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="mb-0 table table-hover ">
+                    <thead>
+                        <tr>
+                            <th>Examen #</th>
+                            <th>Paciente</th>
+                            <th>Fecha Realizacion</th>
+                            <th>Médico Referido</th>
+                            <th>Clínica Referida</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            var NombreEstado = item.EstadoExamen == null ? "// sin asignar" : item.EstadoExamen.Nombre;
+                            var paciente = item.Paciente == null ? "" : item.Paciente.Nombre;
+
+                            <tr>
+                                <td>@item.Id</td>
+                                <td>@paciente</td>
+                                <td>@item.FechaRealizacion</td>
+                                <td>@item.DoctorReferido</td>
+                                <td>@item.ClinicaReferida</td>
+                                @* <td>@item.ExamenLabClinico.NombreExamen</td>
+                                <td>@item.ExamenLabClinico.CategoriaLabClinico.Nombre</td>
+                                <td>@item.ExamenLabClinico.TipoDeExamen</td>
+                                <td>Q @item.ExamenLabClinico.Precio</td>
+                                <td>@item.Empleado.Nombre</td> 
+                                <td>@NombreEstado</td>
+                                <td>
+                                    <a href="@Url.Action("EditarDetalleExamen","LaboratorioClinico", new {id = @item.Id})"
+                                        class="btn btn-warning btn-sm">
+                                        Modificar
+                                    </a>
+
+                                    <a href="@Url.Action("GenerarReporteExamen","CrearPDF", new {id = @item.Id})"
+                                        class="btn btn-danger btn-sm">
+                                        PDF
+                                    </a>
+
+                                    @* <a href="@Url.Action("EliminarExamen","LaboratorioClinico", new {id = @item.Id}, new{id = ""})"
+                                        class="btn btn-primary btn-sm">
+                                        Eliminar
+                                    </a> 
+
+                                    <a asp-action="EliminarExamenRealizado" asp-route-id="@item.Id" class = "btn btn-danger btn-sm"
+                                                    onclick="return confirm('¿Está seguro/a que desea eliminar este registro?');">Eliminar</a>
+                                </td>
+
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+}
+
+
+
+<a asp-action="ListaExamenesRealizados" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@(Model.PageIndex - 1)"
+    asp-route-currentFilter="@ViewData["CurrentFilter"]" class="btn btn-danger btn-sm @prevDisabled">
+    Anterior
+</a>
+<a asp-action="ListaExamenesRealizados" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@(Model.PageIndex + 1)"
+    asp-route-currentFilter="@ViewData["CurrentFilter"]" class="btn btn-danger btn-sm @nextDisabled" class="">
+    Siguiente
+</a> *@

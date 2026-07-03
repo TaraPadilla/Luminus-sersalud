@@ -1,0 +1,475 @@
+@using sistema.Models
+@model CajaDetallesViewModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Detalle de Caja";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fechaEmision = DateTime.Now;
+}
+
+<style>
+    .report-container {
+        margin-top: 10px;
+        font-size: 11px;
+    }
+
+    .report-title {
+        text-align: center;
+        font-weight: bold;
+        font-size: 16px;
+        color: #0d0e36;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+
+    .report-subtitle {
+        text-align: center;
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+
+    .report-meta-block {
+        margin-bottom: 12px;
+        border: 1px solid #dddddd;
+        border-radius: 4px;
+        padding: 8px 10px;
+        background-color: #fafafa;
+    }
+
+    .report-meta-row {
+        font-size: 12px;
+        margin-bottom: 3px;
+    }
+
+    .report-meta-label {
+        font-weight: 600;
+        display: inline-block;
+        min-width: 160px;
+    }
+
+    .report-table {
+        width: 100%;
+        margin-top: 10px;
+        border-collapse: collapse;
+    }
+
+    /* Título de sección */
+    .report-table-title-row th {
+        background-color: #f3f4ff;
+        border-left: 3px solid #0d0e36;
+        color: #0d0e36;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: bold;
+        font-size: 12px;
+        text-align: center;
+        padding: 6px 8px;
+    }
+
+    /* Encabezados de columnas */
+    .report-table-header-row th {
+        background-color: #eef2ff;
+        color: #0d0e36;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 10px;
+        text-align: left;
+        padding: 4px 6px;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table tbody td {
+        font-size: 10px;
+        padding: 3px 4px;
+        vertical-align: top;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .report-table tbody tr:nth-child(even) {
+        background-color: #fbfbfb;
+    }
+
+    .empty-row td {
+        text-align: center;
+        font-style: italic;
+        color: #777777;
+    }
+
+    .summary {
+        margin-top: 4px;
+        text-align: right;
+        font-size: 11px;
+    }
+
+    .summary-label {
+        font-weight: 600;
+        margin-right: 4px;
+    }
+
+    .caja-totals {
+        margin-top: 14px;
+        border: 1px solid #dddddd;
+        border-radius: 4px;
+        padding: 8px 10px;
+        background-color: #f5f5f5;
+        font-size: 11px;
+    }
+
+    .caja-totals-item {
+        text-align: right;
+        margin-bottom: 2px;
+    }
+
+    .caja-totals-label {
+        font-weight: 600;
+        margin-right: 4px;
+    }
+</style>
+
+<div class="report-container">
+    <!-- Encabezado del reporte -->
+    <div class="report-title">
+        REPORTE - @ViewData["Title"]
+    </div>
+    <div class="report-subtitle">
+        <b>Fecha y hora de emisión:</b> @fechaEmision
+    </div>
+
+    <!-- Meta de caja -->
+    <div class="report-meta-block">
+        <div class="report-meta-row">
+            <span class="report-meta-label">Fecha de apertura:</span>
+            <span>@Model.FechaApertura</span>
+        </div>
+        <div class="report-meta-row">
+            <span class="report-meta-label">Responsable apertura:</span>
+            <span>@Model.ResponsableApertura</span>
+        </div>
+        <div class="report-meta-row">
+            <span class="report-meta-label">Fecha de cierre:</span>
+            <span>@Model.FechaCierre</span>
+        </div>
+        <div class="report-meta-row">
+            <span class="report-meta-label">Responsable cierre:</span>
+            <span>@Model.ResponsableCierre</span>
+        </div>
+    </div>
+
+    <!-- VENTAS -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="10">Ventas</th>
+            </tr>
+            <tr class="report-table-header-row">
+                <th>Sucursal</th>
+                <th>Ambiente</th>
+                <th>Fecha</th>
+                <th>No. Venta</th>
+                <th>Comprobante</th>
+                <th>Descripción</th>
+                <th>Cliente</th>
+                <th>Vendedor</th>
+                <th>Forma de pago</th>
+                <th>Monto pagado</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Ventas != null && Model.Ventas.Count > 0)
+            {
+                foreach (var venta in Model.Ventas)
+                {
+                    <tr>
+                        <td>@venta.SucursalNombre</td>
+                        <td>@venta.AmbienteNombre</td>
+                        <td>@venta.FechaVenta</td>
+                        <td>@venta.VentaId</td>
+                        <td>@venta.Comprobante</td>
+                        <td>@venta.Descripcion</td>
+                        <td>@venta.Cliente</td>
+                        <td>@venta.Vendedor</td>
+                        <td>
+                            @if (venta.FormasPago != null && venta.FormasPago.Count > 0)
+                            {
+                                foreach (var formaPago in venta.FormasPago)
+                                {
+                                    <div>
+                                        <strong>@formaPago.NombreFormaPago</strong>: @formaPago.Monto
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <span>No hay pagos registrados</span>
+                            }
+                        </td>
+                        <td>@venta.Total</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr class="empty-row">
+                    <td colspan="10">No hay ventas registradas</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="summary">
+        <div>
+            <span class="summary-label">Total de ventas:</span>
+            <span>Q @(Model.Ventas != null ? Model.Ventas.Sum(a => a.Total) : 0)</span>
+        </div>
+        <div>
+            <span class="summary-label">Número de ventas:</span>
+            <span>@(Model.Ventas != null ? Model.Ventas.Count : 0)</span>
+        </div>
+    </div>
+
+    <!-- MONTOS -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="10">Montos</th>
+            </tr>
+            <tr class="report-table-header-row">
+                <th>Sucursal</th>
+                <th>Ambiente</th>
+                <th>Efectivo</th>
+                <th>Tarjeta VISA</th>
+                <th>Tarjeta MasterCard</th>
+                <th>Cheques</th>
+                <th>Transferencia</th>
+                <th>Visa Link</th>
+                <th>Visa Net</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Montos != null && Model.Montos.Count > 0)
+            {
+                foreach (var monto in Model.Montos)
+                {
+                    <tr>
+                        <td>@monto.SucursalNombre</td>
+                        <td>@monto.AmbienteNombre</td>
+                        <td>@monto.Efectivo</td>
+                        <td>@monto.Visa</td>
+                        <td>@monto.MasterCard</td>
+                        <td>@monto.Cheques</td>
+                        <td>@monto.Transferencia</td>
+                        <td>@monto.Visalink</td>
+                        <td>@monto.Visanet</td>
+                        <td>@monto.Total</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr class="empty-row">
+                    <td colspan="10">No hay montos registrados</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="summary">
+        <span class="summary-label">Monto total:</span>
+        <span>Q @(Model.Montos != null ? Model.Montos.Sum(a => a.Total) : 0)</span>
+    </div>
+
+    <!-- COMPRAS -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="8">Compras</th>
+            </tr>
+            <tr class="report-table-header-row">
+                <th>Sucursal</th>
+                <th>Ambiente</th>
+                <th>Fecha compra</th>
+                <th>Comprobante</th>
+                <th>Descripción</th>
+                <th>Proveedor</th>
+                <th>Empleado</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Compras != null && Model.Compras.Count > 0)
+            {
+                foreach (var compra in Model.Compras)
+                {
+                    <tr>
+                        <td>@compra.SucursalNombre</td>
+                        <td>@compra.AmbienteNombre</td>
+                        <td>@compra.FechaCompra</td>
+                        <td>@compra.Comprobante</td>
+                        <td>@compra.Descripcion</td>
+                        <td>@compra.Proveedor</td>
+                        <td>@compra.Empleado</td>
+                        <td>@compra.Total</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr class="empty-row">
+                    <td colspan="8">No hay compras registradas</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="summary">
+        <div>
+            <span class="summary-label">Monto:</span>
+            <span>Q @(Model.Compras != null ? Model.Compras.Sum(a => a.Total) : 0)</span>
+        </div>
+        <div>
+            <span class="summary-label">Número de compras:</span>
+            <span>@(Model.Compras != null ? Model.Compras.Count : 0)</span>
+        </div>
+    </div>
+
+    <!-- INGRESOS -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="6">Ingresos</th>
+            </tr>
+            <tr class="report-table-header-row">
+                <th>Sucursal</th>
+                <th>Ambiente</th>
+                <th>Fecha ingreso</th>
+                <th>Descripción</th>
+                <th>Número de comprobante</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Ingresos != null && Model.Ingresos.Count > 0)
+            {
+                foreach (var ingreso in Model.Ingresos)
+                {
+                    <tr>
+                        <td>@ingreso.SucursalNombre</td>
+                        <td>@ingreso.AmbienteNombre</td>
+                        <td>@ingreso.FechaIngreso</td>
+                        <td>@ingreso.Descripcion</td>
+                        <td>@ingreso.NumeroComprobante</td>
+                        <td>@ingreso.Total</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr class="empty-row">
+                    <td colspan="6">No hay ingresos registrados</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="summary">
+        <div>
+            <span class="summary-label">Monto:</span>
+            <span>Q @(Model.Ingresos != null ? Model.Ingresos.Sum(a => a.Total) : 0)</span>
+        </div>
+        <div>
+            <span class="summary-label">Número de ingresos:</span>
+            <span>@(Model.Ingresos != null ? Model.Ingresos.Count : 0)</span>
+        </div>
+    </div>
+
+    <!-- EGRESOS -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="7">Egresos</th>
+            </tr>
+            <tr class="report-table-header-row">
+                <th>Sucursal</th>
+                <th>Ambiente</th>
+                <th>Fecha</th>
+                <th>Descripción</th>
+                <th>Número de comprobante</th>
+                <th>Cuenta contable</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Egresos != null && Model.Egresos.Count > 0)
+            {
+                foreach (var egreso in Model.Egresos)
+                {
+                    <tr>
+                        <td>@egreso.SucursalNombre</td>
+                        <td>@egreso.AmbienteNombre</td>
+                        <td>@egreso.FechaEgreso</td>
+                        <td>@egreso.Descripcion</td>
+                        <td>@egreso.NumeroComprobante</td>
+                        <td>@egreso.CuentaContable</td>
+                        <td>@egreso.Total</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr class="empty-row">
+                    <td colspan="7">No hay egresos registrados</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="summary">
+        <div>
+            <span class="summary-label">Monto:</span>
+            <span>Q @(Model.Egresos != null ? Model.Egresos.Sum(a => a.Total) : 0)</span>
+        </div>
+        <div>
+            <span class="summary-label">Número de egresos:</span>
+            <span>@(Model.Egresos != null ? Model.Egresos.Count : 0)</span>
+        </div>
+    </div>
+
+    <!-- RESUMEN DE CAJA -->
+    <div class="caja-totals">
+        <div class="caja-totals-item">
+            <span class="caja-totals-label">Monto apertura:</span>
+            <span>Q @Model.MontoApertura</span>
+        </div>
+        <div class="caja-totals-item">
+            <span class="caja-totals-label">Total ingresos:</span>
+            <span>Q @Model.TotalIngresosCaja</span>
+        </div>
+        <div class="caja-totals-item">
+            <span class="caja-totals-label">Total egresos:</span>
+            <span>Q @Model.TotalEgresosCaja</span>
+        </div>
+        <div class="caja-totals-item">
+            <span class="caja-totals-label">Total efectivo:</span>
+            <span>Q @(Model.MontoApertura + (Model.Montos != null ? Model.Montos.Sum(a => a.Efectivo) : 0))</span>
+        </div>
+        <div class="caja-totals-item">
+            <span class="caja-totals-label">Total cierre:</span>
+            <span>Q @Model.TotalCierreCaja</span>
+        </div>
+    </div>
+</div>

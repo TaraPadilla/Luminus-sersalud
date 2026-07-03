@@ -1,0 +1,174 @@
+@model sistema.Models.HospitalizacionDetallesViewModel
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+
+@{
+    var usuarioAdmisiones = User.IsInRole("Admisiones");
+        string cliente = Configuration["Cliente"]; 
+
+}  
+<div class="tab-pane tabs-animation fade show" id="tab-content-nota-operatoria" role="tabpanel">
+    <div class="form-row">
+        <div class="col-md-12">
+            <div class="main-card mb-3 nota-clinica-card">
+
+                <!-- Header Operatoria -->
+                <div class="nota-header nota-header-operatoria">
+                    <div class="d-flex align-items-center">
+                        <div class="nota-header-icon nota-header-icon-operatoria">
+                            <i class="fas fa-procedures"></i>
+                        </div>
+                        <div>
+                            <h5 class="nota-header-title">Notas Operatorias</h5>
+                            <p class="nota-header-subtitle">Procedimientos quir&uacute;rgicos e intervenciones registradas</p>
+                        </div>
+                    </div>
+                    <div class="d-flex" style="gap: 8px;">
+                        @if (!usuarioAdmisiones && !Model.HospitalizacionFinalizada && !User.IsInRole("Enfermeria") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
+                        {
+                            <button class="btn btn-nota-primary btn-nota-primary-operatoria" data-bind="click: verModalAgregarNotaOperatoria">
+                                <i class="fas fa-plus mr-1"></i> Nuevo Procedimiento
+                            </button>
+                            <button class="btn btn-nota-outline btn-nota-outline-operatoria" data-bind="click: function() { $root.imprimirNotasOperatoriasAll(@Model.HospitalizacionId) }">
+                                <i class="fas fa-print mr-1"></i> Imprimir Todo
+                            </button>
+                        }
+                    </div>
+                </div>
+
+                <!-- Cuerpo -->
+                <div class="nota-card-body">
+                    <div class="table-responsive">
+                        <table class="table tabla-notas">
+                            <thead>
+                                <tr>
+                                    <th>Fecha de intervenci&oacute;n</th>
+                                    <th>Cirujano / 1er Ayudante</th>
+                                    <th>Diagn&oacute;stico Post-Op / Operaci&oacute;n</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!--ko foreach: notasOperatorias-->
+                                <tr>
+                                    <td>
+                                        <div class="nota-fecha-wrapper">
+                                            <div class="nota-fecha-icon nota-fecha-icon-operatoria">
+                                                <i class="fas fa-clock"></i>
+                                            </div>
+                                            <div>
+                                                <!-- ko if: $data.FechaOperacion -->
+                                                <div class="nota-fecha-text" data-bind="text: $data.FechaOperacion"></div>
+                                                <!-- /ko -->
+                                                <!-- ko ifnot: $data.FechaOperacion -->
+                                                <div class="nota-fecha-text" data-bind="text: $data.FechaRegistro"></div>
+                                                <!-- /ko -->
+                                                <!-- ko if: $data.HoraComenzo -->
+                                                <div class="nota-fecha-label">
+                                                    Inicio: <span data-bind="text: $data.HoraComenzo"></span>
+                                                    <!-- ko if: $data.HoraTermino -->
+                                                    &nbsp;&mdash; Fin: <span data-bind="text: $data.HoraTermino"></span>
+                                                    <!-- /ko -->
+                                                </div>
+                                                <!-- /ko -->
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <!-- ko if: $data.Cirujano -->
+                                        <span class="nota-badge-operatoria d-block mb-1">
+                                            <i class="fas fa-user-md mr-1"></i>
+                                            <span data-bind="text: $data.Cirujano"></span>
+                                        </span>
+                                        <!-- /ko -->
+                                        <!-- ko ifnot: $data.Cirujano -->
+                                        <span class="nota-badge-operatoria d-block mb-1">
+                                            <i class="fas fa-user-md mr-1"></i>
+                                            <!-- ko if: $data.Profesional -->
+                                            <span data-bind="text: $data.Profesional"></span>
+                                            <!-- /ko -->
+                                            <!-- ko ifnot: $data.Profesional -->
+                                            <span>N/A</span>
+                                            <!-- /ko -->
+                                        </span>
+                                        <!-- /ko -->
+                                        <!-- ko if: $data.PrimerAyudante -->
+                                        <span class="nota-badge-operatoria d-block" style="opacity:.8;">
+                                            <i class="fas fa-user-plus mr-1"></i>
+                                            <span data-bind="text: $data.PrimerAyudante"></span>
+                                        </span>
+                                        <!-- /ko -->
+                                    </td>
+                                    <td>
+                                        <!-- ko if: $data.DiagnosticoPostOperatorio -->
+                                        <div class="nota-contenido-cell nota-contenido-cell-operatoria mb-1" data-bind="text: $data.DiagnosticoPostOperatorio"></div>
+                                        <!-- /ko -->
+                                        <!-- ko if: $data.OperacionEfectuada -->
+                                        <div class="nota-contenido-cell nota-contenido-cell-operatoria" style="font-size:0.8rem;opacity:.85;" data-bind="text: $data.OperacionEfectuada"></div>
+                                        <!-- /ko -->
+                                        <!-- ko ifnot: $data.DiagnosticoPostOperatorio -->
+                                        <!-- ko ifnot: $data.OperacionEfectuada -->
+                                        <!-- ko if: $data.Diagnostico -->
+                                        <div class="nota-contenido-cell nota-contenido-cell-operatoria" data-bind="text: $data.Diagnostico"></div>
+                                        <!-- /ko -->
+                                        <!-- ko ifnot: $data.Diagnostico -->
+                                        <span class="text-muted" style="font-size:0.82rem;">Sin descripción</span>
+                                        <!-- /ko -->
+                                        <!-- /ko -->
+                                        <!-- /ko -->
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="d-flex justify-content-center" style="gap: 6px;">
+                                            @if (!(User.IsInRole("Enfermeria") && (cliente == "SS"))) 
+                                            {
+                                                <!-- ko ifnot: $data.Firmado -->
+                                                <button type="button" class="btn btn-warning text-white" data-bind="click: function() { $root.abrirEditarNotaOperatoria($data) }">
+                                                    <i class="fas fa-edit mr-1"></i> Editar
+                                                </button>
+                                                <!-- /ko -->
+                                            }
+                                            <button class="btn btn-nota-accion btn-nota-operatoria" data-bind="click: function() { $root.verDetalleNotaOperatoria($data) }">
+                                                <i class="fas fa-eye mr-1"></i> Ver
+                                            </button>
+                                            <button class="btn btn-nota-accion btn-nota-operatoria" data-bind="click: function() { $root.imprimirNotaOperatoria($data) }">
+                                                <i class="fas fa-file-pdf mr-1"></i> PDF
+                                            </button>
+                                            <!-- ko ifnot: $data.Firmado -->
+                                            <button class="btn btn-nota-accion btn-nota-firmar" data-bind="click: function() { $root.abrirModalFirmaNotaOperatoria($data) }">
+                                                <i class="fas fa-signature mr-1"></i> Firmar
+                                            </button>
+                                            <!-- /ko -->
+                                            <!-- ko if: $data.Firmado -->
+                                            <span class="badge badge-success px-2 py-1" style="font-size:0.75rem;border-radius:8px;">
+                                                <i class="fas fa-check-circle mr-1"></i> Firmado
+                                            </span>
+                                            <!-- /ko -->
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!--/ko-->
+
+                                <!-- ko if: notasOperatorias().length === 0 -->
+                                <tr>
+                                    <td colspan="4">
+                                        <div class="nota-empty-state">
+                                            <i class="fas fa-procedures d-block"></i>
+                                            <p>No hay procedimientos quir&uacute;rgicos registrados para este paciente</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- /ko -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="nota-footer">
+                    <span><i class="fas fa-syringe mr-1" style="color:var(--operatoria-color)"></i> Procedimientos: <strong data-bind="text: notasOperatorias().length"></strong></span>
+                    <span><i class="fas fa-user-md mr-1" style="color:var(--operatoria-color)"></i> &Uacute;ltimo cirujano: <strong data-bind="text: notasOperatorias().length ? notasOperatorias()[notasOperatorias().length-1].Profesional : 'N/A'"></strong></span>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,77 @@
+-- ============================================================
+-- TABLA: ListasChequeo
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public."ListasChequeo"
+(
+    "Id"                        SERIAL          PRIMARY KEY,
+    "HospitalizacionId"         INTEGER         NOT NULL,
+    "FechaRegistro"             TIMESTAMP       NOT NULL DEFAULT NOW(),
+    "UserId"                    VARCHAR(450),
+
+    -- Encabezado
+    "NombrePaciente"            VARCHAR(150),
+    "ApellidoPaciente"          VARCHAR(150),
+    "FechaNacimiento"           DATE,
+    "FechaChequeo"              DATE,
+    "HoraChequeo"               VARCHAR(10),
+
+    -- ENTRADA: El paciente confirma
+    "CI_NombreConfirma"         VARCHAR(150),
+    "CI_ApellidoConfirma"       VARCHAR(150),
+    "CI_FechaNacConfirma"       DATE,
+    "CI_Consentimiento"         VARCHAR(20),
+    "CI_Operacion"              VARCHAR(300),
+    "CI_LadoOperar"             VARCHAR(30),
+    "CI_SitioMarcado"           VARCHAR(20),
+    "CI_Alergia"                VARCHAR(20),
+
+    -- ENTRADA: El anestesiólogo confirma
+    "CI_EvalPreanestesica"      VARCHAR(20),
+    "CI_AccesoIV"               VARCHAR(20),
+    "CI_EquipoAnestesia"        VARCHAR(20),
+    "CI_Medicamentos"           VARCHAR(20),
+    "CI_Oximetro"               VARCHAR(20),
+    "CI_EquipoAspiracion"       VARCHAR(20),
+    "CI_ViaAerea"               VARCHAR(20),
+
+    -- PAUSA: El cirujano confirma
+    "CP_Presentacion"           VARCHAR(20),
+    "CP_NombrePacienteCirujano" VARCHAR(150),
+    "CP_NombreCirugia"          VARCHAR(300),
+    "CP_EventosCriticos"        VARCHAR(20),
+    "CP_TiempoDuracion"         VARCHAR(20),
+    "CP_ImagenesDiagnosticas"   VARCHAR(20),
+    "CP_PerdidaSangre"          VARCHAR(30),
+
+    -- PAUSA: La instrumentista confirma
+    "CP_Esterilidad"            VARCHAR(20),
+    "CP_MaterialesAdicionales"  VARCHAR(20),
+
+    -- PAUSA: El anestesiólogo confirma
+    "CP_EventosCriticosAnest"   VARCHAR(20),
+    "CP_ProfilaxisAntibiotica"  VARCHAR(20),
+    "CP_Tromboprofilaxis"       VARCHAR(20),
+    "CP_ManejoDolor"            VARCHAR(20),
+
+    -- SALIDA: La enfermera confirma
+    "CS_NombreOperacion"        VARCHAR(300),
+    "CS_NombreEnfermera"        VARCHAR(150),
+    "CS_RecuentoCompleto"       VARCHAR(20),
+    "CS_EtiquetadoMuestras"     VARCHAR(20),
+
+    -- SALIDA: Recuperación
+    "CS_RepasoPostOp"           VARCHAR(20),
+    "CS_PorQue"                 TEXT,
+    "CS_Traslado"               VARCHAR(50),
+    "CS_Complicaciones"         TEXT,
+    "CS_ServicioNumCama"        VARCHAR(100),
+
+    CONSTRAINT "FK_ListasChequeo_Hospitalizaciones"
+        FOREIGN KEY ("HospitalizacionId")
+        REFERENCES public."Hospitalizaciones" ("Id")
+        ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS "IX_ListasChequeo_HospitalizacionId"
+    ON public."ListasChequeo" ("HospitalizacionId");

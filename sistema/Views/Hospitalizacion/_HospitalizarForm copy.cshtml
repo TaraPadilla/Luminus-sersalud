@@ -1,0 +1,644 @@
+@using Database.Shared.Enumeraciones
+@model sistema.Models.HospitalizacionHospitalizarViewModel
+@Html.HiddenFor(a => a.EspecialidadId)
+@Html.HiddenFor(a => a.PacienteId)
+@Html.HiddenFor(a => a.ConsultaId)
+@Html.HiddenFor(a => a.EmergenciaId)
+@Html.HiddenFor(a => a.CodigoSeguro)
+@Html.HiddenFor(m => m.HabitacionId)
+@Html.HiddenFor(m => m.HabitacionCategoriaId)
+@Html.HiddenFor(m => m.HabitacionEstadoId)
+@Html.HiddenFor(m => m.UrlArchivoConsentimiento)
+@Html.HiddenFor(m => m.Base64FirmaConsentimiento)
+@Html.HiddenFor(a => a.CitaId)
+
+@{
+    var habitacionId = Context.Request.Query["habitacionId"];
+    var consultaId = Model.ConsultaId;
+    var pacienteId = Model.PacienteId;
+}
+
+
+<style>
+    .select2-container {
+    width: 100% !important;
+}
+</style>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-6">
+                <center>
+                    <h4><b>Registrar hospitalizaci&oacute;n</b></h4>
+                </center>
+            </div>
+            <div class="col-md-6">
+                <div class="form-row h5">
+                    <div class="col-md-4">
+                        <b>Habitacion</b><br />
+                        <span class="badge badge-primary">@Model.HabitacionNumeroNombre</span>
+                    </div>
+                    <div class="col-md-4">
+                        <b>Categoria</b><br />
+                        <label class="badge badge-warning">@Model.HabitacionCategoria</label>
+                    </div>
+                    @* <div class="col-md-4">
+                        <b>Estado</b><br />
+                        @{
+                            var estadoId = Model.HabitacionEstadoId;
+                        }
+                        @if (estadoId == (int)EstadoHabitacionEnum.Disponible)
+                        {
+                            <label class="badge badge-success">@Model.HabitacionEstado</label>
+                        }
+                        else if (estadoId == (int)EstadoHabitacionEnum.Ocupada)
+                        {
+                            <label class="badge badge-danger">@Model.HabitacionEstado</label>
+                        }
+                        else
+                        {
+                            <label class="badge badge-warning">@Model.HabitacionEstado</label>
+                        }
+                    </div> *@
+                    <div class="col-md-4">
+                        <b>Seguro</b><br />
+                        <label class="badge badge-warning">
+                            @(string.IsNullOrEmpty(Model.CodigoSeguro) ? "Sin seguro" : Model.CodigoSeguro)
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@* <div class="form-row paso" id="paso-especialidad">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <h5><b>1. Seleccionar especialidad</b></h5>
+                        <hr />
+                    </div>
+                    <div class="col-md-12" id="texto-validacion-especialidad">
+                        <label class="text-danger">Debe seleccionar una especialidad</label>
+                    </div>
+                    <div class="col-md-12">
+                        <select class="select2bs4 form-control">
+                            <option value="1" selected>Medicina General</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-12 text-right">
+        <button class="btn btn-primary" data-bind="click:pasoTarifas">Siguiente <i
+                class="fas fa-arrow-alt-circle-right"></i></button>
+    </div>
+</div> *@
+<div class="form-row paso" id="paso-especialidad">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <h5><b>1. Seleccionar especialidad</b></h5>
+                        <hr />
+                    </div>
+
+                    <div class="col-md-12" id="texto-validacion-especialidad">
+                        <label class="text-danger">Debe seleccionar una especialidad</label>
+                    </div>
+
+                    <div class="col-md-12">
+                        <select class="select2bs4 form-control" data-bind="
+                            options: especialidades,
+                            optionsText: 'NombreEspecialidad',
+                            optionsValue: 'Id',
+                            value: especialidadId,
+                            event: {
+                            change: function () {
+                            var id = especialidadId();
+                            var sel = null;
+
+                            // Buscar objeto seleccionado para mantener especialidadSeleccionada y nombre
+                            ko.utils.arrayForEach(especialidades(), function (e) {
+                            if (e && e.Id == id) { sel = e; }
+                            });
+
+                            especialidadSeleccionada(sel);
+                            especialidadNombre(sel ? sel.NombreEspecialidad : 'Medicina General');
+
+                            // Regla: si queda vacío/0, forzar MG
+                            if (!id || id == 0) {
+                            especialidadId(1);
+                            especialidadNombre('Medicina General');
+                            especialidadSeleccionada(null);
+                            }
+                            }
+                            }">
+                        </select>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-12 text-right">
+        <button class="btn btn-primary" data-bind="click:pasoTarifas">
+            Siguiente <i class="fas fa-arrow-alt-circle-right"></i>
+        </button>
+    </div>
+</div>
+
+
+<div class="form-row paso" id="paso-tarifas">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-11">
+                        <h5><b>2. Seleccionar tarifa</b></h5>
+                        <hr />
+                    </div>
+                    <div class="col-md-1">
+                        <button class="btn btn-primary" data-bind="click:consultarTarifas">
+                            <i class="fas fa-redo"></i>
+                        </button>
+                    </div>
+                    <div class="col-md-12" id="texto-validacion-tarifas">
+                        <label class="text-danger">Debe seleccionar una tarifa</label>
+                    </div>
+                    <div class="col-md-12">
+                        <table class="table table-hover table-responsive">
+                            <thead>
+                                <tr>
+                                    <th>Seleccionar</th>
+                                    <th>Nombre</th>
+                                    <th>Días</th>
+                                    <th>Fecha especial</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!--ko foreach: tarifas-->
+                                <tr>
+                                    <td>
+                                        <input type="radio" class="form-control"
+                                               data-bind="checked: $root.tarifaSeleccionada, value: $data" />
+                                    </td>
+                                    <td data-bind="text:NombreTarifa"></td>
+                                    <td>
+                                        <!--ko if:Lunes-->
+                                        <label class="badge badge-success">Lu</label>
+                                        <!--/ko-->
+                                        <!--ko if:Martes-->
+                                        <label class="badge badge-success">Ma</label>
+                                        <!--/ko-->
+                                        <!--ko if:Miercoles-->
+                                        <label class="badge badge-success">Mi</label>
+                                        <!--/ko-->
+                                        <!--ko if:Jueves-->
+                                        <label class="badge badge-success">Ju</label>
+                                        <!--/ko-->
+                                        <!--ko if:Viernes-->
+                                        <label class="badge badge-success">Vi</label>
+                                        <!--/ko-->
+                                        <!--ko if:Sabado-->
+                                        <label class="badge badge-success">Sa</label>
+                                        <!--/ko-->
+                                        <!--ko if:Domingo-->
+                                        <label class="badge badge-success">Do</label>
+                                        <!--/ko-->
+                                    </td>
+                                    <td>
+                                        <!--ko if:FechaEspecial-->
+                                        <label class="badge badge-success" data-bind="text:FechaTarifa"></label>
+                                        <!--/ko-->
+                                        <!--ko ifnot:FechaEspecial-->
+                                        -
+                                        <!--/ko-->
+                                    </td>
+                                    <td data-bind="text:ValorTarifa"></td>
+                                </tr>
+                                <!--/ko-->
+                            </tbody>
+                        </table>
+                        <hr />
+                    </div>
+                    <div class="col-md-12">
+                        <a class="btn btn-primary text-white" data-bind="click:modificarCategoria">
+                            Modificar tarifas
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-12 text-right">
+        <button class="btn btn-warning" data-bind="click:pasoEspecialidad"><i class="fas fa-arrow-alt-circle-left"></i>
+            Anterior</button>
+            <button class="btn btn-primary" data-bind="click:pasoPaciente">Siguiente <i
+                class="fas fa-arrow-alt-circle-right"></i></button>
+            </div>
+        </div>
+
+        <div class="form-row paso" id="paso-paciente">
+            <div class="col-md-12">
+                <div id="msgCuentas" style="display:none;">
+                    <div class="form-row">
+                        <div class="col-md-12">
+                            <div class="alert alert-warning" role="alert">
+                                El paciente seleccionado tiene cuentas pendientes,
+                                <a id="revisarRentas" href="#" class="alert-link">
+                                    click aquí para revisar
+                                </a>.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>3. Seleccionar paciente</b></h5>
+                                <hr />
+                            </div>
+                            <div class="col-md-12" id="texto-validacion-paciente">
+                                <label class="text-danger">Debe seleccionar un paciente</label>
+                            </div>
+                            <div class="col-md-4">
+                                Buscar paciente (Nombre/DPI)<br />
+                                <select class="select2bs4 form-control" data-bind="options: listaUsuarios,
+                                optionsText: 'NombreConDpi',
+                                @*optionsValue: 'Id',*@
+                                value: pacienteSeleccionado,
+                                optionsCaption: 'Seleccione un paciente',
+                                event:{change:validarExistenciaPaciente}"></select>
+                            </div>
+                            <div class="col-md-4" style="display: none;">
+                                Paciente ID<br />
+                                <input class="form-control" data-bind="value:pacienteId" readonly />
+                            </div>
+                            <div class="col-md-4">
+                                Nombre<br />
+                                <input class="form-control" data-bind="value:pacienteNombre" readonly />
+                            </div>
+                            <div class="col-md-4">
+                                DPI
+                                <input class="form-control" data-bind="value:pacienteDpi" />
+                            </div>
+                            <div class="col-md-4">
+                                Telefono
+                                <input class="form-control" data-bind="value:pacienteTelefono" />
+                            </div>
+                            <div class="col-md-4">
+                                Fecha de nacimiento
+                                <input class="form-control" type="date" data-bind="value:pacienteFechaNacimiento" />
+                            </div>
+                            <div class="col-md-4">
+                                Edad
+                                <input class="form-control" data-bind="value: edadCalculada" readonly disabled />
+                                <!-- Este campo ahora es deshabilitado -->
+                            </div>
+
+                            @*<div class="col-md-2">
+                    <label class="text-white">Validar</label><br />
+                    <a href="#" class="btn btn-warning" data-bind="click:validarExistenciaPaciente">Validar</a>
+                    </div>*@
+                            @*<div class="col-md-5">
+                    <label>Buscar por Nombre:</label>
+                    <input type="text" class="form-control" placeholder="Buscar por nombre"
+                    data-bind="value:terminoBusquedaNombre" />
+                    </div>
+
+                    <br />
+
+                    <div class="col-md-12">
+                    <table class="table">
+                    <thead>
+                    <tr>
+                    <th>DPI</th>
+                    <th>Nombre</th>
+                    <th>Seleccionar</th>
+                    </tr>
+                    </thead>
+                    <tbody data-bind="foreach: pacientesExistentes">
+                    <tr>
+                    <td data-bind="text:Dpi"></td>
+                    <td data-bind="text:Nombre"></td>
+                    <td>
+                    <input type="radio" class="form-control" data-bind="checked:$root.pacienteId,value:Id" />
+                    </td>
+                    </tr>
+                    </tbody>
+                    </table>
+                    </div>
+                    @*<div class="col-md-12">
+                    <span>No se encontraron coincidencias</span><br />
+                    <a href="/Pacientes/Nuevo" target="_blank" class="btn btn-primary">
+                    <i class="fas fa-external-link-alt"></i>
+                    Nuevo paciente
+                    </a>
+                    </div>*@
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-12 text-right">
+                <button class="btn btn-warning" data-bind="click:pasoTarifas"><i class="fas fa-arrow-alt-circle-left"></i>
+                    Anterior</button>
+                    <button class="btn btn-primary" data-bind="click:pasoEstadia">Siguiente <i
+                        class="fas fa-arrow-alt-circle-right"></i></button>
+                    </div>
+                </div>
+
+                <div class="form-row paso" id="paso-estadia">
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-12">
+                                        <h5><b>4. Seleccionar estadia</b></h5>
+                                        <hr />
+                                    </div>
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label>Periodo de hospitalización</label>
+                                            <input type="text" class="form-control" id="Periodo" data-bind="value:periodo" />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label>Observaciones</label>
+                                        @Html.TextAreaFor(a => a.Observaciones, 5, 500, new
+                                        {
+                                            @class = "form-control",
+                                            @placeholder = "Observaciones",
+                                            data_bind = "value:observaciones"
+                                        })
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-12 text-right">
+                        <button class="btn btn-warning" data-bind="click:pasoPaciente"><i class="fas fa-arrow-alt-circle-left"></i>
+                            Anterior</button>
+                            <button class="btn btn-primary" data-bind="click:pasoConsentimiento">Siguiente<i
+                                class="fas fa-arrow-alt-circle-right"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="form-row paso" id="paso-consentimiento">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="form-row">
+                                            <div class="col-md-12">
+                                                <h5><b>5. Consentimiento</b></h5>
+                                                <hr />
+                                            </div>
+                                            @* <div class="col-md-12">
+                        <b>Archivo cargado</b><br />
+                        <!--ko if:urlArchivoConsentimiento()!=null && urlArchivoConsentimiento()!=''-->
+                        <a data-bind="attr:{href:urlArchivoConsentimiento}" href="#" target="_blank">Archivo
+                            consentimiento</a>
+                        <!--/ko-->
+                        <!--ko if:urlArchivoConsentimiento()==null || urlArchivoConsentimiento()==''-->
+                        No hay archivo cargado aun
+                        <!--/ko-->
+                    </div>
+                    <div class="col-md-12">
+                        <b>Subir/cambiar archivo consentimiento firmado</b><br />
+                            <input type="text" id="nuevo-nombre-archivo" class="form-control" placeholder="Ingrese el nombre del archivo sin la extensión" />
+
+                        <input type="file" id="archivo-consentimiento-firmado" class="form-control"
+                            data-bind="event:{change:subirArchivoConsentimientoFirmado}" />
+                    </div> *@
+                                            <div>
+                                                <h6><b>Redactar / Crear Consentimiento</b></h6>
+                                                <a href="#" id="irAhora" class="btn btn-primary" target="_blank">
+                                                    <i class="fas fa-external-link-alt"></i>&nbsp; Ir Ahora
+                                                </a>
+                                                <div id="mensajeConsulta" style="display: none;" class="mt-3">
+                                                    <div class="alert alert-info">
+                                                        <p>Se ha consultado la base de datos. Si no recuerdas haber creado este documento de
+                                                            consentimiento para este usuario y habitación, haz clic en <a href="#" id="irAhora"
+                                                                                                                      class="btn btn-primary"><i class="fas fa-external-link-alt"></i>&nbsp; Ir
+                                                            Ahora</a> para crear uno nuevo. </br>
+                                                            Si ya has creado el nuevo documento de consentimiento, haz clic en 'Imprimir
+                                                            Consentimiento'.</p>
+                                                        </div>
+                                                        <a class="btn btn-danger" target="_blank" style="color: white; display: none;"
+                                                               id="botonImprimir">
+                                                            <i class="fas fa-print"></i>&nbsp; Imprimir Consentimiento
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-12 text-right">
+                                    <button class="btn btn-warning" data-bind="click:pasoEstadia"><i class="fas fa-arrow-alt-circle-left"></i>
+                                        Anterior</button>
+                                        <button class="btn btn-primary" data-bind="click:pasoResumen">Siguiente (Resumen)<i
+                                            class="fas fa-arrow-alt-circle-right"></i></button>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row paso" id="paso-resumen">
+                                        <div class="col-md-12">
+                                            <div class="main-card mb-3 card">
+                                                <div class="card-body">
+                                                    <div class="form-row">
+                                                        <div class="col-md-12">
+                                                            <h5><b>Resumen de hospitalizacion</b></h5>
+                                                            <hr />
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <b>Especialidad</b><br />
+                                                            <span data-bind="text:especialidadNombre"></span>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <b>Tarifa</b><br />
+                                                            @* <span data-bind="text:tarifaNombre"></span> - Q <span data-bind="text:tarifaValor"></span> *@
+                                                            <span
+                                                            data-bind="text: tarifaSeleccionada() ? tarifaSeleccionada().NombreTarifa + ' - Q ' + tarifaSeleccionada().ValorTarifa : 'No seleccionada'"></span>
+
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <b>Nombre del paciente</b><br />
+                                                            <span data-bind="text:pacienteNombre"></span>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <b>DPI del paciente</b><br />
+                                                            <span data-bind="text:pacienteDpi"></span>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <b>Telefono del paciente</b><br />
+                                                            <span data-bind="text:pacienteTelefono"></span>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <b>Fecha de nacimiento</b><br />
+                                                            <span data-bind="text:pacienteFechaNacimiento"></span>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <b>Periodo</b><br />
+                                                            <span data-bind="text:periodo"></span>
+                                                        </div>
+                                                        <div class="col-md-12">
+                                                            <b>Observaciones</b><br />
+                                                            <span data-bind="text:observaciones"></span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12 text-right">
+                                            <button class="btn btn-warning" data-bind="click:pasoConsentimiento">
+                                                <i class="fas fa-arrow-alt-circle-left"></i> Anterior
+                                            </button>
+                                            <!-- Mostrar mensaje si no hay consentimiento -->
+                                            <p id="mensajeConsentimiento" class="text-danger" style="display: none;">
+                                                El formulario de consentimiento es obligatorio antes de finalizar la hospitalización.
+                                            </p>
+                                            <!-- Botón de finalizar condicionado por la visibilidad del botón de imprimir -->
+                                            <button id="btnFinalizar" class="btn btn-primary" data-bind="click:registrarHospitalizacion"
+                                                    style="display: none;">
+                                                Finalizar
+                                            </button>
+                                        </div>
+
+
+
+                                        <div class="card-body">
+                                            <div class="form-row">
+                                                <div class="col-md-12">
+                                                    <h5><b>Consentimiento</b></h5>
+                                                    <a class="btn btn-danger" target="_blank" style="color: white;" id="botonImprimir2">
+                                                        <i class="fas fa-print"></i>&nbsp; Imprimir Consentimiento
+                                                    </a>
+                                                    @* <!-- Verifica si la URL del archivo está presente y muestra el iframe -->
+                <!-- Si la URL está vacía, muestra un mensaje -->
+                <div data-bind="if: urlArchivoConsentimiento() && urlArchivoConsentimiento() !== ''">
+                    <iframe data-bind="attr: { src: urlArchivoConsentimiento }" width="100%" height="400px"
+                        style="zoom:3;"></iframe>
+                </div>
+                <div data-bind="if: !urlArchivoConsentimiento() || urlArchivoConsentimiento() === ''">
+                    <p class="text-danger">No hay archivo de consentimiento cargado.</p>
+                </div>  *@
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <script>
+
+                                        document.addEventListener("DOMContentLoaded", function () {
+                                            var habitacionId = '@habitacionId'; // El valor de habitacionId
+                                            var consultaId = '@consultaId'; // El valor de consultaId
+                                            var pacienteId = '@Model.PacienteId'; // El valor de pacienteId desde el modelo
+                                            var citaId = '@Model.CitaId'; // El valor de citaId desde el modelo
+
+                                            // Iniciar el intervalo para verificar cambios en pacienteId
+                                            var interval = setInterval(function () {
+                                                // Verificar si pacienteId es nulo o 0 y obtener el valor del input si es necesario
+                                                if (!pacienteId || pacienteId === "0") {
+                                                    pacienteId = document.querySelector('[data-bind="value:pacienteId"]').value; // Obtener el valor del input
+                                                }
+
+                                                // Solo actualizar el enlace si pacienteId ya tiene un valor válido
+                                                if (pacienteId && pacienteId !== "0") {
+                                                    // Generar la URL usando Url.Action con todos los parámetros, incluyendo citaId
+                                                    var newHref = '@Url.Action("CrearFormConsentimientoHospi", "Pacientes", new { HabitacionId = "__habitacionId__", PacienteId = "__pacienteId__", ConsultaId = "__consultaId__", CitaId = "__citaId__" })'
+                                                        .replace('__habitacionId__', habitacionId)
+                                                        .replace('__pacienteId__', pacienteId)
+                                                        .replace('__consultaId__', consultaId)
+                                                        .replace('__citaId__', citaId);
+
+                                                    // Reemplazar '&amp;' con '&' para obtener el formato correcto en la URL
+                                                    newHref = newHref.replace(/&amp;/g, '&');
+
+                                                    document.getElementById('irAhora').href = newHref;
+                                                    console.log(newHref);
+
+                                                    // Detener el intervalo una vez que el valor se haya actualizado
+                                                    clearInterval(interval);
+                                                }
+                                            }, 500); // Ejecutar cada 500ms
+
+                                            function consultarExistenciaConsentimiento() {
+                                                $.ajax({
+                                                    url: "/ConsentimientoHospi/ObtenerPorPacienteYHabitacion",
+                                                    method: "GET",
+                                                    data: {
+                                                        pacienteId: parseInt(pacienteId),
+                                                        habitacionId: parseInt(habitacionId)
+                                                    },
+                                                    success: function (dataResult) {
+                                                        let data = JSON.parse(dataResult);
+                                                        if (data.exitoso) {
+                                                            @* console.log(data.resultado); *@
+                                                                $('#mensajeConsulta').show(); // Muestra el mensaje de la consulta
+                                                            // Si existe el consentimiento, muestra el botón de impresión
+                                                            $('#botonImprimir').show();
+                                                            $('#botonImprimir2').show();
+                                                            $('#btnFinalizar').show(); // Mostrar el botón de finalizar
+                                                            $('#mensajeConsentimiento').hide(); // Ocultar mensaje
+                                                        } else {
+                                                            @* console.log(data.mensaje); *@
+                                                                $('#mensajeConsulta').hide();
+                                                            $('#botonImprimir').hide();
+                                                            $('#botonImprimir2').hide();
+                                                            $('#btnFinalizar').hide(); // Ocultar el botón de finalizar
+                                                            $('#mensajeConsentimiento').show(); // Mostrar mensaje
+                                                        }
+                                                    },
+                                                    error: function (dataError) {
+                                                        @* console.log(dataError); *@
+                                                    }
+                                                });
+                                            }
+
+                                            setInterval(function () {
+                                                consultarExistenciaConsentimiento();
+                                            }, 3000)
+
+                                            // Asignamos el manejador de eventos al botón de imprimir
+                                            $('#botonImprimir').on('click', function () {
+                                                // Aquí puedes obtener los valores de idPaciente e idHabitacion
+                                                // Ejemplo: obtener de algún lugar del DOM o de las variables actuales
+                                                const idPaciente = parseInt(pacienteId); // Reemplaza con el valor real
+                                                const idHabitacion = parseInt(habitacionId); // Reemplaza con el valor real
+
+                                                // Llamamos a la función que genera el PDF
+                                                generarPDFConsentimiento(idPaciente, idHabitacion);
+                                            });
+
+                                            // Asignamos el manejador de eventos al botón de imprimir
+                                            $('#botonImprimir2').on('click', function () {
+                                                // Aquí puedes obtener los valores de idPaciente e idHabitacion
+                                                // Ejemplo: obtener de algún lugar del DOM o de las variables actuales
+                                                const idPaciente = parseInt(pacienteId); // Reemplaza con el valor real
+                                                const idHabitacion = parseInt(habitacionId); // Reemplaza con el valor real
+
+                                                // Llamamos a la función que genera el PDF
+                                                generarPDFConsentimiento(idPaciente, idHabitacion);
+                                            });
+
+                                            function generarPDFConsentimiento(idPaciente, idHabitacion, idHospi = null) {
+                                                // La URL que abrirá la página para generar el PDF
+                                                const url = `/CrearPDF/GenerarPDFConsentimientoHospi?idPaciente=${idPaciente}&idHabitacion=${idHabitacion}&idHospi=${idHospi}`;
+
+                                                // Abrimos la URL en una nueva ventana para generar el PDF
+                                                window.open(url, "_blank");
+                                            }
+                                        });
+                                    </script>

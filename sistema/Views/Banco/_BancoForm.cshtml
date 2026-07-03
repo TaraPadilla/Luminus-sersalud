@@ -1,0 +1,34 @@
+﻿@model sistema.Models.BancoViewModel;
+
+@Html.HiddenFor(m => m.Id)
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <h5><b>Informaci&oacute;n del banco</b></h5>
+                        <hr />
+                    </div>
+                    <div class="col-md-12">
+                        <label>Nombre del banco</label>
+                        @Html.TextBoxFor(a => a.Nombre, new
+                        {
+                        @class = "form-control",
+                        @placeholder = "Nombre del banco"
+                        })
+                    </div>
+                    <div class="col-md-12">
+                        <label>Dirección</label>
+                        @Html.TextAreaFor(a => a.Direccion, new
+                        {
+                        @class = "form-control",
+                        @placeholder = "Dirección"
+                        })
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

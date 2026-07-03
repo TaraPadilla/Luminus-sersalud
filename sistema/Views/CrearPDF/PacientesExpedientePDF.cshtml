@@ -1,0 +1,397 @@
+@using Database.Shared.Models
+@model Paciente
+
+@{
+  Layout = "_HojaMembreteLayout";
+
+  ViewData["Title"] = "Expediente de paciente";
+  ViewData["MostrarLogo"] = true;
+  ViewData["MostrarNombreEmpresa"] = true;
+  ViewData["MostrarDireccion"] = true;
+  ViewData["MostrarTelefono"] = true;
+  ViewData["MostrarCorreoElectronico"] = true;
+  ViewData["MostrarServicios"] = true;
+  ViewData["MostrarEmergencias"] = true;
+
+  DateTime fecha = DateTime.Now;
+
+  string PacienteFechaRegistro = Model?.FechaRegistro == null
+  ? "-"
+  : Convert.ToDateTime(Model.FechaRegistro).ToString("yyyy/MM/dd");
+}
+
+<div class="doc">
+
+  <!-- Título principal usando ViewData["Title"] -->
+  <div class="doc-title">REPORTE - @ViewData["Title"]</div>
+  <div class="doc-underline"></div>
+
+  <!-- Fecha de emisión -->
+  <table class="table" style="border:0;">
+    <tbody>
+      <tr>
+        <td style="text-align:center; font-weight:700; border:0;">
+          Fecha y hora de emisión: @fecha.ToString("dd/MM/yyyy hh:mm tt")
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- DATOS DEL PACIENTE -->
+  <table class="section-title">
+    <tr>
+      <td class="bar"></td>
+      <td>DATOS DEL PACIENTE</td>
+    </tr>
+  </table>
+
+  <table class="block">
+    <tr>
+      <td style="padding:0;">
+        <table class="table twocol">
+          <colgroup>
+            <col />
+            <col />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Fecha de registro</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="kv-row">
+              <td><span class="value">@Model?.Nombre</span></td>
+              <td><span class="value">@PacienteFechaRegistro</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <!-- ANTECEDENTES FAMILIARES -->
+  <table class="section-title">
+    <tr>
+      <td class="bar"></td>
+      <td>ANTECEDENTES FAMILIARES</td>
+    </tr>
+  </table>
+
+  <table class="block">
+    <tr>
+      <td style="padding:0;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Antecedente</th>
+              <th>Madre</th>
+              <th>Abuela (M)</th>
+              <th>Abuelo (M)</th>
+              <th>Otros (M)</th>
+              <th>Padre</th>
+              <th>Abuela (P)</th>
+              <th>Abuelo (P)</th>
+              <th>Hermanos</th>
+              <th>Otros (P)</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (Model?.PatologiasPaciente != null && Model.PatologiasPaciente.Any())
+            {
+              foreach (var item in Model.PatologiasPaciente)
+              {
+                var madre = item.Madre ? "Sí" : "No";
+                var abm = item.AbuelaMaterna ? "Sí" : "No";
+                var abom = item.AbueloMaterno ? "Sí" : "No";
+                var otm = item.OtrosMaterno ? "Sí" : "No";
+                var padre = item.Padre ? "Sí" : "No";
+                var abp = item.AbuelaPaterna ? "Sí" : "No";
+                var abop = item.AbueloPaterno ? "Sí" : "No";
+                var herm = item.Hermanos ? "Sí" : "No";
+                var otp = item.OtrosPaterno ? "Sí" : "No";
+                <tr class="kv-row">
+                  <td><span class="value">@item?.TipoPatologia?.Tipo</span></td>
+                  <td><span class="value">@madre</span></td>
+                  <td><span class="value">@abm</span></td>
+                  <td><span class="value">@abom</span></td>
+                  <td><span class="value">@otm</span></td>
+                  <td><span class="value">@padre</span></td>
+                  <td><span class="value">@abp</span></td>
+                  <td><span class="value">@abop</span></td>
+                  <td><span class="value">@herm</span></td>
+                  <td><span class="value">@otp</span></td>
+                </tr>
+              }
+            }
+            else
+            {
+              <tr class="kv-row">
+                <td colspan="10"><span class="value">No hay antecedentes registrados</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <!-- OTRAS PREGUNTAS -->
+  <table class="section-title">
+    <tr>
+      <td class="bar"></td>
+      <td>OTRAS PREGUNTAS</td>
+    </tr>
+  </table>
+
+  <table class="block">
+    <tr>
+      <td style="padding:0;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Pregunta</th>
+              <th>Respuesta</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (Model?.PacientesPreguntasRegistro != null && Model.PacientesPreguntasRegistro.Any())
+            {
+              foreach (var item in Model.PacientesPreguntasRegistro)
+              {
+                <tr class="kv-row">
+                  <td><span class="value">@item?.PreguntaRegistro?.Pregunta</span></td>
+                  <td><span class="value">@item?.Respuesta</span></td>
+                </tr>
+              }
+            }
+            else
+            {
+              <tr class="kv-row">
+                <td colspan="2"><span class="value">No hay preguntas registradas</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <!-- HOSPITALIZACIONES -->
+  <table class="section-title">
+    <tr>
+      <td class="bar"></td>
+      <td>HOSPITALIZACIONES</td>
+    </tr>
+  </table>
+
+  <table class="block">
+    <tr>
+      <td style="padding:0;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Fecha inicial</th>
+              <th>Fecha final</th>
+              <th>Habitación</th>
+              <th>Finalizada</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (Model?.Hospitalizaciones != null && Model.Hospitalizaciones.Any())
+            {
+              foreach (var item in Model.Hospitalizaciones)
+              {
+                var fini = item.FechaInicio.ToString("yyyy/MM/dd HH:mm");
+                var ffin = item.FechaFin.ToString("yyyy/MM/dd HH:mm");
+                var fin = (item?.Finalizada ?? false) ? "Sí" : "No";
+                <tr class="kv-row">
+                  <td><span class="value">@fini</span></td>
+                  <td><span class="value">@ffin</span></td>
+                  <td><span class="value">@item?.Habitacion?.NombreNumeroHabitacion</span></td>
+                  <td><span class="value">@fin</span></td>
+                </tr>
+              }
+            }
+            else
+            {
+              <tr class="kv-row">
+                <td colspan="4"><span class="value">No hay hospitalizaciones registradas</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <!-- CONSULTAS -->
+  <table class="section-title">
+    <tr>
+      <td class="bar"></td>
+      <td>CONSULTAS</td>
+    </tr>
+  </table>
+
+  <table class="block">
+    <tr>
+      <td style="padding:0;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Fecha y hora de inicio</th>
+              <th>Costo de consulta</th>
+              <th>Especialidad</th>
+              <th>Servicios</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (Model?.Citas != null && Model.Citas.Any())
+            {
+              foreach (var c in Model.Citas)
+              {
+                var consulta = c?.Consultas?.FirstOrDefault();
+                if (consulta != null)
+                {
+                  var f = consulta.FechaYHoraInicioConsulta.ToString("yyyy/MM/dd HH:mm");
+                  var costo = consulta.CostoConsulta.ToString("0.00");
+                  <tr class="kv-row">
+                    <td><span class="value">@f</span></td>
+                    <td><span class="value">@costo</span></td>
+                    <td><span class="value">@consulta?.Citas?.EspecialidadText</span></td>
+                    <td><span class="value">@consulta?.Citas?.ServicioText</span></td>
+                  </tr>
+                }
+              }
+            }
+            else
+            {
+              <tr class="kv-row">
+                <td colspan="4"><span class="value">No hay consultas registradas</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <!-- CAMBIO DE FASES -->
+  <table class="section-title">
+    <tr>
+      <td class="bar"></td>
+      <td>CAMBIO DE FASES</td>
+    </tr>
+  </table>
+
+  <table class="block">
+    <tr>
+      <td style="padding:0;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Fecha de inicio</th>
+              <th>Fase</th>
+              <th>Finalizada</th>
+              <th>Fecha de finalización</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (Model?.PacientesFasesTratamiento != null && Model.PacientesFasesTratamiento.Any())
+            {
+              foreach (var cambioFase in Model.PacientesFasesTratamiento)
+              {
+                var faseFinalizada = (cambioFase?.FaseFinalizada ?? false) ? "Sí" : "No";
+                var fin = cambioFase?.FechaFinalizacionFase == null
+                ? "-"
+                : Convert.ToDateTime(cambioFase.FechaFinalizacionFase).ToString("yyyy/MM/dd");
+                <tr class="kv-row">
+                  <td><span class="value">@cambioFase?.FechaInicioFase.ToString("yyyy/MM/dd")</span></td>
+                  <td><span class="value">@cambioFase?.FaseTratamiento?.NombreFase</span></td>
+                  <td><span class="value">@faseFinalizada</span></td>
+                  <td><span class="value">@fin</span></td>
+                </tr>
+              }
+            }
+            else
+            {
+              <tr class="kv-row">
+                <td colspan="4"><span class="value">No hay registros de cambio de fase</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <!-- SEGUIMIENTOS NUTRICIONALES -->
+  <table class="section-title">
+    <tr>
+      <td class="bar"></td>
+      <td>SEGUIMIENTOS NUTRICIONALES</td>
+    </tr>
+  </table>
+
+  <table class="block">
+    <tr>
+      <td style="padding:0;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Peso</th>
+              <th>IMC</th>
+              <th>PGC</th>
+              <th>Cuello</th>
+              <th>Busto</th>
+              <th>Cintura/Abdomen</th>
+              <th>Cadera</th>
+              <th>Muslo</th>
+              <th>Brazo</th>
+              <th>Muñeca</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (Model?.PacientesSeguimientosNutricionales != null && Model.PacientesSeguimientosNutricionales.Any())
+            {
+              foreach (var s in Model.PacientesSeguimientosNutricionales)
+              {
+                string peso = s?.Peso?.ToString() ?? "-";
+                string imc = s?.IMC?.ToString() ?? "-";
+                string pgc = s?.PGC?.ToString() ?? "-";
+                string cuello = s?.Cuello?.ToString() ?? "-";
+                string busto = s?.Busto?.ToString() ?? "-";
+                string ca = s?.CinturaAbdomen?.ToString() ?? "-";
+                string cadera = s?.Cadera?.ToString() ?? "-";
+                string muslo = s?.Muslo?.ToString() ?? "-";
+                string brazo = s?.Brazo?.ToString() ?? "-";
+                string muneca = s?.Muñeca?.ToString() ?? "-";
+                <tr class="kv-row">
+                  <td><span class="value">@s?.FechaText</span></td>
+                  <td><span class="value">@peso</span></td>
+                  <td><span class="value">@imc</span></td>
+                  <td><span class="value">@pgc</span></td>
+                  <td><span class="value">@cuello</span></td>
+                  <td><span class="value">@busto</span></td>
+                  <td><span class="value">@ca</span></td>
+                  <td><span class="value">@cadera</span></td>
+                  <td><span class="value">@muslo</span></td>
+                  <td><span class="value">@brazo</span></td>
+                  <td><span class="value">@muneca</span></td>
+                </tr>
+              }
+            }
+            else
+            {
+              <tr class="kv-row">
+                <td colspan="11"><span class="value">No hay seguimientos nutricionales registrados</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+</div>

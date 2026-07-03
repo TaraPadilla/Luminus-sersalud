@@ -1,0 +1,334 @@
+@* @{
+
+Layout = "_HojaLayout";
+
+DateTime fecha = DateTime.Now;
+decimal totalVenta = 0.00m;
+
+decimal totalVentaServ = 0.00m;
+
+decimal totalCompra = 0.00m;
+
+decimal totalIngreso = 0.00m;
+
+decimal totalEgreso = 0.00m;
+
+}
+
+@model sistema.Models.CajaClinicaBaseViewModel
+
+
+
+
+                       <div class="text-right" style="font-size: 12px;">
+                            <label class=""><strong>Fecha y Hora de Emision: </strong>@fecha</label> &nbsp; &nbsp;
+                            <br/>   
+                        </div>
+              <div class="form-row">
+    <div class="col-md-12">
+                <h4>Ventas</h4>
+                <div class="form-row">
+                    <div class="col-md-12">
+
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha Venta</th>
+                                        <th>Comprobante</th>
+                                        <th>Descripción</th>
+                                        <th>Paciente</th>
+                                        <th>Vendedor</th>
+                                        <th>Total</th>
+
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.CajaClinica.DetalleCajaClinicas.Where(a => a.Venta != null))
+
+
+
+                                    {
+                                        <tr>
+                                            <td>@item.Venta.FechaVenta</td>
+                                            <td>
+                                                @if (String.IsNullOrEmpty(item.Venta.NoComprobante))
+
+
+
+                                                {
+                                                    <span>CF</span>
+
+                                                }
+
+                                                else
+
+                                                {
+                                                    <span>@item.Venta.NoComprobante</span>
+
+                                                }
+                                            </td>
+                                            <td>@item.Descripcion</td>
+                                            <td>@item.Venta.Paciente.Nombre</td>
+                                            <td>@item.Venta.Empleado.Nombre</td>
+                                            <td>Q @item.Ingreso</td>
+                                        </tr>
+
+                                        totalVenta += item.Ingreso;
+
+                                    }
+                                </tbody>
+                            </table>
+                 
+
+                    </div>
+                </div>
+                <div class="text-right" style="font-size: 17px;">
+                    <span>_____________________</span><br/>
+                    Q <span>@totalVenta</span>
+                </div> 
+          
+    </div>
+</div>
+
+
+<div class="form-row">
+    <div class="col-md-12">
+                <h4>Compras</h4>
+                <div class="form-row">
+                    <div class="col-md-12">
+                 
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha Compra</th>
+                                        <th>Comprobante</th>
+                                        <th>Descripción</th>
+                                        <th>Proveedor</th>
+                                        <th>Vendedor</th>
+                                        <th>Total</th>
+
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.CajaClinica.DetalleCajaClinicas.Where(a => a.Compra != null))
+
+
+
+                                    {
+                                        <tr>
+                                            <td>@item.Compra.FechaCompra</td>
+                                            <td>
+                                                @if (String.IsNullOrEmpty(item.Compra.NoComprobante))
+
+
+
+                                                {
+                                                    <span>CF</span>
+
+                                                }
+
+                                                else
+
+                                                {
+                                                    <span>@item.Compra.NoComprobante</span>
+
+                                                }
+                                            </td>
+                                            <td>@item.Descripcion</td>
+                                            <td>@item.Compra.Proveedor.Nombre</td>
+                                            <td>@item.Compra.Empleado.Nombre</td>
+                                            <td>Q @item.Gasto</td>
+                                        </tr>
+
+                                        totalCompra += item.Gasto;
+
+                                    }
+                                </tbody>
+                            </table>
+                  
+
+                    </div>
+                </div>
+                     <div class="text-right" style="font-size: 17px;">
+                    <span>_____________________</span><br/>
+                    Q <span>@totalCompra</span>
+                </div>
+    </div>
+</div>
+
+<div class="form-row">
+    <div class="col-md-12">
+                <h4>Venta de Servicios</h4>
+                <div class="form-row">
+                    <div class="col-md-12">
+            
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha Venta</th>
+                                        <th>Comprobante</th>
+                                        <th>Descripción</th>
+                                        <th>Cliente</th>
+                                        <th>Vendedor</th>
+                                        <th>Total</th>
+
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.CajaClinica.DetalleCajaClinicas.Where(a => a.VentaServicio != null))
+
+
+
+                                    {
+                                        <tr>
+                                            <td>@item.VentaServicio.FechaVenta</td>
+                                            <td>
+                                                @if (String.IsNullOrEmpty(item.VentaServicio.NoComprobante))
+
+
+
+                                                {
+                                                    <span>CF</span>
+
+                                                }
+
+                                                else
+
+                                                {
+                                                    <span>@item.VentaServicio.NoComprobante</span>
+
+                                                }
+                                            </td>
+                                            <td>@item.Descripcion</td>
+                                            @* <td>@item.VentaServicio.Cliente.Nombre</td> 
+                                            <td>@item.VentaServicio.Empleado.Nombre</td>
+                                            <td>Q @item.Gasto</td>
+                                        </tr>
+
+                                        totalVentaServ += item.Ingreso;
+
+                                    }
+                                </tbody>
+                            </table>
+
+                    </div>
+                </div>
+                 <div class="text-right" style="font-size: 17px;">
+                    <span>_____________________</span><br/>
+                    Q <span>@totalVentaServ</span>
+                </div>
+    </div>
+</div>
+
+<div class="form-row">
+    <div class="col-md-6">
+                <h4>Ingresos</h4>
+                <div class="form-row">
+                    <div class="col-md-12">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha Ingreso</th>
+                                        <th>Descripción</th>
+                                        <th>Total</th>
+
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.CajaClinica.DetalleCajaClinicas.Where(a => a.Ingreso != 0.00m && a.Venta==null && a.VentaServicio==null))
+
+
+
+                                    {
+                                        <tr>
+                                            <td>@item.Fecha</td>
+                                            <td>@item.Descripcion</td>
+                                            <td>Q @item.Ingreso</td>
+                                        </tr>
+
+                                        totalIngreso += item.Ingreso;
+
+                                    }
+                                </tbody>
+                            </table>
+
+                    </div>
+                </div>
+                    <div class="text-right" style="font-size: 17px;">
+                    <span>_____________________</span><br/>
+                    Q <span>@totalIngreso</span>
+                </div>
+    </div>
+     <div class="col-md-6">
+                <h4>Egresos</h4>
+                <div class="form-row">
+                    <div class="col-md-12">
+                            <table class="table ">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha Venta</th>
+                                        <th>Descripción</th>
+                                        <th>Total</th>
+
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.CajaClinica.DetalleCajaClinicas.Where(a => a.Gasto != 0.00m && a.Compra == null))
+
+
+
+                                    {
+                                        <tr>
+                                            <td>@item.Fecha</td>
+                                            <td>@item.Descripcion</td>
+                                            <td>Q @item.Gasto</td>
+                                        </tr>
+
+                                        totalEgreso += item.Gasto;
+
+                                    }
+                                </tbody>
+                            </table>
+
+                    </div>
+                </div>
+                    <div class="text-right" style="font-size: 17px;">
+                    <span>_____________________</span><br/>
+                    Q <span>@totalEgreso</span>
+                </div>
+    </div>
+</div>
+
+
+@{
+
+    decimal sumaing = totalVenta + totalVentaServ + totalIngreso;
+    decimal sumaeg = totalCompra + totalEgreso;
+    decimal res = sumaing - sumaeg + Model.CajaClinica.MontoApertura;
+}
+
+<div class="form-row">
+    <div class="col-md-12">
+                <div class="text-right" style="font-size: 17px;">
+                    <span>Monto Apertura:</span>
+                    Q <span>@Model.CajaClinica.MontoApertura</span>
+                </div>
+                <div class="text-right" style="font-size: 17px;">
+                    <span>Total Egresos:</span>
+                    Q <span>@sumaeg</span>
+                </div>
+                <div class="text-right" style="font-size: 17px;">
+                    <span>Total Ingresos</span>
+                    Q <span>@sumaing</span>
+                </div>
+                <div class="text-right" style="font-size: 17px;">
+                    <span>Total Cierre:</span>
+                    Q <span>@res</span>
+                </div>
+    </div>
+</div>
+
+@section Scripts
+{
+<script src="~/js/FuncionesCaja.js"></script>
+}*@

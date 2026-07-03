@@ -1,0 +1,856 @@
+@model sistema.Models.ConsultasViewModel
+
+<br />
+<br>
+<div class="card">
+    <div class="card-body">
+        @if (!Model.HabilitarEdicion)
+        {
+            <div class="form-row">
+                <div class="col-md-12">
+                    <button type="submit" class="btn btn-success btn-lg text-white" id="generarObstetricaBiometriaPDFBtn">
+                        Biometria PDF &nbsp;<i class="fas fa-arrow-down"></i>
+                    </button>
+                </div>
+            </div>
+            <br>
+        }
+
+        <div class="form-group">
+            <label for="biometriaSelect"><b>Seleccionar número de formularios de biometría</b></label>
+            <select id="biometriaSelect" class="form-control">
+                <option value="1">1 Biometría</option>
+                <option value="2">2 Biometrías</option>
+                <option value="3">3 Biometrías</option>
+                <option value="4">4 Biometrías</option>
+            </select>
+        </div>
+        <div class="form-row biometria">
+            <div class="col-md-12">
+                <h5><b>Biometria</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">LCC</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaRlc, new
+                    {
+                        @class = "form-control dato-consulta",
+                                        @placeholder
+                                        = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">SG</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaSg, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder
+                                        = " "
+                                        })
+                </div>
+            </div>
+
+            @*MANANTIALES no utiliza este campo*@
+            @* <div class="col-md-2">
+            <div class="position-relative form-group">
+            <label class="">W</label>
+            @Html.TextBoxFor(a => a.ObsteBiometriaW, new { @class = "form-control", @placeholder = " " })
+            </div>
+            </div> *@
+
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">DBP</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaDbp, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder
+                                        = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">LF</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaLf, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder
+                                        = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">AC</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaAc, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder
+                                        = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">HC</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaHc, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder
+                                        = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">FCF</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaFcf, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder
+                                        = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">ILA (cms)</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaIla, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder
+                                        = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Placenta</b>
+                    <select asp-for="ObsteBiometriaPlacenta" class="form-control dato-consulta">
+                        <option value=""></option>
+                        <option value="CORPORIA ANTERIOR">CORPORIA ANTERIOR</option>
+                        <option value="CORPORIA POSTERIOR">CORPORIA POSTERIOR</option>
+                        <option value="FUNDICA">FUNDICA</option>
+                        <option value="DESPRENDIMIENTO PLACENTARIO">DESPRENDIMIENTO PLACENTARIO</option>
+                        <option value="PLACENTA PREVIA ">PLACENTA PREVIA </option>
+                        <option value="PLACENTA MARGINAL">PLACENTA MARGINAL</option>
+
+                        @* <option value="Previa">Previa</option> *@
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Grado</b>
+                    <select asp-for="ObsteBiometriaGrado" class="form-control dato-consulta">
+                        <option value="0">0</option>
+                        <option value="I">I</option>
+                        <option value="II">II</option>
+                        <option value="III">III</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Malformaciones Fetales</b>
+                    <select asp-for="ObsteBiometriaMalformaciones" class="form-control dato-consulta">
+                        <option value="No Visibles">No Visibles</option>
+                        <option value="SI">SI</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Peso (lb)</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaPeso, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">EG +/- 2 Semanas</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaEg, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder
+                                        = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Fecha Probable del Parto</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaFechaParto, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Sexo</b>
+                    <select asp-for="ObsteBiometriaSexo" class="form-control dato-consulta">
+                        <option value=""></option>
+                        <option value="Masculino">Masculino</option>
+                        <option value="Femenino">Femenino</option>
+                    </select>
+                </div>
+            </div>
+
+
+
+
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Comentario</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaComentario, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder = " "
+                                        })
+                </div>
+            </div>
+        </div>
+        <div class="form-row biometria2">
+            <div class="col-md-12">
+                <h5><b>Biometria #2</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">LCC</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaRlc2, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">SG</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaSg2, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder
+                                        = " "
+                                        })
+                </div>
+            </div>
+
+            @*MANANTIALES no utiliza este campo*@
+            @* <div class="col-md-2">
+            <div class="position-relative form-group">
+            <label class="">W</label>
+            @Html.TextBoxFor(a => a.ObsteBiometriaW, new { @class = "form-control", @placeholder = " " })
+            </div>
+            </div> *@
+
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">DBP</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaDbp2, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">LF</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaLf2, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder
+                                        = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">AC</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaAc2, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder
+                                        = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">HC</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaHc2, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder
+                                        = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">FCF</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaFcf2, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">ILA (cms)</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaIla2, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Placenta</b>
+                    <select asp-for="ObsteBiometriaPlacenta2" class="form-control dato-consulta">
+                        <option value=""></option>
+                        <option value="CORPORIA ANTERIOR">CORPORIA ANTERIOR</option>
+                        <option value="CORPORIA POSTERIOR">CORPORIA POSTERIOR</option>
+                        <option value="FUNDICA">FUNDICA</option>
+                        <option value="DESPRENDIMIENTO PLACENTARIO">DESPRENDIMIENTO PLACENTARIO</option>
+                        @* <option value="Previa">Previa</option> *@
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Grado</b>
+                    <select asp-for="ObsteBiometriaGrado2" class="form-control dato-consulta">
+                        <option value="0">0</option>
+                        <option value="I">I</option>
+                        <option value="II">II</option>
+                        <option value="III">III</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Malformaciones Fetales</b>
+                    <select asp-for="ObsteBiometriaMalformaciones2" class="form-control dato-consulta">
+                        <option value="No Visibles">No Visibles</option>
+                        <option value="SI">SI</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Peso (lb)</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaPeso2, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">EG +/- 2 Semanas</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaEg2, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder
+                                        = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Fecha Probable del Parto</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaFechaParto2, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Sexo</b>
+                    <select asp-for="ObsteBiometriaSexo2" class="form-control dato-consulta">
+                        <option value=""></option>
+                        <option value="Masculino">Masculino</option>
+                        <option value="Femenino">Femenino</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Comentario</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaComentario2, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder = " "
+                                        })
+                </div>
+            </div>
+        </div>
+        <div class="form-row biometria3">
+            <div class="col-md-12">
+                <h5><b>Biometria #3</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">LCC</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaRlc3, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">SG</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaSg3, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder
+                                        = " "
+                                        })
+                </div>
+            </div>
+
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">DBP</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaDbp3, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">LF</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaLf3, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder
+                                        = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">AC</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaAc3, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder
+                                        = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">HC</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaHc3, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder
+                                        = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">FCF</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaFcf3, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">ILA (cms)</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaIla3, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Placenta</b>
+                    <select asp-for="ObsteBiometriaPlacenta3" class="form-control dato-consulta">
+                        <option value=""></option>
+                        <option value="CORPORIA ANTERIOR">CORPORIA ANTERIOR</option>
+                        <option value="CORPORIA POSTERIOR">CORPORIA POSTERIOR</option>
+                        <option value="FUNDICA">FUNDICA</option>
+                        <option value="DESPRENDIMIENTO PLACENTARIO">DESPRENDIMIENTO PLACENTARIO</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Grado</b>
+                    <select asp-for="ObsteBiometriaGrado3" class="form-control dato-consulta">
+                        <option value="0">0</option>
+                        <option value="I">I</option>
+                        <option value="II">II</option>
+                        <option value="III">III</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Malformaciones Fetales</b>
+                    <select asp-for="ObsteBiometriaMalformaciones3" class="form-control dato-consulta">
+                        <option value="No Visibles">No Visibles</option>
+                        <option value="SI">SI</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Peso (lb)</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaPeso3, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">EG +/- 2 Semanas</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaEg3, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder
+                                        = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Fecha Probable del Parto</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaFechaParto3, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Sexo</b>
+                    <select asp-for="ObsteBiometriaSexo3" class="form-control dato-consulta">
+                        <option value=""></option>
+                        <option value="Masculino">Masculino</option>
+                        <option value="Femenino">Femenino</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Comentario</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaComentario3, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder = " "
+                                        })
+                </div>
+            </div>
+        </div>
+        <div class="form-row biometria4">
+            <div class="col-md-12">
+                <h5><b>Biometria #4</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">LCC</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaRlc4, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">SG</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaSg4, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder
+                                        = " "
+                                        })
+                </div>
+            </div>
+
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">DBP</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaDbp4, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">LF</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaLf4, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder
+                                        = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">AC</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaAc4, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder
+                                        = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">HC</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaHc4, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder
+                                        = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">FCF</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaFcf4, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">ILA (cms)</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaIla4, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Placenta</b>
+                    <select asp-for="ObsteBiometriaPlacenta4" class="form-control dato-consulta">
+                        <option value=""></option>
+                        <option value="CORPORIA ANTERIOR">CORPORIA ANTERIOR</option>
+                        <option value="CORPORIA POSTERIOR">CORPORIA POSTERIOR</option>
+                        <option value="FUNDICA">FUNDICA</option>
+                        <option value="DESPRENDIMIENTO PLACENTARIO">DESPRENDIMIENTO PLACENTARIO</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Grado</b>
+                    <select asp-for="ObsteBiometriaGrado4" class="form-control dato-consulta">
+                        <option value="0">0</option>
+                        <option value="I">I</option>
+                        <option value="II">II</option>
+                        <option value="III">III</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Malformaciones Fetales</b>
+                    <select asp-for="ObsteBiometriaMalformaciones4" class="form-control dato-consulta">
+                        <option value="No Visibles">No Visibles</option>
+                        <option value="SI">SI</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Peso (lb)</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaPeso4, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">EG +/- 2 Semanas</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaEg4, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder
+                                        = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Fecha Probable del Parto</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaFechaParto4, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder = " "
+                                        })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Sexo</b>
+                    <select asp-for="ObsteBiometriaSexo4" class="form-control dato-consulta">
+                        <option value=""></option>
+                        <option value="Masculino">Masculino</option>
+                        <option value="Femenino">Femenino</option>
+                    </select>
+                </div>
+            </div>
+
+
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Comentario</b>
+                    @Html.TextBoxFor(a => a.ObsteBiometriaComentario4, new
+                                        {
+                        @class = "form-control dato-consulta",
+                                        @placeholder = " "
+                                        })
+                </div>
+            </div>
+        </div>
+
+
+
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Biometria (historial)</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-12 text-primary texto-cargando-historial" style="display:none">
+                Cargando historial...
+            </div>
+            <div class="col-md-12 text-danger texto-error-cargando-historial" style="display:none">
+                Error de servidor y/o conexion. <a href="#" data-bind="click:consultarHistorialConsultas">Reintentar</a>
+            </div>
+            <!--ko foreach:historialConsultas-->
+            <div class="col-md-12" style="background-color:lightgray"><b>Fecha: </b><span data-bind="text:Fecha"></span>
+            </div>
+            <div class="col-md-2"><b>LCC:</b><br /><span data-bind="text:ObsteBiometriaRlc"></span></div>
+            <div class="col-md-2"><b>SG:</b><br /><span data-bind="text:ObsteBiometriaSg"></span></div>
+            <div class="col-md-2"><b>DBP:</b><br /><span data-bind="text:ObsteBiometriaDbp"></span></div>
+            <div class="col-md-2"><b>HC:</b><br /><span data-bind="text:ObsteBiometriaHc"></span></div>
+            <div class="col-md-2"><b>AC:</b><br /><span data-bind="text:ObsteBiometriaAc"></span></div>
+            <div class="col-md-2"><b>LF:</b><br /><span data-bind="text:ObsteBiometriaLf"></span></div>
+            <div class="col-md-2"><b>EG:</b><br /><span data-bind="text:ObsteBiometriaEg"></span></div>
+            <div class="col-md-2"><b>FCF:</b><br /><span data-bind="text:ObsteBiometriaFcf"></span></div>
+            <div class="col-md-2"><b>Placenta:</b><br /><span data-bind="text:ObsteBiometriaPlacenta"></span></div>
+            <div class="col-md-2"><b>Grado:</b><br /><span data-bind="text:ObsteBiometriaGrado"></span></div>
+            <div class="col-md-2"><b>ILA:</b><br /><span data-bind="text:ObsteBiometriaIla"></span></div>
+            <div class="col-md-2"><b>Malformaciones:</b><br /><span
+                    data-bind="text:ObsteBiometriaMalformaciones"></span></div>
+            <div class="col-md-2"><b>Peso:</b><br /><span data-bind="text:ObsteBiometriaPeso"></span></div>
+            <div class="col-md-2"><b>Sexo:</b><br /><span data-bind="text:ObsteBiometriaSexo"></span></div>
+            <div class="col-md-2"><b>FPP:</b><br /><span data-bind="text:ObsteBiometriaFechaParto"></span></div>
+            <div class="col-md-2"><b>Comentario:</b><br /><span data-bind="text:ObsteBiometriaComentario"></span></div>
+            @*MANANTIALES NO utiliza el campo W*@
+            @* <div class="col-md-2"><b>W:</b><br /><span data-bind="text:ObsteBiometriaW"></span></div> *@
+            <!--/ko-->
+            <!--ko if:historialConsultas().length==0-->
+            <div class="col-md-12">
+                No hay registro de consultas anteriores
+            </div>
+            <!--/ko-->
+        </div>
+    </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        // Establece el valor del select al cargar la página
+        $("#biometriaSelect").val(@Model.NumeroBebes);
+
+        // Manejo del evento change en el select
+        document.getElementById('biometriaSelect').addEventListener('change', function () {
+            var selectedValue = this.value;
+
+            // Oculta todas las biometrias
+            document.querySelector('.biometria').style.display = 'none';
+            document.querySelector('.biometria2').style.display = 'none';
+            document.querySelector('.biometria3').style.display = 'none';
+            document.querySelector('.biometria4').style.display = 'none';
+
+            // Muestra la cantidad seleccionada
+            if (selectedValue >= 1) {
+                document.querySelector('.biometria').style.display = '';
+            }
+            if (selectedValue >= 2) {
+                document.querySelector('.biometria2').style.display = '';
+            }
+            if (selectedValue >= 3) {
+                document.querySelector('.biometria3').style.display = '';
+            }
+            if (selectedValue == 4) {
+                document.querySelector('.biometria4').style.display = '';
+            }
+        });
+
+        // Ejecuta el evento change al cargar la página para mostrar la biometría seleccionada por defecto
+        document.getElementById('biometriaSelect').dispatchEvent(new Event('change'));
+
+        // Maneja el clic del botón para generar los PDFs
+        document.getElementById("generarObstetricaBiometriaPDFBtn").addEventListener("click", function () {
+            var numeroBebes = @Model.NumeroBebes; // Obtener el valor de NumeroBebes desde el modelo
+            var consultaId = @Model.ConsultaId;
+
+            if (numeroBebes >= 1) {
+                generarObstetricaBiometriaPDF(consultaId);
+            }
+            if (numeroBebes >= 2) {
+                generarObstetricaBiometriaPDF2(consultaId);
+            }
+            if (numeroBebes >= 3) {
+                generarObstetricaBiometriaPDF3(consultaId);
+            }
+            if (numeroBebes == 4) {
+                generarObstetricaBiometriaPDF4(consultaId);
+            }
+        });
+    });
+</script>

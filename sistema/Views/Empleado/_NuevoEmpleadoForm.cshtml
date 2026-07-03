@@ -1,0 +1,514 @@
+@using sistema.Models
+@using Database.Shared.Models
+@model EmpleadoBaseViewModel
+
+<form asp-controller="Empleado" asp-action="Nuevo" method="post">
+    <input type="hidden" name="TipoEmpleadoFormulario" value="Empleado" data-bind="value: TipoEmpleadoFormulario" />
+
+    <div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel">
+        <div class="main-card mb-3 card">
+            <h5 class="card-header">Nuevo Empleado</h5>
+            <div class="card-body">
+
+                <h5 class="card-title text-primary">Nombre y Apellido</h5>
+                <div class="form-row">
+                    <div class="col-md-6">
+                        <div class="position-relative form-group">
+                            <label class="font-weight-bold">Nombre<span class="text-danger"> * Obligatorio</span></label>
+                            @Html.TextBoxFor(a => a.Empleado.Nombre, new { @class = "form-control", placeholder = "Nombre Empleado", data_bind = "value: Nombre" })
+                            @Html.ValidationMessageFor(a => a.Empleado.Nombre, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="position-relative form-group">
+                            <label class="font-weight-bold">Apellido<span class="text-danger"> * Obligatorio</span></label>
+                            @Html.TextBoxFor(a => a.Empleado.Apellido, new { @class = "form-control", placeholder = "Apellido", data_bind = "value: Apellido" })
+                            @Html.ValidationMessageFor(a => a.Empleado.Apellido, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+
+                <h5 class="card-title text-primary mt-3">Datos De Contacto</h5>
+                <div class="form-row">
+                    <div class="col-sm-12 col-md-4 col-lg-4">
+                        <div class="position-relative form-group">
+                            <label class="font-weight-bold">Telefono<span class="text-danger"> * Obligatorio</span></label>
+                            @Html.TextBoxFor(a => a.Empleado.Telefono, new { type = "phone", @class = "form-control", placeholder = "Telefono", data_bind = "value: Telefono" })
+                            @Html.ValidationMessageFor(a => a.Empleado.Telefono, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-sm-12 col-md-4 col-lg-4">
+                        <div class="position-relative form-group">
+                            <label class="font-weight-bold">Telefono 2</label>
+                            @Html.TextBoxFor(a => a.Empleado.Telefono_2, new { type = "phone", @class = "form-control", placeholder = "Telefono 2", data_bind = "value: Telefono_2" })
+                            @Html.ValidationMessageFor(a => a.Empleado.Telefono_2, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-sm-12 col-md-4 col-lg-4">
+                        <div class="position-relative form-group">
+                            <label class="font-weight-bold">Email<span class="text-danger"> * Obligatorio</span></label>
+                            @Html.TextBoxFor(a => a.Empleado.Email, new { type = "text", @class = "form-control", placeholder = "Email", data_bind = "value: Email" })
+                            @Html.ValidationMessageFor(a => a.Empleado.Email, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+
+                <h5 class="card-title text-primary mt-3">Datos Personales y Laborales</h5>
+                <div class="form-row">
+                    <div class="col-sm-6 col-md-3">
+                        <div class="position-relative form-group">
+                            <label class="font-weight-bold">Edad</label>
+                            @Html.TextBoxFor(a => a.Empleado.Edad, new { type = "number", @class = "form-control", placeholder = "Edad", data_bind = "value: Edad" })
+                            @Html.ValidationMessageFor(a => a.Empleado.Edad, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <div class="position-relative form-group">
+                            <label class="font-weight-bold">Dpi<span class="text-danger"> * Obligatorio</span></label>
+                            @Html.TextBoxFor(a => a.Empleado.Dpi, new { type = "text", step = "any", @class = "form-control", placeholder = "Dpi", data_bind = "value: Dpi" })
+                            @Html.ValidationMessageFor(a => a.Empleado.Dpi, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <div class="position-relative form-group">
+                            <label class="font-weight-bold">Nit<span class="text-danger"> * Obligatorio</span></label>
+                            @Html.TextBoxFor(a => a.Empleado.Nit, new { type = "text", @class = "form-control", placeholder = "Nit", data_bind = "value: Nit" })
+                            @Html.ValidationMessageFor(a => a.Empleado.Nit, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <div class="position-relative form-group">
+                            <label class="font-weight-bold">Estado Civil</label>
+                            <select class="form-control select2bs4" style="width: 100%;" asp-for="Empleado.EstadoCivil" data-bind="value: EstadoCivil">
+                                <option value="Soltero/a">Soltero/a</option>
+                                <option value="Casado/a">Casado/a</option>
+                                <option value="Viudo/a">Viudo/a</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="position-relative form-group">
+                            <label class="font-weight-bold">Direccion</label>
+                            @Html.TextBoxFor(a => a.Empleado.Direccion, new { @class = "form-control", placeholder = "Direccion", data_bind = "value: Direccion" })
+                            @Html.ValidationMessageFor(a => a.Empleado.Direccion, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="col-sm-12 col-md-4">
+                        <div class="position-relative form-group">
+                            <label class="font-weight-bold">Tipo de contrato</label>
+                            <select class="form-control select2bs4" style="width: 100%;" asp-for="Empleado.TipoContrato" data-bind="value: TipoContrato">
+                                <option value="Fijo">Fijo</option>
+                                <option value="Eventual">Eventual</option>
+                                <option value="Vacacionista">Vacacionista</option>
+                                <option value="Indefinido">Indefinido</option>
+                                <option value="Mixto">Mixto</option>
+                                <option value="ServiciosProfesionalesEIndependientes">Servicios Profesionales e Independientes</option>
+                                <option value="SinContrato">Sin Contrato</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-12 col-md-4">
+                        <div class="position-relative form-group">
+                            <label class="font-weight-bold">Salario</label>
+                            @Html.TextBoxFor(a => a.Empleado.Salario, new { @class = "form-control", placeholder = "Salario", data_bind = "value: Salario" })
+                            @Html.ValidationMessageFor(a => a.Empleado.Salario, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+
+                    <div class="col-sm-12 col-md-4">
+                        <div class="position-relative form-group">
+                            <label class="font-weight-bold">Telefono de la clinica</label>
+                            @Html.TextBoxFor(a => a.Empleado.TelefonoClinica, new { type = "number", @class = "form-control", placeholder = "Telefono de la clinica", data_bind = "value: TelefonoClinica" })
+                            @Html.ValidationMessageFor(a => a.Empleado.TelefonoClinica, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="col-md-4">
+                        <div class="position-relative form-group">
+                            <label class="font-weight-bold">Sucursal</label>
+                            <select class="form-control" asp-items="Model.ListaSucursales" asp-for="Empleado.SucursalId" data-bind="value: SucursalId"></select>
+                            @Html.ValidationMessageFor(a => a.Empleado.SucursalId, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="position-relative form-group">
+                            <label class="font-weight-bold">Tipo Empleado</label>
+                            <select class="form-control" asp-for="Empleado.TipoEmpleado" data-bind="value: TipoEmpleado">
+                                <option value="Empleado">Empleado</option>
+                                <option value="Administrador">Administrador</option>
+                                <option value="Especialista ">Especialista </option>
+                                <option value="Licenciado ">Licenciado </option>
+                                <option value="Técnicos">Técnicos</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="position-relative form-group">
+                            <label class="font-weight-bold">Jornada de Trabajo <span class="text-danger"> * Obligatorio</span></label>
+                            <select class="form-control" asp-for="Empleado.JornadaTrabajo" data-bind="value: JornadaTrabajo">
+                                <option value="">Seleccione una opción</option>
+                                <option value="Diurna">Diurna</option>
+                                <option value="Mixta">Mixta</option>
+                                <option value="Nocturna">Nocturna</option>
+                                <option value="No aplica">No está sujeto a jornada</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- =========================
+                     ✅ Ubicación organizacional (corregido)
+                     - Alineado a NuevoEmpleadoVM.js:
+                       * options: DepartamentosOrg / UnidadesOrg / SeccionesOrg
+                       * optionsText/optionsValue: 'nombre' / 'id'
+                     - NO rompe lógica actual (solo binding KO)
+                     ========================= -->
+                <h5 class="card-title text-primary mt-3">Ubicación Organizacional</h5>
+                <div class="form-row">
+                    <div class="col-sm-12 col-md-4">
+                        <div class="position-relative form-group">
+                            <label class="font-weight-bold">Departamento</label>
+                            <select class="form-control"
+                                    data-bind="value: DepartamentoId,
+                                               options: DepartamentosOrg,
+                                               optionsText: 'nombre',
+                                               optionsValue: 'id',
+                                               optionsCaption: 'Seleccione un departamento'">
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-12 col-md-4">
+                        <div class="position-relative form-group">
+                            <label class="font-weight-bold">Unidad</label>
+                            <select class="form-control"
+                                    data-bind="value: UnidadOrgId,
+                                               options: UnidadesOrg,
+                                               optionsText: 'nombre',
+                                               optionsValue: 'id',
+                                               optionsCaption: 'Seleccione una unidad',
+                                               enable: DepartamentoId">
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-12 col-md-4">
+                        <div class="position-relative form-group">
+                            <label class="font-weight-bold">Sección</label>
+                            <select class="form-control"
+                                    data-bind="value: SeccionOrgId,
+                                               options: SeccionesOrg,
+                                               optionsText: 'nombre',
+                                               optionsValue: 'id',
+                                               optionsCaption: 'Seleccione una sección',
+                                               enable: UnidadOrgId">
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="col-md-4">
+                        <div class="position-relative form-group">
+                            <label class="font-weight-bold">Firma del Empleado</label>
+                            <div class="d-flex align-items-center">
+                                <div class="mr-3 shadow-sm" style="width: 50px; height: 50px; border: 1px solid #ced4da; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #fff;">
+                                    <img data-bind="attr: { src: FirmaPrevisualizacion }, visible: FirmaPrevisualizacion()" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+                                    <i class="fas fa-signature text-muted" data-bind="visible: !FirmaPrevisualizacion()"></i>
+                                </div>
+                                <button type="button" class="btn btn-outline-primary shadow-sm" data-bind="click: prepararModalFirma">
+                                    <i class="fas fa-pen mr-1"></i> Configurar Firma
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="position-relative form-group">
+                            <label class="font-weight-bold">Fecha de Inicio de Labores <span class="text-danger"> * Obligatorio</span></label>
+                            @Html.TextBoxFor(a => a.Empleado.FechaInicioLabores, new { type = "date", @class = "form-control", placeholder = "Fecha de Inicio", data_bind = "value: FechaInicioLabores" })
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="position-relative form-group">
+                            <label class="font-weight-bold">Vacaciones Programadas <span class="text-danger"> * Obligatorio</span></label>
+                            @Html.TextBoxFor(a => a.Empleado.VacacionesProgramadas, new { type = "date", @class = "form-control", placeholder = "Vacaciones Programadas", data_bind = "value: VacacionesProgramadas" })
+                        </div>
+                    </div>
+                </div>
+
+                <h5 class="card-title text-primary mt-3">Otros Datos</h5>
+                <div class="form-row">
+                    <div class="col-md-6">
+                        <div class="position-relative form-group">
+                            <label class="font-weight-bold">Calendario - Color de fondo</label>
+                            @Html.TextBoxFor(a => a.Empleado.ColorHexadecimalFondo, new { @class = "form-control", type = "color", data_bind = "value: ColorHexadecimalFondo" })
+                            @Html.ValidationMessageFor(a => a.Empleado.ColorHexadecimalFondo, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="position-relative form-group">
+                            <label class="font-weight-bold">Calendario - Color de texto</label>
+                            @Html.TextBoxFor(a => a.Empleado.ColorHexadecimalTexto, new { @class = "form-control", type = "color", data_bind = "value: ColorHexadecimalTexto" })
+                            @Html.ValidationMessageFor(a => a.Empleado.ColorHexadecimalTexto, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row mt-3">
+                    <div class="col-md-12">
+                        <div class="position-relative form-group">
+                            <label class="font-weight-bold">Observaciones</label>
+                            @Html.TextAreaFor(a => a.Empleado.Observaciones, 5, 500, new { @class = "form-control", placeholder = "Observaciones", style = "max-width:100% !important;", data_bind = "value: Observaciones" })
+                            @Html.ValidationMessageFor(a => a.Empleado.Observaciones, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+                <div class="clearfix">
+                    <button type="button" class="btn btn-primary btn-lg float-right shadow-sm" data-bind="click: agregarEmpleado">
+                        <i class="fa fa-save mr-1"></i> Guardar Registro
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- OVERLAY FIRMA - No usa Bootstrap modal, evita el problema del doble backdrop -->
+<div id="mdl-firma-empleado" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:1055; align-items:center; justify-content:center;">
+    <!-- Backdrop propio -->
+    <div id="mdl-firma-backdrop" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5);" onclick="window.cerrarModalFirmaEmpleado()"></div>
+    <!-- Contenido -->
+    <div style="position:relative; z-index:1; width:100%; max-width:800px; margin:auto; border-radius:14px; overflow:hidden; box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+        <div class="modal-content" style="border-radius:14px; overflow:hidden;">
+
+            <div class="modal-header py-3" style="background:linear-gradient(135deg,#e3f2fd 0%,#bbdefb 100%);border-bottom:3px solid #1976d2;">
+                <div class="d-flex align-items-center">
+                    <div style="width:40px;height:40px;border-radius:10px;background:#bbdefb;display:flex;align-items:center;justify-content:center;margin-right:12px;">
+                        <i class="fas fa-signature" style="color:#1976d2;"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title mb-0 font-weight-bold text-dark">Firma del Empleado</h5>
+                        <small class="text-muted">Dibuje o suba una imagen de su firma</small>
+                    </div>
+                </div>
+                <button type="button" class="close ml-auto" onclick="window.cerrarModalFirmaEmpleado()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body p-4" style="background:#f7f9fc;">
+                <div id="selectorFirmaEmpleado">
+                    <ul class="nav nav-pills mb-3 justify-content-center justify-content-sm-start" style="gap:8px;">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#" id="tabCanvasFirmaEmpleado" onclick="window._switchFirmaTabEmpleado('canvas'); return false;">
+                                <i class="fas fa-pen mr-1"></i> Dibujar firma
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" id="tabArchivoFirmaEmpleado" onclick="window._switchFirmaTabEmpleado('archivo'); return false;">
+                                <i class="fas fa-upload mr-1"></i> Subir imagen
+                            </a>
+                        </li>
+                    </ul>
+
+                    <div id="panelCanvasFirmaEmpleado">
+                        <div class="text-center w-100" style="background:#fff; border:2px dashed #c5cedd; border-radius:10px; overflow:hidden;">
+                            <canvas id="canvasFirmaEmpleado" style="width: 100%; height: 200px; cursor:crosshair; touch-action:none; display:block;"></canvas>
+                        </div>
+                        <div class="d-flex justify-content-between mt-3">
+                            <button type="button" class="btn btn-outline-secondary shadow-sm" onclick="window.limpiarCanvasFirmaEmpleado()">
+                                <i class="fas fa-eraser mr-1"></i> Limpiar
+                            </button>
+                            <button type="button" class="btn btn-outline-success shadow-sm" onclick="window.usarCanvasFirmaEmpleado()">
+                                <i class="fas fa-check mr-1"></i> Usar esta firma
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="panelArchivoFirmaEmpleado" class="d-none">
+                        <div class="p-4 border rounded text-center shadow-sm" style="background:#fff;">
+                            <i class="fas fa-image fa-3x text-muted mb-3"></i>
+                            <p class="text-muted mb-3 font-weight-bold">Seleccione una imagen de la firma</p>
+                            <p class="small text-muted mb-3">(Formatos aceptados: PNG, JPG)</p>
+                            <div class="custom-file text-left mx-auto" style="max-width: 350px;">
+                                <input type="file" class="custom-file-input" id="inputArchivoFirma" accept="image/png, image/jpeg, image/jpg" onchange="window.previsualizarArchivoFirmaEmpleado(this)" />
+                                <label class="custom-file-label" for="inputArchivoFirma" data-browse="Buscar">Elegir archivo...</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="contenedorPrevFirmaEmpleado" class="d-none mt-2 text-center w-100">
+                    <p class="small font-weight-bold text-muted text-uppercase mb-2">Vista previa de la nueva firma</p>
+                    <div class="d-flex justify-content-center w-100">
+                        <img id="imgPrevFirmaEmpleado" alt="Firma Temporal" class="shadow-sm" style="max-height:160px; max-width:100%; border:1px solid #dee2e6; border-radius:8px; padding:6px; background:#fff; display:none; object-fit:contain;" onload="this.style.display='inline-block';" onerror="this.style.display='none';" />
+                    </div>
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.resetearFirmaEmpleadoUI()">
+                            <i class="fas fa-redo mr-1"></i> Cambiar firma
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="background:#fff;border-top:1px solid #e2e8f0;">
+                <button type="button" class="btn btn-secondary shadow-sm" onclick="window.cerrarModalFirmaEmpleado()">
+                    <i class="fas fa-times mr-1"></i> Cancelar
+                </button>
+                @* <button type="button" class="btn btn-primary font-weight-bold shadow-sm" id="btnConfirmarFirmaEmpleado" disabled data-bind="click: confirmarFirmaModal">
+                    <i class="fas fa-save mr-1"></i> Confirmar Firma
+                </button> *@
+                <button type="button" class="btn btn-primary font-weight-bold shadow-sm" id="btnConfirmarFirmaEmpleado" disabled onclick="window.empleadoVm.confirmarFirmaModal()">
+                    <i class="fas fa-save mr-1"></i> Confirmar Firma
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    var _canvas  = null;
+    var _ctx     = null;
+    var _drawing = false;
+
+    function _getPos(e, canvas) {
+        var r = canvas.getBoundingClientRect();
+        var scaleX = canvas.width  / r.width;
+        var scaleY = canvas.height / r.height;
+        var clientX = e.clientX !== undefined ? e.clientX : e.touches[0].clientX;
+        var clientY = e.clientY !== undefined ? e.clientY : e.touches[0].clientY;
+        return { x: (clientX - r.left) * scaleX, y: (clientY - r.top) * scaleY };
+    }
+
+    var _onPointerDown = null, _onPointerMove = null, _onPointerUp = null;
+
+    window.initCanvasFirmaEmpleado = function () {
+        _canvas = document.getElementById('canvasFirmaEmpleado');
+        if (!_canvas) return;
+        if (_onPointerDown) {
+            _canvas.removeEventListener('pointerdown', _onPointerDown);
+            _canvas.removeEventListener('pointermove', _onPointerMove);
+            _canvas.removeEventListener('pointerup',   _onPointerUp);
+            _canvas.removeEventListener('pointerout',  _onPointerUp);
+        }
+        _ctx = _canvas.getContext('2d');
+        _ctx.strokeStyle = '#1a1a2e';
+        _ctx.lineWidth   = 2.2;
+        _ctx.lineCap     = 'round';
+        _ctx.lineJoin    = 'round';
+
+        _onPointerDown = function (e) {
+            e.preventDefault(); _drawing = true;
+            var pos = _getPos(e, _canvas);
+            _ctx.beginPath(); _ctx.moveTo(pos.x, pos.y);
+            _canvas.setPointerCapture(e.pointerId);
+        };
+        _onPointerMove = function (e) {
+            if (!_drawing) return;
+            e.preventDefault();
+            var pos = _getPos(e, _canvas);
+            _ctx.lineTo(pos.x, pos.y); _ctx.stroke();
+        };
+        _onPointerUp = function (e) {
+            if (_drawing) { _ctx.closePath(); _drawing = false; }
+        };
+        _canvas.addEventListener('pointerdown', _onPointerDown);
+        _canvas.addEventListener('pointermove', _onPointerMove);
+        _canvas.addEventListener('pointerup',   _onPointerUp);
+        _canvas.addEventListener('pointerout',  _onPointerUp);
+    };
+
+    window.limpiarCanvasFirmaEmpleado = function () {
+        if (_canvas && _ctx) {
+            _ctx.clearRect(0, 0, _canvas.width, _canvas.height);
+            _ctx.beginPath(); _drawing = false;
+        }
+    };
+
+    window.usarCanvasFirmaEmpleado = function () {
+        if (!_canvas) return;
+        var px = _ctx.getImageData(0, 0, _canvas.width, _canvas.height).data;
+        var hasContent = false;
+        for (var i = 3; i < px.length; i += 4) { if (px[i] > 0) { hasContent = true; break; } }
+        if (!hasContent) { alert("El área de firma está vacía. Por favor dibuje su firma."); return; }
+        var dataUrl = _canvas.toDataURL('image/png');
+        if (window.empleadoVm) window.empleadoVm.setFirmaTemporal(dataUrl, null);
+    };
+
+    window.previsualizarArchivoFirmaEmpleado = function (input) {
+        var archivo = input.files[0];
+        if (!archivo) return;
+        var label = input.nextElementSibling;
+        if (label) label.innerText = archivo.name;
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            if (window.empleadoVm) window.empleadoVm.setFirmaTemporal(e.target.result, archivo);
+        };
+        reader.readAsDataURL(archivo);
+    };
+
+    window._switchFirmaTabEmpleado = function (modo) {
+        var panelCanvas  = document.getElementById('panelCanvasFirmaEmpleado');
+        var panelArchivo = document.getElementById('panelArchivoFirmaEmpleado');
+        var tabCanvas    = document.getElementById('tabCanvasFirmaEmpleado');
+        var tabArchivo   = document.getElementById('tabArchivoFirmaEmpleado');
+        if (modo === 'canvas') {
+            panelCanvas.classList.remove('d-none'); panelArchivo.classList.add('d-none');
+            tabCanvas.classList.add('active');       tabArchivo.classList.remove('active');
+            window.initCanvasFirmaEmpleado();
+        } else {
+            panelCanvas.classList.add('d-none');    panelArchivo.classList.remove('d-none');
+            tabCanvas.classList.remove('active');    tabArchivo.classList.add('active');
+        }
+    };
+
+    window.resetearFirmaEmpleadoUI = function () {
+        document.getElementById('selectorFirmaEmpleado').classList.remove('d-none');
+        document.getElementById('contenedorPrevFirmaEmpleado').classList.add('d-none');
+        document.getElementById('btnConfirmarFirmaEmpleado').disabled = true;
+        document.getElementById('imgPrevFirmaEmpleado').src = "";
+        window.limpiarCanvasFirmaEmpleado();
+        var input = document.getElementById('inputArchivoFirma');
+        if (input) input.value = "";
+        var label = document.querySelector('label[for="inputArchivoFirma"]');
+        if (label) label.innerText = "Elegir archivo...";
+        if (window.empleadoVm) {
+            window.empleadoVm.FirmaTemporalBase64(null);
+            window.empleadoVm.FirmaTemporalFile(null);
+        }
+    };
+
+    // ✅ Abrir y cerrar el overlay sin Bootstrap
+    window.abrirModalFirmaEmpleado = function () {
+        var overlay = document.getElementById('mdl-firma-empleado');
+        overlay.style.display = 'flex';
+        // Resetear tabs al estado inicial (canvas activo)
+        window._switchFirmaTabEmpleado('canvas');
+    };
+
+    window.cerrarModalFirmaEmpleado = function () {
+        var overlay = document.getElementById('mdl-firma-empleado');
+        overlay.style.display = 'none';
+    };
+
+})();
+</script>

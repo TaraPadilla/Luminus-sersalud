@@ -1,0 +1,133 @@
+@using Database.Shared.Enumeraciones
+@using sistema.Models
+@model CajaDetallesViewModel
+
+@{
+    decimal totalIngreso = 0.00m;
+}
+
+<div class="form-row">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <h4>Ingresos</h4>
+                <hr />
+                @if (Model.AmbienteId == (int)AmbienteEnum.Global)
+                {
+                    @if (Model.SucursalId == null)
+                    {
+                        <b>Filtrar por sucursal:</b>
+                        <div class="form-row">
+                            <div class="col-md-2">
+                                <input type="checkbox" class="ingresos-filtro-sucursal"
+                               id="ingresos-filtro-sucursal-" checked onchange="aplicarFiltrosIngresos()" />
+                                <label for="ingresos-filtro-sucursal-">TODAS</label>
+                            </div>
+                            @foreach (var sucursal in Model.ListaSucursales)
+                            {
+                                <div class="col-md-2">
+                                    <input type="checkbox" class="ingresos-filtro-sucursal"
+                               id="ingresos-filtro-sucursal-@sucursal.Id" checked onchange="aplicarFiltrosIngresos()" />
+                                    <label for="ingresos-filtro-sucursal-@sucursal.Id">@sucursal.NombreSucursal</label>
+                                </div>
+                            }
+                        </div>
+                        <hr />
+                    }
+                    <b>Filtrar por ambiente:</b>
+                    <div class="form-row">
+                        <div class="col-md-2">
+                            <input type="checkbox" class="ingresos-filtro-ambiente"
+                               id="ingresos-filtro-ambiente-@((int)AmbienteEnum.Global)"
+                               checked onchange="aplicarFiltrosIngresos()" />
+                            <label for="ingresos-filtro-ambiente-@((int)AmbienteEnum.Global)">Global</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="checkbox" class="ingresos-filtro-ambiente"
+                               id="ingresos-filtro-ambiente-@((int)AmbienteEnum.Hospital)"
+                               checked onchange="aplicarFiltrosIngresos()" />
+                            <label for="ingresos-filtro-ambiente-@((int)AmbienteEnum.Hospital)">Hospital</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="checkbox" class="ingresos-filtro-ambiente"
+                               id="ingresos-filtro-ambiente-@((int)AmbienteEnum.Farmacia)"
+                               checked onchange="aplicarFiltrosIngresos()" />
+                            <label for="ingresos-filtro-ambiente-@((int)AmbienteEnum.Farmacia)">Farmacia</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="checkbox" class="ingresos-filtro-ambiente"
+                               id="ingresos-filtro-ambiente-@((int)AmbienteEnum.Clinica)"
+                               checked onchange="aplicarFiltrosIngresos()" />
+                            <label for="ingresos-filtro-ambiente-@((int)AmbienteEnum.Clinica)">Clinica</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="checkbox" class="ingresos-filtro-ambiente"
+                               id="ingresos-filtro-ambiente-@((int)AmbienteEnum.Laboratorio)"
+                               checked onchange="aplicarFiltrosIngresos()" />
+                            <label for="ingresos-filtro-ambiente-@((int)AmbienteEnum.Laboratorio)">Laboratorio</label>
+                        </div>
+                    </div>
+                }
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="table-responsive">
+                            <table class="mb-0 table table-hover ">
+                                <thead>
+                                    <tr>
+                                        <th>Sucursal</th>
+                                        <th>Ambiente</th>
+                                        <th>Fecha Ingreso</th>
+                                        <th>Descripción</th>
+                                        <th>Número comprobante</th>
+                                        @* <th>Banco</th>
+                                        <th>Cuenta</th> *@
+                                        <th>Total</th>
+                                        <th>Acciones</th>
+
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.Ingresos == null || Model.Ingresos.Count == 0)
+                                    {
+                                        <tr>
+                                            <td colspan="9">No hay ingresos registrados</td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var ingreso in Model.Ingresos)
+                                        {
+                                            <tr class="ingresos-reg-sucursal-@ingreso.SucursalId ingresos-reg-ambiente-@ingreso.AmbienteId">
+                                                <td>@ingreso.SucursalNombre</td>
+                                                <td><span class="badge badge-primary">@ingreso.AmbienteNombre</span></td>
+                                                <td>@ingreso.FechaIngreso</td>
+                                                <td>@ingreso.Descripcion</td>
+                                                <td>@ingreso.NumeroComprobante</td>
+                                                @* <td>@ingreso.Banco</td>
+                                                <td>@ingreso.Cuenta</td> *@
+                                                <td>Q <span class="ingresos-valor-sucursal-@ingreso.SucursalId ingresos-valor-ambiente-@ingreso.AmbienteId">@ingreso.Total</span></td>
+                                                <td>
+                                                    <a class="btn btn-danger text-white" onclick="eliminarDetalle(@ingreso.Id)">
+                                                        <i class="fas fa-trash"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+
+                                            totalIngreso += @ingreso.Total;
+                                        }
+                                        <tr class="bg-dark text-light font-weight-bolder">
+                                            <td colspan="7">TOTAL</td>
+                                            <td>Q <span id="ingresos-total">@totalIngreso</span></td>
+                                            <td></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

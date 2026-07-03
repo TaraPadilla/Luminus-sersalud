@@ -1,0 +1,42 @@
+@* @model Database.Shared.Models.CategoriaLabClinico; *@
+@model sistema.Models.ModCategoriaListados
+
+
+<div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel">
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+
+            <div class="form-row">
+                <div class="col-md-12">
+                    <div class="position-relative form-group">
+                        <label class="">Nombre o Descripción</label>
+                        @* <input placeholder="Descripción Producto" class="form-control"> *@
+                        @Html.TextBoxFor(a => a.CategoriaLabClinico.Nombre, new {@class="form-control", @placeholder="Descripcion"})
+                        @Html.ValidationMessageFor(a => a.CategoriaLabClinico.Nombre, "", new { @class = "text-danger"})
+                    </div>
+                </div>
+
+                 @* <div class="col-md-6">
+                    <div class="position-relative form-group">
+                        <label class="">Estado</label>
+                         <select class="form-control select2bs4" style="width: 100%;" asp-for="Estado">
+                             <option selected> Estado ejemplo 1</option>
+                             <option> Estado ejemplo 2</option>
+                             <option> Estado ejemplo 3</option>
+                             <option> Estado ejemplo 4</option>
+                        </select>
+                    </div>
+                </div> *@
+
+            </div>
+        
+            <div class="col-md-12">
+                <div class="position-relative form-group">
+                    <button class="btn btn-primary" type="submit">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+

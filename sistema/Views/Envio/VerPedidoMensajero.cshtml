@@ -1,0 +1,366 @@
+
+@model sistema.Models.EnvioBaseViewModel
+
+@{
+    decimal sumtotal = 0.00m;
+    decimal sumsubtotal = 0.00m;
+    decimal sumdescuento = 0.00m;
+     int porc = 0;
+}
+
+
+@await Html.PartialAsync("_MensajeExito")
+<link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.0.1/css/toastr.css" rel="stylesheet"/>
+
+
+
+
+
+</br>
+
+
+
+
+
+
+
+
+
+
+@if(Model.Envio.EstadosEnvioId==1 || Model.Envio.EstadosEnvioId==2){
+<a href="@Url.Action("EnviaraRuta","Envio", new {id = @Model.Envio.Id})" class="btn btn-warning">Enviar a ruta</a>
+<a href="@Url.Action("Entregado","Envio", new {id = @Model.Envio.Id})" class="btn btn-warning">Entregado</a>
+}
+
+
+
+<div class="form-row">
+    <div class="col-md-12">
+
+
+
+ 
+                        <div class="main-card mb-3 card">
+
+
+
+                            <div class="card-body">
+                                @* <button class="btn btn-primary" onclick="">prueba</button> *@
+                                <div class="form-row">
+                                   
+                                    <div class="col-md-6">
+                                        <div class="position-relative form-group"><label class=""><strong>Nombre Vendedor:</strong> </label>
+                                        @if(Model.Empleado != null)
+                                        {
+                                             <label class="">@Model.Empleado.Nombre</label>
+                                        }
+                                         
+
+                                            
+                                        </div>
+                                    </div>
+                                    @* <div class="col-md-6">
+                                        <div class="position-relative form-group">
+                                        <label><strong>Piloto Responsable:</strong> </label>
+                                        @if(Model.Envio.User.Persona != null)
+                                        {
+                                            <label class="">@Model.Envio.User.Persona.Nombre</label>
+                                        }
+                                        
+                                            
+                                        </div>
+                                    </div> *@
+
+                                </div>
+                                <div class="form-row">
+                                    
+                                    <div class="col-md-6">
+                                        <div class="position-relative form-group">
+                                        <label><strong>Cliente:</strong> </label>
+                                        <label>@Model.Envio.Nombres</label>
+                                            
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="position-relative form-group">
+                                        <label><strong>Nit:</strong> </label>
+                                        <label>@Model.Envio.Nit</label>
+                                            
+                                        </div>
+                                    </div>
+                                    
+                                   
+                                </div>
+                                <div class="form-row">
+                                    
+                                    
+                                    <div class="col-md-6">
+                                        <div class="position-relative form-group">
+                                        <label><strong>Fecha y Hora de entrega:</strong> </label>
+                                        <label class="">@Model.Envio.FechaEntrega</label>
+                                            
+                                        </div>
+                                    </div>
+                                     
+                                     <div class="col-md-12">
+                                        <div class="position-relative form-group">
+                                        <label class=""><strong>Direccion:</strong> </label>
+                                        <label class="">@Model.Envio.DireccionExacta</label>
+                                            
+                                        </div>
+                                    </div>
+                                </div>
+
+                               
+                            </div>
+
+
+
+                        </div>
+                 
+
+                 <div class="main-card mb-3 card">
+
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class='table table-hover' id="tableventa">
+                                <thead>
+                                    <tr>
+                                        <th>Codigo</th>
+                                        <th>Nombre Producto</th>
+                                        <th>Cantidad</th>
+                                        <th>Precio</th>
+                                        <th>  %  </th>
+                                        <th>Descuento</th>
+                                        <th>Subtotal</th>
+                                        <th>Total</th>
+                                        @if(Model.Envio.EstadosEnvioId != 3 && Model.Envio.EstadosEnvioId != 4 && !User.IsInRole("Mensajero")){
+                                        <th>Acciones</th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody id="contentdetalle">
+
+                                     @if(Model != null)
+                                    {
+                                        foreach (var item in Model.Envio.DetalleEnvios)
+                                        {
+                                            if(item.Descuento == 0 || item.Subtotal == 0){
+                                                porc = 0;
+                                            }
+                                            else 
+                                            {
+                                                porc = Convert.ToInt32((item.Descuento / item.Subtotal) * 100);
+                                            }
+
+                                        <tr>
+                                        <td>@item.Producto.CodigoReferencia</td>
+                                        <td>@item.Producto.NombreProducto</td>
+                                        <td>@item.Cantidad</td>
+                                        <td>@item.Precio</td>
+                                        <td>@porc</td>
+                                        <td class="desc-t">@item.Descuento</td>
+                                        <td class="subtotal-t">@item.Subtotal</td>
+                                        <td class="total-t">@item.Total</td>
+                                        @if(Model.Envio.EstadosEnvioId != 3 && Model.Envio.EstadosEnvioId != 4 && !User.IsInRole("Mensajero")){
+                                        <td><button  type="button"  class="btn btn-danger btn-sm" onclick="eliminarFila(this,@item.Precio)">Quitar</button></td>
+                                        }
+                                        <td style="display: none;" class="idProd">@item.Id</td>
+                                    </tr>
+                                        sumdescuento += item.Descuento;
+                                        sumsubtotal += item.Subtotal;
+                                        sumtotal += item.Total;
+
+                                    }
+                                    }
+
+                                </tbody>
+                                
+                            </table>
+
+
+                        </div>
+
+                            <br/>
+                            
+                            <div class="text-right" style="font-size: 25px;">
+                                <span>Subtotal:</span> 
+                            Q <span id="subtotal-venta">0.00</span> 
+                            </div> 
+
+                            <div class="text-right"  style="font-size: 25px;">
+                                 <span>Descuento:</span> 
+                                 Q <span id="descuento-venta">0.00</span>           
+                            @* Q <label id="descuentoventa" contenteditable="true" style="white-space:nowrap; word-wrap: break-word;">0.00</label>  *@
+                            </div> 
+
+                            <div class="text-right" style="font-size: 25px;">
+                                <span>Total:</span> 
+                            Q <span id="precio-total-a-pagar">0.00</span> 
+                            </div> 
+
+
+                        @* <h1>Detalle de la venta</h1> *@
+
+                    </div>
+                </div>
+      
+
+        </div>
+
+    </div>
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ @* <div class="tab-pane tabs-animation fade show " id="tab-content-4" role="tabpanel">
+                    <div class="form">
+                        <div class="col-md-12">
+                            <div class="main-card mb-3 card">
+
+
+
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-6">
+                                        <div class="position-relative form-group"> <label>Usuario de piloto</label>
+                                        <select class="form-control select2bs4 selectrutas" style="width: 100%;"
+                                             id="usuarioselect">
+                                             @if(Model.Envio.User == null){
+
+                                                 <option selected value="">Sin Asignar</option>
+                                                 @foreach(var item in Model.ListaUsuarios){
+                                               
+                                                      <option value="@item.Id">@item.UserName</option>
+                                                  }
+                                                     
+                                             
+                                             }
+                                             else
+                                             {
+                                                @foreach(var item in Model.ListaUsuarios){
+                                               
+                                                  if(Model.Envio.User.Id == item.Id){
+                                                      <option selected value="@item.Id">@item.UserName</option>
+                                                  }
+                                                  else
+                                                  {
+                                                      <option value="@item.Id">@item.UserName</option>
+                                                  }
+                                                     
+                                             } 
+                                             }
+                                             
+                                            
+                                        </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label>Ruta</label>
+                                        <select class="form-control select2bs4 selectrutas" style="width: 100%;"
+                                            asp-for="Envio.RutaId" asp-items="@Model.ListaRutas" id="rutaselect">
+                                        </select>
+    
+                                    </div>
+
+                                </div>
+                                 <div class="form-row">
+                                    <div class="col-md-12">
+                                        @* <div class="position-relative form-group"><label class="">Fecha Entrega</label>
+                                           
+                                            @Html.TextBoxFor(a => a.Envio.FechaEntrega, new
+                                                                           {type="date",@class="form-control",@id="fechalimite",
+                                                                               @placeholder="Fecha Inicio"})
+                                            @Html.ValidationMessageFor(a => a.Envio.FechaEntrega, "", new { @class =
+                                                                               "text-danger"})
+                                        </div> *@
+
+                                        @* <label>Fecha y Hora de entrega</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control float-right" id="reservationtime">
+                                        </div>
+                                   
+                                    </div>
+                                  
+                                </div>
+                                <div class="form-row">
+                                    
+                                    <div class="col-md-12">
+                                 <div class="position-relative form-group">
+                                  <label class="">Direccion Exacta</label>
+                                 @Html.TextAreaFor(a => a.Envio.DireccionExacta,5,500 ,htmlAttributes : new {
+                                       @class="form-control ", @placeholder="Direccion Exacta", @id="direccionexacta", @style="max-width:100% !important;"})
+                                  @Html.ValidationMessageFor(a => a.Envio.DireccionExacta, "", new { @class = "text-danger"})
+                                </div>
+                                 </div>
+                                 
+                                </div>
+                                </div>
+
+                               
+                            </div>
+
+
+
+                        </div>
+                    </div>
+                  </div>  *@
+
+
+@section Scripts
+{
+<script src="~/js/FuncionesEnvio.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.0.1/js/toastr.js"></script>
+
+<script type="text/javascript" src="~/js/moment.min.js"></script>
+<script type="text/javascript" src="~/js/daterangepicker.js"></script>
+<script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+
+<script>
+    $(function(){
+        $('.select2').select2({
+            tags: true
+        });
+        
+    $('.select2bs4').select2({
+      theme: 'bootstrap4',
+      tags: true,
+    });
+
+          $('#reservationtime').daterangepicker({
+                    timePicker: true,
+                    timePickerIncrement: 30,
+                    locale: {
+                        format: 'MM/DD/YYYY hh:mm A'
+                    }
+                });
+    });
+
+
+    
+</script>
+}
+
+@section css
+{
+    <link href="~/css/daterangepicker.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.0.1/css/toastr.css" rel="stylesheet"/>
+}
+
+                            
+                                

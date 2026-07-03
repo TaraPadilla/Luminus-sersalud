@@ -1,0 +1,85 @@
+@model sistema.Models.VentaBaseViewModel
+
+
+
+
+<div class="form-row">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <form asp-controller="Venta" asp-action="Reporte" method="get" id="report-form">
+                    <div class="form-row">
+                        <div class="col-md-12">
+                            <label>Seleccione Rango: </label>
+                            <div class="input-group">
+                                <input type="text" class="form-control float-right" id="reservationtime2" name="fecha">
+                            </div>
+                        </div>
+                        <br>
+                        <div class="col-md-12">
+                            <label>Vendedor</label>
+                            <select class="form-control select2bs4" style="width: 100%;" name="empleadoid" asp-items="@Model.ListaEmpleados" id="empleadoselect">
+                                <option selected value="">Sin asignar</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <br/>
+                    @* <button type="submit" id="generarpdf" class="btn btn-primary">Generar PDF</button> *@
+                    <button type="button" id="generarexcel" class="btn btn-success">Generar Excel</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+@section Scripts
+{
+    <script type="text/javascript" src="~/js/moment.min.js"></script>
+    <script type="text/javascript" src="~/js/daterangepicker.js"></script>
+    <script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+
+    <script>
+       $(function(){
+            $('.select2').select2({
+                tags: true
+            });
+            
+            $('.select2bs4').select2({
+                theme: 'bootstrap4',
+                tags: true,
+            });
+
+            // Configuración del rango de fecha
+            $('#reservationtime').daterangepicker({
+                timePicker: true,
+                timePickerIncrement: 30,
+                locale: {
+                    format: 'MM/DD/YYYY hh:mm A'
+                }
+            });
+            $('#reservationtime2').daterangepicker({
+                timePicker: true,
+                timePickerIncrement: 30,
+                locale: {
+                    format: 'MM/DD/YYYY hh:mm A'
+                }
+            });
+
+            // Maneja el envío del formulario para generar PDF o Excel
+            $('#generarpdf').on('click', function() {
+                $('#report-form').attr('action', '@Url.Action("ReportePDFVentasFarmacia", "Venta")'); // Acción para PDF
+                $('#report-form').submit();
+            });
+
+            $('#generarexcel').on('click', function() {
+                $('#report-form').attr('action', '@Url.Action("ReporteExcelVentasFarmacia", "CrearExcel")'); // Acción para Excel
+                $('#report-form').submit();
+            });
+        });
+    </script>
+}

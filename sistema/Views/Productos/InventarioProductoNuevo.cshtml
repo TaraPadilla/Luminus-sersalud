@@ -1,0 +1,49 @@
+@using sistema.Models
+@model InventarioProductoViewModel
+@{
+    ViewData["Title"] = Model.TipoBodegaNombre + " - " + Model.TipoProductoNombre;
+}
+
+@{
+    var tipoProducto = Context.Request.Query["tipoProducto"].ToString();
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            @if(tipoProducto == "3")
+            {
+                 <h4><b>@(Model.TipoBodegaNombre + " - Nuevos " + Model.TipoProductoNombre)</b></h4>
+            }
+            else
+            {                
+                <h4><b>@(Model.TipoBodegaNombre + " - Nuevo " + Model.TipoProductoNombre)</b></h4>
+            }
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_InventarioProductoForm")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div>
+            <button class="btn btn-danger" data-bind="click: cancelarRegistroProducto">
+                Cancelar
+            </button>
+            <button class="btn btn-primary" data-bind="click: registrarProducto">
+                Guardar producto
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+<script type="text/javascript" src="~/ViewModelKo/InventarioProductoVM.js"></script>
+}
+
+<script>
+    console.log("Tipo de producto desde la URL222: @tipoProducto");
+</script>

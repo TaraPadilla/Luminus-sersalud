@@ -1,0 +1,286 @@
+@using Database.Shared.Models
+@model sistema.Models.InfoConsultaViewModel
+@{
+    ViewData["Title"] = "Informacion de consulta";
+
+    //ROLES
+    var usuarioAdministrador = User.IsInRole("Administrador");
+    var usuarioDesarrollador = User.IsInRole("Desarrollador");
+    var usuarioMedicoInterno = User.IsInRole("Medico Interno");
+    var usuarioMedicoGeneral = User.IsInRole("Medico General");
+    var usuarioEnfermeria = User.IsInRole("Enfermeria");
+    var usuarioRadiologia = User.IsInRole("Radiologia");
+
+
+}
+@Html.HiddenFor(a => a.ConsultaId)
+@Html.HiddenFor(a => a.PacienteId)
+@Html.HiddenFor(a => a.CitaId)
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <h4><b>Consulta No. @Model.ConsultaId</b></h4>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_ConsultaForm")
+
+<!--Aca va el codigo de informacion de consulta anterior mientras hago la prueba-->
+
+@if (usuarioAdministrador || usuarioDesarrollador
+|| usuarioMedicoInterno || usuarioMedicoGeneral || usuarioEnfermeria || usuarioRadiologia)
+{
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <a asp-controller="Consultas" asp-action="EditarConsulta" asp-route-id="@Model.Consulta.Id"
+               class="btn btn-primary text-white">
+                <i class="fas fa-edit"></i> Editar consulta
+            </a>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/ViewModelKo/ConsultaVM.js"></script>
+
+    <script> $(function () {
+    // Convierte inputs en texto
+    let controlesDatos = document.getElementsByClassName("dato-consulta");
+    $(controlesDatos).each(function (idx, control) {
+        var input = control;
+        var span = document.createElement('p');
+        span.textContent = input.value;
+        input.parentNode.replaceChild(span, input);
+    });
+
+    // Oculta controles de edición
+    $(".datos-edicion-consulta").css("display", 'none');
+
+    // Deshabilita controles de CIE10
+    $(".cie10-control").prop("disabled", true);
+});
+</script>
+
+    <script>
+
+
+        $(function () {
+            //lOS CONTROLES TIPO INPUT SE CONVIERTEN EN TEXTO
+            //ESTO PERMITE UTILIZAR MENOS HTML Y QUE SEA MAS ORDENADA
+            //LA VISTA DE INFORMACION CONSULTA Y EDITAR CONSULTA
+            let controlesDatos = document.getElementsByClassName("dato-consulta");
+            $(controlesDatos).each(function (idx, control) {
+                var input = control;
+                var span = document.createElement('p');
+                span.textContent = input.value;
+                input.parentNode.replaceChild(span, input);
+            });
+
+            //SE OCULTAN LOS CONTROLES QUE SOLO ESTAN HABILITADOS EN EDITAR CONSULTA
+            $(".datos-edicion-consulta").css("display", 'none');
+        });
+
+
+
+        $("#tabs").tabs();
+
+        function hideD() {
+            $("#caracteristicas-diente-1").hide();
+            $("#caracteristicas-diente-2").hide();
+            $("#caracteristicas-diente-3").hide();
+            $("#caracteristicas-diente-4").hide();
+            $("#caracteristicas-diente-5").hide();
+            $("#caracteristicas-diente-6").hide();
+            $("#caracteristicas-diente-7").hide();
+            $("#caracteristicas-diente-8").hide();
+            $("#caracteristicas-diente-9").hide();
+            $("#caracteristicas-diente-10").hide();
+            $("#caracteristicas-diente-11").hide();
+            $("#caracteristicas-diente-12").hide();
+            $("#caracteristicas-diente-13").hide();
+            $("#caracteristicas-diente-14").hide();
+            $("#caracteristicas-diente-15").hide();
+            $("#caracteristicas-diente-16").hide();
+            $("#caracteristicas-diente-17").hide();
+            $("#caracteristicas-diente-18").hide();
+            $("#caracteristicas-diente-19").hide();
+            $("#caracteristicas-diente-20").hide();
+            $("#caracteristicas-diente-21").hide();
+            $("#caracteristicas-diente-22").hide();
+            $("#caracteristicas-diente-23").hide();
+            $("#caracteristicas-diente-24").hide();
+            $("#caracteristicas-diente-25").hide();
+            $("#caracteristicas-diente-26").hide();
+            $("#caracteristicas-diente-27").hide();
+            $("#caracteristicas-diente-28").hide();
+            $("#caracteristicas-diente-29").hide();
+            $("#caracteristicas-diente-30").hide();
+            $("#caracteristicas-diente-31").hide();
+            $("#caracteristicas-diente-32").hide();
+            $("#servicios-diente-1").hide();
+            $("#servicios-diente-2").hide();
+            $("#servicios-diente-3").hide();
+            $("#servicios-diente-4").hide();
+            $("#servicios-diente-5").hide();
+            $("#servicios-diente-6").hide();
+            $("#servicios-diente-7").hide();
+            $("#servicios-diente-8").hide();
+            $("#servicios-diente-9").hide();
+            $("#servicios-diente-10").hide();
+            $("#servicios-diente-11").hide();
+            $("#servicios-diente-12").hide();
+            $("#servicios-diente-13").hide();
+            $("#servicios-diente-14").hide();
+            $("#servicios-diente-15").hide();
+            $("#servicios-diente-16").hide();
+            $("#servicios-diente-17").hide();
+            $("#servicios-diente-18").hide();
+            $("#servicios-diente-19").hide();
+            $("#servicios-diente-20").hide();
+            $("#servicios-diente-21").hide();
+            $("#servicios-diente-22").hide();
+            $("#servicios-diente-23").hide();
+            $("#servicios-diente-24").hide();
+            $("#servicios-diente-25").hide();
+            $("#servicios-diente-26").hide();
+            $("#servicios-diente-27").hide();
+            $("#servicios-diente-28").hide();
+            $("#servicios-diente-29").hide();
+            $("#servicios-diente-30").hide();
+            $("#servicios-diente-31").hide();
+            $("#servicios-diente-32").hide();
+        };
+        function showD1() {
+            $("#caracteristicas-diente-1").show();
+            $("#servicios-diente-1").show();
+        };
+        function showD2() {
+            $("#caracteristicas-diente-2").show();
+            $("#servicios-diente-2").show();
+        };
+        function showD3() {
+            $("#caracteristicas-diente-3").show();
+            $("#servicios-diente-3").show();
+        };
+        function showD4() {
+            $("#caracteristicas-diente-4").show();
+            $("#servicios-diente-4").show();
+        };
+        function showD5() {
+            $("#caracteristicas-diente-5").show();
+            $("#servicios-diente-5").show();
+        };
+        function showD6() {
+            $("#caracteristicas-diente-6").show();
+            $("#servicios-diente-6").show();
+        };
+        function showD7() {
+            $("#caracteristicas-diente-7").show();
+            $("#servicios-diente-7").show();
+        };
+        function showD8() {
+            $("#caracteristicas-diente-8").show();
+            $("#servicios-diente-8").show();
+        };
+        function showD9() {
+            $("#caracteristicas-diente-9").show();
+            $("#servicios-diente-9").show();
+        };
+        function showD10() {
+            $("#caracteristicas-diente-10").show();
+            $("#servicios-diente-10").show();
+        };
+        function showD11() {
+            $("#caracteristicas-diente-11").show();
+            $("#servicios-diente-11").show();
+        };
+        function showD12() {
+            $("#caracteristicas-diente-12").show();
+            $("#servicios-diente-12").show();
+        };
+        function showD13() {
+            $("#caracteristicas-diente-13").show();
+            $("#servicios-diente-13").show();
+        };
+        function showD14() {
+            $("#caracteristicas-diente-14").show();
+            $("#servicios-diente-14").show();
+        };
+        function showD15() {
+            $("#caracteristicas-diente-15").show();
+            $("#servicios-diente-15").show();
+        };
+        function showD16() {
+            $("#caracteristicas-diente-16").show();
+            $("#servicios-diente-16").show();
+        };
+        function showD17() {
+            $("#caracteristicas-diente-17").show();
+            $("#servicios-diente-17").show();
+        };
+        function showD18() {
+            $("#caracteristicas-diente-18").show();
+            $("#servicios-diente-18").show();
+        };
+        function showD19() {
+            $("#caracteristicas-diente-19").show();
+            $("#servicios-diente-19").show();
+        };
+        function showD20() {
+            $("#caracteristicas-diente-20").show();
+            $("#servicios-diente-20").show();
+        };
+        function showD21() {
+            $("#caracteristicas-diente-21").show();
+            $("#servicios-diente-21").show();
+        };
+        function showD22() {
+            $("#caracteristicas-diente-22").show();
+            $("#servicios-diente-22").show();
+        };
+        function showD23() {
+            $("#caracteristicas-diente-23").show();
+            $("#servicios-diente-23").show();
+        };
+        function showD24() {
+            $("#caracteristicas-diente-24").show();
+            $("#servicios-diente-24").show();
+        };
+        function showD25() {
+            $("#caracteristicas-diente-25").show();
+            $("#servicios-diente-25").show();
+        };
+        function showD26() {
+            $("#caracteristicas-diente-26").show();
+            $("#servicios-diente-26").show();
+        };
+        function showD27() {
+            $("#caracteristicas-diente-27").show();
+            $("#servicios-diente-27").show();
+        };
+        function showD28() {
+            $("#caracteristicas-diente-28").show();
+            $("#servicios-diente-28").show();
+        };
+        function showD29() {
+            $("#caracteristicas-diente-29").show();
+            $("#servicios-diente-29").show();
+        };
+        function showD30() {
+            $("#caracteristicas-diente-30").show();
+            $("#servicios-diente-30").show();
+        };
+        function showD31() {
+            $("#caracteristicas-diente-31").show();
+            $("#servicios-diente-31").show();
+        };
+        function showD32() {
+            $("#caracteristicas-diente-32").show();
+            $("#servicios-diente-32").show();
+        };
+
+    </script>
+}

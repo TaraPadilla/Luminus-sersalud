@@ -1,0 +1,313 @@
+@model sistema.Models.HistoriaClinicaViewModel
+@{
+    ViewData["Title"] = "Editar Consulta";
+    Layout = null;
+
+}
+
+@Html.HiddenFor(m => m.ConsultaId)
+@Html.HiddenFor(m => m.PacienteId)
+
+@{
+    var usuarioAdmisiones = User.IsInRole("Admisiones");
+    var usuarioEnfermeria = User.IsInRole("Enfermeria");
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<br />
+
+
+<div class="card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Impresi&oacute;n clinica</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-12">
+                <b>Impresi&oacute;n clinica</b><br>
+                @Html.TextAreaFor(a => a.HistoriaClinicaImpresionClinica, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Historia cl&iacute;nica</b></h5>
+                <hr />
+            </div>
+
+            <div class="col-md-4">
+                <b>Motivo de consulta</b><br />
+                @Html.TextAreaFor(m => m.ConsultaMotivo, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+            <div class="col-md-4">
+                <b>Historia de la enfermedad actual</b><br />
+                @Html.TextAreaFor(m => m.HistoriaEnfermedadActual, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+            <div class="col-md-4">
+                <b>Alergicos:</b><br />
+                @Html.TextAreaFor(a => a.PacienteAlergias, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Solo para mujeres</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-4">
+                <b>&iquest;Est&aacute; usted embarazada?</b><br />
+                <select asp-for="EstaEmbarazada" class="form-control dato-consulta" disabled="disabled">
+                    <option value="-">Seleccione...</option>
+                    <option value="SI">SI</option>
+                    <option value="NO">NO</option>
+                    <option value="N/S">N/S</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <b>Numero de semanas</b><br />
+                @Html.TextBoxFor(a => a.NumeroSemanasEmbarazo, new { type = "number", @class = "form-control dato-consulta", @readonly = "readonly"})
+            </div>
+            <div class="col-md-4">
+                <b>&iquest;Est&aacute; usted amamantando?</b><br />
+                <select class="form-control dato-consulta" asp-for="EstaAmamantando" disabled="disabled">
+                    <option value="-">Seleccione...</option>
+                    <option value="SI">SI</option>
+                    <option value="NO">NO</option>
+                    <option value="N/S">N/S</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Antecedentes patologicos</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-4">
+                <b>Medicos:</b><br />
+                @Html.TextAreaFor(a => a.PacienteMedicos, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+            <div class="col-md-4">
+                <b>Quirurgicos:</b><br />
+                @Html.TextAreaFor(a => a.PacienteQuirurgicos, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+            <div class="col-md-4">
+                <b>Traumaticos:</b><br />
+                @Html.TextAreaFor(a => a.PacienteTraumaticos, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+            <div class="col-md-4">
+                <b>Vicios y/o man&iacute;as:</b><br />
+                @Html.TextAreaFor(a => a.PacienteVicios, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+            <div class="col-md-4">
+                <b>Medicamento de uso actual:</b><br />
+                @Html.TextAreaFor(a => a.PacienteMedicamentos, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-12">
+                <h5><b>Examen físico</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-5">
+                <b>ESTADO GENERAL:</b><br>
+                @Html.TextBoxFor(m => m.ExamenFisicoEstadoGeneral, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+            <div class="col-md-4">
+                <b>PESO (KG):</b><br />
+                @Html.TextBoxFor(m => m.ExamenFisicoPeso,
+                         new
+                         {
+                             @class = "form-control dato-consulta", @readonly = "readonly",
+                             @placeholder = "Peso",
+                             @onchange = "getIMC()"
+                         })
+            </div>
+            <div class="col-md-3">
+                TALLA (M):<br />
+                @Html.TextBoxFor(m => m.ExamenFisicoTalla,
+                         new
+                         {
+                             @class = "form-control dato-consulta", @readonly = "readonly",
+                             @placeholder = "Talla",
+                             @onchange = "getIMC()"
+                         })
+            </div>
+            <div class="col-md-2">
+                FC:<br>
+                @Html.TextBoxFor(m => m.ExamenFisicoFrecuenciaCardiaca,
+                         new
+                         {
+                             @class = "form-control dato-consulta", @readonly = "readonly",
+                             @placeholder = "Frecuencia cardiaca"
+                         })
+            </div>
+            <div class="col-md-2">
+                FR:<br>
+                @Html.TextBoxFor(m => m.ExamenFisicoFrecuenciaRespiratoria,
+                         new
+                         {
+                             @class = "form-control dato-consulta", @readonly = "readonly",
+                             @placeholder = "Frecuencia respiratoria"
+                         })
+            </div>
+            <div class="col-md-2">
+                P/A:<br>
+                @Html.TextBoxFor(m => m.ExamenFisicoPresionArterial,
+                         new
+                         {
+                             @class = "form-control dato-consulta", @readonly = "readonly",
+                             @placeholder = "P/A"
+                         })
+            </div>
+            <div class="col-md-2">
+                TEMP:<br>
+                @Html.TextBoxFor(m => m.ExamenFisicoTemperatura,
+                         new
+                         {
+                             @class = "form-control dato-consulta", @readonly = "readonly",
+                             @placeholder = "Temperatura"
+                         })
+            </div>
+            <div class="col-md-2">
+                SpO2:<br>
+                @Html.TextBoxFor(m => m.ExamenFisicoSaturacionOxigeno,
+                         new
+                         {
+                             @class = "form-control dato-consulta", @readonly = "readonly",
+                             @placeholder = "Saturación de oxígeno"
+                         })
+            </div>
+            <div class="col-md-2">
+                GLASGOW<br>
+                @Html.TextBoxFor(m => m.ExamenFisicoGlasgow, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-12">
+                <h5><b>Revision por sistemas</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-6">
+                <b>APARIENCIA GENERAL Y NEUROLOGICO:</b><br>
+                @Html.TextAreaFor(m => m.RevisionSistemasAparienciaGeneral, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+            <div class="col-md-6">
+                <b>CABEZA:</b><br>
+                @Html.TextAreaFor(m => m.RevisionSistemasCabeza, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+            <div class="col-md-6">
+                <b>OIDOS Y BOCA:</b><br>
+                @Html.TextAreaFor(m => m.RevisionSistemasOidosBoca, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+            <div class="col-md-6">
+                <b>CUELLO:</b><br>
+                @Html.TextAreaFor(m => m.RevisionSistemasCuello, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+            <div class="col-md-6">
+                <b>TORAX:</b><br>
+                @Html.TextAreaFor(m => m.RevisionSistemasTorax, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+            <div class="col-md-6">
+                <b>ABDOMEN:</b><br>
+                @Html.TextAreaFor(m => m.RevisionSistemasAbdomen, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+            <div class="col-md-6">
+                <b>DORSO Y EXTREMIDADES:</b><br>
+                @Html.TextAreaFor(m => m.RevisionSistemasDorsoYExtremidades, new
+                    {
+                        @class = "form-control dato-consulta", @readonly = "readonly"
+                    })
+            </div>
+            <div class="col-md-6">
+                <b>GENITALES:</b><br>
+                @Html.TextAreaFor(m => m.RevisionSistemasGenitales, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+<div class="card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Comentario</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-12">
+                <b>Comentario</b><br>
+                @Html.TextAreaFor(a => a.HistoriaClinicaComentario, new { @class = "form-control dato-consulta", @readonly = "readonly" })
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@if (!usuarioAdmisiones)
+{
+    @if (!User.IsInRole("Enfermeria") && !User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio") && !User.IsInRole("Medico Externo"))
+    {    
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div>
+                    <a href="#" class="btn btn-primary" 
+                    onclick="
+                        var consultaId = @Model.ConsultaId;
+                        var url = '/Consultas/EditarConsultaHistoriaClinica/' + consultaId;
+                        var width = 860;
+                        var height = 800;
+                        var left = (screen.width / 2) - (width / 2);
+                        var top = (screen.height / 2) - (height / 2);
+                        var windowFeatures = 'width=' + width + ',height=' + height + ',top=' + top + ',left=' + left + ',scrollbars=yes,resizable=yes';
+                        var newWindow = window.open(url, 'EditarConsultaHistoriaClinica', windowFeatures);
+                        
+                        // Verificar cada segundo si la ventana ha sido cerrada
+                        var timer = setInterval(function() { 
+                            if (newWindow.closed) {
+                                clearInterval(timer);
+                                location.reload();  // Recargar la página cuando la ventana emergente se cierre
+                            }
+                        }, 1000);
+
+                        return false;">
+                        Editar consulta
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+
+
+@section Scripts {
+    <script type="text/javascript" src="~/js/moment.min.js"></script>
+}

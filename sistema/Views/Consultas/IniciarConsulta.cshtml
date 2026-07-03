@@ -1,0 +1,58 @@
+@{
+    ViewData["Title"] = "Iniciar Consulta";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <h4><b>Iniciar consulta</b></h4>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_ConsultaForm")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div>
+            <a href="#" class="btn btn-primary" data-bind="click: registrarConsulta">
+                Guardar consulta
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+<script type="text/javascript" src="~/ViewModelKo/ConsultaVM.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("Script cargado");
+    const input = document.getElementById('cie10-codigo');
+    const descripcion = document.getElementById('cie10-descripcion');
+    const boton = document.getElementById('buscar-cie10');
+
+    boton.addEventListener('click', function() {
+        const codigo = input.value.trim();
+        if (codigo.length === 0) {
+            descripcion.textContent = '';
+            return;
+        }
+        fetch(`/Consultas/BuscarCie10?codigo=${encodeURIComponent(codigo)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.descripcion) {
+                    descripcion.textContent = data.descripcion;
+                } else {
+                    descripcion.textContent = 'No encontrado';
+                }
+            })
+            .catch(() => {
+                descripcion.textContent = 'Error al buscar';
+            });
+    });
+});
+</script>
+}
+

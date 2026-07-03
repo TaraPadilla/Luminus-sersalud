@@ -1,0 +1,39 @@
+@model sistema.Models.ConsultasViewModel
+
+<br />
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Bebidas alcohólicas</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-12">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        ¿Bebe bebidas alcohólicas?
+                    </div>
+                    <div class="col-md-6">
+                        <div class="col-md-2">
+                            @Html.RadioButtonFor(m => m.BebeBebidasAlcoholicas, "si") Sí
+                        </div>
+                        <div class="col-md-4">
+                            Si es así, ¿cuánto alcohol bebió en las últimas 24 horas?<br>
+                            @Html.TextBoxFor(a => a.AlcoholUltimas24Horas, new { @class = "form-control" })
+                        </div>
+                        <div class="col-md-4">
+                            Si es así, ¿cuánto bebe por lo general en una semana?<br>
+                            @Html.TextBoxFor(a => a.AlcoholSemanal, new { @class = "form-control" })
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        @Html.RadioButtonFor(m => m.BebeBebidasAlcoholicas, "no") No
+                    </div>
+                    <div class="col-md-3">
+                        @Html.RadioButtonFor(m => m.BebeBebidasAlcoholicas, "ns") N/S
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

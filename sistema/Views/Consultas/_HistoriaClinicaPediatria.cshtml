@@ -1,0 +1,65 @@
+@model sistema.Models.ConsultasViewModel
+
+<br />
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Historia cl&iacute;nica Pedi&aacute;trica</b></h5>
+                <hr />
+            </div>
+            @*MANANTIALES NO utiliza este campo*@
+            @* <div class="col-md-4">
+            Historia del problema<br />
+            @Html.TextAreaFor(m => m.HistoriaProblema, new { @class = "form-control" })
+            </div> *@
+            <div class="col-md-4">
+                <b>Motivo de consulta</b><br />
+                @Html.TextAreaFor(m => m.HistoriaPediatriaConsultaMotivo, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-4">
+                <b>Historia de la enfermedad actual</b><br />
+                @Html.TextAreaFor(m => m.HistoriaPediatriaHistoriaEnfermedadActual, new { @class = "form-control dato-consulta" })
+            </div>
+            @*<div class="col-md-4">
+                <b>Diagnostico</b><br />
+                @Html.TextAreaFor(m => m.HistoriaPediatriaDiagnostico, new { @class = "form-control dato-consulta" })
+            </div>*@
+        </div>
+        <br />
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Historia cl&iacute;nica Pedi&aacute;trica (historial)</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-12 text-primary texto-cargando-historial" style="display:none">
+                Cargando historial...
+            </div>
+            <div class="col-md-12 text-danger texto-error-cargando-historial" style="display:none">
+                Error de servidor y/o conexion. <a href="#" data-bind="click:consultarHistorialConsultas">Reintentar</a>
+            </div>
+            <!--ko foreach:historialConsultas-->
+            <div class="col-md-12" style="background-color:lightgray">
+                <b>Fecha: </b><span data-bind="text:Fecha"></span>
+            </div>
+            <div class="col-md-4">
+                <b>Motivo de consulta</b><br />
+                <span data-bind="text:HistoriaPediatriaConsultaMotivo"></span>
+            </div>
+            <div class="col-md-4">
+                <b>Historia de la enfermedad actual</b><br />
+                <span data-bind="text:HistoriaPediatriaHistoriaEnfermedadActual"></span>
+            </div>
+            <div class="col-md-4">
+                <b>Diagnostico</b><br />
+                <span data-bind="text:HistoriaPediatriaDiagnostico"></span>
+            </div>
+            <!--/ko-->
+            <!--ko if:historialConsultas().length==0-->
+            <div class="col-md-12">
+                No hay registro de consultas anteriores
+            </div>
+            <!--/ko-->
+        </div>
+    </div>
+</div>

@@ -1,0 +1,34 @@
+@{
+    ViewData["Title"] = "Modificar Gasto";
+}
+
+<div class="app-page-title">
+    <div class="page-title-wrapper">
+
+        <div class="page-title-heading">
+            <div class="page-title-icon">
+                <i class="pe-7s-graph text-success">
+                </i>
+            </div>
+            <div>Modificar Gasto
+                <div class="page-title-subheading">Modifica tus gastos.
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+     @await Html.PartialAsync("_MensajeExito")
+    <div>
+    <a href="@Url.Action("Eliminar","Gasto", new {id = @Model.Gasto.Id})"  class="btn btn-danger" hidden="@Model.Modificar" >
+        Eliminar Gasto
+    </a>
+    </div>
+
+
+<br/>
+
+
+<form asp-controller="Gasto" asp-action="Modificar"  method="post">  
+    @await Html.PartialAsync("_GastoForm")
+</form>

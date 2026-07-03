@@ -1,0 +1,107 @@
+@model IEnumerable<Database.Shared.Models.Cotizacion>
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Cotizaciones";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+    decimal totalGeneral = 0m;
+}
+
+<style>
+    .report-container {
+        margin-top: 10px;
+        font-size: 12px;
+    }
+
+    .report-title {
+        text-align: center;
+        font-weight: bold;
+        font-size: 16px;
+        color: #0d0e36;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+
+    .report-subtitle {
+        text-align: center;
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    .report-table-title-row th {
+        background-color: #f3f4ff;
+        border-left: 3px solid #0d0e36;
+        color: #0d0e36;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: bold;
+        font-size: 12px;
+        text-align: left;
+        padding: 6px 8px;
+    }
+
+    .report-table-header-row th {
+        background-color: #eef2ff;
+        color: #0d0e36;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 11px;
+        text-align: left;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table tbody td {
+        font-size: 12px;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .report-table tfoot td {
+        font-weight: bold;
+        padding: 6px 8px;
+        border-top: 1px solid #e1e4ea;
+        background-color: #f9fafb;
+        text-align: right;
+    }
+</style>
+
+<div class="report-container">
+    <!-- Título principal -->
+    <div class="report-title">
+        REPORTE - @ViewData["Title"]
+    </div>
+    <div class="report-subtitle">
+        <b>Fecha y hora de emisión:</b> @fecha.ToString("dd/MM/yyyy HH:mm")
+    </div>
+
+    <!-- Tabla de cotizaciones -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="7">Listado de cotizaciones</th>
+            </tr>
+            <tr class="report-table-header-row">
+                <th>Fecha cotización</th>
+                <th>Cotización #</th>
+                <th>Cliente</

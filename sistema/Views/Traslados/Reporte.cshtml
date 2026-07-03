@@ -1,0 +1,189 @@
+@using System
+@using System.Globalization
+@model sistema.Models.TrasladosBaseViewModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Traslado";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    var personaEnviado = Model.TrasladosProductos.ResponsableEnviado == null
+        ? ""
+        : Model.TrasladosProductos.ResponsableEnviadoText;
+
+    var personaRecibido = Model.TrasladosProductos.ResponsableRecibido == null
+        ? ""
+        : Model.TrasladosProductos.ResponsableRecibidoText;
+
+    var bodegaOrigen = Model.TrasladosProductos.BodegaOrigen != null
+        ? Model.TrasladosProductos.BodegaOrigen.NombreBodega
+        : "-";
+
+    var bodegaDestino = Model.TrasladosProductos.BodegaDestino != null
+        ? Model.TrasladosProductos.BodegaDestino.NombreBodega
+        : "-";
+}
+
+<style>
+    .report-container {
+        margin-top: 10px;
+        font-size: 11px;
+    }
+
+    .report-title {
+        text-align: center;
+        font-weight: bold;
+        font-size: 16px;
+        color: #0d0e36;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+    }
+
+    /* Tabla de metadatos (encabezado del traslado) */
+    .report-meta-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 10px;
+        border: none;
+    }
+
+    .report-meta-table td {
+        font-size: 12px;
+        padding: 4px 6px;
+        vertical-align: top;
+        border: none;
+    }
+
+    .report-meta-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .report-meta-label {
+        font-weight: bold;
+        width: 18%;
+        white-space: nowrap;
+    }
+
+    .report-table {
+        width: 100%;
+        margin-top: 10px;
+        border-collapse: collapse;
+    }
+
+    /* Título de sección (similar al bloque de Servicios del membrete) */
+    .report-table-title-row th {
+        background-color: #f3f4ff;
+        border-left: 3px solid #0d0e36;
+        color: #0d0e36;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: bold;
+        font-size: 12px;
+        text-align: center;
+        padding: 6px 8px;
+    }
+
+    /* Encabezados de columnas */
+    .report-table-header-row th {
+        background-color: #eef2ff;
+        color: #0d0e36;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 11px;
+        text-align: left;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table tbody td {
+        font-size: 12px;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+</style>
+
+<div class="report-container">
+    <!-- Encabezado del reporte -->
+    <div class="report-title">
+        REPORTE - TRASLADO
+    </div>
+
+    <!-- Encabezado de datos del traslado en tabla 4 columnas -->
+    <table class="report-meta-table">
+        <tbody>
+            <tr>
+                <td class="report-meta-label" style="text-align:center; text-transform: uppercase;" colspan="4">Traslado No. @Model.TrasladosProductos.Id</td>
+            </tr>
+            <tr>
+                <td class="report-meta-label" style="width:5%">FECHA DE ENVÍO:</td>
+                <td style="width:20%; text-transform: uppercase; text-align: left;">
+                    @Model.TrasladosProductos.FechaTraslado.Value.ToString("D", CultureInfo.CreateSpecificCulture("es-GT")).ToUpperInvariant()
+                    @Model.TrasladosProductos.FechaTraslado.Value.ToString("HH:mm")
+                </td>
+                <td class="report-meta-label" style="width:5%">RESPONSABLE:</td>
+                <td style="width:20%; text-transform: uppercase; text-align: left;">@personaEnviado</td>
+            </tr>
+            <tr>
+                <td class="report-meta-label" style="width:5%">OBSERVACIONES:</td>
+                <td style="width:20%; text-transform: uppercase; text-align: left;">@Model.TrasladosProductos.Observaciones</td>
+                <td class="report-meta-label" style="width:5%">ESTADO:</td>
+                <td style="width:20%; text-transform: uppercase; text-align: left;">@Model.TrasladosProductos.EstadoTraslados.DescripcionEstado</td>
+            </tr>
+            <tr>
+                <td class="report-meta-label" style="width:5%">RESPONSABLE RECIBIDO:</td>
+                <td style="width:20%; text-transform: uppercase; text-align: left;">@personaRecibido</td>
+                <td class="report-meta-label" style="width:5%">TOTAL ITEMS:</td>
+                <td style="width:20%; text-transform: uppercase; text-align: left;">@Model.TrasladosProductos.DetalleTrasladoProductos.Count()</td>
+            </tr>
+            <tr>
+                <td class="report-meta-label" style="width:5%">Origen:</td>
+                <td style="width:20%; text-transform: uppercase; text-align: left;">@bodegaOrigen</td>
+                <td class="report-meta-label" style="width:5%">Destino:</td>
+                <td style="width:20%; text-transform: uppercase; text-align: left;">@bodegaDestino</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Tabla de productos -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="3">Productos</th>
+            </tr>
+            <tr class="report-table-header-row">
+                <th>Nombre Producto</th>
+                <th>Unidad de venta</th>
+                <th>Cantidad</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var producto in Model.TrasladosProductos.DetalleTrasladoProductos)
+            {
+                var presentacion = "UN";
+                if (producto.ProductoInventario != null &&
+                    producto.ProductoInventario.UnidadMedidaVenta != null)
+                {
+                    presentacion = producto.ProductoInventario.UnidadMedidaVenta.Nombre ?? "UN";
+                }
+
+                <tr>
+                    <td>@producto.ProductoInventario.Producto.NombreProducto</td>
+                    <td>@presentacion</td>
+                    <td>@producto.Cantidad</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

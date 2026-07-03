@@ -1,0 +1,27 @@
+@{
+    ViewData["Title"] = "Modificar Cliente";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <h4><b>Modificar persona</b></h4>
+        </div>
+    </div>
+</div>
+
+<form asp-controller="Personas" asp-action="Modificar" method="post">
+    @await Html.PartialAsync("_PersonaForm")
+</form>
+
+@section Scripts{
+<script type="text/javascript" src="~/js/moment.min.js"></script>
+<script type="text/javascript" src="~/js/daterangepicker.js"></script>
+<script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+    }
+
+@section css {
+<link href="~/css/daterangepicker.css" rel="stylesheet">
+    }

@@ -1,0 +1,24 @@
+@model sistema.Models.MarcaViewModel
+
+<div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel">
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+          
+                <div class="form-row">
+
+                    <div class="col-md-12">
+                        <div class="position-relative form-group"><label for="exampleEmail11" class="">Marca</label>
+                                @* <input placeholder="Descripción Producto" class="form-control"> *@
+                                @Html.TextBoxFor(a => a.Marca.NombreMarca, new {@class="form-control", @placeholder="Marca"})
+                                @Html.ValidationMessageFor(a => a.Marca.NombreMarca, "", new { @class = "text-danger"})
+                                </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="col-md-12">
+                            <button class="btn btn-primary">Guardar</button>
+                    </div>
+                </div>
+        </div>
+    </div>
+</div>

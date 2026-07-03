@@ -1,0 +1,107 @@
+@model sistema.Models.HospitalizacionDetallesViewModel
+@{
+    var usuarioAdmisiones = User.IsInRole("Admisiones");
+    var usuarioMedicoExterno = User.IsInRole("Medico Externo");
+
+} 
+<div class="tab-pane tabs-animation fade show " id="tab-content-evolucion" role="tabpanel">
+    <div class="form-row">
+        <div class="col-md-12">
+            <div class="main-card mb-3 card" style="border-radius: 10px">
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="col-md-11">
+                            <h6><b>Signos vitales</b></h6> 
+                            <hr />
+                        </div>
+                        <div class="col-md-1">
+                            @if (!usuarioAdmisiones)
+                            {
+                                @if (!Model.HospitalizacionFinalizada && !User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio") && !User.IsInRole("Medico Externo"))
+                                {
+                                    <button class="btn btn-primary"
+                                            data-bind="click:verModalAgregarExamenFisico">
+                                        Agregar
+                                    </button>
+                                }
+                            }
+                        </div>
+                        <div class="col-md-12">
+                            <table class="table table-hover table-responsive">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha y hora</th>
+                                        <th>Profesional</th>
+                                        <th>Frecuencia cardiaca</th>
+                                        <th>Temperatura</th>
+                                        <th>Presion arterial</th>
+                                        <th>Presion arterial media</th>
+                                        <th>Saturacion de oxigeno</th>
+                                        <th>Frecuencia respiratoria</th>
+                                        <th>Glucosa (GMT)</th>
+                                        @* <th>Oxigenacion</th> *@
+                                        <th>Peso (kg)</th>
+                                        <th>Estatura (cm)</th>
+                                        <th>Observaciones</th>
+                                        <th>Estado</th>
+                                        @if (!usuarioAdmisiones)
+                                        {
+                                            @if (!Model.HospitalizacionFinalizada && !User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio") && !User.IsInRole("Medico Externo"))
+                                            {
+                                                <th>Acciones</th>
+                                            }
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!--ko foreach: examenesFisicosHospitalizacion-->
+                                    <tr>
+                                        <td data-bind="text: $data.FechaHora || ''"></td>
+                                        <td data-bind="text: $data.Persona || ''"></td>
+                                        <td data-bind="text: $data.Frecuenciacardiaca || ''"></td>
+                                        <td data-bind="text: $data.Temperatura || ''"></td>
+                                        <td data-bind="text: $data.Presionarterial || ''"></td>
+                                        <td data-bind="text: $data.Presionarterialmedia || ''"></td>
+                                        <td data-bind="text: $data.Saturaciondeoxigeno || ''"></td>
+                                        <td data-bind="text: $data.Frecuenciarespiratoria || ''"></td>
+                                        <td data-bind="text: $data.Glucosa || ''"></td>
+                                        @* <td data-bind="text: $data.Oxigenacion || ''"></td> *@
+                                        <td data-bind="text: $data.Peso || ''"></td>
+                                        <td data-bind="text: $data.Estatura || ''"></td>
+                                        <td data-bind="text: $data.Observaciones || ''"></td>
+                                        <td>
+                                            <!-- ko if: $data.Autorizado -->
+                                            <span class="badge badge-success"><i class="fas fa-check-circle"></i> Autorizado</span>
+                                            <!-- /ko -->
+                                            <!-- ko ifnot: $data.Autorizado -->
+                                            <span class="badge badge-warning"><i class="fas fa-clock"></i> Pendiente por Autorización</span>
+                                            <!-- /ko -->
+                                        </td>
+                                        @* @if (!usuarioAdmisiones)
+                                        {
+                                            @if (!Model.HospitalizacionFinalizada && !User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
+                                            { *@
+                                                @if (!Model.HospitalizacionFinalizada && !User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio") && !User.IsInRole("Medico Externo"))
+                                                { 
+                                                <td>
+                                                    <!-- ko ifnot: $data.Autorizado -->
+                                                    <button class="btn btn-sm btn-warning"
+                                                            data-bind="click: $root.autorizarExamenFisico">
+                                                        <i class="fas fa-fingerprint"></i> Autorizar
+                                                    </button>
+                                                    <!-- /ko -->
+                                                </td>
+                                                }
+                                            @* }
+                                        } *@
+                                    </tr>
+                                    <!--/ko-->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

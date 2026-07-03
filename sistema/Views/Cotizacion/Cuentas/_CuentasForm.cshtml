@@ -1,0 +1,44 @@
+﻿@model farmamest.Models.CuentasViewModel;
+
+@Html.HiddenFor(m => m.CuentaId)
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <h5><b>Informaci&oacute;n de la cuenta</b></h5>
+                        <hr />
+                    </div>
+                    <div class="col-md-12">
+                        <label>Nombre de la cuenta</label>
+                        @Html.TextBoxFor(a => a.Nombre, new
+                        {
+                        @class = "form-control",
+                        @placeholder = "Nombre de la cuenta"
+                        })
+                    </div>
+                    <div class="col-md-12">
+                        <label>Banco</label>
+                        @Html.DropDownList("BancoId",ViewBag.Banco as SelectList,  new { @class = "form-control"})
+
+                    </div><div class="col-md-12">
+                        <label>Tipo de cuenta</label>
+                        @Html.DropDownList("TipoCuentaId",ViewBag.TipoCuenta as SelectList, new { @class = "form-control"})
+
+                    </div>
+
+                    <div class="col-md-12">
+                        <label>Numero de cuenta</label>
+                        @Html.TextBoxFor(a => a.NumeroCuenta, new
+                        {
+                        @class = "form-control",
+                        @placeholder = "Número de cuenta"
+                        })
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

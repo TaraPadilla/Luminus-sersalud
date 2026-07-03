@@ -1,0 +1,80 @@
+@model sistema.Models.PacientesRegistrarRetiroViewModel
+@{
+    ViewData["Title"] = "Registrar retiro";
+}
+@Html.HiddenFor(m=>m.PacienteId)
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <h4><b>Registrar retiro</b></h4>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Datos del paciente</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-12">
+                <div class="form-row">
+                    <div class="col-md-4">
+                        <span><b>Nombre</b></span><br>
+                        @Model.PacienteNombre
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br><br>
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Información de retiro</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-12">
+                <label>Motivo de retiro</label>
+                @Html.TextAreaFor(m=>m.MotivoRetiro, new{@class="form-control",@placeholder="Motivo de retiro"})
+            </div>
+            <div class="col-md-6">
+                <label>Volver a contactar</label>
+                <select asp-for="VolverAContactar" class="form-control">
+                    <option value="true">Sí</option>
+                    <option value="false">No</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label>Fecha de contacto</label>
+                @Html.TextBoxFor(m=>m.FechaContacto, new {@class="form-control",@type="date"})
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <a class="btn btn-danger text-light" data-bind="click:cancelarRetiroPaciente">
+                    Cancelar
+                </a>
+                <button class="btn btn-primary" data-bind="click: registrarRetiro">
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.0.1/js/toastr.js"></script>
+<script type="text/javascript" src="~/js/moment.min.js"></script>
+<script type="text/javascript" src="~/js/daterangepicker.js"></script>
+<script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<script src="https://knockoutjs.com/downloads/knockout-3.5.1.js"></script>
+<script src="~/ViewModelKo/PacienteRegistrarRetiroVM.js"></script>
+}

@@ -1,0 +1,400 @@
+@*@* @using Database.Shared.Paginacion;
+    @model PaginacionList<Database.Shared.Models.Caja> 
+
+@model sistema.Models.CajaLaboratorioBaseViewModel
+
+@{
+
+    decimal totalVenta = 0.00m;
+
+    decimal totalVentaServ = 0.00m;
+
+    decimal totalCompra = 0.00m;
+
+    decimal totalIngreso = 0.00m;
+
+    decimal totalEgreso = 0.00m;
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+    <div class="form-row">
+        <div class="col-md-12">
+
+            <div class="col-md-6">
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <button type="button" class="btn btn-primary" onclick="GuardarIngreso(@Model.CajaLab.Id)">Nuevo Ingreso</button>
+                        <button type="button" class="btn btn-primary" onclick="GuardarEgreso(@Model.CajaLab.Id)">Nuevo Egreso</button>
+                        <a href="@Url.Action("Cerrar","LaboratorioClinico", new {id = @Model.CajaLab.Id})"
+                            class="btn btn-primary text-left">
+                            Cerrar caja
+                        </a>
+                        <a href="@Url.Action("","", new {id = @Model.CajaLab.Id})"
+                            class="btn btn-primary text-left">
+                            Generar PDF
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+<div class="form-row">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <h4>Ventas</h4>
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="table-responsive">
+                            <table class="mb-0 table table-hover ">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha Venta</th>
+                                        <th># Venta</th>
+                                        <th>Descripción</th>
+                                        <th>Paciente</th>
+                                        @* <th>Vendedor</th> 
+                                        <th>Monto Pagado</th>
+
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.CajaLab.DetalleCajaLabs
+                                    .Where(a => a.VentasLab != null).OrderByDescending(a=>a.VentasLab.FechaVenta))
+                                    {
+                                        <tr>
+                                            <td>@item.VentasLab.FechaVenta</td>
+                                            <td>@item.VentasLab.Id</td>
+                                            <td>@item.Descripcion</td>
+                                            <td>
+                                                @if(item.VentasLab.Examen != null)
+                                                {
+                                                    @item.VentasLab.Examen.Paciente.Nombre
+                                                }
+                                            </td>
+                                            @* <td>@item.VentasLab.Empleado.Nombre</td> 
+                                            <td>Q @item.Ingreso</td>
+                                        </tr>
+
+                                        totalVenta += item.Ingreso;
+
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="text-right" style="font-size: 17px;">
+                    <span>_____________________</span><br/>
+                    Q <span>@totalVenta</span>
+                </div> 
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@* <div class="form-row">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <h4>Venta de Servicios</h4>
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="table-responsive">
+                            <table class="mb-0 table table-hover ">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha Venta</th>
+                                        <th>Comprobante</th>
+                                        <th>Descripción</th>
+                                        <th>Cliente</th>
+                                        <th>Vendedor</th>
+                                        <th>Total</th>
+
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.Caja.DetalleCajas.Where(a => a.VentaServicio != null).OrderByDescending(a=>a.VentaServicio.FechaVenta))
+
+
+
+                                    {
+                                        <tr>
+                                            <td>@item.VentaServicio.FechaVenta</td>
+                                            <td>
+                                                @if (String.IsNullOrEmpty(item.VentaServicio.NoComprobante))
+
+
+
+                                                {
+                                                    <span>CF</span>
+
+                                                }
+
+                                                else
+
+                                                {
+                                                    <span>@item.VentaServicio.NoComprobante</span>
+
+                                                }
+                                            </td>
+                                            <td>@item.Descripcion</td>
+                                            <td>@item.VentaServicio.Paciente.Nombre</td>
+                                            <td>@item.VentaServicio.Empleado.Nombre</td>
+                                            <td>Q @item.Gasto</td>
+                                        </tr>
+
+                                        totalVentaServ += item.Ingreso;
+
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+                 <div class="text-right" style="font-size: 17px;">
+                    <span>_____________________</span><br/>
+                    Q <span>@totalVentaServ</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div> 
+
+<div class="form-row">
+    <div class="col-md-6">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <h4>Ingresos</h4>
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="table-responsive">
+                            <table class="mb-0 table table-hover ">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha Ingreso</th>
+                                        <th>Descripción</th>
+                                        <th>Total</th>
+                                        <th>Acciones</th>
+
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.CajaLab.DetalleCajaLabs.Where(a => a.Ingreso != 0.00m && a.VentasLab == null).OrderByDescending(a=>a.Fecha))
+                                    {
+                                        <tr>
+                                            <td>@item.Fecha</td>
+                                            <td>@item.Descripcion</td>
+                                            <td>Q @item.Ingreso</td>
+                                            <td>
+                                                <a  class="btn btn-danger text-white" onclick="eliminarDetalle(@item.Id)">
+                                                    Quitar
+                                                </a>
+                                            </td>
+                                        </tr>
+
+                                        totalIngreso += item.Ingreso;
+
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+                    <div class="text-right" style="font-size: 17px;">
+                    <span>_____________________</span><br/>
+                    Q <span>@totalIngreso</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+     <div class="col-md-6">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <h4>Egresos</h4>
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="table-responsive">
+                            <table class="mb-0 table table-hover ">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha Venta</th>
+                                        <th>Descripción</th>
+                                        <th>Total</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.CajaLab.DetalleCajaLabs.Where(a => a.Gasto != 0.00m).OrderByDescending(a=>a.Fecha))
+                                    {
+                                        <tr>
+                                            <td>@item.Fecha</td>
+                                            <td>@item.Descripcion</td>
+                                            <td>Q @item.Gasto</td>
+                                            <td>
+                                                <a class="btn btn-danger text-white" onclick="eliminarDetalle(@item.Id)">
+                                                    Quitar
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        totalEgreso += item.Gasto;
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+                    <div class="text-right" style="font-size: 17px;">
+                    <span>_____________________</span><br/>
+                    Q <span>@totalEgreso</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+@{
+
+    decimal sumaing = totalVenta + totalVentaServ + totalIngreso;
+    decimal sumaeg = totalCompra + totalEgreso;
+    decimal res = sumaing - sumaeg + Model.CajaLab.MontoApertura;
+}
+
+<div class="form-row">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="text-right" style="font-size: 17px;">
+                    <span>Monto Apertura:</span>
+                    Q <span>@Model.CajaLab.MontoApertura</span>
+                </div>
+                <div class="text-right" style="font-size: 17px;">
+                    <span>Total Egresos:</span>
+                    Q <span>@sumaeg</span>
+                </div>
+                <div class="text-right" style="font-size: 17px;">
+                    <span>Total Ingresos</span>
+                    Q <span>@sumaing</span>
+                </div>
+                <div class="text-right" style="font-size: 17px;">
+                    <span>Total Cierre:</span>
+                    Q <span>@res</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+<script src="~/js/FuncionesCaja.js"></script>
+
+<script>
+    function eliminarDetalle(id)
+    {
+        var datos = {"detalleId" : id}
+
+        if(confirm('¿Está seguro/a que desea eliminar este registro? Los cambios no se podrán revertir.'))
+        {
+            $.ajax({
+                method: "POST",
+                data: datos,
+                @* "dataType": "json", *@
+                @* "contentType": "application/json", 
+                url: '/LaboratorioClinico/EliminarDetalle',
+                traditional: true,
+
+                success: function(data, textStatus) {
+                    window.location.reload()
+                },
+
+                error: function(data) {
+                    alert(data.error);
+                }
+            });
+        }
+    }
+
+    function GuardarIngreso() {
+
+    var descripcion = prompt("Escribe una descripcion");
+
+    var monto = prompt("Escribe el monto");
+
+
+
+    var datos = {
+
+    };
+
+    // console.log(datos);
+
+
+    $.ajax({
+        method: "POST",
+        data: datos,
+        "dataType": "json",
+        "contentType": "application/json",
+        url: '/LaboratorioClinico/GuardarIngreso?Descripcion=' + descripcion + '&Monto=' + monto,
+        traditional: true,
+        success: function(data) {
+
+            //console.log(data);
+            location.reload();
+
+        },
+        error: function(data) {
+            alert(data.error);
+        }
+    });
+
+
+
+}
+
+function GuardarEgreso() {
+
+    var descripcion = prompt("Escribe una descripcion");
+    var monto = prompt("Escribe el monto");
+    var datos = {
+
+    };
+
+    // console.log(datos);
+
+
+    $.ajax({
+        method: "POST",
+        data: datos,
+        "dataType": "json",
+        "contentType": "application/json",
+        url: '/LaboratorioClinico/GuardarEgreso?Descripcion=' + descripcion + '&Monto=' + monto,
+        traditional: true,
+        success: function(data) {
+
+            //console.log(data);
+            location.reload();
+
+        },
+        error: function(data) {
+            alert(data.error);
+        }
+    });
+
+
+
+}
+</script>
+}*@

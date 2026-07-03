@@ -1,0 +1,49 @@
+@{
+    ViewData["Title"] = "Sociedades";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <h4><b>Sociedades</b></h4><br />
+            <h6>Carpeta</h6>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="tabla-archivos">
+                <thead>
+                    <tr class="text-center">
+                        <th>Nombre de archivo</th>
+                        <th>Tipo</th>
+                        <th>Ruta</th>
+                        <th>Vigente hasta</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Contrato 001</td>
+                        <td>Contrato laboral</td>
+                        <td>\Sociedades\20230516862854825384268.pdf</td>
+                        <td>2023/10/06</td>
+                        <td>
+                            <a download target="_blank" href="~/assets/images/logocentral.png" class="btn btn-success">Descargar</a>
+                            <button class="btn btn-danger">Eliminar</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://knockoutjs.com/downloads/knockout-3.5.1.js"></script>
+<script type="text/javascript" src="~/ViewModelKo/RepositorioArchivosCarpetaVM.js"></script>

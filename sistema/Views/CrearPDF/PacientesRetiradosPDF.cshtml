@@ -1,0 +1,85 @@
+@using Database.Shared.Models
+@model List<Paciente>
+
+@{
+    Layout = "_HojaMembreteLayout";
+
+    ViewData["Title"] = "Pacientes retirados";
+    // Configuración estándar de membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+}
+
+<div class="form-row">
+    <div class="col-md-12">
+        <center>
+            <h5><b>@ViewData["Title"]</b></h5>
+        </center>
+        <hr />
+    </div>
+</div>
+
+<div class="form-row">
+    <div class="col-md-12">
+        <center>
+            <b>Fecha y hora de emisión:</b> @fecha.ToString("dd/MM/yyyy HH:mm")
+        </center>
+        <hr />
+    </div>
+</div>
+
+<div class="form-row">
+    <div class="col-md-12">
+        <table class="mb-0 table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Teléfono</th>
+                    <th>Celular</th>
+                    <th>Fecha de registro</th>
+                    <th>Edad</th>
+                    <th>Email</th>
+                    <th>Fecha de retiro</th>
+                    <th>Peso inicial</th>
+                    <th>Último peso registrado</th>
+                    <th>Motivo de retiro</th>
+                    <th>Fecha de contacto</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    var fechaRegistro = item.FechaRegistro == null
+                    ? ""
+                    : Convert.ToDateTime(item.FechaRegistro).ToString("yyyy/MM/dd");
+
+                    var pesoInicial = "";
+                    var ultimoPesoRegistrado = "";
+                    var motivoRetiro = "";
+                    var contactado = "";
+
+                    <tr>
+                        <td>@item.Nombre</td>
+                        <td>@item.Telefono</td>
+                        <td>@item.Celular</td>
+                        <td>@fechaRegistro</td>
+                        <td>@item.Edad</td>
+                        <td>@item.Email</td>
+                        <td>@item.FechaRetiro</td>
+                        <td>@pesoInicial</td>
+                        <td>@ultimoPesoRegistrado</td>
+                        <td>@motivoRetiro</td>
+                        <td>@contactado</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,50 @@
+@model sistema.Models.ConsultasViewModel
+
+<br />
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Habitaciones disponibles</b></h5>
+            </div>
+            <div class="col-md-12">
+                <hr />
+            </div>
+            <div id="text-cargando-habitaciones-disponibles" class="text-primary" style="display:none">
+                Cargando habitaciones disponibles...
+            </div>
+            <div id="text-error-cargando-habitaciones-disponibles" class="text-danger" style="display:none">
+                Error al consultar habitaciones.
+                <a href="#" data-bind="click:consultarHabitacionesDisponibles">Reintentar</a>
+            </div>
+            <div class="col-md-12 table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Numero/Nombre</th>
+                            <th>Categoria</th>
+                            <th>Capacidad de personas</th>
+                            <th>Numero de camas</th>
+                            <th>Ocupar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!--ko foreach: habitacionesDisponibles-->
+                        <tr>
+                            <td data-bind="text:HabitacionNombre"></td>
+                            <td data-bind="text:HabitacionCategoria"></td>
+                            <td data-bind="text:HabitacionCapacidadPersonas"></td>
+                            <td data-bind="text:HabitacionNumeroCamas"></td>
+                            <td>
+                                <button class="btn btn-primary" data-bind="click:$root.ocuparHabitacion">
+                                    <i class="fa fa-bed"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <!--/ko-->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

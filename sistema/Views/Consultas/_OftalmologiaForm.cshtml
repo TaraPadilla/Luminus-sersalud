@@ -1,0 +1,1213 @@
+@model sistema.Models.ConsultasViewModel
+@using Database.Shared.Models
+@{
+  var _hist = ViewBag.OftHistorialFull as IEnumerable<ConsultasOftalmologia>;
+
+  // Helper de presentación
+  Func<object, string> V = (val) =>
+  {
+    if (val == null) return "Sin definir";
+    if (val is string s) return string.IsNullOrWhiteSpace(s) ? "Sin definir" : s;
+    return Convert.ToString(val);
+  };
+
+  var idx = 0;
+}
+
+
+@{
+  // ===== Helpers de formateo seguro (uso en lectura) =====
+  string TextoONada(string? v) => string.IsNullOrWhiteSpace(v) ? "—" : v;
+
+  string DecNulo(decimal? n, string f = "0.00") =>
+  n.HasValue ? n.Value.ToString(f, global::System.Globalization.CultureInfo.InvariantCulture) : "—";
+
+  string EntNulo(int? n) =>
+  n.HasValue ? n.Value.ToString(global::System.Globalization.CultureInfo.InvariantCulture) : "—";
+
+  string Adicion(decimal? n) =>
+  n.HasValue ? n.Value.ToString("+0.00", global::System.Globalization.CultureInfo.InvariantCulture) : "—";
+
+  string Dip(decimal? n) =>
+  n.HasValue ? n.Value.ToString("0.0", global::System.Globalization.CultureInfo.InvariantCulture) : "—";
+}
+
+@* IDs necesarios para upsert; viajarán en el POST del formulario principal *@
+@Html.HiddenFor(m => m.Oft_ConsultaId)
+@Html.HiddenFor(m => m.Oft_Id)
+
+<style>
+  :root {
+    --ink: #1f2937;
+    --ink-soft: #334155;
+    --muted: #6b7280;
+    --brand: #0ea5e9;
+    --brand-ink: #0369a1;
+    --bg: #f7fbff;
+    --card: #ffffff;
+    --card-bdr: #e5edf7;
+    --accent: #dbeafe;
+  }
+
+  .oft-wrap {
+    background: var(--bg);
+    color: var(--ink)
+  }
+
+  .oft-card {
+    background: var(--card);
+    border: 1px solid var(--card-bdr);
+    border-radius: .9rem;
+    box-shadow: 0 8px 24px rgba(2, 32, 71, .06);
+  }
+
+  .oft-head {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    color: var(--brand-ink);
+    font-weight: 800;
+    letter-spacing: .2px;
+    margin-bottom: .75rem;
+  }
+
+  .oft-head i {
+    font-size: 1.3rem;
+    color: var(--brand)
+  }
+
+  .oft-sub {
+    color: var(--muted);
+    font-size: .95rem;
+  }
+
+  .oft-pill {
+    display: inline-block;
+    padding: .25rem .6rem;
+    border-radius: 9999px;
+    background: var(--accent);
+    color: var(--brand-ink);
+    font-weight: 700;
+    font-size: .8rem;
+  }
+
+  .table thead th {
+    background: var(--accent);
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--card-bdr);
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: var(--ink-soft)
+  }
+
+  .hint {
+    font-size: .85rem;
+    color: var(--muted)
+  }
+
+  .hr-soft {
+    border-top: 1px dashed #e5edf7
+  }
+
+  .nav-pills .nav-link {
+    font-weight: 700
+  }
+
+  .nav-pills .nav-link.active {
+    background: var(--brand);
+    box-shadow: 0 6px 14px rgba(14, 165, 233, .25)
+  }
+</style>
+
+<div class="oft-wrap">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    @if (Model.HabilitarEdicion)
+    {
+      <span class="oft-pill">MODO EDICIÓN</span>
+    }
+    else
+    {
+
+      <span class="oft-pill" style="background:#eaeef6;color:#475569">MODO LECTURA</span>
+    }
+    <div class="text-danger" asp-validation-summary="ModelOnly"></div>
+  </div>
+
+  @* ============================ EDICION ============================ *@
+  @if (Model.HabilitarEdicion)
+  {
+    <div class="row">
+      <div class="col-lg-6 mb-3">
+        <div class="oft-card p-3 p-md-4">
+          <div class="oft-head"><i class="fas fa-notes-medical"></i>
+            <h5 class="mb-0">Motivo de consulta e historia</h5>
+          </div>
+          <textarea class="form-control" rows="6" asp-for="Oft_HistoriaEnfermedadActual"
+          placeholder="Breve historia de la enfermedad actual"></textarea>
+          <span class="text-danger" asp-validation-for="Oft_HistoriaEnfermedadActual"></span>
+        </div>
+      </div>
+
+      <div class="col-lg-6 mb-3">
+        <div class="oft-card p-3 p-md-4">
+          <div class="oft-head"><i class="fas fa-clipboard-list"></i>
+            <h5 class="mb-0">Antecedentes</h5>
+          </div>
+          <div class="form-row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Médicos</label>
+              <textarea class="form-control" rows="2" asp-for="Oft_PacienteMedicos"></textarea>
+              <span class="text-danger" asp-validation-for="Oft_PacienteMedicos"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Quirúrgicos</label>
+              <textarea class="form-control" rows="2" asp-for="Oft_PacienteQuirurgicos"></textarea>
+              <span class="text-danger" asp-validation-for="Oft_PacienteQuirurgicos"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Traumáticos</label>
+              <textarea class="form-control" rows="2" asp-for="Oft_PacienteTraumaticos"></textarea>
+              <span class="text-danger" asp-validation-for="Oft_PacienteTraumaticos"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Alérgicos</label>
+              <textarea class="form-control" rows="2" asp-for="Oft_PacienteAlergias"></textarea>
+              <span class="text-danger" asp-validation-for="Oft_PacienteAlergias"></span>
+            </div>
+            <div class="col-md-12 mb-1">
+              <label class="form-label">Familiares</label>
+              <textarea class="form-control" rows="2" asp-for="Oft_PacienteFamiliares"></textarea>
+              <span class="text-danger" asp-validation-for="Oft_PacienteFamiliares"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="oft-card mb-3 p-3 p-md-4">
+      <div class="oft-head"><i class="fas fa-eye"></i>
+        <h5 class="mb-0">Datos objetivos</h5>
+      </div>
+
+      <ul class="nav nav-pills mb-3" role="tablist">
+        <li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#avsc">Agudeza visual sin corrección</a>
+        </li>
+        <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#contraste">Sensibilidad de contraste</a></li>
+        <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#avcerca">AV cerca sin corrección</a></li>
+        <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#testesp">Tests especiales</a></li>
+      </ul>
+
+      <div class="tab-content">
+        <div id="avsc" class="tab-pane fade show active">
+          <div class="form-row">
+            <div class="col-md-3 mb-3">
+              <label class="form-label">Test</label>
+              <select class="form-control" asp-for="Oft_AgudezaSC_Test">
+                <option value="SNELLEN LETRAS">SNELLEN LETRAS</option>
+                <option value="SNELLEN NÚMEROS">SNELLEN NÚMEROS</option>
+                <option value="ALLEN">ALLEN</option>
+                <option value="E">E</option>
+                <option value="E">C</option>
+              </select>
+              <span class="text-danger" asp-validation-for="Oft_AgudezaSC_Test"></span>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">OD (Ojo Derecho)</label>
+              <select class="form-control" asp-for="Oft_AgudezaSC_OD" id="Oft_AgudezaSC_OD">
+                @foreach (var v in new[]{
+                            "20/15","20/20","20/30","20/40","20/50","20/60","20/70","20/80","20/100","20/200","20/400","20/800",
+                            "20/1600","Movimientos de manos","Percepción de Luz","NPL"})
+                {
+                  <option value="@v">@v</option>
+                }
+              </select>
+
+              <span class="text-danger" asp-validation-for="Oft_AgudezaSC_OD"></span>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">OS (Ojo Izquierdo)</label>
+              <select class="form-control" asp-for="Oft_AgudezaSC_OS" id="Oft_AgudezaSC_OS">
+                @foreach (var v in new[]{
+                            "20/15","20/20","20/30","20/40","20/50","20/60","20/70","20/80","20/100","20/200","20/400","20/800",
+                            "20/1600","Movimientos de manos","Percepción de Luz","NPL"})
+                {
+                  <option value="@v">@v</option>
+                }
+              </select>
+
+              <span class="text-danger" asp-validation-for="Oft_AgudezaSC_OS"></span>
+            </div>
+          </div>
+          <div class="hint mt-1">Valores típicos: 20/15 a 20/800.</div>
+        </div>
+
+        <div id="contraste" class="tab-pane fade">
+          <div class="form-row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">OD</label>
+              <input type="text" class="form-control" asp-for="Oft_Contraste_OD" placeholder="Texto libre" />
+              <span class="text-danger" asp-validation-for="Oft_Contraste_OD"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">OS</label>
+              <input type="text" class="form-control" asp-for="Oft_Contraste_OS" placeholder="Texto libre" />
+              <span class="text-danger" asp-validation-for="Oft_Contraste_OS"></span>
+            </div>
+          </div>
+        </div>
+
+        <div id="avcerca" class="tab-pane fade">
+          <p class="hint">Toma los valores del combo de agudeza visual.</p>
+          <div class="form-row">
+            <div class="col-md-4 mb-3">
+              <label class="form-label">OD</label>
+              <select class="form-control" asp-for="Oft_AVCerca_OD" id="Oft_AVCerca_OD">
+                @foreach (var v in new[]{
+                            "20/15","20/20","20/30","20/40","20/50","20/60","20/70","20/80","20/100","20/200","20/400","20/800",
+                            "abajo de 20/800","20/1600","Movimientos de manos","Percepción de Luz","NPL"})
+                {
+                  <option value="@v">@v</option>
+                }
+              </select>
+              <span class="text-danger" asp-validation-for="Oft_AVCerca_OD"></span>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">OS</label>
+              <select class="form-control" asp-for="Oft_AVCerca_OS" id="Oft_AVCerca_OS">
+                @foreach (var v in new[]{
+                            "20/15","20/20","20/30","20/40","20/50","20/60","20/70","20/80","20/100","20/200","20/400","20/800",
+                            "abajo de 20/800","20/1600","Movimientos de manos","Percepción de Luz","NPL"})
+                {
+                  <option value="@v">@v</option>
+                }
+              </select>
+
+              <span class="text-danger" asp-validation-for="Oft_AVCerca_OS"></span>
+            </div>
+          </div>
+        </div>
+
+        <div id="testesp" class="tab-pane fade">
+          <div class="form-row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Ishihara (OD)</label>
+              <input type="text" class="form-control" asp-for="Oft_TestIshihara_OD" />
+              <span class="text-danger" asp-validation-for="Oft_TestIshihara_OD"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Ishihara (OS)</label>
+              <input type="text" class="form-control" asp-for="Oft_TestIshihara_OS" />
+              <span class="text-danger" asp-validation-for="Oft_TestIshihara_OS"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Estereopsis (OD)</label>
+              <input type="text" class="form-control" asp-for="Oft_TestEstereopsis_OD" />
+              <span class="text-danger" asp-validation-for="Oft_TestEstereopsis_OD"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Estereopsis (OS)</label>
+              <input type="text" class="form-control" asp-for="Oft_TestEstereopsis_OS" />
+              <span class="text-danger" asp-validation-for="Oft_TestEstereopsis_OS"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="oft-card mb-3 p-3 p-md-4">
+      <div class="oft-head"><i class="fas fa-glasses"></i>
+        <h5 class="mb-0">Óptica</h5>
+      </div>
+
+      <div id="opticaAcc" role="tablist">
+        <div class="card mb-2">
+          <div class="card-header" role="tab" id="lensometriaHead">
+            <h6 class="mb-0"><a data-toggle="collapse" href="#lensometria" aria-expanded="true"
+                aria-controls="lensometria">Lensometría (Histórico)</a></h6>
+          </div>
+          <div id="lensometria" class="collapse show" role="tabpanel" aria-labelledby="lensometriaHead"
+            data-parent="#opticaAcc">
+            <div class="card-body">
+              <div class="form-row">
+                <div class="col-md-3 mb-3"><label class="form-label">OD Esfera</label><input type="number" step="0.25"
+                    inputmode="decimal" class="form-control" asp-for="Oft_Lensometria_OD_Esfera" placeholder="0.00" />
+                </div>
+                <div class="col-md-3 mb-3"><label class="form-label">OD Cilindro</label><input type="number" step="0.25"
+                    inputmode="decimal" class="form-control" asp-for="Oft_Lensometria_OD_Cilindro" placeholder="0.00" />
+                </div>
+                <div class="col-md-3 mb-3"><label class="form-label">OD Eje</label><input type="number" step="1" min="0"
+                    max="180" class="form-control" asp-for="Oft_Lensometria_OD_Eje" placeholder="0–180" /></div>
+                <div class="col-md-3 mb-3"><label class="form-label">OD Agudeza V.</label><input type="text"
+                    class="form-control" asp-for="Oft_Lensometria_OD_Agudeza" placeholder="20/20" /></div>
+
+                <div class="col-12"></div>
+
+                <div class="col-md-3 mb-3"><label class="form-label">OS Esfera</label><input type="number" step="0.25"
+                    inputmode="decimal" class="form-control" asp-for="Oft_Lensometria_OS_Esfera" placeholder="0.00" />
+                </div>
+                <div class="col-md-3 mb-3"><label class="form-label">OS Cilindro</label><input type="number" step="0.25"
+                    inputmode="decimal" class="form-control" asp-for="Oft_Lensometria_OS_Cilindro" placeholder="0.00" />
+                </div>
+                <div class="col-md-3 mb-3"><label class="form-label">OS Eje</label><input type="number" step="1" min="0"
+                    max="180" class="form-control" asp-for="Oft_Lensometria_OS_Eje" placeholder="0–180" /></div>
+                <div class="col-md-3 mb-3"><label class="form-label">OS Agudeza V.</label><input type="text"
+                    class="form-control" asp-for="Oft_Lensometria_OS_Agudeza" placeholder="20/20" /></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-2">
+          <div class="card-header" role="tab" id="finalHead">
+            <h6 class="mb-0"><a class="collapsed" data-toggle="collapse" href="#final" aria-expanded="false"
+                aria-controls="final">Final</a></h6>
+          </div>
+          <div id="final" class="collapse" role="tabpanel" aria-labelledby="finalHead" data-parent="#opticaAcc">
+            <div class="card-body">
+              <div class="form-row">
+                <div class="col-md-3 mb-3"><label class="form-label">OD Esfera</label><input type="number" step="0.25"
+                    inputmode="decimal" class="form-control" asp-for="Oft_Final_OD_Esfera" /></div>
+                <div class="col-md-3 mb-3"><label class="form-label">OD Cilindro</label><input type="number" step="0.25"
+                    inputmode="decimal" class="form-control" asp-for="Oft_Final_OD_Cilindro" /></div>
+                <div class="col-md-3 mb-3"><label class="form-label">OD Eje</label><input type="number" step="1" min="0"
+                    max="180" class="form-control" asp-for="Oft_Final_OD_Eje" /></div>
+                <div class="col-md-3 mb-3"><label class="form-label">OD Agudeza V.</label><input type="text"
+                    class="form-control" asp-for="Oft_Final_OD_Agudeza" /></div>
+
+                <div class="col-md-3 mb-3"><label class="form-label">OS Esfera</label><input type="number" step="0.25"
+                    inputmode="decimal" class="form-control" asp-for="Oft_Final_OS_Esfera" /></div>
+                <div class="col-md-3 mb-3"><label class="form-label">OS Cilindro</label><input type="number" step="0.25"
+                    inputmode="decimal" class="form-control" asp-for="Oft_Final_OS_Cilindro" /></div>
+                <div class="col-md-3 mb-3"><label class="form-label">OS Eje</label><input type="number" step="1" min="0"
+                    max="180" class="form-control" asp-for="Oft_Final_OS_Eje" /></div>
+                <div class="col-md-3 mb-3"><label class="form-label">OS Agudeza V.</label><input type="text"
+                    class="form-control" asp-for="Oft_Final_OS_Agudeza" /></div>
+
+                <div class="col-md-3 mb-3"><label class="form-label">Adición (siempre con +)</label><input type="number"
+                    step="0.25" inputmode="decimal" class="form-control" asp-for="Oft_Final_Adicion"
+                    placeholder="+0.75, +1.00" /></div>
+                <div class="col-md-3 mb-3"><label class="form-label">DIP (mm)</label><input type="number" step="0.5"
+                    inputmode="decimal" class="form-control" asp-for="Oft_Final_DIP_mm" /></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-2">
+          <div class="card-header" role="tab" id="retinoHead">
+            <h6 class="mb-0"><a class="collapsed" data-toggle="collapse" href="#retino" aria-expanded="false"
+                aria-controls="retino">Retinoscopía</a></h6>
+          </div>
+          <div id="retino" class="collapse" role="tabpanel" aria-labelledby="retinoHead" data-parent="#opticaAcc">
+            <div class="card-body">
+              <div class="form-row">
+                <div class="col-md-3 mb-3"><label class="form-label">OD Esfera</label><input type="number" step="0.25"
+                    inputmode="decimal" class="form-control" asp-for="Oft_Retino_OD_Esfera" /></div>
+                <div class="col-md-3 mb-3"><label class="form-label">OD Cilindro</label><input type="number" step="0.25"
+                    inputmode="decimal" class="form-control" asp-for="Oft_Retino_OD_Cilindro" /></div>
+                <div class="col-md-3 mb-3"><label class="form-label">OD Eje</label><input type="number" step="1" min="0"
+                    max="180" class="form-control" asp-for="Oft_Retino_OD_Eje" /></div>
+
+                <div class="col-12"></div>
+
+                <div class="col-md-3 mb-3"><label class="form-label">OS Esfera</label><input type="number" step="0.25"
+                    inputmode="decimal" class="form-control" asp-for="Oft_Retino_OS_Esfera" /></div>
+                <div class="col-md-3 mb-3"><label class="form-label">OS Cilindro</label><input type="number" step="0.25"
+                    inputmode="decimal" class="form-control" asp-for="Oft_Retino_OS_Cilindro" /></div>
+                <div class="col-md-3 mb-3"><label class="form-label">OS Eje</label><input type="number" step="1" min="0"
+                    max="180" class="form-control" asp-for="Oft_Retino_OS_Eje" /></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header" role="tab" id="lenteHead">
+            <h6 class="mb-0"><a class="collapsed" data-toggle="collapse" href="#lente" aria-expanded="false"
+                aria-controls="lente">Tipo de lente</a></h6>
+          </div>
+          <div id="lente" class="collapse" role="tabpanel" aria-labelledby="lenteHead" data-parent="#opticaAcc">
+            <div class="card-body">
+              <div class="form-row">
+                <div class="col-md-4 mb-3">
+                  <div class="custom-control custom-radio"><input class="custom-control-input" type="radio"
+                      asp-for="Oft_TipoLente" id="l1" value="Monofocal" /><label class="custom-control-label"
+                      for="l1">Monofocal</label></div>
+                  <div class="custom-control custom-radio"><input class="custom-control-input" type="radio"
+                      asp-for="Oft_TipoLente" id="l2" value="Bifocal Flaptop" /><label class="custom-control-label"
+                      for="l2">Bifocal Flaptop</label></div>
+                  <div class="custom-control custom-radio"><input class="custom-control-input" type="radio"
+                      asp-for="Oft_TipoLente" id="l3" value="Bifocal Invisible" /><label class="custom-control-label"
+                      for="l3">Bifocal Invisible</label></div>
+                  <div class="custom-control custom-radio"><input class="custom-control-input" type="radio"
+                      asp-for="Oft_TipoLente" id="l4" value="Progresivo" /><label class="custom-control-label"
+                      for="l4">Progresivo</label></div>
+                  <span class="text-danger" asp-validation-for="Oft_TipoLente"></span>
+                </div>
+                <div class="col-md-8 mb-1">
+                  <label class="form-label">Material y tratamiento <span class="hint">(No retirar insumos)</span></label>
+                  <textarea class="form-control" rows="3" asp-for="Oft_LenteMaterialTratamiento"
+                  placeholder="Se escribirá directamente..."></textarea>
+                  <span class="text-danger" asp-validation-for="Oft_LenteMaterialTratamiento"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /opticaAcc -->
+    </div>
+
+    <div class="oft-card mb-3 p-3 p-md-4">
+      <div class="oft-head"><i class="fas fa-binoculars"></i>
+        <h5 class="mb-0">Inspección, lámpara de hendidura y oftalmoscopía</h5>
+      </div>
+      <div class="form-row">
+        @* CAMBIO: estos campos ahora son TEXTO LIBRE *@
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Movimientos extraoculares (OD)</label>
+          <input type="text" class="form-control" asp-for="Oft_Inspeccion_MovExtraoculares_OD" />
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Movimientos extraoculares (OS)</label>
+          <input type="text" class="form-control" asp-for="Oft_Inspeccion_MovExtraoculares_OS" />
+        </div>
+
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Cejas (OD)</label>
+          <input type="text" class="form-control" asp-for="Oft_Inspeccion_Cejas_OD" />
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Cejas (OS)</label>
+          <input type="text" class="form-control" asp-for="Oft_Inspeccion_Cejas_OS" />
+        </div>
+
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Párpados y pestañas (OD)</label>
+          <input type="text" class="form-control" asp-for="Oft_Inspeccion_ParpadosPestanas_OD" />
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Párpados y pestañas (OS)</label>
+          <input type="text" class="form-control" asp-for="Oft_Inspeccion_ParpadosPestanas_OS" />
+        </div>
+
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Vía lagrimal (OD)</label>
+          <input type="text" class="form-control" asp-for="Oft_Inspeccion_ViaLagrimal_OD" />
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Vía lagrimal (OS)</label>
+          <input type="text" class="form-control" asp-for="Oft_Inspeccion_ViaLagrimal_OS" />
+        </div>
+
+        <div class="col-12">
+          <hr class="hr-soft">
+          <div class="font-weight-bold text-primary mb-2">Segmento anterior</div>
+        </div>
+
+        <div class="col-md-6 mb-3"><label class="form-label">Conjuntiva (OD)</label>
+          <input type="text" class="form-control default-sin-alt" asp-for="Oft_Inspeccion_Conjuntiva_OD" />
+        </div>
+        <div class="col-md-6 mb-3"><label class="form-label">Conjuntiva (OS)</label>
+          <input type="text" class="form-control default-sin-alt" asp-for="Oft_Inspeccion_Conjuntiva_OS" />
+        </div>
+
+        <div class="col-md-6 mb-3"><label class="form-label">Córnea y esclera (OD)</label>
+          <input type="text" class="form-control default-sin-alt" asp-for="Oft_Inspeccion_CorneaEsclera_OD" />
+        </div>
+        <div class="col-md-6 mb-3"><label class="form-label">Córnea y esclera (OS)</label>
+          <input type="text" class="form-control default-sin-alt" asp-for="Oft_Inspeccion_CorneaEsclera_OS" />
+        </div>
+
+        <div class="col-md-6 mb-3"><label class="form-label">Cámara anterior y ángulo (OD)</label>
+          <input type="text" class="form-control default-sin-alt" asp-for="Oft_Inspeccion_CamaraAnteriorAngulo_OD" />
+        </div>
+        <div class="col-md-6 mb-3"><label class="form-label">Cámara anterior y ángulo (OS)</label>
+          <input type="text" class="form-control default-sin-alt" asp-for="Oft_Inspeccion_CamaraAnteriorAngulo_OS" />
+        </div>
+
+        <div class="col-md-6 mb-3"><label class="form-label">Iris y pupila (OD)</label>
+          <input type="text" class="form-control default-sin-alt" asp-for="Oft_Inspeccion_IrisPupila_OD" />
+        </div>
+        <div class="col-md-6 mb-3"><label class="form-label">Iris y pupila (OS)</label>
+          <input type="text" class="form-control default-sin-alt" asp-for="Oft_Inspeccion_IrisPupila_OS" />
+        </div>
+
+        <div class="col-md-6 mb-3"><label class="form-label">Cristalino (OD)</label>
+          <input type="text" class="form-control default-sin-alt" asp-for="Oft_Inspeccion_Cristalino_OD" />
+        </div>
+        <div class="col-md-6 mb-3"><label class="form-label">Cristalino (OS)</label>
+          <input type="text" class="form-control default-sin-alt" asp-for="Oft_Inspeccion_Cristalino_OS" />
+        </div>
+
+        <div class="col-md-6 mb-3"><label class="form-label">BUT (OD)</label>
+          <input type="text" class="form-control default-sin-alt" asp-for="Oft_Inspeccion_BUT_OD" />
+        </div>
+        <div class="col-md-6 mb-3"><label class="form-label">BUT (OS)</label>
+          <input type="text" class="form-control default-sin-alt" asp-for="Oft_Inspeccion_BUT_OS" />
+        </div>
+
+        <div class="col-md-6 mb-3"><label class="form-label">Presión intraocular (OD)</label><input type="number"
+            step="0.1" inputmode="decimal" class="form-control" asp-for="Oft_Inspeccion_PresionIntraocular_OD"
+            placeholder="mmHg" /></div>
+        <div class="col-md-6 mb-3"><label class="form-label">Presión intraocular (OS)</label><input type="number"
+            step="0.1" inputmode="decimal" class="form-control" asp-for="Oft_Inspeccion_PresionIntraocular_OS"
+            placeholder="mmHg" /></div>
+
+        <div class="col-12">
+          <hr class="hr-soft">
+          <div class="font-weight-bold text-primary mb-2">Segmento posterior</div>
+        </div>
+
+        <div class="col-md-6 mb-3"><label class="form-label">Vítreo (OD)</label>
+          <input type="text" class="form-control default-sin-alt" asp-for="Oft_Inspeccion_Vitreo_OD" />
+        </div>
+        <div class="col-md-6 mb-3"><label class="form-label">Vítreo (OS)</label>
+          <input type="text" class="form-control default-sin-alt" asp-for="Oft_Inspeccion_Vitreo_OS" />
+        </div>
+
+        @* CAMBIO: Nervio óptico ahora es SELECT con opciones 0.1–1.0 *@
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Nervio óptico (OD)</label>
+          <select class="form-control" asp-for="Oft_Inspeccion_NervioOptico_OD">
+            <option value="0.1">0.1</option>
+            <option value="0.2">0.2</option>
+            <option value="0.3">0.3</option>
+            <option value="0.4">0.4</option>
+            <option value="0.5">0.5</option>
+            <option value="0.6">0.6</option>
+            <option value="0.7">0.7</option>
+            <option value="0.8">0.8</option>
+            <option value="0.9">0.9</option>
+            <option value="1.0">1.0</option>
+          </select>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Nervio óptico (OS)</label>
+          <select class="form-control" asp-for="Oft_Inspeccion_NervioOptico_OS">
+            <option value="0.1">0.1</option>
+            <option value="0.2">0.2</option>
+            <option value="0.3">0.3</option>
+            <option value="0.4">0.4</option>
+            <option value="0.5">0.5</option>
+            <option value="0.6">0.6</option>
+            <option value="0.7">0.7</option>
+            <option value="0.8">0.8</option>
+            <option value="0.9">0.9</option>
+            <option value="1.0">1.0</option>
+          </select>
+        </div>
+
+        <div class="col-md-6 mb-3"><label class="form-label">Mácula (OD)</label>
+          <input type="text" class="form-control default-sin-alt" asp-for="Oft_Inspeccion_Macula_OD" />
+        </div>
+        <div class="col-md-6 mb-3"><label class="form-label">Mácula (OS)</label>
+          <input type="text" class="form-control default-sin-alt" asp-for="Oft_Inspeccion_Macula_OS" />
+        </div>
+
+        <div class="col-md-6 mb-3"><label class="form-label">Retina (OD)</label>
+          <input type="text" class="form-control default-sin-alt" asp-for="Oft_Inspeccion_Retina_OD" />
+        </div>
+        <div class="col-md-6 mb-3"><label class="form-label">Retina (OS)</label>
+          <input type="text" class="form-control default-sin-alt" asp-for="Oft_Inspeccion_Retina_OS" />
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-lg-6 mb-3">
+        <div class="oft-card p-3 p-md-4">
+          <div class="oft-head"><i class="fas fa-notes-medical"></i>
+            <h5 class="mb-0">Impresión clínica</h5>
+          </div>
+          <textarea class="form-control" rows="6" asp-for="Oft_HistoriaClinicaImpresionClinica"
+          placeholder="Breve Impresión clínica actual"></textarea>
+          <span class="text-danger" asp-validation-for="Oft_HistoriaClinicaImpresionClinica"></span>
+        </div>
+      </div>
+
+      <div class="col-lg-6 mb-3">
+        <div class="oft-card p-3 p-md-4">
+          <div class="oft-head"><i class="fas fa-clipboard-list"></i>
+            <h5 class="mb-0">Tratamiento</h5>
+          </div>
+          <textarea class="form-control" rows="6" asp-for="Oft_HistoriaClinicaComentario"
+          placeholder="Breve Tratamiento o Comentario actual"></textarea>
+          <span class="text-danger" asp-validation-for="Oft_HistoriaClinicaComentario"></span>
+        </div>
+      </div>
+    </div>
+    <!-- Botones para generar Word -->
+    @if (Model.HabilitarEdicion)
+    {
+      <div class="text-right mb-3">
+        <button type="button" id="btnRecetaMedica" class="btn btn-outline-primary mr-2">
+          Receta médica (Word)
+        </button>
+        <button type="button" id="btnRecetaGafas" class="btn btn-outline-success">
+          Receta gafas (Word)
+        </button>
+      </div>
+    }
+
+
+
+
+  }
+
+  @if (_hist != null)
+  {
+    <div class="mt-4">
+      <h3 class="h5 mb-3 text-secondary">Histórico Oftalmología (completo)</h3>
+
+      <!-- Acordeón Bootstrap 4 -->
+      <div class="accordion" id="oftHistAccordion">
+        @foreach (var h in _hist)
+        {
+          var collapseId = $"oftHist-{idx}";
+          var headingId = $"oftHead-{idx}";
+          idx++;
+
+          <div class="card mb-3">
+            <div class="card-header" id="@headingId">
+              <h2 class="mb-0">
+                <button class="btn btn-link collapsed w-100 text-left d-flex justify-content-between align-items-center"
+                  type="button" data-toggle="collapse" data-target="#@collapseId" aria-expanded="false"
+                  aria-controls="@collapseId">
+                  <div class="w-100 d-flex flex-column flex-md-row justify-content-between small">
+                    <div><span class="fw-semibold text-dark">Fecha:</span> @(h.Fecha == default ? "Sin definir" :
+                                        h.Fecha.ToString("dd-MM-yyyy HH:mm"))</div>
+                  </div>
+                </button>
+              </h2>
+            </div>
+
+            <div id="@collapseId" class="collapse" aria-labelledby="@headingId" data-parent="#oftHistAccordion">
+              <div class="card-body">
+
+                <div class="card border rounded shadow-sm mb-4">
+                  <div class="card-body">
+
+                    <!-- Motivo -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-notes-medical"></i>
+                        <h5 class="mb-0">Motivo de consulta e Historia y Antecedentes</h5>
+                      </div>
+                      <div class="row d-flex justify-content-between gap-3">
+                        <div class="col-12 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Historia enfermedad actual</strong></div>
+                          <div class="text-muted">@V(h.HistoriaEnfermedadActual)</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Antecedentes -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-clipboard-list"></i>
+                        <h5 class="mb-0">Antecedentes</h5>
+                      </div>
+                      <div class="row d-flex justify-content-between gap-3">
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Antecedentes médicos</strong></div>
+                          <div class="text-muted">@V(h.PacienteMedicos)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Antecedentes quirúrgicos</strong></div>
+                          <div class="text-muted">@V(h.PacienteQuirurgicos)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Antecedentes traumáticos</strong></div>
+                          <div class="text-muted">@V(h.PacienteTraumaticos)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Alergias</strong></div>
+                          <div class="text-muted">@V(h.PacienteAlergias)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Antecedentes familiares</strong></div>
+                          <div class="text-muted">@V(h.PacienteFamiliares)</div>
+                        </div>
+                        <div class="col-4 mb-3"></div>
+                      </div>
+                    </div>
+
+                    <!-- Datos Objetivos -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-eye"></i>
+                        <h5 class="mb-0">Datos Objetivos</h5>
+                      </div>
+
+                      <div class="fw-bold text-primary mb-2">Agudeza visual sin corrección</div>
+                      <div class="row d-flex justify-content-between gap-3">
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Test</strong></div>
+                          <div class="text-muted">@V(h.AgudezaSC_Test)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OD (Ojo Derecho)</strong></div>
+                          <div class="text-muted">@V(h.AgudezaSC_OD)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OS (Ojo Izquierdo)</strong></div>
+                          <div class="text-muted">@V(h.AgudezaSC_OS)</div>
+                        </div>
+                      </div>
+
+                      <div class="fw-bold text-primary mb-2">Sensibilidad de contraste</div>
+                      <div class="row d-flex justify-content-between gap-3">
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OD (Ojo Derecho)</strong></div>
+                          <div class="text-muted">@V(h.Contraste_OD)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OS (Ojo Izquierdo)</strong></div>
+                          <div class="text-muted">@V(h.Contraste_OS)</div>
+                        </div>
+                        <div class="col-4 mb-3"></div>
+                      </div>
+
+                      <div class="fw-bold text-primary mb-2">AV cerca sin corrección</div>
+                      <div class="row d-flex justify-content-between gap-3">
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OD (Ojo Derecho)</strong></div>
+                          <div class="text-muted">@V(h.AVCerca_OD)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OS (Ojo Izquierdo)</strong></div>
+                          <div class="text-muted">@V(h.AVCerca_OS)</div>
+                        </div>
+                        <div class="col-4 mb-3"></div>
+                      </div>
+
+                      <div class="fw-bold text-primary mb-2">Tests especiales</div>
+                      <div class="row d-flex justify-content-between gap-3">
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Ishihara OD (Ojo Derecho)</strong></div>
+                          <div class="text-muted">@V(h.TestIshihara_OD)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Ishihara OS (Ojo Izquierdo)</strong></div>
+                          <div class="text-muted">@V(h.TestIshihara_OS)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Estereopsis OD (Ojo Derecho)</strong></div>
+                          <div class="text-muted">@V(h.TestEstereopsis_OD)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Estereopsis OS (Ojo Izquierdo)</strong></div>
+                          <div class="text-muted">@V(h.TestEstereopsis_OS)</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Óptica -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-glasses"></i>
+                        <h5 class="mb-0">Óptica</h5>
+                      </div>
+
+                      <div class="fw-bold text-primary mb-2">Lensometría (Histórico)</div>
+                      <div class="row d-flex justify-content-between gap-3">
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OD Esfera</strong></div>
+                          <div class="text-muted">@V(h.Lensometria_OD_Esfera)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OD Cilindro</strong></div>
+                          <div class="text-muted">@V(h.Lensometria_OD_Cilindro)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OD Eje</strong></div>
+                          <div class="text-muted">@V(h.Lensometria_OD_Eje)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OD Agudeza</strong></div>
+                          <div class="text-muted">@V(h.Lensometria_OD_Agudeza)</div>
+                        </div>
+
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OS Esfera</strong></div>
+                          <div class="text-muted">@V(h.Lensometria_OS_Esfera)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OS Cilindro</strong></div>
+                          <div class="text-muted">@V(h.Lensometria_OS_Cilindro)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OS Eje</strong></div>
+                          <div class="text-muted">@V(h.Lensometria_OS_Eje)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OS Agudeza</strong></div>
+                          <div class="text-muted">@V(h.Lensometria_OS_Agudeza)</div>
+                        </div>
+                      </div>
+
+                      <div class="fw-bold text-primary mb-2">Final</div>
+                      <div class="row d-flex justify-content-between gap-3">
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OD Esfera</strong></div>
+                          <div class="text-muted">@V(h.Final_OD_Esfera)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OD Cilindro</strong></div>
+                          <div class="text-muted">@V(h.Final_OD_Cilindro)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OD Eje</strong></div>
+                          <div class="text-muted">@V(h.Final_OD_Eje)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OD Agudeza</strong></div>
+                          <div class="text-muted">@V(h.Final_OD_Agudeza)</div>
+                        </div>
+
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OS Esfera</strong></div>
+                          <div class="text-muted">@V(h.Final_OS_Esfera)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OS Cilindro</strong></div>
+                          <div class="text-muted">@V(h.Final_OS_Cilindro)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OS Eje</strong></div>
+                          <div class="text-muted">@V(h.Final_OS_Eje)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OS Agudeza</strong></div>
+                          <div class="text-muted">@V(h.Final_OS_Agudeza)</div>
+                        </div>
+
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Adición</strong></div>
+                          <div class="text-muted">@V(h.Final_Adicion)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>DIP (mm)</strong></div>
+                          <div class="text-muted">@V(h.Final_DIP_mm)</div>
+                        </div>
+                      </div>
+
+                      <div class="fw-bold text-primary mb-2">Retinoscopía</div>
+                      <div class="row d-flex justify-content-between gap-3">
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OD Esfera</strong></div>
+                          <div class="text-muted">@V(h.Retino_OD_Esfera)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OD Cilindro</strong></div>
+                          <div class="text-muted">@V(h.Retino_OD_Cilindro)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OD Eje</strong></div>
+                          <div class="text-muted">@V(h.Retino_OD_Eje)</div>
+                        </div>
+
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OS Esfera</strong></div>
+                          <div class="text-muted">@V(h.Retino_OS_Esfera)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OS Cilindro</strong></div>
+                          <div class="text-muted">@V(h.Retino_OS_Cilindro)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>OS Eje</strong></div>
+                          <div class="text-muted">@V(h.Retino_OS_Eje)</div>
+                        </div>
+                      </div>
+
+                      <div class="fw-bold text-primary mb-2">Tipo de Lente</div>
+                      <div class="row d-flex justify-content-between gap-3">
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Tipo de Lente</strong></div>
+                          <div class="text-muted">@V(h.TipoLente)</div>
+                        </div>
+                        <div class="col-12 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Material y tratamiento (No retirar insumos)</strong>
+                          </div>
+                          <div class="text-muted">@V(h.LenteMaterialTratamiento)</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Inspección, LH y Oftalmoscopía -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-binoculars"></i>
+                        <h5 class="mb-0">Inspección, lámpara de hendidura y oftalmoscopía</h5>
+                      </div>
+
+                      <div class="row d-flex justify-content-between gap-3">
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Mov. extraoculares OD</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_MovExtraoculares_OD)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Cejas OD</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_Cejas_OD)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Párpados y pestañas OD</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_ParpadosPestanas_OD)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Vía lagrimal OD</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_ViaLagrimal_OD)</div>
+                        </div>
+
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Mov. extraoculares OS</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_MovExtraoculares_OS)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Cejas OS</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_Cejas_OS)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Párpados y pestañas OS</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_ParpadosPestanas_OS)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Vía lagrimal OS</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_ViaLagrimal_OS)</div>
+                        </div>
+                      </div>
+
+                      <div class="fw-bold text-primary mb-2">Segmento Anterior</div>
+                      <div class="row d-flex justify-content-between gap-3">
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Conjuntiva OD</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_Conjuntiva_OD)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Córnea y esclera OD</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_CorneaEsclera_OD)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Cámara ant./ángulo OD</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_CamaraAnteriorAngulo_OD)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Iris y pupila OD</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_IrisPupila_OD)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Cristalino OD</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_Cristalino_OD)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>BUT OD</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_BUT_OD)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Presión intraocular OD</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_PresionIntraocular_OD)</div>
+                        </div>
+
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Conjuntiva OS</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_Conjuntiva_OS)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Córnea y esclera OS</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_CorneaEsclera_OS)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Cámara ant./ángulo OS</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_CamaraAnteriorAngulo_OS)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Iris y pupila OS</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_IrisPupila_OS)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Cristalino OS</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_Cristalino_OS)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>BUT OS</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_BUT_OS)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Presión intraocular OS</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_PresionIntraocular_OS)</div>
+                        </div>
+                      </div>
+
+                      <div class="fw-bold text-primary mb-2">Segmento Posterior</div>
+                      <div class="row d-flex justify-content-between gap-3">
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Vítreo OD</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_Vitreo_OD)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Nervio óptico OD</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_NervioOptico_OD)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Mácula OD</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_Macula_OD)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Retina OD</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_Retina_OD)</div>
+                        </div>
+
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Vítreo OS</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_Vitreo_OS)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Nervio óptico OS</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_NervioOptico_OS)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Mácula OS</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_Macula_OS)</div>
+                        </div>
+                        <div class="col-4 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Retina OS</strong></div>
+                          <div class="text-muted">@V(h.Inspeccion_Retina_OS)</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Impresión / Comentario -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="bi bi-clipboard2-check"></i>
+                        <h5 class="mb-0">Impresión clínica y tratamiento</h5>
+                      </div>
+                      <div class="row d-flex justify-content-between gap-3">
+                        <div class="col-12 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Impresión clínica</strong></div>
+                          <div class="text-muted">@V(h.HistoriaClinicaImpresionClinica)</div>
+                        </div>
+                        <div class="col-12 mb-3">
+                          <div class="text-dark text-uppercase"><strong>Tratamiento / Comentario</strong></div>
+                          <div class="text-muted">@V(h.HistoriaClinicaComentario)</div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+    @*   <div class="text-right mb-4">
+        <a href="/CrearPDF/ConsultaOftalmologiaPDF?consultaId=@(Model.ConsultaId?.ToString())"
+          class="btn btn-success btn-lg text-white" target="_blank">
+          Generar PDF &nbsp;<i class="fas fa-arrow-down"></i>
+        </a>
+      </div> *@
+  }
+  else
+  {
+    <div class="mt-4 small text-muted">No hay histórico oftalmológico para este paciente.</div>
+  }
+
+</div>
+
+
+@if (Model.HabilitarEdicion && !Model.Hospitalizada)
+{
+  <script>
+    // Poblar listas de agudeza visual y defaults "Sin alteración" (solo en edición)
+    (function () {
+      var AVS = [
+        "20/15", "20/20", "20/30", "20/40", "20/50", "20/60", "20/70", "20/80",
+        "20/100", "20/200", "20/400", "20/800",
+        "abajo de 20/800", "20/1600", "Movimientos de manos", "Percepción de Luz", "NPL"
+      ];
+
+      function fillSelectPreservingValue(sel, values) {
+        if (!sel) return;
+        var prev = sel.value;  // guardar valor actual que pudo venir del modelo
+        sel.innerHTML = "";
+        values.forEach(function (v) {
+          var o = document.createElement('option');
+          o.value = v;
+          o.textContent = v;
+          sel.appendChild(o);
+        });
+        if (prev) sel.value = prev;  // restaurar si existía
+      }
+
+      var avOD = document.getElementById("Oft_AgudezaSC_OD");
+      var avOS = document.getElementById("Oft_AgudezaSC_OS");
+      var avCOD = document.getElementById("Oft_AVCerca_OD");
+      var avCOS = document.getElementById("Oft_AVCerca_OS");
+
+      [avOD, avOS, avCOD, avCOS].forEach(function (sel) {
+        fillSelectPreservingValue(sel, AVS);
+      });
+
+      if (avOD && avCOD) {
+        avOD.addEventListener('change', function () { avCOD.value = avOD.value; });
+      }
+      if (avOS && avCOS) {
+        avOS.addEventListener('change', function () { avCOS.value = avOS.value; });
+      }
+
+      // Valores por defecto "Sin alteración"
+      var opts = ["Sin alteración", "Con alteración", "Observación"];
+      document.querySelectorAll(".default-sin-alt").forEach(function (sel) {
+        var prev = sel.value;
+
+        // Solo tiene sentido recrear options si es un SELECT
+        if (sel.tagName === "SELECT") {
+          sel.innerHTML = "";
+          opts.forEach(function (v) {
+            var o = document.createElement('option');
+            o.value = v;
+            o.textContent = v;
+            sel.appendChild(o);
+          });
+        }
+
+        sel.value = prev || "Sin alteración";
+      });
+
+      // === Botones Word (solo window.open, sin AJAX) ===
+      var consultaId = '@(Model.ConsultaId?.ToString() ?? "")';
+
+      function validarConsultaId() {
+        if (!consultaId) {
+          alert("Debe guardar primero la consulta antes de generar la receta.");
+          return false;
+        }
+        return true;
+      }
+
+      var btnRecetaMedica = document.getElementById("btnRecetaMedica");
+      if (btnRecetaMedica) {
+        btnRecetaMedica.addEventListener("click", function () {
+          if (!validarConsultaId()) return;
+          var url = '@Url.Action("RecetaMedicaWord", "Consultas")'
+            + '?consultaId=' + encodeURIComponent(consultaId);
+          window.open(url, "_blank");
+        });
+      }
+
+      var btnRecetaGafas = document.getElementById("btnRecetaGafas");
+      if (btnRecetaGafas) {
+        btnRecetaGafas.addEventListener("click", function () {
+          if (!validarConsultaId()) return;
+          var url = '@Url.Action("RecetaGafasWord", "Consultas")'
+            + '?consultaId=' + encodeURIComponent(consultaId);
+          window.open(url, "_blank");
+        });
+      }
+    })();
+  </script>
+}
+
+@section Scripts {
+  <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,139 @@
+﻿@model List<Database.Shared.Models.Receta>
+
+@{
+    ViewData["Title"] = "Gestión de Recetas";
+}
+
+<div class="container-fluid animated fadeIn">
+
+    @await Html.PartialAsync("_MensajeExito")
+
+    <div class="card shadow-sm border-0 mb-4">
+        @* Encabezado Estilizado - Estilo Hospitalario Moderno *@
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-file-medical mr-2"></i>Catálogo de Recetas
+                </h5>
+                <small class="text-muted text-uppercase" style="letter-spacing: 1px;">Administración de costos y preparaciones</small>
+            </div>
+            <a class="btn btn-primary btn-sm shadow-sm px-4" asp-action="Nuevo" asp-controller="Receta">
+                <i class="fas fa-plus-circle mr-1"></i> Nueva Receta
+            </a>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover w-100" id="tabla-recetas">
+                    <thead class="thead-light">
+                        <tr>
+                            <th class="border-top-0">Nombre de la Receta</th>
+                            <th class="border-top-0">Ingredientes Principales</th>
+                            <th class="border-top-0 text-center">Precio Costo</th>
+                            <th class="border-top-0 text-center">Precio Venta</th>
+                            <th class="border-top-0 text-right" style="width:150px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null)
+                        {
+                            foreach (var receta in Model)
+                            {
+                                <tr>
+                                    @* Nombre resaltado *@
+                                    <td class="align-middle font-weight-bold text-dark" style="font-size: 1.05rem;">
+                                        @receta.NombreReceta
+                                    </td>
+                                    
+                                    @* Ingredientes con texto legible *@
+                                    <td class="align-middle text-secondary" style="font-size: 1rem; max-width: 250px;">
+                                        @receta.Ingredientes
+                                    </td>
+
+                                    @* Precios con formato visual claro *@
+                                    <td class="align-middle text-center">
+                                        <span class="text-muted small">$</span> <span class="font-weight-bold">@receta.PrecioCosto</span>
+                                    </td>
+                                    <td class="align-middle text-center">
+                                        <span class="text-success small">$</span> <span class="font-weight-bold text-success">@receta.PrecioVenta</span>
+                                    </td>
+
+                                    @* Acciones con iconos grandes y tooltips *@
+                                    <td class="align-middle text-right">
+                                        <div class="btn-group" role="group">
+                                            <a class="btn btn-light btn-sm text-warning mx-1 border shadow-sm" 
+                                               data-toggle="tooltip" 
+                                               title="Editar Receta"
+                                               asp-action="Modificar"
+                                               asp-controller="Receta"
+                                               asp-route-recetaId="@receta.Id">
+                                                <i class="fas fa-edit fa-lg"></i>
+                                            </a>
+
+                                            <form asp-action="EliminarReceta"
+                                                  asp-controller="Receta"
+                                                  method="post"
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('¿Está seguro de eliminar esta receta?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="recetaId" value="@receta.Id" />
+                                                <button type="submit" 
+                                                        class="btn btn-light btn-sm text-danger mx-1 border shadow-sm" 
+                                                        data-toggle="tooltip" 
+                                                        title="Eliminar Receta">
+                                                    <i class="fas fa-trash-alt fa-lg"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Inicializar Tooltips para las acciones
+            $('[data-toggle="tooltip"]').tooltip();
+
+            // Configuración de DataTable en Español
+            $('#tabla-recetas').DataTable({
+                "language": {
+                    "sProcessing":     "Procesando...",
+                    "sLengthMenu":     "Mostrar _MENU_ registros",
+                    "sZeroRecords":    "No se encontraron resultados",
+                    "sEmptyTable":     "Ningún dato disponible en esta tabla",
+                    "sInfo":           "Mostrando registros del _START_ al _END_ de un total de _TOTAL_",
+                    "sInfoEmpty":      "Mostrando 0 al 0 de 0 registros",
+                    "sInfoFiltered":   "(filtrado de un total de _MAX_ registros)",
+                    "sSearch":         "Buscar:",
+                    "oPaginate": {
+                        "sFirst":    "Primero",
+                        "sLast":     "Último",
+                        "sNext":     "Siguiente",
+                        "sPrevious": "Anterior"
+                    }
+                },
+                "responsive": true,
+                "columnDefs": [
+                    { "orderable": false, "targets": 4 } // Desactivar orden en columna de acciones
+                ],
+                "order": [[0, "asc"]],
+                "drawCallback": function() {
+                    // Re-vincular tooltips al navegar entre páginas
+                    $('[data-toggle="tooltip"]').tooltip();
+                }
+            });
+
+            if (typeof rememberMe === "function") {
+                rememberMe("receta");
+            }
+        });
+    </script>
+}

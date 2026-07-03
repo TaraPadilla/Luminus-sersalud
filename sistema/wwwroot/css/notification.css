@@ -1,0 +1,96 @@
+    /* ===== NOTIFICACIONES DE MEDICACIÓN ===== */
+#notif-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 360px;
+    pointer-events: none;
+}
+
+.notif-card {
+    background: #ffffff;
+    border-left: 5px solid #ffc107;
+    border-radius: 10px;
+    padding: 14px 16px 14px 16px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    pointer-events: all;
+    position: relative;
+    animation: notifSlideIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.notif-card.notif-saliendo {
+    animation: notifSlideOut 0.3s ease forwards;
+}
+
+.notif-card .notif-icono {
+    font-size: 1.4rem;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.notif-card .notif-titulo {
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: #856404;
+    display: flex;
+    align-items: center;
+}
+
+.notif-card .notif-mensaje {
+    font-size: 0.87rem;
+    color: #444;
+    margin-top: 5px;
+    line-height: 1.4;
+}
+
+.notif-card .notif-hora {
+    font-size: 0.76rem;
+    color: #999;
+    margin-top: 6px;
+}
+
+.notif-card .notif-cerrar {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #bbb;
+    background: none;
+    border: none;
+    line-height: 1;
+    padding: 0;
+    transition: color 0.2s;
+}
+
+.notif-card .notif-cerrar:hover {
+    color: #555;
+}
+
+.notif-card .notif-barra {
+    height: 3px;
+    background: #ffc107;
+    border-radius: 2px;
+    margin-top: 10px;
+    animation: notifBarra 15s linear forwards;
+    transform-origin: left;
+}
+
+@keyframes notifSlideIn {
+    from { transform: translateX(110%); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+}
+
+@keyframes notifSlideOut {
+    from { transform: translateX(0);    opacity: 1; }
+    to   { transform: translateX(110%); opacity: 0; }
+}
+
+@keyframes notifBarra {
+    from { transform: scaleX(1); }
+    to   { transform: scaleX(0); }
+}

@@ -1,0 +1,467 @@
+@model sistema.Models.RequisicionListaViewModel
+
+@{
+    ViewData["Title"] = "Requisiciones";
+    var nombreRol = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+}
+
+<style>
+    /* =========================
+       MODAL: z-index + altura fija + scroll interno (flex)
+       ========================= */
+
+    /* Modal arriba */
+    #modalDetalleRequisicion.modal.show {
+        z-index: 20050 !important;
+        pointer-events: auto !important;
+    }
+
+    #modalAutorizacion.modal.show {
+        z-index: 20050 !important;
+        pointer-events: auto !important;
+    }
+
+    #modalAutorizacion .modal-dialog {
+        box-shadow: none !important;
+        -webkit-box-shadow: none !important; 
+    }
+
+    /* Backdrop debajo del modal */
+    .modal-backdrop.show {
+        z-index: 20000 !important;
+        pointer-events: auto !important;
+    }
+
+    /* ALTURA REAL del dialog (no max-height) */
+    #modalDetalleRequisicion .modal-dialog {
+        max-width: 1200px;
+        height: 85vh;        /* <- clave */
+        margin: 1.75rem auto; /* respeta el centrado visual */
+    }
+
+    /* modal-content debe estirarse al 100% del dialog */
+    #modalDetalleRequisicion .modal-content {
+        height: 100%;        /* <- clave */
+        display: flex;       /* <- clave */
+        flex-direction: column;
+    }
+
+    /* body debe ocupar todo el espacio restante */
+    #modalDetalleRequisicion .modal-body {
+        flex: 1 1 auto;      /* <- clave */
+        overflow-y: auto;    /* scroll interno */
+        padding: 1rem;       /* p-3 */
+    }
+
+    /* ===== Ajustes del partial dentro del modal (opcional) ===== */
+    /* Quita padding lateral del container-fluid si existe */
+    #detalleRequisicionBody > .container-fluid {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    /* Elimina margen inferior del último card para que no “empuje” el footer */
+    #detalleRequisicionBody .card:last-child {
+        margin-bottom: 0 !important;
+    }
+
+    .barcode-wrapper {
+        width: 120px;
+        height: 50px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+
+    .barcode-estatico {
+        cursor: zoom-in;
+        transition: transform 0.2s ease-in-out;
+        max-width: 100%;
+        height: auto;
+        background: white;
+    }
+
+    .barcode-zoom-active {
+        position: fixed !important; 
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) scale(6) !important; 
+        z-index: 99999 !important; 
+        box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        border: 1px solid #000;
+        padding: 2px;
+        cursor: zoom-out;
+        width: 15%;
+    }
+
+    .barcode-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.2);
+        z-index: 99998;
+        display: none;
+    }
+</style>
+
+<div class="container-fluid px-0">
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+                
+            <div class="d-flex align-items-center justify-content-between flex-wrap">
+                <h4 class="mb-0 font-weight-bold">Requisiciones</h4>
+                <a class="btn btn-primary btn-sm mt-2 mt-sm-0"
+                   asp-controller="Requisicion"
+                   asp-action="Nuevo">
+                    Nueva requisición
+                </a>
+            </div>
+
+            <hr class="my-3" />
+
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0" id="tabla-requisiciones">
+                    <thead class="thead-light">
+                        <tr>
+                            <th style="width: 140px;">N° Requisición</th>
+                            <th style="width: 120px;">N° Orden</th>
+                            <th style="width: 120px;">Departamento</th>
+                            <th style="width: 120px;">Unidad</th>
+                            <th style="width: 160px;">Fecha</th>
+                            <th style="width: 220px;">Solicitante</th>
+                            <th>Origen</th>
+                            <th>Destino</th>
+                            <th style="width: 160px;">Estado</th>
+                            <th class="text-right" style="width: 170px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Modal Detalle -->
+<div class="modal fade" id="modalDetalleRequisicion" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title mb-0">Detalle de requisición</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body" id="detalleRequisicionBody">
+                <div class="text-center text-muted py-4">
+                    Seleccione una requisición para ver el detalle.
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal Autorizacion -->
+<div class="modal fade" id="modalAutorizacion" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title mb-0">Autorizar</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body" id="autorizacionBody">
+                <div class="text-center text-muted py-4">
+                    Seleccione una requisición para ver el detalle.
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+<script>
+    (function () {
+        const usuarioRol = '@nombreRol';
+        const tabla = $('#tabla-requisiciones').DataTable({
+            processing: true,
+            serverSide: true,
+            searching: true,
+            ordering: true,
+            lengthMenu: [10, 25, 50, 100],
+            pageLength: 10,
+            ajax: {
+                url: '@Url.Action("ListaData", "Requisicion")',
+                type: 'POST'
+            },
+            "drawCallback": function(settings) {
+                $('[data-toggle="tooltip"]').tooltip({
+                    container: 'body', 
+                    trigger: 'hover'
+                });
+            },
+            columns: [
+                { data: 'numeroRequisicion', name: 'NumeroRequisicion' },
+                { data: 'numeroOrden', name: 'NumeroOrden' },
+                { data: 'departamentoNombre', name: 'DepartamentoNombre' },
+                { data: 'unidadNombre', name: 'UnidadNombre' },
+                { data: 'fechaSolicitud', name: 'FechaSolicitud' },
+                { data: 'solicitanteNombre', name: 'SolicitanteNombre' },
+                { data: 'bodegaOrigenNombre', name: 'BodegaOrigenNombre' },
+                { data: 'bodegaDestinoNombre', name: 'BodegaDestinoNombre' },
+                { 
+                    data: 'estado', 
+                    name: 'Estado',
+                    render: function (data, type, row) {
+
+                        const colores = {
+                            'Borrador': 'bg-light text-dark border',          
+                            'EnviadoAJefatura': 'badge-primary',              
+                            'VistoBuenoJefatura': 'bg-info text-white',      
+                            'VistoBuenoGerencia': 'bg-success text-white',  
+                            'TrasladadoABodega': 'bg-secondary text-white',  
+                            'EntregadoAKardex': 'bg-dark text-white'  
+                        };
+
+                        let claseBadge = colores[data] || 'badge-secondary';
+
+                        let textoFormateado = data.replace(/([A-Z])/g, ' $1').trim();
+
+                        return `<span class="badge badge-pill ${claseBadge}" style="padding: 0.5em 0.8em; font-weight: 500;">
+                                    ${textoFormateado.toUpperCase()}
+                                </span>`;
+                    }
+                },
+                {
+                    data: 'requisicionId',
+                    orderable: false,
+                    searchable: false,
+                    className: 'text-right',
+                    render: function (data, type, row) {
+                        let estado = row.estado;
+                        let botones = `
+            <div class="btn-group" role="group" aria-label="Acciones">
+                <div class="d-flex gap-1 flex-wrap">
+                    <button type="button" class="btn btn-outline-primary js-modal-trigger" data-toggle="tooltip" title="Detalle." data-id="${data}" data-target="#modalDetalleRequisicion">
+                        <i class="fa-regular fa-eye"></i>
+                    </button>
+
+                    <button type="button" class="btn btn-outline-info js-btn-pdf" data-id="${data}" data-toggle="tooltip" title="Reporte.">
+                        <i class="fa-solid fa-file-pdf"></i>
+                    </button>`;
+        if (estado === 'EnviadoAJefatura' && (usuarioRol === 'Jefe de Area' || usuarioRol === 'Administrador') ) {
+            botones += `
+                <button type="button" class="btn btn-outline-warning js-modal-trigger" data-id="${data}" data-tipo="vobo" data-toggle="tooltip" title="Autorizar Jefatura." data-target="#modalAutorizacion">
+                    <i class="fa-solid fa-circle-check"></i>
+                </button>`;
+        }
+
+        if (estado === 'VistoBuenoJefatura' && (usuarioRol === 'Gerente Administrativo Financiero' || usuarioRol === 'Administrador')) {
+            botones += `
+                <button type="button" class="btn btn-outline-warning js-modal-trigger" data-id="${data}" data-tipo="autorizacion" data-toggle="tooltip" title="Autorizar Gerencia." data-target="#modalAutorizacion">
+                    <i class="fa-solid fa-circle-check"></i>
+                </button>`;
+        }
+
+        if (estado === 'TrasladadoABodega' && (usuarioRol === 'Auxiliar de Bodega' || usuarioRol === 'Administrador')) {
+            botones += `
+                <button type="button" class="btn btn-outline-warning js-modal-trigger" data-id="${data}" data-tipo="autorizacionbodega" data-toggle="tooltip" title="Autorizar Auxiliar Bodega." data-target="#modalAutorizacion">
+                    <i class="fa-solid fa-circle-check"></i>
+                </button>`;
+        }
+
+        botones += `</div></div>`;
+        return botones;
+                          
+                    }
+                }
+            ],
+            language: {
+                emptyTable: "No hay requisiciones registradas.",
+                processing: "Cargando..."
+            }
+        });
+
+        function setLoading() {
+            document.getElementById('detalleRequisicionBody').innerHTML =
+                '<div class="text-center text-muted py-4">Cargando...</div>';
+        }
+
+        function setError(msg) {
+            document.getElementById('detalleRequisicionBody').innerHTML =
+                '<div class="alert alert-danger mb-0">' + (msg || 'Error al cargar el detalle.') + '</div>';
+        }
+
+
+        async function cargarDetalle(id) {
+            try {
+                setLoading();
+
+                const url = '@Url.Action("DetalleModal", "Requisicion")' + '?id=' + encodeURIComponent(id);
+                const resp = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+
+                if (!resp.ok) {
+                    setError('Error ' + resp.status + ': No se pudo obtener el detalle de la base de datos.');
+                    console.error("Error en la respuesta:", resp.statusText);
+                    return;
+                }
+
+                const html = await resp.text();
+                const contenedor = document.getElementById('detalleRequisicionBody');
+                contenedor.innerHTML = html;
+
+                const elementos = contenedor.querySelectorAll('.barcode-estatico');
+
+                elementos.forEach(el => {
+                    const serialRaw = el.getAttribute('data-serial');
+                    if (serialRaw) {
+                        try {
+                            const serialLimpio = serialRaw.replace(/[^a-zA-Z0-9]/g, '-');
+
+                            JsBarcode(el, serialLimpio, {
+                                format: "CODE128",
+                                displayValue: false, 
+                                fontSize: 12,
+                                width: 1,           
+                                height: 40,
+                                margin: 10
+                            });
+
+                            if (el.parentNode.className !== 'barcode-wrapper') {
+                                const wrapper = document.createElement('div');
+                                wrapper.className = 'barcode-wrapper';
+                                el.parentNode.insertBefore(wrapper, el);
+                                wrapper.appendChild(el);
+
+                                wrapper.addEventListener('click', function(e) {
+                                    e.stopPropagation();
+                                    const isZoomed = el.classList.contains('barcode-zoom-active');
+
+                                    document.querySelectorAll('.barcode-zoom-active').forEach(item => {
+                                        item.classList.remove('barcode-zoom-active');
+                                    });
+
+                                    if (!isZoomed) {
+                                        el.classList.add('barcode-zoom-active');
+                                    }
+                                });
+                            }
+                        } catch (barcodeError) {
+                            console.error("Error generando código para: " + serialRaw, barcodeError);
+                            el.style.display = 'none'; 
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error("Error crítico en cargarDetalle:", e);
+                setError("Error de red o fallo en el renderizado del detalle.");
+            }
+        }
+
+        if (!window.zoomHandlerIniciado) {
+            document.addEventListener('click', function() {
+                document.querySelectorAll('.barcode-zoom-active').forEach(item => {
+                    item.classList.remove('barcode-zoom-active');
+                });
+            }, { capture: true });
+            window.zoomHandlerIniciado = true;
+        }
+
+        $('#modalDetalleRequisicion')
+            .on('shown.bs.modal', function () {
+                document.body.classList.add('modal-open');
+                this.focus();
+            })
+            .on('hidden.bs.modal', function () {
+                document.getElementById('detalleRequisicionBody').innerHTML =
+                    '<div class="text-center text-muted py-4">Seleccione una requisición para ver el detalle.</div>';
+            });
+
+        
+        async function  cargarAutorizacion(id, tipo) {
+            const body = document.getElementById('autorizacionBody');
+            if (!body) return;
+
+            try {
+                body.innerHTML = '<div class="text-center py-4">Cargando formulario...</div>';
+                const url = '@Url.Action("Autorizacion", "Requisicion")' 
+                    + '?id=' + encodeURIComponent(id) 
+                    + '&tipo=' + encodeURIComponent(tipo);
+
+                const resp = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+
+                if (!resp.ok) throw new Error('Error HTTP ' + resp.status);
+
+                const html = await resp.text();
+                body.innerHTML = html;
+            } catch (e) {
+                body.innerHTML = '<div class="alert alert-danger">Error al cargar autorización.</div>';
+            }
+        }
+
+        document.addEventListener('click', function (ev) {
+    const btn = ev.target.closest('.js-modal-trigger'); 
+    if (!btn) return;
+
+    const id = btn.getAttribute('data-id');
+    const targetModalId = btn.getAttribute('data-target'); 
+    const tipo = btn.getAttribute('data-tipo'); 
+
+    if (!id || !targetModalId) return;
+
+    const $modal = $(targetModalId);
+
+    if ($modal.parent()[0] !== document.body) {
+        $modal.appendTo(document.body);
+    }
+
+    if (targetModalId === '#modalDetalleRequisicion') {
+        cargarDetalle(id); 
+    } else if (targetModalId === '#modalAutorizacion') {
+        cargarAutorizacion(id, tipo);
+    }
+
+    $modal.modal('show'); 
+});
+
+
+$(document).on('click', '.js-btn-pdf', function () {
+    const idGenerado = $(this).attr('data-id');
+
+    if (idGenerado) {
+        const urlPdf = `/CrearPDF/generarPDFRequisicionDespacho?requisicionId=${idGenerado}`;
+        
+        window.open(urlPdf, '_blank');
+    } else {
+        toastr.error("Error: No se pudo identificar el ID de la requisición.");
+    }
+});
+
+    })();
+</script>
+
+<script type="text/javascript" src="~/js/FuncionesEstadoRequisicion.js"></script>
+
+}

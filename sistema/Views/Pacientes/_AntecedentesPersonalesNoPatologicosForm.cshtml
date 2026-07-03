@@ -1,0 +1,100 @@
+@model sistema.Models.PacientesBaseViewModel
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                @if (User.IsInRole("CirugiaPlastica"))
+                {
+                    <h5><b>Datos personales NO patológicos (APnP)</b></h5>
+                }
+                else
+                {
+                    <h5><b>Antecedentes personales NO patológicos (APnP)</b></h5>
+                    
+                }
+                <hr>
+                
+            </div>
+            <div class="col-md-12">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        @*<thead>
+                            <tr>
+                            <th>Nombre</th>
+                            <th><center>Presentó el antecedente</center></th>
+                            <th>Fecha</th>
+                            </tr>
+                            </thead>*@
+                        <tbody>
+                            <tr>
+                                <td>Vivienda completa</td>
+                                <td>
+                                    <select class="form-control">
+                                        <option>Seleccione...</option>
+                                        <option>Sí</option>
+                                        <option>No</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    Deficiencias:<br />
+                                    <input class="form-control" />
+                                </td>
+                                <td>
+                                    No. de habitaciones:<br />
+                                    <input class="form-control" />
+                                </td>
+                                <td>
+                                    No. de habitantes:<br />
+                                    <input class="form-control" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Mascotas</td>
+                                <td>
+                                    <select class="form-control">
+                                        <option>Seleccione...</option>
+                                        <option>Sí</option>
+                                        <option>No</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Alimentación adecuada</td>
+                                <td>
+                                    <select class="form-control">
+                                        <option>Seleccione...</option>
+                                        <option>Sí</option>
+                                        <option>No</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Higiene adecuada</td>
+                                <td>
+                                    <select class="form-control">
+                                        <option>Seleccione...</option>
+                                        <option>Sí</option>
+                                        <option>No</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    Detalles:<br />
+                                    <input class="form-control" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Nivel socioeconómico
+                                </td>
+                                <td>
+                                    <input class="form-control" />
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

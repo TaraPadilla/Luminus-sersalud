@@ -1,0 +1,199 @@
+@model sistema.Models.HistoricoProductosPDFVM
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Config
+@{
+    Layout = "_LayoutRequisicionDespacho";
+    ViewData["Title"] = "Cardex productos";
+    var nombreEmpresaDefault = Config["EstablecimientoNombreEmpresa"] ?? "";
+    var logo = Config["ImagenLogoBase64"] ?? "";
+    var primerMov = Model.MovimientosNacional?.FirstOrDefault();
+}
+
+<div style="font-family: 'Arial Narrow', Arial, sans-serif; padding: 10px; box-sizing: border-box;">
+    
+    @* Ajuste: Se integró el número rojo y serie en la tabla principal para alinearlos a la derecha *@
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 5px;">
+        <tr>
+            <td style="width: 15%; text-align: left; vertical-align: middle;">
+                @if (!string.IsNullOrWhiteSpace(logo))
+                {
+                    <img src="@logo" alt="Logo" style="width: 75px; height: auto; display: block;" />
+                }
+            </td>
+            <td style="width: 70%; text-align: center; vertical-align: middle;">
+                <div style="font-weight: bold; font-size: 13px;">@nombreEmpresaDefault.ToUpper()</div>
+                <div style="font-size: 11px; font-weight: bold;">BODEGA DE MATERIAL MEDICO QUIRURGICO</div>
+                <div style="font-size: 10px; font-weight: bold;">TARJETA DE CONTROL DE INGRESOS Y EGRESOS DE MATERIAL MEDICO QUIRURGICO</div>
+            </td>
+            <td style="width: 15%; text-align: right; vertical-align: top;">
+                <div style="color: #d32f2f; font-weight: bold; font-size: 14px;">Nº 002137</div>
+                <div style="font-size: 10px; font-weight: bold;">Serie BMQA</div>
+            </td>
+        </tr>
+    </table>
+
+    @* Ajuste: Se eliminó el flex interno para que la línea divisoria entre celdas sea visible *@
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 5px; border: 1px solid black;">
+        <tr>
+            <td style="width: 40%; font-size: 9px; padding: 4px;"><strong>NOMBRE DEL PRODUCTO:</strong> @(primerMov?.Medicamento ?? "N/A")</td>
+            <td style="width: 20%; font-size: 9px; padding: 4px;"><strong>CODIGO:</strong> @(primerMov.ProductoInventarioId)</td>
+            <td style="width: 40%; border: 1px solid #000; font-size: 9px; padding: 4px;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span><strong>PRESENTACION:</strong></span>
+                    <span>@(primerMov?.UnidadNombre ?? "UNIDAD")</span>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: 1px solid black;">
+        <thead>
+            @* Ajuste: Fondo gris sutil para las cabeceras *@
+            <tr style="font-weight: bold; text-transform: uppercase; background-color: #eeeeee;">
+                <th style="width: 6%; border: 1px solid #000; font-size: 7px; padding: 2px;" rowspan="2">FECHA</th>
+                <th style="width: 5%; border: 1px solid #000; font-size: 7px; padding: 2px;" rowspan="2">DOCUMENTO DE RESPALDO</th>
+                <th style="width: 20%; border: 1px solid #000; font-size: 7px; padding: 2px;" rowspan="2">DESCRIPCION</th>
+                <th style="border: 1px solid #000; font-size: 7px; padding: 2px;" colspan="3">ENTRADAS</th>
+                <th style="width: 5%; border: 1px solid #000; font-size: 7px; padding: 2px;" rowspan="2">No. LOTE</th>
+                <th style="width: 6%; border: 1px solid #000; font-size: 7px; padding: 2px;" rowspan="2">FECHA VENCIMIENTO</th>
+                <th style="border: 1px solid #000; font-size: 7px; padding: 2px;" colspan="3">SALIDAS</th>
+                <th style="border: 1px solid #000; font-size: 7px; padding: 2px;" colspan="3">EXISTENCIA</th>
+                <th style="width: 15%; border: 1px solid #000; font-size: 7px; padding: 2px;" rowspan="2">OBSERVACIONES</th>
+            </tr>
+            <tr style="font-weight: bold; background-color: #eeeeee;">
+                <th style="width: 4.5%; border: 1px solid #000; font-size: 7px; padding: 2px;">CANT.</th>
+                <th style="width: 4.5%; border: 1px solid #000; font-size: 7px; padding: 2px;">P. UNIT.</th>
+                <th style="width: 5%; border: 1px solid #000; font-size: 7px; padding: 2px;">TOTAL</th>
+                <th style="width: 4.5%; border: 1px solid #000; font-size: 7px; padding: 2px;">CANT.</th>
+                <th style="width: 4.5%; border: 1px solid #000; font-size: 7px; padding: 2px;">P. UNIT.</th>
+                <th style="width: 5%; border: 1px solid #000; font-size: 7px; padding: 2px;">TOTAL</th>
+                <th style="width: 4.5%; border: 1px solid #000; font-size: 7px; padding: 2px;">CANT.</th>
+                <th style="width: 4.5%; border: 1px solid #000; font-size: 7px; padding: 2px;">P. UNIT.</th>
+                <th style="width: 5%; border: 1px solid #000; font-size: 7px; padding: 2px;">TOTAL</th>
+            </tr>
+        </thead>
+            <tbody>
+                @if (Model.MovimientosNacional != null)
+                {
+                    var movimientosAgrupados = Model.MovimientosNacional
+                        .Select((mov, index) => new { mov, index }) // mantiene orden original
+                        .GroupBy(x =>
+                        {
+                            var desc = x.mov.DescripcionMovimiento ?? "";
+
+                            if (desc.Contains("REQ"))
+                            {
+                                var partes = desc.Split('/');
+                                var reqParte = partes[0].Trim(); // "REQ 10"
+                                return reqParte.Replace("REQ", "").Trim();
+                            }
+
+                            return "SIN-REQ-" + x.index;
+                        })
+                        .OrderBy(g => g.First().index)
+                        .ToList();
+
+                    foreach (var grupo in movimientosAgrupados)
+                    {
+                        var entrada = grupo.Select(x => x.mov).FirstOrDefault(m =>
+                            m.TipoMovimientoNombre.Contains("Entrada") ||
+                            m.TipoMovimientoNombre.Contains("Compra") ||
+                            m.TipoMovimientoNombre.Contains("Ajuste Positivo"));
+
+                        var salida = grupo.Select(x => x.mov).FirstOrDefault(m =>
+                            !m.TipoMovimientoNombre.Contains("Entrada") &&
+                            !m.TipoMovimientoNombre.Contains("Compra") &&
+                            !m.TipoMovimientoNombre.Contains("Ajuste Positivo"));
+
+                        var referencia = grupo.First().mov;
+                        var fVence = referencia.FechaVencimientoLote?.ToString("dd/MM/yy") ?? "-";
+                        var descripcionOriginal = referencia.DescripcionMovimiento ?? "";
+                        var partesDescripcion = descripcionOriginal.Split('-')[0].Trim(); 
+
+                        var saldo = grupo.Last().mov.SaldoActual;
+                        var costo = grupo.Last().mov.CostoPonderadoCompra ?? 0m;
+                        var totalExistencia = saldo * costo;
+                        
+                        <tr>
+                            <td style="border: 1px solid #000; font-size: 7px; padding: 2px; text-align: center;">
+                                @referencia.Fecha.ToString("dd/MM/yy")
+                            </td>
+
+                            <td style="border: 1px solid #000; font-size: 7px; padding: 2px; text-align: center;">
+                                
+                            </td>
+
+                            <td style="border: 1px solid #000; font-size: 7px; padding: 2px 4px; text-align: left;">
+                                    @partesDescripcion
+                            </td>
+
+                            @* ENTRADAS *@
+                            <td style="border: 1px solid #000; font-size: 7px; padding: 2px; text-align: center;">
+                                @(entrada != null ? entrada.Cantidad.ToString("N0") : "")
+                            </td>
+                            <td style="border: 1px solid #000; font-size: 7px; padding: 2px; text-align: center;">
+                                @(entrada != null ? entrada.PrecioUnitario.ToString("N2") : "")
+                            </td>
+                            <td style="border: 1px solid #000; font-size: 7px; padding: 2px; text-align: center;">
+                               @(entrada != null ? entrada.TotalEntrada.ToString("N2") : "")
+                            </td>
+
+                            <td style="border: 1px solid #000; font-size: 7px; padding: 2px; text-align: center;">
+                                @referencia.Lote
+                            </td>
+                            <td style="border: 1px solid #000; font-size: 7px; padding: 2px; text-align: center;">
+                                @fVence
+                            </td>
+
+                            @* SALIDAS *@
+                            <td style="border: 1px solid #000; font-size: 7px; padding: 2px; text-align: center;">
+                                @(salida != null ? salida.Cantidad.ToString("N0") : "")
+                            </td>
+                            <td style="border: 1px solid #000; font-size: 7px; padding: 2px; text-align: center;">
+                                @(salida != null ? salida.PrecioCosto.ToString("N2") : "")
+                            </td>
+                            <td style="border: 1px solid #000; font-size: 7px; padding: 2px; text-align: center;">
+                                @(salida != null ? salida.TotalSalida.ToString("N2") : "")
+                            </td>
+
+                            @* EXISTENCIA *@
+                            <td style="border: 1px solid #000; font-size: 7px; padding: 2px; text-align: center; font-weight: bold;">
+                                   @saldo.ToString("N2")
+                            </td>
+                            <td style="border: 1px solid #000; font-size: 7px; padding: 2px; text-align: center;">
+                                    @costo.ToString("N2")
+                            </td>
+                            <td style="border: 1px solid #000; font-size: 7px; padding: 2px; text-align: center;">
+                                   @totalExistencia.ToString("N2")
+                            </td>
+
+                            <td style="border: 1px solid #000; font-size: 7px; padding: 2px; text-align: center;">
+                                -
+                            </td>
+                        </tr>
+                    }
+                }
+
+                @for (int i = 0; i < 12; i++)
+                {
+                    <tr style="height: 18px;">
+                        <td style="border: 1px solid #000;">&nbsp;</td>
+                        <td style="border: 1px solid #000;"></td>
+                        <td style="border: 1px solid #000;"></td>
+                        <td style="border: 1px solid #000;"></td>
+                        <td style="border: 1px solid #000;"></td>
+                        <td style="border: 1px solid #000;"></td>
+                        <td style="border: 1px solid #000;"></td>
+                        <td style="border: 1px solid #000;"></td>
+                        <td style="border: 1px solid #000;"></td>
+                        <td style="border: 1px solid #000;"></td>
+                        <td style="border: 1px solid #000;"></td>
+                        <td style="border: 1px solid #000;"></td>
+                        <td style="border: 1px solid #000;"></td>
+                        <td style="border: 1px solid #000;"></td>
+                        <td style="border: 1px solid #000;"></td>
+                    </tr>
+                }
+            </tbody>
+    </table>
+</div>

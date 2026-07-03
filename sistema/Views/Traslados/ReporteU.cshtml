@@ -1,0 +1,88 @@
+@using System;
+@using System.Globalization;
+@model sistema.Models.TrasladosBaseViewModel
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Config
+
+@{
+	Layout = "_HojaLayout";
+	ViewData["ImagenLogo"] = Config["ImagenLogoBase64"];
+	var personaEnviado = Model.TrasladosProductos.ResponsableEnviado == null ? "" :
+	Model.TrasladosProductos.ResponsableEnviadoText;
+	var personaRecibido = Model.TrasladosProductos.ResponsableRecibido == null ? "" :
+	Model.TrasladosProductos.ResponsableRecibidoText;
+}
+
+<div>
+	<div class="text-center" style="border: 1px black solid;">
+		<h4> Reporte de Envío </h4>
+		<h6>RED OWL SOFTWARE</h6>
+	</div>
+</div>
+<br>
+<div>
+	<span class="font-weight-bold">Traslado # </span>
+	<span> @Model.TrasladosProductos.Id </span>
+</div>
+
+<div>
+	<span class="font-weight-bold">FECHA DE ENV&#205;O</span>
+	<span>
+		@Model.TrasladosProductos.FechaTraslado.Value.ToString("D",
+		CultureInfo.CreateSpecificCulture("Es-GT")).ToUpperInvariant()
+		@Model.TrasladosProductos.FechaTraslado.Value.ToString("HH:mm")</span>
+</div>
+
+<div>
+	<span class="font-weight-bold">RESPONSABLE</span>
+	<span> @personaEnviado</span>
+</div>
+
+<div>
+	<span class="font-weight-bold">OBSERVACIONES</span>
+	<span> @Model.TrasladosProductos.Observaciones</span>
+</div>
+
+
+
+<br>
+
+<div>
+	<span class="font-weight-bold">ESTADO</span>
+	<span> @Model.TrasladosProductos.EstadoTraslados.DescripcionEstado</span>
+</div>
+
+<div>
+	<span class="font-weight-bold">RESPONSABLE RECIBIDO</span>
+	<span> @personaRecibido</span>
+</div>
+<div>
+	<span class="font-weight-bold">TOTAL ITEMS</span>
+	<span> @Model.TrasladosProductos.DetalleTrasladoProductos.Count()</span>
+</div>
+<div>
+	<span class="font-weight-bold">TIPO TRASLADO</span>
+	<span> BODEGA A CLINICA</span>
+</div>
+<table class="table table-bordered">
+	<thead>
+		<tr>
+			<th style="background: #1f4724 !important; color: white;"><span contenteditable>Nombre Producto</span></th>
+			<th style="background: #1f4724 !important; color: white;"><span contenteditable>Presentación</span></th>
+			<th style="background: #1f4724 !important; color: white;"><span contenteditable>Cantidad</span></th>
+		</tr>
+	</thead>
+	<tbody>
+		@foreach (var producto in Model.TrasladosProductos.DetalleTrasladoProductos)
+		{
+			var presentacion = producto.Producto.PresentacionProducto == null ? "// sin asignar " :
+			producto.Producto.PresentacionProducto.PresentProducto;
+
+			<tr>
+				<td><span contenteditable>@producto.Producto.NombreProducto</span></td>
+				<td><span contenteditable>@presentacion</span></td>
+				<td><span contenteditable>@producto.Cantidad</span></td>
+			</tr>
+		}
+	</tbody>
+</table>

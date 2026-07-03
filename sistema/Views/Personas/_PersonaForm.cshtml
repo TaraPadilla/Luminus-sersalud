@@ -1,0 +1,85 @@
+@model sistema.Models.PersonasViewModel
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Datos personales</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-4">
+                <div class="position-relative form-group">
+                    <label>Tipificación de comunicación</label>
+                    <select class="form-control" asp-for="@Model.TipificacionComunicacionId"
+                            asp-items="@Model.TipificacionComunicacionSelectListItems">
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="position-relative form-group">
+                    <label>Fecha de contacto</label>
+                    @Html.TextBoxFor(m=>m.FechaContacto,new{ @type="date", @class = "form-control"})
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="position-relative form-group">
+                    <label>Nombre</label>
+                    @Html.TextBoxFor(m=>m.Nombre,new{ @class = "form-control", @placeholder="Nombre"})
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="position-relative form-group">
+                    <label class="">Sexo</label>
+                    <select class="form-control select2bs4" style="width: 100%;" asp-for="@Model.SexoId"
+                            asp-items="@Model.SexoSelectListItems">
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="position-relative form-group">
+                    <label>Teléfono</label>
+                    @Html.TextBoxFor(m=>m.Telefono,new{ @class = "form-control", @placeholder="Teléfono"})
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="position-relative form-group">
+                    <label>E-mail</label>
+                    @Html.TextBoxFor(m=>m.Email,new{ @class = "form-control", @placeholder="E-mail"})
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="position-relative form-group">
+                    <label>Tipo de red social</label>
+                    <select asp-items="Model.TipoRedSocialSelectList"
+                            asp-for="TipoRedSocialId" class="form-control">
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="position-relative form-group">
+                    <label>La persona toma el servicio</label>
+                    <select class="form-control" asp-for="TomaServicio">
+                        <option value="false">No</option>
+                        <option value="true">Si</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="position-relative form-group">
+                    <label>En caso de no tomar el servicio, ¿cuál es el motivo?</label>
+                    @Html.TextAreaFor(m=>m.MotivoNoTomarServicio,new{ @class = "form-control",
+                    @placeholder="Motivo"})
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <button class="btn btn-primary">
+            Guardar persona
+        </button>
+    </div>
+</div>

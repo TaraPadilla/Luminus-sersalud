@@ -1,0 +1,103 @@
+@model IEnumerable<Database.Shared.Models.Envio>
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Envíos";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+}
+
+<style>
+    .report-container {
+        margin-top: 10px;
+        font-size: 12px;
+    }
+
+    .report-title {
+        text-align: center;
+        font-weight: bold;
+        font-size: 16px;
+        color: #0d0e36;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+
+    .report-subtitle {
+        text-align: center;
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 4px;
+    }
+
+    .report-table th {
+        background-color: #eef2ff;
+        color: #0d0e36;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 11px;
+        text-align: left;
+        padding: 4px 6px;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table td {
+        font-size: 12px;
+        padding: 4px 6px;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+</style>
+
+<div class="report-container">
+    <!-- Título principal -->
+    <div class="report-title">
+        REPORTE - @ViewData["Title"]
+    </div>
+
+    <!-- Fecha y hora de emisión -->
+    <div class="report-subtitle">
+        <b>Fecha y hora de emisión:</b> @fecha.ToString("dd/MM/yyyy HH:mm")
+    </div>
+
+    <!-- Tabla de envíos -->
+    <table class="report-table">
+        <thead>
+            <tr>
+                <th>Ruta #</th>
+                <th>Nombre piloto</th>
+                <th>Fecha y hora de entrega</th>
+                <th>Dirección exacta</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.RutaId</td>
+                    <td>@item.NombrePiloto</td>
+                    <td>@item.FechaEntrega</td>
+                    <td>@item.DireccionExacta</td>
+                    <td>@item.EstadosEnvio?.Estado</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

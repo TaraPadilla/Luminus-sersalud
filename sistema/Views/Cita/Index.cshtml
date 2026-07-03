@@ -1,0 +1,430 @@
+@model sistema.Models.CitasSchedulerViewModel
+@{
+    ViewData["Title"] = "Citas";
+}
+
+    <div class="form-row">
+        <div class="col-md-12">
+            <a asp-action="Lista" asp-controller="Cita" class="btn btn-danger">
+                <i class="fas fa-list"></i> &nbsp; Formato lista 
+            </a>
+
+            <a asp-action="CitasFinalizadas" asp-controller="Cita" class="btn btn-success">
+                <i class="fas fa-check"></i> &nbsp; Citas Finalizadas 
+            </a>
+        </div>
+    </div>
+    <br>
+
+    <div style="display: flex;">
+        <div style="margin-right: 10px;">
+            <div id="nav"></div>
+        </div>
+        <div style="flex-grow: 1;">
+            <div id="dp"></div>
+        </div>
+    </div>
+
+     <script type="text/javascript">
+
+        var nav = new DayPilot.Navigator("nav");
+        nav.locale = "es-mx";
+        nav.showMonths = 3;
+        nav.skipMonths = 3;
+        nav.selectMode = "Day";
+        nav.freeHandSelectionEnabled = true;
+        nav.selectionDay = DayPilot.Date.today();
+        nav.onTimeRangeSelected = function (args) {
+            console.log(args);
+            dp.startDate = args.start;
+            dp.update();
+        };
+        nav.onBeforeCellRender = function (args) {
+            if (args.cell.isCurrentMonth) {
+                args.cell.cssClass = "current-month";
+            }
+        };
+        nav.onVisibleRangeChange = function (args) {
+            var start = args.start;
+            var end = args.end;
+
+            if (start <= nav.selectionDay && nav.selectionDay < end) {
+                return;
+            }
+
+            var day = nav.selectionDay.getDay();
+            var target = start.firstDayOfMonth().addDays(day);
+            nav.select(target);
+        };
+        
+        nav.init();
+
+
+
+        @* calendario *@
+
+        var dp = new DayPilot.Calendar("dp");
+        dp.locale = "es-mx";
+
+        // view
+        dp.startDate = DayPilot.Date.today();
+        dp.viewType = "Week";
+        dp.allDayEventHeight = 25;
+
+        dp.eventDeleteHandling = "Update";
+
+        // on delete X button
+         dp.onEventDelete = function(args) {
+             if (!confirm("¿Está seguro de eliminar esta cita?")) {
+                 args.preventDefault();
+            }
+            else {
+
+
+            }
+        };
+
+        // cuando se presiona el boton yes 
+        dp.onEventDeleted = function(args) {
+        
+        var data = {"id" : parseInt(args.e.data.id)}
+            $.ajax({
+                url: "/Cita/EliminarCita/",
+                data: data ,
+                type: 'POST',
+                success: function (result) {
+
+                    dp.message("Se ha eliminado la cita.");
+                },
+                error: function (error) {
+                    
+                    args.preventDefault();
+                }
+            });
+        };
+
+        // bubble, with async loading
+        dp.bubble = new DayPilot.Bubble({
+        onLoad: function (args) {
+        var ev = args.source;
+        //alert("event: " + ev);
+        args.async = true;  // notify manually using .loaded()
+
+        // simulating slow server-side load
+        setTimeout(function () {
+            args.html = ev.text();
+            args.loaded();
+        }, 500);
+        }
+        });
+
+        dp.contextMenu = new DayPilot.Menu({
+        items: [
+        {
+            text: "Ver detalles", onclick: function () {
+                @* alert("Event value: " + this.source.value()); *@
+                window.location.href = "/Cita/EditarCita/" + this.source.value();
+            }
+        },
+        {
+            text: "Cancelar Cita", onclick: function () {
+                @* alert("Event value: " + this.source.value()); *@
+                window.location.href = "/Cita/CancelarCita/" + this.source.value();
+            }
+        },
+        {
+            text: "Finalizar Cita", onclick: function () {
+                @* alert("Event text: " + this.source.text()); *@
+
+            if (confirm("¿Está seguro de finalizar esta cita?")) {
+                dp.events.remove(this.source);
+                
+                var data = {"id" : parseInt(this.source.value())}
+
+                $.ajax({
+                    url: "/Cita/FinalizarCita/",
+                    data: data ,
+                    type: 'POST',
+                    success: function (result) {
+
+                        dp.message("Se ha finalizado la cita.");
+
+                    },
+                    error: function (error) {
+                        alert(error);
+                        args.preventDefault();
+                    }
+                });
+                }
+            }
+        },
+        @* {
+            text: "Show event start", onclick: function () {
+                alert("Event start: " + this.source.start().toStringSortable());
+            }
+        },  *@
+        {
+            text: "Eliminar cita", onclick: function () {
+                
+                if (confirm("¿Está seguro de eliminar esta cita?")) {
+                dp.events.remove(this.source);
+                
+                var data = {"id" : parseInt(this.source.value())}
+
+                $.ajax({
+                    url: "/Cita/EliminarCita/",
+                    data: data ,
+                    type: 'POST',
+                    success: function (result) {
+
+                        dp.message("Se ha eliminado la cita.");
+
+                    },
+                    error: function (error) {
+                        alert(error);
+                        args.preventDefault();
+                    }
+                });
+                }
+
+            }
+        }
+        ]
+        });
+
+        // event moving
+        dp.onEventMoved = function (args) {
+
+         var data = {
+             "id" : parseInt(args.e.data.id),
+             "fechaInicio" : args.newStart.value,
+             "fechaFinal" : args.newEnd.value,
+          }
+          console.log(args);
+          console.log(data);
+
+            $.ajax({
+                url: "/Cita/MoverCita",
+                data: data,
+                type: 'POST',
+                success: function (result) {
+
+                    dp.message("Se ha movido la cita.");
+
+                },
+                error: function (error) {
+                    dp.message(error.responseJSON.message);
+                }
+            }); 
+        };
+
+        // event resizing
+        dp.onEventResized = function (args) {
+            var data = {
+                "id" : parseInt(args.e.data.id),
+                "fechaInicio" : args.newStart.value,
+                "fechaFinal" : args.newEnd.value,
+            }
+            console.log(args);
+            console.log(data);
+
+                $.ajax({
+                    url: "/Cita/ResizeCita",
+                    data: data,
+                    type: 'POST',
+                    success: function (result) {
+
+                        dp.message("Se ha modificado la cita.");
+
+                    },
+                    error: function (error) {
+                        dp.message(error.responseJSON.message);
+                    }
+                }); 
+        };
+        
+
+        // event creating
+        dp.onTimeRangeSelected = function (args) {
+
+        @* var name = prompt("Nombre del paciente:", ""); *@
+        dp.clearSelection();
+        @* if (!name) return; *@
+
+        var data = {
+            "Cita": {
+                @* "NombreCliente" : name, *@
+                "FechaInicio" : args.start,
+                "FechaFinal" : args.end,
+            },
+        }
+
+            return $.ajax({
+                url: "/Cita/NuevaCita",
+                contentType: 'application/json',
+                dataType: 'json',
+                data: JSON.stringify(data),
+                type: 'POST',
+                success: function (result) {
+
+                    var e = new DayPilot.Event({
+                        start: args.start,
+                        end: args.end,
+                        id: result,
+                        //resource: args.resource,
+                        text: ""
+                        });
+
+                    dp.events.add(e);
+                    dp.message("Se ha creado la cita");
+
+                },
+                error: function (error) {
+                    dp.message(error.responseJSON.message);
+                }
+            });
+        
+        };
+
+        dp.onTimeRangeRightClick = function (args) {
+        window.console && console.log(args);
+        };
+
+        dp.onTimeRangeDoubleClicked = function (args) {
+        alert("DoubleClick: start: " + args.start + " end: " + args.end + " resource: " + args.resource);
+        };
+
+        dp.onEventClick = function (args) {
+        //alert("clicked: " + args.e.id());
+        };
+
+        dp.eventDoubleClickHandling = "Enabled";
+        dp.onEventDoubleClick = function (args) {
+        @* alert("double click"); *@
+        };
+
+        dp.showEventStartEnd = true;
+        dp.scrollLabelsVisible = true;
+
+        @* // show items
+        var e = new DayPilot.Event({
+        start: DayPilot.Date.today().addHours(12),
+        end: DayPilot.Date.today().addHours(15),
+        id: DayPilot.guid(),
+        text: "Special event"
+        });
+         *@
+        @* dp.events.add(e); *@
+
+        dp.events.list = [
+            @foreach(var item in Model.CitasList)
+                {
+                    @* var especialidad = item.Especialidad == null ? "" : "@item.Especialidad.NombreEspecialidad"; *@
+                    var cliente = item.Paciente == null ? "" : item.Paciente.Nombre.ToString();
+
+            @:{
+                    @:start: DayPilot.Date.parse('@item.FechaInicio', "MM/dd/yyyy HH:mm:ss"),
+                    @:end:   DayPilot.Date.parse('@item.FechaFinal', "MM/dd/yyyy HH:mm:ss"),
+                    @:id: '@item.Id',
+                    @:text: '@cliente',
+                    @:tags: {"type": "@item.EspecialidadText"}
+            @:},
+
+                }
+
+
+        ]; 
+
+        console.log(dp.events.list);
+
+        dp.onBeforeEventRender = function(args) {
+        var type = args.data.tags && args.data.tags.type;
+        switch (type) {
+
+            case "Medicina general":
+                args.data.fontColor = "#ffffff";
+                args.data.backColor = "#2fb9e7";
+                args.data.borderColor = "#2fb9e7";
+                break;
+
+            case "Medicina est&#xE9;tica":
+                args.data.fontColor = "#ffffff";
+                args.data.backColor = "#A02B4E";
+                args.data.borderColor = "#A02B4E";
+                break;
+
+            case "Ginecolog&#xED;a y Obstetricia":
+                args.data.fontColor = "#ffffff";
+                args.data.backColor = "#e660c3";
+                args.data.borderColor = "#e660c3";
+                break;
+                
+            case "Pediatr&#xED;a":
+                args.data.fontColor = "#000";
+                args.data.backColor = "#ffa500";
+                args.data.borderColor = "#ffa500";
+                break;
+
+            case "Cirug&#xED;a":
+                args.data.fontColor = "#ffffff";
+                args.data.backColor = "#808080";
+                args.data.borderColor = "#808080";
+                break;
+
+            case "Traumatolog&#xED;a":
+                args.data.fontColor = "#ffffff";
+                args.data.backColor = "#000000";
+                args.data.borderColor = "#000000";
+                break;
+
+            case "Medicina interna":
+                args.data.fontColor = "#ffffff";
+                args.data.backColor = "#8B4513";
+                args.data.borderColor = "#8B4513";
+                break;
+
+            case "Laboratorio cl&#xED;nico":
+                args.data.fontColor = "#ffffff";
+                args.data.backColor = "#008000";
+                args.data.borderColor = "#008000";
+                break;
+        }
+    };
+        
+
+        @* dp.contextMenuSelection = new DayPilot.Menu({
+        items: [
+        {
+            'text': 'Create new event (JavaScript)', 'onclick': function () {
+                dp.events.add(new DayPilot.Event({
+                    start: this.source.start,
+                    end: this.source.end,
+                    text: "New event",
+                    resource: this.source.resource
+                }));
+            }
+        },
+        {'text': '-'},
+        {
+            'text': 'Show selection details', 'onclick': function () {
+                alert('Start: ' + this.source.start + '\nEnd: ' + this.source.end + '\nResource id: ' + this.source.resource);
+            }
+        },
+        {
+            'text': 'Clean selection', 'onclick': function () {
+                dp.clearSelection();
+            }
+        }]
+        }); *@
+
+        dp.timeRangeSelectingStartEndEnabled = true;
+
+        dp.init();
+
+        
+        
+    </script>
+
+@section css {
+    <script type="text/javascript" src="~/js/daypilot-all.min.js"></script>
+}

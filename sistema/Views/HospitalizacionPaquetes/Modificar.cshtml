@@ -1,0 +1,45 @@
+@{
+    ViewData["Title"] = "Editar paquete de hospitalizacion";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body titulo-azul">
+        <h4><b><i class="fas fa-toolbox"></i> Editar paquete de hospitalizacion</b></h4>
+    </div>
+</div>
+
+@await Html.PartialAsync("_HospitalizacionPaqueteForm")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div>
+            <button class="btn btn-danger" data-bind="click: cancelarEdicionPaquete">
+                Cancelar
+            </button>
+            <button class="btn btn-success" data-bind="click: editarPaquete">
+                Guardar cambios
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script type="text/javascript" src="~/ViewModelKo/HospitalizacionPaqueteVM.js"></script>
+}
+
+@section css {
+    <style>
+        .seccion-header {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-bottom: 2px solid darkgray;
+        }
+
+            .seccion-header:hover {
+                background-color: darkgray;
+                cursor: pointer;
+            }
+    </style>
+}

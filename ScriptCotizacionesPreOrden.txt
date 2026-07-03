@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS "CotizacionesPreOrden"
+(
+    "Id" SERIAL PRIMARY KEY,
+    "Fecha" TIMESTAMP NOT NULL,
+    "Items" TEXT NOT NULL,
+    "ProveedorPrincipal" TEXT
+);

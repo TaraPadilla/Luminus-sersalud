@@ -1,0 +1,320 @@
+@using System.Globalization
+@model sistema.Models.ExamenLabClinicoViewModel
+
+@{
+    ViewData["Title"] = "Modificar";
+}
+<head>
+    <meta charset="utf-8">
+    <!-- Otras etiquetas del encabezado -->
+</head>
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <h4><b>Modificar examen</b></h4>
+        </div>
+    </div>
+</div>
+
+
+@await Html.PartialAsync("_ExamenForm")
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <button class="btn btn-success" data-bind="click:modificarExamen">
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+@{
+    string nombreExamen = Model.NombreExamen;
+    string nombreExamenNormalizado = nombreExamen.Normalize(System.Text.NormalizationForm.FormD);
+    string nombreExamenSinDiacriticos = new string(
+        nombreExamenNormalizado
+            .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+            .ToArray()
+    );
+}
+@*
+@if (nombreExamen.Equals("Heces Completo") || nombreExamen.Equals("Urocultivo")
+|| nombreExamen.Equals("Uroanálisis") || nombreExamen.Equals("Líquido Peritoneal")) *@
+
+@* Si eston examneens son lo que se van a editar saldra un fromulario diferente *@
+@if (nombreExamenSinDiacriticos.Equals("Heces Completo", StringComparison.OrdinalIgnoreCase) ||
+ nombreExamenSinDiacriticos.Equals("Urocultivo", StringComparison.OrdinalIgnoreCase) ||
+ nombreExamenSinDiacriticos.Equals("Uroanalisis", StringComparison.OrdinalIgnoreCase) ||
+ nombreExamenSinDiacriticos.Equals("Liquido Peritoneal", StringComparison.OrdinalIgnoreCase) ||
+ nombreExamenSinDiacriticos.Equals("Espermograma", StringComparison.OrdinalIgnoreCase))
+{
+
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+
+            <table class="table" id="tabla">
+                <thead>
+                    <tr>
+                        <th>Campos</th>
+                        <th>Tipo</th>
+                        <th>Valor de Referencia</th>
+                        <th>Estado</th>
+                        <th style="width: 300px;">Indicaciones</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.DatosExamenes)
+                    {
+                        var activo = item.Activo == false ? "Activo" : "Inactivo";
+
+                        <tr>
+                            <th>@item.Campos</th>
+                            <th> @item.Tipo </th>
+                            <th> @item.ValorReferencia </th>
+                            <th> @activo </th>
+                            <th> @item.Indicaciones </th>
+                            <th>
+                                @* <a href="#" class="btn btn-primary">Desactivar</a> *@
+                                <a href="@Url.Action("ActivarODesactivarDatosLab","LaboratorioClinico", new {id = @item.Id, cat2 = @Model.ExamenLabClinico.Id})" class="btn btn-warning">
+                                    @if (item.Activo == false)
+                                    {
+                                        <span>Desactivar</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Activar</span>
+                                    }
+                                </a>
+                                <a href="@Url.Action("ModificarDatosLab","LaboratorioClinico",
+                                new {id = @item.Id})" class="btn btn-warning">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="@Url.Action("EliminarDatosLab","LaboratorioClinico",
+                                new {id = @item.Id, cat2 = @Model.ExamenLabClinico.Id})" class="btn btn-danger">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </th>
+                        </tr>
+                    }
+                    <tr>
+                        <th class="text-center">
+                            @* <a href="#" id="agregarNuevo" class="btn btn-danger" data-toggle="modal" data-target="#exampleModalCenter">Nuevo</a> *@
+                            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalDatosInusuales">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </th>
+
+
+                    </tr>
+                </tbody>
+
+            </table>
+
+            <br>
+            @* <div class="row">
+        <div class="col-md-12">
+        <div class="position-relative form-group">
+        <button class="btn btn-primary" type="submit">Guardar</button>
+        </div>
+        </div>
+        </div> *@
+        </div>
+    </div>
+
+
+}
+@* Saldra el fomulario de los examenes mas comunes o que no tienen ningun nombre del condicional de arriba *@
+else
+{
+    @Model.NombreExamen
+    ;
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Campos</th>
+                        <th>Resultado</th>
+                        <th>Valor de Referencia</th>
+                        <th>Estado</th>
+                        <th style="width: 300px;">Indicaciones</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.DatosExamenes)
+                    {
+                        var activo = item.Activo == false ? "Activo" : "Inactivo";
+
+                        <tr>
+                            <th>@item.Campos</th>
+                            <th> @item.Resultado </th>
+                            <th> @item.ValorReferencia </th>
+                            <th> @activo </th>
+                            <th> @item.Indicaciones </th>
+                            <th>
+                                @* <a href="#" class="btn btn-primary">Desactivar</a> *@
+                                <a href="@Url.Action("ActivarODesactivarDatosLab","LaboratorioClinico", new {id = @item.Id, cat2 = @Model.ExamenLabClinico.Id})" class="btn btn-warning">
+                                    @if (item.Activo == false)
+                                    {
+                                        <span>Desactivar</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Activar</span>
+                                    }
+                                </a>
+                                <a href="@Url.Action("ModificarDatosLab","LaboratorioClinico", 
+                                new {id = @item.Id})" class="btn btn-warning">
+                                    <i class="fas fa-edit"></i>
+                                    </a>
+                                <a href="@Url.Action("EliminarDatosLab","LaboratorioClinico", 
+                                new {id = @item.Id, cat2 = @Model.ExamenLabClinico.Id})" class="btn btn-danger">
+                            <i class="fas fa-trash"></i>
+                            </a>
+                            </th>
+                        </tr>
+                    }
+                    <tr>
+                        <th class="text-center">
+                            @* <a href="#" id="agregarNuevo" class="btn btn-danger" data-toggle="modal" data-target="#exampleModalCenter">Nuevo</a> *@
+                            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModalScrollable">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </th>
+
+
+                    </tr>
+                </tbody>
+
+            </table>
+
+            <br>
+            @* <div class="row">
+        <div class="col-md-12">
+        <div class="position-relative form-group">
+        <button class="btn btn-primary" type="submit">Guardar</button>
+        </div>
+        </div>
+        </div> *@
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script type="text/javascript" src="~/ViewModelKo/ExamenLabClinicoVM.js"></script>
+}
+
+
+@section Modales {
+    <form asp-controller="LaboratorioClinico" asp-action="CrearDatosExamenLab" method="post">
+        <div class="modal fade" id="exampleModalScrollable" tabindex="-1" role="dialog" aria-labelledby="exampleModalScrollableTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalScrollableTitle">Nuevo registro</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        @* ocultar el id de categoria examen *@
+                        <div class="form-row">
+                            <input type="hidden" name="datoid" value="@Model.ExamenLabClinico.Id">
+
+                            <div class="col-12">
+                                <label>Campos</label>
+                                <div class="position-relative form-group">
+                                    <input type="text" class="form-control" asp-for="Campos">
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label>Resultado</label>
+                                <div class="position-relative form-group">
+                                    <input type="text" class="form-control" asp-for="Resultado">
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label>ValorReferencia</label>
+                                <div class="position-relative form-group">
+                                    <input type="text" class="form-control" asp-for="ValorReferencia">
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label>Indicaciones</label>
+                                <div class="position-relative form-group">
+                                    <textarea type="text" class="form-control" asp-for="Indicaciones"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    @*Modal de exmanes inusuales*@
+
+    <form asp-controller="LaboratorioClinico" asp-action="CrearDatosExamenLab" method="post">
+        <div class="modal fade" id="modalDatosInusuales" tabindex="-1" role="dialog" aria-labelledby="exampleModalScrollableTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalScrollableTitle">Nuevo registro</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        @* ocultar el id de categoria examen *@
+                        <div class="form-row">
+                            <input type="hidden" name="datoid" value="@Model.ExamenLabClinico.Id">
+
+                            <div class="col-12">
+                                <label>Campos</label>
+                                <div class="position-relative form-group">
+                                    <input type="text" class="form-control" asp-for="Campos">
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label>Tipo</label>
+                                <select class="form-control" asp-for="Tipo"
+                                        asp-items="Model.ListTiposDatos"></select>
+                            </div>
+                            <div class="col-12">
+                                <label>ValorReferencia</label>
+                                <div class="position-relative form-group">
+                                    <input type="text" class="form-control" asp-for="ValorReferencia">
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label>Indicaciones</label>
+                                <div class="position-relative form-group">
+                                    <textarea type="text" class="form-control" asp-for="Indicaciones"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+
+}

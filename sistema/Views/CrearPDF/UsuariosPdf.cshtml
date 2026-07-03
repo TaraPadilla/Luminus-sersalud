@@ -1,0 +1,69 @@
+@model sistema.Areas.Identity.Pages.Account.LogoutModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Usuarios del sistema";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+}
+
+<div class="form-row">
+    <div class="col-md-12">
+        <center><h5><b>LISTADO DE USUARIOS</b></h5></center>
+        <hr />
+    </div>
+</div>
+
+<div class="form-row">
+    <div class="col-md-12">
+        <center>
+            <b>Fecha y hora de emisión:</b> @fecha.ToString("dd/MM/yyyy HH:mm")
+        </center>
+        <hr />
+    </div>
+</div>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Correo</th>
+            <th>Empleado</th>
+            <th>Estado</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model.ListaUsers)
+        {
+            <tr>
+                <td>@item.UserName</td>
+
+                @if (item.Persona == null)
+                {
+                    <td>Sin asignar</td>
+                }
+                else
+                {
+                    <td>@item.Persona.Nombre</td>
+                }
+
+                @if (item.LockoutEnabled)
+                {
+                    <td>Activo</td>
+                }
+                else
+                {
+                    <td>Inactivo</td>
+                }
+            </tr>
+        }
+    </tbody>
+</table>

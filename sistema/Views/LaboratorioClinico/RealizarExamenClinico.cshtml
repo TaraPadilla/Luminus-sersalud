@@ -1,0 +1,600 @@
+@model sistema.Models.RealizarExamenLabClinicoViewModel
+
+@{
+    ViewData["Title"] = "Punto de Venta Lab.";
+}
+@await Html.PartialAsync("_MensajeExito")
+
+<button type="button" class="btn btn-primary float-left" data-toggle="modal" onclick="LimpiarModal()" data-target=".bd-example-modal-lg">Generar Venta</button>
+<br>
+<br>
+<br>
+
+<div class="col-md-12" id="formservicios">
+    <div class="input-group">
+        <div class="input-group-prepend">
+            <button onclick="AgregarServicio()" class="btn btn-success">Agregar</button>
+        </div>
+        <select class="form-control select2bs4" style="width: 80%;" id="servicioitems"></select>
+    </div>
+</div>
+
+
+@* <form asp-controller="LaboratorioClinico" asp-action="RealizarExamenClinico" method="post"> *@
+@await Html.PartialAsync("_RealizarExamenClinico")
+@* </form> *@
+
+@section css {
+<link href="~/css/daterangepicker.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.0.1/css/toastr.css" rel="stylesheet" />
+    }
+
+
+@section Scripts{
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.0.1/js/toastr.js"></script>
+
+
+<script type="text/javascript" src="~/js/moment.min.js"></script>
+<script type="text/javascript" src="~/js/daterangepicker.js"></script>
+<script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+<script>
+            var sumatotal = 0.00;
+            var total = 0.00;
+            var total2 = 0.00;
+            var total3 = 0.00;
+            var saldo= 0;
+
+           // A $( document ).ready() block.
+        $( document ).ready(function() {
+            $.ajax({
+                method: "GET",
+                dataType: 'json',
+                url: '/LaboratorioClinico/ObtenerListadoExamenesLab',
+                traditional: true,
+                success: function (data, state) {
+                    console.log(data);
+
+                    data.forEach(el => {
+                    var html = '<option value="'+el.id+'">'+el.nombreServicio+' -  '+el.categoria+'</option>'
+                    $('#servicioitems').append(html);
+                    });
+
+                //$('#buscarcotitxt').trigger('change');
+
+                },
+                error: function (data) {
+                    console.log(data);
+                }
+
+            });
+        });
+
+        function editarPorcentaje(r) {
+
+        total = 0.00;
+        total2 = 0.00;
+        total3 = 0.00;
+
+        let val = r.value;
+        let sub = r.parentNode.parentNode.querySelectorAll("td.subtotal-t")[0].innerHTML;
+
+        let precio = r.parentNode.parentNode.querySelectorAll("td.precio-fila")[0].querySelectorAll("select")[0].value;
+        let cantidad = r.parentNode.parentNode.querySelectorAll("td.cantidad-fila")[0].querySelectorAll("input")[0].value
+        // var desc = parseFloat(sub) * (parseFloat(val)/100);
+
+        console.log(precio);
+        console.log(cantidad);
+
+        var totalMax = parseFloat(parseFloat(precio).toFixed(2) * parseFloat(cantidad).toFixed(2));
+
+        var desc = val;
+
+        var totalfin = sub - desc;
+
+
+        if(totalfin < 0)
+        {
+            alert("No se permite aplicar valores negativos.");
+            $(r).val(totalMax);
+
+             // como la cantidad es 1 por defecto, hay que calcular el iva para ese producto * 1
+             //let mntogravablen = parseFloat(totalMax / 1.12).toFixed(2);
+
+             // igual con el iva, para sacar el iva tenes que tener el monto gravable ya hecho bro :)
+             //let mntivan = parseFloat(totalMax - mntogravablen).toFixed(2);
+
+            r.parentNode.parentNode.querySelectorAll("td.desc-t")[0].innerHTML=totalMax.toFixed(2);
+            r.parentNode.parentNode.querySelectorAll("td.total-t")[0].innerHTML = 0.00.toFixed(2);
+
+            //r.parentNode.parentNode.querySelectorAll("td.iva-t")[0].innerHTML= 0.00.toFixed(2);
+            //r.parentNode.parentNode.querySelectorAll("td.montogravable-t")[0].innerHTML = 0.00.toFixed(2);
+
+            actualizarPreciosVenta();
+        }
+        else {
+
+
+            r.parentNode.parentNode.querySelectorAll("td.desc-t")[0].innerHTML=desc;
+            r.parentNode.parentNode.querySelectorAll("td.total-t")[0].innerHTML = totalfin.toFixed(2);
+
+            // como la cantidad es 1 por defecto, hay que calcular el iva para ese producto * 1
+            //let mntogravable = parseFloat(totalfin / 1.12).toFixed(2);
+
+            // igual con el iva, para sacar el iva tenes que tener el monto gravable ya hecho bro :)
+            //let mntiva = parseFloat(totalfin - mntogravable).toFixed(2);
+
+            //r.parentNode.parentNode.querySelectorAll("td.iva-t")[0].innerHTML = mntiva;
+            //r.parentNode.parentNode.querySelectorAll("td.montogravable-t")[0].innerHTML = mntogravable;
+
+            actualizarPreciosVenta();
+        }
+    }
+
+
+        $(function(){
+            $("#servicioitems").empty();
+
+
+
+            $('#reservationtime').daterangepicker({
+                        timePicker: true,
+                        timePickerIncrement: 30,
+                        singleDatePicker: true,
+                        locale: {
+                            format: 'MM/DD/YYYY hh:mm A'
+                        }
+            });
+        });
+
+        function AgregarServicio()
+        {
+             var codigo = document.getElementById('servicioitems').value;
+             var servicio = BuscarServicioByCodigo(codigo);
+
+             console.log(servicio);
+        }
+
+        function BuscarServicioByCodigo(codigo)
+        {
+            var datos = {"id" : codigo }
+
+            return $.ajax({
+                method: "GET",
+                data : datos,
+                dataType: 'json',
+                url: '/LaboratorioClinico/RetornarExamenes',
+                traditional: true,
+                success: function (data, state) {
+                    agregarATablaServicio(data);
+                },
+                error: function (data) {
+                }
+
+            });
+
+        }
+
+        $('input[type="radio"]').click(function(){
+            if ($(this).is(':checked')){
+                if($(this).val() === "productos"){
+                    document.getElementById("formservicios").style.display = "none";
+                    document.getElementById("formproductos").style.display = "block";
+                }
+                else
+                {
+                    document.getElementById("formservicios").style.display = "block";
+                    document.getElementById("formproductos").style.display = "none";
+                }
+            }
+        });
+
+
+        function agregarATablaServicio(data) {
+        //total= total + data.precio;
+        total = 0.00;
+        total2 = 0.00;
+        total3 = 0.00;
+
+        let precioA = data.precio.toFixed(2);
+        let precioB = data.precioB.toFixed(2);
+        let precioC = data.precioC.toFixed(2);
+
+
+        var htmlTags = '<tr style="background-color:rgba(255,211,105,0.5);"> <td> ' + data.id + '</td>' +
+            '<td> ' + data.nombreServicio + ' </td>' +
+            '<td class="cantidad-fila" ><input type="text" onchange="editarValorFila(this)" style="background-color:rgba(255,211,105,0.5);" value="1" class="form-control "></td>' +
+            '<td class="precio-fila">' +
+            '<select name=""  class="form-control selectpreciosventa" style="background-color:rgba(255,211,105,0.5);" onchange="escogerPrecio(this)">' +
+            // '<option value="' + data.precio.toFixed(2) + '">Precio al Publico - Q' + data.precio.toFixed(2) + '</option>' +
+            // '<option value="' + data.precio_2.toFixed(2) + '">Precio mayorista - Q' + data.precio_2.toFixed(2) + '</option>' +
+            // '<option value="' + data.precio_3.toFixed(2) + '">Precio de fardo - Q' + data.precio_3.toFixed(2) + '</option>' +
+            // '<option value="' + data.precio_4.toFixed(2) + '">Precio docena - Q' + data.precio_4.toFixed(2) + '</option>' +
+            '<option value="' + precioA + '"> Precio Normal - Q' +  precioA + '</option>'  +
+            '<option value="' + precioB + '"> Precio Social - Q'  +  precioB + '</option>' +
+            '<option value="' + precioC + '"> Precio IGSS - Q'  +  precioC + '</option>' +
+            '</select>' +
+            '</td>' +
+            '<td class="porcentaje"><input type="text" value="0" class="form-control" style="background-color:rgba(255,211,105,0.5);" onchange="editarPorcentaje(this)"></td>' +
+            '<td class="desc-t" style="display: none;">0.00</td>' +
+            '<td class="subtotal-t">' + precioA + '</td>' +
+            '<td class="total-t">' + precioA + '</td>' +
+            '<td><button  type="button"  class="btn btn-danger btn-sm" onclick="eliminarFila(this)">Quitar</button></td>' +
+            '<td style="display:none;" class="nuevo-detalle"> ' + data.id + ' </td>' +
+            '<td style="display:none;" class="nuevo-detalle">S</td></tr>';
+
+
+        //var total= '<span>'+sumatotal.toFixed(2)+'</span>'
+
+        $('#contentdetalle').append(htmlTags);
+
+
+        actualizarPreciosVenta();
+
+        // Es para que muestre un mensaje de alerta al tener exito en buscar el producto y agregar.
+        toastr.options = {
+            "closeButton": false,
+            "debug": false,
+            "newestOnTop": false,
+            "progressBar": true,
+            "positionClass": "toast-top-center",
+            "preventDuplicates": true,
+            "onclick": null,
+            "showDuration": "100",
+            "hideDuration": "1000",
+            "timeOut": "5000",
+            "extendedTimeOut": "1000",
+            "showEasing": "swing",
+            "hideEasing": "linear",
+            "showMethod": "show",
+            "hideMethod": "hide"
+        };
+
+        toastr.success('Producto agregado!');
+
+
+
+
+
+
+
+
+        }
+
+        function actualizarPreciosVenta(){
+
+        var lista = document.getElementById('contentdetalle').querySelectorAll("td.total-t");
+        var listasub = document.getElementById('contentdetalle').querySelectorAll("td.subtotal-t");
+        var listadesc = document.getElementById('contentdetalle').querySelectorAll("td.desc-t");
+
+
+
+        //console.log(lista);
+
+        lista.forEach(function (item) {
+            total = parseFloat(total) + parseFloat(item.innerText);
+        });
+
+        listasub.forEach(function (item) {
+            total2 = parseFloat(total2) + parseFloat(item.innerText);
+        });
+
+        listadesc.forEach(function (item) {
+            total3 = parseFloat(total3) + parseFloat(item.innerText);
+        });
+
+        // console.log(val);
+        //console.log(sig);
+        // console.log(suma2);
+
+        saldo = total;
+
+        document.getElementById('subtotal-venta').innerHTML = total2.toFixed(2);
+        document.getElementById('descuento-venta').innerHTML = total3.toFixed(2);
+        document.getElementById('precio-total-a-pagar').innerHTML = total.toFixed(2);
+        document.getElementById('total-a-pagar2').innerHTML = total.toFixed(2);
+        document.getElementById('total-saldo-venta').innerHTML = saldo.toFixed(2);
+        }
+
+
+
+        function editarValorFila(r) {
+
+        total = 0.00;
+        total2 = 0.00;
+        total3 = 0.00;
+        totaliva = 0.00;
+
+        var val = r.value;
+
+        console.log(val);
+
+        var sig = r.parentNode.parentNode.querySelectorAll("td.precio-fila")[0].querySelectorAll("select")[0].value;
+
+        var suma2 = val * sig;
+
+        var porc = r.parentNode.parentNode.querySelectorAll("td.porcentaje")[0].querySelectorAll("input")[0].value;
+
+        var desc = suma2 * (parseInt(porc)/100);
+
+        r.parentNode.parentNode.querySelectorAll("td.desc-t")[0].innerHTML=desc.toFixed(2);
+
+        var totalfin = parseFloat(suma2) - parseFloat(desc);
+
+        r.parentNode.parentNode.querySelectorAll("td.subtotal-t")[0].innerHTML = suma2.toFixed(2);
+        r.parentNode.parentNode.querySelectorAll("td.total-t")[0].innerHTML = totalfin.toFixed(2);
+
+
+
+        // como la cantidad es 1 por defecto, hay que calcular el iva para ese producto * 1
+        //let mntogravable = parseFloat(suma2 / 1.12).toFixed(2);
+
+        // igual con el iva, para sacar el iva tenes que tener el monto gravable ya hecho bro :)
+        //let mntiva = parseFloat(suma2 - mntogravable).toFixed(2);
+
+        // iva i monto gravable
+        //r.parentNode.parentNode.querySelectorAll("td.iva-t")[0].innerHTML = mntiva;
+        //r.parentNode.parentNode.querySelectorAll("td.montogravable-t")[0].innerHTML = mntogravable;
+
+        actualizarPreciosVenta();
+
+
+    }
+
+    function LimpiarModal(){
+        document.getElementById('montotxt').value="";
+        document.getElementById('vuelto-n').innerHTML="0.00";
+        saldo = total;
+
+    }
+
+    $("#montotxt").on("keyup", function () {
+
+        var monto = document.getElementById('montotxt').value;
+
+        var vuelto = monto - total;
+        saldo = total - monto;
+
+        if (vuelto <0){
+
+            vuelto = 0.00;
+        }
+
+        if (saldo <0)
+        {
+            saldo=0;
+        }
+
+        console.log(saldo);
+        document.getElementById('vuelto-n').innerHTML = vuelto.toFixed(2);
+        document.getElementById('total-saldo-venta').innerHTML = saldo.toFixed(2);
+
+    });
+
+    function eliminarFila(r) {
+        total = 0.00;
+        total2 = 0.00;
+        total3 = 0.00;
+
+
+        var i = r.parentNode.parentNode.rowIndex;
+        document.getElementById("tableventa").deleteRow(i);
+
+
+        actualizarPreciosVenta();
+    }
+
+    function escogerPrecio(r) {
+
+       total = 0.00;
+        total2 = 0.00;
+        total3 = 0.00;
+
+        let val = r.value;
+        let sub = r.parentNode.parentNode.querySelectorAll("td.subtotal-t")[0].innerHTML;
+
+        let precio = r.parentNode.parentNode.querySelectorAll("td.precio-fila")[0].querySelectorAll("select")[0].value;
+        let cantidad = r.parentNode.parentNode.querySelectorAll("td.cantidad-fila")[0].querySelectorAll("input")[0].value;
+        // var desc = parseFloat(sub) * (parseFloat(val)/100);
+        console.log(precio);
+        console.log(cantidad);
+
+        var totalMax = parseFloat(parseFloat(precio).toFixed(2) * parseFloat(cantidad).toFixed(2));
+
+        @* var desc = val;
+
+            var totalfin = sub - desc; *@
+
+        r.parentNode.parentNode.querySelectorAll("td.desc-t")[0].innerHTML=parseFloat("0.00").toFixed(2);
+        r.parentNode.parentNode.querySelectorAll("td.porcentaje")[0].querySelectorAll("input")[0].value = "0";
+        r.parentNode.parentNode.querySelectorAll("td.total-t")[0].innerHTML = totalMax.toFixed(2);
+        r.parentNode.parentNode.querySelectorAll("td.subtotal-t")[0].innerHTML = totalMax.toFixed(2);
+
+        actualizarPreciosVenta();
+    }
+
+
+
+
+    function GuardarVentaLab() {
+
+        var detalleVenta = new Array();
+
+
+        $.each($("#tableventa tbody tr"), function () {
+            detalleVenta.push({
+                "ProductoId": parseInt($(this).find("td").eq(9).html()),
+                "Cantidad": parseInt(this.querySelectorAll("td.cantidad-fila")[0].querySelectorAll("input")[0].value),
+                "Precio": parseFloat(this.querySelectorAll("td.precio-fila")[0].querySelectorAll("select")[0].value),
+                "Descuento": parseFloat($(this).find("td").eq(5).html()),
+                "Subtotal": parseFloat($(this).find("td").eq(6).html()),
+                "Total": parseFloat($(this).find("td").eq(7).html()),
+                //"BienOServicio": $(this).find("td").eq(10).html(),
+                // "MontoPago" :  $("montotxt").val(),
+
+            });
+        });
+
+       // var pago = document.getElementById('formapagoselect').value;
+
+
+        var datos = {
+            "encabezado": {
+                // formapagoselect-venta
+                //"Nombres": $("#clienteselect option:selected").text(),
+                "Nombres": document.getElementById('Nombres').value,
+                //"NoComprobante": document.getElementById('nocomprobante').value,
+                "ClienteId": document.getElementById('clienteselect').value,
+                "Nit": document.getElementById('Nit').value,
+                "Direccion": document.getElementById('Direccion').value,
+                "FormaPago": parseInt(document.getElementById('formapagoselect-venta').value),
+                "Monto": parseFloat(document.getElementById('montotxt').value),
+                "Vuelto" :  parseFloat(document.getElementById('vuelto-n').innerText),
+                "EmpleadoId": parseInt(document.getElementById('empleadoid').value),
+                @* "MedicoReferido" : document.getElementById('medicoreferido').value, *@
+                "Medico" :$('#medicoreferido option:selected').text(),
+                "Clinica" :$('#clinicareferida option:selected').text(),
+                "ClinicaReferida" : document.getElementById('clinicareferida').value,
+            },
+
+            "detalle": detalleVenta,
+        }
+
+        console.log(datos);
+
+    //    var data = { "datos": datos }
+
+       if(saldo==0){
+
+        $.ajax({
+            method: "POST",
+            data: JSON.stringify(datos),
+            "dataType": "json",
+            "contentType": "application/json",
+            url: '/LaboratorioClinico/GuardarVentaLab',
+            traditional: true,
+            success: function (data) {
+                @* window.open('/CrearPDF/GenerarReporteExamen/'+ data,'_blank'); *@
+                @* window.location.href = '/LaboratorioClinico/RealizarExamenClinico/'; *@
+                window.location.href = '@Url.Action("GenerarReporteExamen","CrearPDF")/'+ data;
+            },
+            error: function (data) {
+                console.log(data);
+                alert(data.responseJSON.message);
+            }
+        });
+
+       }
+       else{
+        alert("Error, Hay Saldo Pendiente");
+       }
+
+    }
+
+    $("#clienteselect").on('change', function () {
+
+        $.ajax({
+            method: "GET",
+            data: { "id": $("#clienteselect option:selected").val() },
+            dataType: 'json',
+            url: '/LaboratorioClinico/RetornarPaciente',
+            traditional: true,
+            success: function (data, state) {
+                console.log(data);
+
+                if (data === null) {
+                    document.getElementById("Nit").value = "";
+                    document.getElementById("Nombres").value = "";
+                    document.getElementById("Direccion").value = "";
+                    return;
+                }
+
+                    document.getElementById("Nit").value = data.nit;
+                    document.getElementById("Nombres").value = data.nombres;
+                    document.getElementById("Direccion").value = data.direccion;
+
+            },
+            error: function (data) {
+
+            },
+
+        });
+    });
+
+
+
+</script>
+}
+
+@section Modales{
+<div class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle">Forma De Pago</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="col-md-6">
+                        <label>Forma de Pago</label>
+                        <select class="form-control select2bs4 selectpagos" style="width: 100%;"
+                                asp-items="@Model.ListaFormaPagos" id="formapagoselect-venta">
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="position-relative form-group">
+                            <label class="">Monto Pagado</label>
+                            <input placeholder="Monto Pagado" id="montotxt" type="number" class="form-control">
+
+                        </div>
+                    </div>
+                    <br />
+                </div>
+
+                <div class="text-center" style="font-size: 18px; text-align: center;">
+                    <div class="">
+
+                        <div class="tabel-text-total">
+                            <span>Total:</span>
+                        </div>
+
+                        <div class="label-total-t">
+                            <span style="font-weight: 800;" id="total-a-pagar2">0.00</span>
+                        </div>
+
+                    </div>
+
+                    <div class="">
+
+                        <div class="tabel-text-total">
+                            <span>Saldo:</span>
+                        </div>
+
+                        <div class="label-total-t">
+                            <span style="font-weight: 800;" id="total-saldo-venta">0.00</span>
+                        </div>
+
+                    </div>
+
+                    <div class="">
+                        <div class="">
+                            <span>Vuelto:</span>
+                        </div>
+                        <div class="">
+                            <span style="font-weight: 800;" id="vuelto-n">0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="GuardarVentaLab()">Listo</button>
+            </div>
+        </div>
+    </div>
+</div>
+}

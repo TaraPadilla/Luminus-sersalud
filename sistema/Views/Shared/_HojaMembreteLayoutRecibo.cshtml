@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>@(ViewData["Title"] ?? "BLACK OUT SERVICES")</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    @RenderSection("css", required: false)
+
+    <style>
+        * { box-sizing: border-box; font-family: Arial, sans-serif; }
+        body {
+            margin: 0;
+            background: #fff;
+        }
+        /* Ancho típico de recibo (80 mm) */
+        .receipt {
+            width: 80mm;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 10px 12px;
+            text-align: center;
+            font-size: 12px;
+            line-height: 1.35;
+        }
+        .brand {
+            font-weight: bold;
+            color: #0d0e36;
+            font-size: 18px;
+            letter-spacing: .2px;
+        }
+        .sub {
+            display: block;
+            margin-top: 2px;
+        }
+        .divider {
+            border: 0;
+            border-top: 1px dashed #0d0e36;
+            margin: 8px 0;
+        }
+        .panel {
+            border: 1px solid #0d0e36;
+            border-radius: 6px;
+            padding: 8px;
+            margin: 8px 0;
+        }
+        .muted { opacity: .85; }
+        .emergency { font-weight: 700; margin-top: 6px; }
+        .text-blue { color:#0d0e36; font-weight:bold; }
+        /* Asegurar buen resultado al imprimir */
+        @@media print {
+            body { margin: 0; }
+            .receipt { width: 80mm; padding: 6mm 5mm; }
+            .divider { margin: 6px 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt">
+        <span class="brand">@ViewData["NombreEmpresa"]</span>
+        <span class="sub muted">@ViewData["Direccion"]</span>
+        <span class="sub muted">Telefonos: @ViewData["Telefono"]</span>
+        <span class="sub muted">@ViewData["CorreoElectronico"]</span>
+
+        <hr class="divider">
+
+        <div class="panel">
+            <i class="muted">
+                SERVICIOS: Hospitalizaci&oacute;n, Ultrasonido, Rayos X, Electrocardiogramas,
+                Farmacia, Laboratorio, Operaciones de Emergencia y Planificadas
+            </i>
+        </div>
+
+        <div class="emergency">EMERGENCIAS LAS 24 HORAS</div>
+
+        <hr class="divider">
+
+        <!-- Contenido dinámico del documento/recibo -->
+        @RenderBody()
+
+        <hr class="divider">
+        <div class="muted">Gracias por su preferencia</div>
+    </div>
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

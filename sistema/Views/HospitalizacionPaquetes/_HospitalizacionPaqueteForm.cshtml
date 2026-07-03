@@ -1,0 +1,286 @@
+@using sistema.Models
+@model HospitalizacionPaqueteViewModel
+
+@Html.HiddenFor(a => a.Id)
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-6">
+                <label>Codigo</label>
+                @Html.TextBoxFor(m => m.CodigoInterno,
+                         new { @class = "form-control", @placeholder = "Codigo del paquete" })
+            </div>
+            <div class="col-md-6">
+                <label>Nombre</label>
+                @Html.TextBoxFor(m => m.Nombre,
+                         new { @class = "form-control", @placeholder = "Nombre del paquete" })
+            </div>
+            <div class="col-md-6">
+
+                @Html.TextAreaFor(m => m.Id,
+                         new { @class = "d-none", @placeholder = "Descripcion" })
+            </div>
+            <div class="col-md-12">
+                <label>Descripcion</label>
+                @Html.TextAreaFor(m => m.Descripcion,
+                         new { @class = "form-control", @placeholder = "Descripcion" })
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <!--Productos-->
+        <div class="form-row">
+            <div class="col-md-12 seccion-header" id="productos-header">
+                <b>PRODUCTOS</b>
+            </div>
+            <div class="col-md-12 text-primary" style="display:none" id="texto-cargando-productos-existentes">
+                Cargando productos existentes...
+            </div>
+            <div class="col-md-12 text-danger" style="display:none" id="texto-error-consultar-productos-existentes">
+                Error de conexion.
+                <a href="#" data-bind="click:consultarProductosExistentes">Reintentar</a>
+            </div>
+            <div class="col-md-12 seccion-body form-row" id="productos-body">
+                <div class="col-md-12 form-row">
+                    <div class="col-md-12">
+                        <br />
+                    </div>
+                    <div class="col-md-5">
+                        <label>Seleccionar producto:</label>
+                        <select class="select2bs4 form-control"
+                                data-bind="options: productosExistentes,
+                                   optionsText: 'ProductoNombre',
+                                   value: productoSeleccionado">
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Seleccionar unidad de venta:</label>
+                        <select class="form-control"
+                                data-bind="options: unidadesVentaProducto,
+                                   optionsText: 'UnidadMedidaVentaNombre',
+                                   value: unidadVentaSeleccionadaProducto">
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Seleccionar Precio:</label>
+                        <select class="form-control"
+                                data-bind="options: preciosProducto,
+                                   optionsText: 'Precio',
+                                   value: precioSeleccionadoProducto">
+                        </select>
+                    </div>
+                    <div class="col-md-1">
+                        <label class="text-white">Agregar</label>
+                        <button class="btn btn-primary" data-bind="click: agregarProducto">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <div class="col-md-12">
+                        <br />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!--Servicios-->
+        <div class="form-row">
+            <div class="col-md-12 seccion-header" id="servicios-header">
+                <b>SERVICIOS</b>
+            </div>
+            <div class="col-md-12 text-primary" style="display:none" id="texto-cargando-servicios-existentes">
+                Cargando servicios existentes...
+            </div>
+            <div class="col-md-12 text-danger" style="display:none" id="texto-error-consultar-servicios-existentes">
+                Error de conexion.
+                <a href="#" data-bind="click:consultarServiciosExistentes">Reintentar</a>
+            </div>
+            <div class="col-md-12 seccion-body form-row" id="servicios-body">
+                <div class="col-md-12 form-row">
+                    <div class="col-md-12">
+                        <br />
+                    </div>
+                    @* <div class="col-md-3">
+                        <label>Buscar por c&oacute;digo:</label>
+                        <input class="form-control" data-bind="value: codigoServicioBuscar"
+                               id="codigo-servicio-buscar" />
+                    </div> *@
+                    <div class="col-md-5">
+                        <label>Seleccionar servicio:</label>
+                        <select class="select2bs4 form-control"
+                                data-bind="options: serviciosExistentes
+                                                                    ,optionsText: 'ServicioNombreMostrar',
+                                                            value: servicioSeleccionado">
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label>Seleccionar Precio:</label>
+                        <select class="form-control"
+                                data-bind="options: preciosServicio,
+                                   optionsText: 'PrecioNombreMostrar',
+                                   value: precioSeleccionadoServicio">
+                        </select>
+                    </div>
+                    <div class="col-md-1">
+                        <label class="text-white">Agregar</label>
+                        <button class="btn btn-primary" data-bind="click: agregarServicio">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <div class="col-md-12">
+                        <br />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--Laboratorio-->
+        <div class="form-row">
+            <div class="col-md-12 seccion-header" id="laboratorio-header">
+                <b>LABORATORIOS</b>
+            </div>
+            <div class="col-md-12 seccion-body form-row" id="laboratorio-body">
+                <div class="col-md-12 form-row">
+                    <div class="col-md-12">
+                        <br />
+                    </div>
+                    @* <div class="col-md-3">
+                        <label>Buscar por nombre:</label>
+                        <input class="form-control" data-bind="value: nombreLaboratorioBuscar"
+                               id="nombre-laboratorio-buscar" />
+                    </div> *@
+                    <div class="col-md-5">
+                        <label>Seleccionar laboratorio:</label>
+                        <select class="select2bs4 form-control"
+                                data-bind="options: laboratorioProductoExistente
+                                                                    ,optionsText: 'NombreExamen',
+                                                            value: laboratorioSeleccionado">
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Seleccionar Precio:</label>
+                        <select class="form-control"
+                                data-bind="options: preciosLaboratorioExistentes
+                                                                    ,optionsText: 'PrecioNombreMostrar',
+                                                            value: precioSeleccionadoLaboratorio">
+                        </select>
+                    </div>
+                    <div class="col-md-1">
+                        <label class="text-white">Agregar</label>
+                        <button class="btn btn-primary" data-bind="click: agregarLaboratorio">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <div class="col-md-12">
+                        <br />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--Elementos-->
+        <div class="form-row">
+            <div class="col-md-12 seccion-header">
+                <b>ELEMENTOS</b>
+            </div>
+            
+            <div class="col-md-12 mb-3">
+                <br>
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    </div>
+                    <input type="text" class="form-control" placeholder="Buscar elemento..." data-bind="value: filtroBusqueda, valueUpdate: 'input'">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" data-bind="click: function() { filtroBusqueda(''); }">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-12 form-row">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Cantidad</th>
+                            <th>Precio costo</th>
+                            <th>Precio venta</th>
+                            <th>Subtotal</th>
+                            <th>% Descuento</th>
+                            <th>Total</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody data-bind="foreach: paginatedElementos">
+                        <tr>
+                            <td>
+                                <label class="badge badge-warning" data-bind="text: Tipo"></label><br />
+                                <span data-bind="text: $root.obtenerCodigoElemento($data)"></span>
+                            </td>
+                            <td data-bind="text: $root.obtenerNombreElemento($data)"></td>
+
+                            <td>
+                                <input class="form-control" data-bind="value: Cantidad, event:{change:$root.actualizarTotales}" />
+                            </td>
+                            <td>
+                                <span data-bind="text: PrecioCompra"></span>
+                            </td>
+                            <td>
+                                <span style="font-weight:bolder" data-bind="text: Precio"></span><br />
+                                <input class="form-control" data-bind="value: PrecioValor, event:{change:$root.actualizarTotales}" />
+                            </td>
+                            <td>
+                                <span data-bind="text: Subtotal"></span>
+                            </td>
+                            <td>
+                                <input class="form-control" data-bind="value: DescuentoPorcentaje, event:{change:$root.actualizarTotales}" />
+                            </td>
+                            <td>
+                                <span data-bind="text: ValorTotal"></span>
+                            </td>
+                            <td>
+                                @* <button class="btn btn-danger" data-bind="click: $root.quitarProducto || $root.quitarServicio || $root.quitarLaboratorio">
+                                    <i class="fa fa-trash"></i>
+                                </button> *@
+                                <button class="btn btn-danger" data-bind="click: $root.quitarElemento">
+    <i class="fa fa-trash"></i>
+</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+<!-- Controles de paginación -->
+<div class="d-flex justify-content-center align-items-center mt-3">
+    <button class="btn btn-secondary mx-2" data-bind="click: prevPageElementos, enable: currentPageElementos() > 1">
+        Anterior
+    </button>
+    <span class="mx-2" data-bind="text: 'Página ' + currentPageElementos() + ' de ' + totalPagesElementos()"></span>
+    <button class="btn btn-secondary mx-2" data-bind="click: nextPageElementos, enable: currentPageElementos() < totalPagesElementos()">
+        Siguiente
+    </button>
+</div>
+
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card" style="font-size:24px">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12 text-right">
+                <b>Precio de costo: </b> <span data-bind="text:costoTotalPaquete"></span><br />
+                <b>Precio de venta: </b> <span data-bind="text:ventaTotal"></span><br />
+                <b>Precio FINAL de venta del paquete: </b> @Html.TextBoxFor(a => a.PrecioPaquete, new { @width = "10" })<br />
+                <b>Ganancia:</b> <span data-bind="text:gananciaPaquete"></span>
+            </div>
+        </div>
+    </div>
+</div>

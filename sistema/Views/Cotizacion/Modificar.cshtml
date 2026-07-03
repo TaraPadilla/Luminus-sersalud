@@ -1,0 +1,60 @@
+ @model sistema.Models.CotizacionBaseViewModel
+@await Html.PartialAsync("_MensajeExito")
+<div class="radio-toolbar">
+    <input type="radio" id="radioProductos" name="radiocoti" value="productos" checked>
+    <label for="radioProductos">Productos</label>
+
+    <input type="radio" id="radioServicios" name="radiocoti" value="servicios">
+    <label for="radioServicios">Servicios</label>
+
+</div>
+ <br />
+ <button type="button" class="btn btn-primary" onclick="ModificarCotizacion(@Model.Cotizacion.Id)">Guardar</button>
+ <a href="@Url.Action("ConfirmarCotizacion","Cotizacion", new {id = @Model.Cotizacion.Id})" class="btn btn-primary">
+    Confirmar Venta
+</a>
+
+
+@await Html.PartialAsync("_CotizacionForm")
+<br>
+
+@section Scripts
+{
+<script src="~/js/FuncionesCotizacion.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.0.1/js/toastr.js"></script>
+
+<script type="text/javascript" src="~/js/moment.min.js"></script>
+<script type="text/javascript" src="~/js/daterangepicker.js"></script>
+<script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+
+<script>
+    $(function(){
+        $('.select2').select2({
+            tags: true
+        });
+        
+    $('.select2bs4').select2({
+      theme: 'bootstrap4',
+      tags: true,
+    });
+
+          $('#reservationtime').daterangepicker({
+                    timePicker: true,
+                    timePickerIncrement: 30,
+                    locale: {
+                        format: 'DD/MM/YYYY hh:mm A'
+                    }
+                });
+    });
+
+
+    
+</script>
+}
+
+@section css
+{
+    <link href="~/css/daterangepicker.css" rel="stylesheet">
+    <link href="~/css/radiobutton.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.0.1/css/toastr.css" rel="stylesheet"/>
+}

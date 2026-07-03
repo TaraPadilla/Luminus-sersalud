@@ -1,0 +1,359 @@
+@using Database.Shared.Models
+@model Hospitalizacion
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Hospitalización - Informe detallado";
+
+    // Configuración de membrete (igual que en los demás reportes)
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+
+    decimal valorHabitacion = Model.ValorHabitacionDecimal;
+    decimal valorServicios = 0m;
+    decimal valorMedicamentos = 0m;
+    decimal valorExamenes = 0m;
+    decimal valorPaquetes = 0m;
+    decimal valorTotal = 0m;
+    var tipoSangre = Model.Paciente?.TipoDeSangre ?? "-";
+}
+
+
+<div class="doc">
+    <!-- Encabezado -->
+    <div class="doc-title">REPORTE - @ViewData["Title"]</div>
+    <div class="doc-underline"></div>
+
+    <table class="table" style="border:0;">
+        <tbody>
+            <tr>
+                <td style="text-align:center; font-weight:700; border:0;">
+                    Fecha y hora de emisión: @fecha.ToString("dd/MM/yyyy HH:mm")
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- DATOS DE HOSPITALIZACIÓN -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Datos de hospitalización</td>
+        </tr>
+    </table>
+
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table threecol">
+                    <colgroup>
+                        <col />
+                        <col />
+                        <col />
+                    </colgroup>
+                    <tbody>
+                        <tr class="kv-row">
+                            <td>
+                                <span class="label">Fecha inicial</span>
+                                <span class="value">@Model.FechaInicio</span>
+                            </td>
+                            <td>
+                                <span class="label">Fecha final</span>
+                                <span class="value">@Model.FechaFin</span>
+                            </td>
+                            <td>
+                                <span class="label">Noches</span>
+                                <span class="value">@Model.NochesInt.ToString()</span>
+                            </td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td>
+                                <span class="label">Valor noche</span>
+                                <span class="value">@Model.ValorNocheDecimal.ToString("N2")</span>
+                            </td>
+                            <td>
+                                <span class="label">Valor total habitación</span>
+                                <span class="value">@Model.ValorHabitacionDecimal.ToString("N2")</span>
+                            </td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- DATOS DEL PACIENTE -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Datos del paciente</td>
+        </tr>
+    </table>
+
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table threecol">
+                    <colgroup>
+                        <col />
+                        <col />
+                        <col />
+                    </colgroup>
+                    <tbody>
+                        <tr class="kv-row">
+                            <td>
+                                <span class="label">Nombre</span>
+                                <span class="value">@Model.Paciente.Nombre</span>
+                            </td>
+                            <td>
+                                <span class="label">Sexo</span>
+                                <span class="value">@Model.Paciente.sexoText</span>
+                            </td>
+                            <td>
+                                <span class="label">Tipo de sangre</span>
+                                <span class="value">@tipoSangre</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- MEDICAMENTOS -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Medicamentos</td>
+        </tr>
+    </table>
+
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Cantidad aplicada</th>
+                            <th>Valor unitario</th>
+                            <th>Valor total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.HospitalizacionesProductos != null && Model.HospitalizacionesProductos.Any())
+                        {
+                            foreach (var medicamento in Model.HospitalizacionesProductos)
+                            {
+                                var cantidadAplicada = medicamento.HospitalizacionesProductosAplicaciones
+                                    .Count(a => a.Aplicado && !a.Eliminado);
+                                var valorTotalMedicamento = medicamento.PrecioValor * cantidadAplicada;
+                                valorMedicamentos += valorTotalMedicamento;
+
+                                <tr class="kv-row">
+                                    <td>@medicamento.Producto.NombreProducto</td>
+                                    <td>@cantidadAplicada</td>
+                                    <td>@medicamento.Precio</td>
+                                    <td>@valorTotalMedicamento.ToString("N2")</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr class="kv-row">
+                                <td colspan="4">No hay medicamentos registrados</td>
+                            </tr>
+                        }
+                        <tr class="kv-row">
+                            <td colspan="3"><b>TOTAL</b></td>
+                            <td><b>@valorMedicamentos.ToString("N2")</b></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- SERVICIOS -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Servicios</td>
+        </tr>
+    </table>
+
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Cantidad</th>
+                            <th>Valor unitario</th>
+                            <th>Valor total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.HospitalizacionesServicios != null && Model.HospitalizacionesServicios.Any())
+                        {
+                            foreach (var servicio in Model.HospitalizacionesServicios)
+                            {
+                                var valorTotalServicio = servicio.Precio * servicio.Cantidad;
+                                valorServicios += valorTotalServicio;
+
+                                <tr class="kv-row">
+                                    <td>@servicio.Servicio.NombreServicio</td>
+                                    <td>@servicio.Cantidad</td>
+                                    <td>@servicio.Precio</td>
+                                    <td>@valorTotalServicio.ToString("N2")</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr class="kv-row">
+                                <td colspan="4">No hay servicios registrados</td>
+                            </tr>
+                        }
+                        <tr class="kv-row">
+                            <td colspan="3"><b>TOTAL</b></td>
+                            <td><b>@valorServicios.ToString("N2")</b></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- EXÁMENES -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Exámenes</td>
+        </tr>
+    </table>
+
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.HospitalizacionesExamenes != null && Model.HospitalizacionesExamenes.Any())
+                        {
+                            foreach (var examen in Model.HospitalizacionesExamenes)
+                            {
+                                var det = examen.Examen.DetalleExamenes.FirstOrDefault();
+                                if (det != null)
+                                {
+                                    valorExamenes += det.PrecioValor;
+                                    <tr class="kv-row">
+                                        <td>@det.ExamenLabClinico.NombreExamen</td>
+                                        <td>@det.PrecioValor.ToString("N2")</td>
+                                    </tr>
+                                }
+                            }
+                        }
+                        else
+                        {
+                            <tr class="kv-row">
+                                <td colspan="2">No hay exámenes registrados</td>
+                            </tr>
+                        }
+                        <tr class="kv-row">
+                            <td><b>TOTAL</b></td>
+                            <td><b>@valorExamenes.ToString("N2")</b></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- PAQUETES -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Paquetes</td>
+        </tr>
+    </table>
+
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.HospitalizacionesPaquetesHospitalizacion != null
+                            && Model.HospitalizacionesPaquetesHospitalizacion.Any())
+                        {
+                            foreach (var paquete in Model.HospitalizacionesPaquetesHospitalizacion)
+                            {
+                                var precioPaquete = paquete.PaqueteHospitalizacion.Precio ?? 0m;
+                                valorPaquetes += precioPaquete;
+
+                                <tr class="kv-row">
+                                    <td>@paquete.PaqueteHospitalizacion.NombrePaquete</td>
+                                    <td>@precioPaquete.ToString("N2")</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr class="kv-row">
+                                <td colspan="2">No hay paquetes registrados</td>
+                            </tr>
+                        }
+                        <tr class="kv-row">
+                            <td><b>TOTAL</b></td>
+                            <td><b>@valorPaquetes.ToString("N2")</b></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- TOTAL GENERAL -->
+    @{
+        valorTotal = valorMedicamentos + valorServicios + valorExamenes + valorPaquetes + valorHabitacion;
+    }
+
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <thead>
+                        <tr class="kv-row" style="text-align:center;">
+                            <th>
+                                <div style="font-size:16px; margin-bottom:4px;">TOTAL GENERAL</div>
+                                <div style="font-size:18px; font-weight:bold;">
+                                    @valorTotal.ToString("N2")
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                </table>
+            </td>
+        </tr>
+    </table>
+</div>

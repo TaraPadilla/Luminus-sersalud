@@ -1,0 +1,241 @@
+@*@* @using Database.Shared.Paginacion;
+    @model PaginacionList<Database.Shared.Models.Caja>  
+
+@model sistema.Models.CajaLaboratorioBaseViewModel
+
+ @await Html.PartialAsync("_MensajeExito")
+
+
+<div class="form-row">
+    <div class="col-md-6">
+        <form asp-controller="LaboratorioClinico" asp-action="Aperturar" method="post">
+            <div class="main-card mb-3 card">
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="col-md-12">
+                            <h5><b>Abrir caja</b></h5>
+                        </div>
+                        <div class="col-md-6">
+                            <label>Sucursal</label>
+                            <select asp-for="AperturarSucursalId" class="form-control" asp-items="Model.ListaSucursales">
+                                <option value="">Seleccione...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label>Monto</label>
+                            @Html.TextBoxFor(a => a.CajaLab.MontoApertura, new {@class="form-control", @placeholder="Monto a Aperturar", @id="valorAperturaDefecto"})
+                            @Html.ValidationMessageFor(a => a.CajaLab.MontoApertura, "", new { @class = "text-danger"})
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="col-md-12">
+                            <br />
+                            <button type="submit" class="btn btn-primary text-center">Abrir caja</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+        </form>
+    </div>
+
+
+
+    <div class="col-md-6">
+        <form asp-controller="Caja" asp-action="Reporte" method="get">
+            <div class="main-card mb-3 card">
+                <div class="card-body">
+
+                    <div class="text-center">
+                        <div class="position-relative form-group">
+                            <label for="exampleEmail11" class="">Rango de fechas</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control float-right" id="reservationtime" name="fecha">
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary text-center">Generar PDF</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+
+
+
+</div>
+
+
+
+<div class="form-row">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="table-responsive">
+                            <table class="mb-0 table table-hover ">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha Apertura</th>
+                                        <th>Monto Apertura</th>
+                                        <th>Gastos</th>
+                                        <th>Ingresos</th>
+                                        <th>Total Cierre</th>
+                                        <th>Resp. Apertura</th>
+                                        <th>Resp. Cierre</th>
+                                        <th>Acciones</th>
+
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.ListaCajas)
+                                    {
+                                        @if (item.EstadoCaja == true)
+                                        {
+                                            @* var personaApertura = item.ResponsableAperturaLab == null ? "" : item.ResponsableAperturaText; *@
+                                            @* var personaCierre = item.ResponsableCierreLab == null ? "" : item.ResponsableCierreText; 
+
+                                            var personaApertura = "";
+                                            var personaCierre = "";
+
+                                            if (item.ResponsableAperturaLab != null)
+                                            {
+                                                if (item.ResponsableAperturaLab.Persona != null)
+                                                {
+                                                    personaApertura = item.ResponsableAperturaLab.Persona.Nombre;
+                                                }
+                                            }
+
+                                            if (item.ResponsableCierreLab != null)
+                                            {
+                                                if (item.ResponsableCierreLab.Persona != null)
+                                                {
+                                                    personaApertura = item.ResponsableCierreLab.Persona.Nombre;
+                                                }
+                                            }
+
+                                            <tr class="bg-success">
+                                                <td>@item.FechaApertura</td>
+                                                <td>@item.MontoApertura</td>
+                                                <td>@item.DetalleCajaLabs.Sum(x => x.Gasto)</td>
+                                                <td>@item.DetalleCajaLabs.Sum(x => x.Ingreso)</td>
+
+                                                @{
+                                                    decimal suma1 = item.DetalleCajaLabs.Sum(x => x.Ingreso - x.Gasto);
+                                                    decimal montoap = item.MontoApertura;
+
+                                                    decimal res = suma1 + montoap;
+                                                }
+
+                                                <td>@res</td>
+                                                <td>@personaApertura</td>
+                                                <td>@personaCierre</td>
+                                                <td>
+                                                    <a href="@Url.Action("VerDetalle","LaboratorioClinico", new {id = @item.Id})" class="btn btn-warning btn-sm">
+                                                        Ver Detalle
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                        else
+                                        {
+                                            @* var personaApertura = item.ResponsableAperturaLab == null ? "" : item.ResponsableAperturaText;
+                                                var personaCierre = item.ResponsableCierreLab == null ? "" : item.ResponsableCierreText; 
+
+                                            var personaApertura = "";
+                                            var personaCierre = "";
+
+                                            if (item.ResponsableAperturaLab != null)
+                                            {
+                                                if (item.ResponsableAperturaLab.Persona != null)
+                                                {
+                                                    personaApertura = item.ResponsableAperturaLab.Persona.Nombre;
+                                                }
+                                            }
+
+                                            if (item.ResponsableCierreLab != null)
+                                            {
+                                                if (item.ResponsableCierreLab.Persona != null)
+                                                {
+                                                    personaApertura = item.ResponsableCierreLab.Persona.Nombre;
+                                                }
+                                            }
+
+                                            <tr>
+                                                <td>@item.FechaApertura</td>
+                                                <td>@item.MontoApertura</td>
+                                                <td>@item.DetalleCajaLabs.Sum(x=>x.Gasto)</td>
+                                                <td>@item.DetalleCajaLabs.Sum(x=>x.Ingreso)</td>
+                                                @{
+                                                    decimal suma1 = item.DetalleCajaLabs.Sum(x => x.Ingreso - x.Gasto);
+                                                    decimal montoap = item.MontoApertura;
+                                                    decimal res = suma1 + montoap;
+                                                }
+
+                                                <td>@res</td>
+                                                <td>@personaApertura</td>
+                                                <td>@personaCierre</td>
+                                                <td>
+                                                    <a href="@Url.Action("LaboratorioClinico","Caja", new {id = @item.Id})" class="btn btn-warning btn-sm">
+                                                        Ver Detalle
+                                                    </a>
+
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+
+<script type="text/javascript" src="~/js/moment.min.js"></script>
+<script type="text/javascript" src="~/js/daterangepicker.js"></script>
+<script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+
+<script>
+    $(function(){
+         $('.select2').select2({
+             tags: true
+         });
+
+     $('.select2bs4').select2({
+       theme: 'bootstrap4',
+       tags: true,
+     });
+
+           $('#reservationtime').daterangepicker({
+                     timePicker: true,
+                     timePickerIncrement: 30,
+                     locale: {
+                         format: 'MM/DD/YYYY hh:mm A'
+                     }
+                 });
+
+     });
+
+
+
+</script>
+}
+
+@section css
+{
+<link href="~/css/daterangepicker.css" rel="stylesheet">
+}
+*@

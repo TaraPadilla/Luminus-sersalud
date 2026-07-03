@@ -1,0 +1,211 @@
+@using Database.Shared.Models
+@await Html.PartialAsync("_MensajeExito")
+
+@model sistema.Models.VentaBaseViewModel
+
+@{
+    ViewData["Title"] = "Venta - Detalles";
+    decimal subtotal = 0.00m;
+    decimal descuento = 0.00m;
+    decimal total = 0.00m;
+    decimal descuentoTotal = 0.00m;
+    decimal cargosTotal = 0.00m;
+    decimal totalGeneral = 0.00m;
+}
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <center>
+            <h4><b>Venta - Detalles</b></h4>
+        </center>
+    </div>
+</div>
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-left mb-4" style="font-size: 17px;">
+            <span>Fecha y hora de venta:</span>
+            <span>@Model.Venta.FechaVenta</span>
+        </div>
+        <fieldset disabled>
+            <div class="form-row">
+                <div class="col-md-3">
+                    <div class="position-relative form-group">
+                        <label class="">
+                            No.
+                            Comprobante
+                        </label>
+                        @* <input placeholder="Descripción Producto" class="form-control"> *@
+                        @Html.TextBoxFor(a => a.Venta.NoComprobante, new
+                        { @class = "form-control", @id = "nocomprobante", @placeholder = "No. Comprobante" })
+                        @Html.ValidationMessageFor(a => a.Venta.NoComprobante, "", new
+                        {
+                            @class =
+                        "text-danger"
+                        })
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label>Cliente</label>
+                    <select class="form-control select2bs4" style="width: 100%;" disabled asp-for="Venta.PacienteId"
+                            asp-items="@Model.ListaClientes" id="clienteselect-m">
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <div class="position-relative form-group">
+                        <label class="">Nit</label>
+                        @Html.TextBoxFor(a => a.Venta.Nit, new
+                        {
+                            @class = "form-control",
+                            @id = "Nit",
+                            @placeholder = "Nit"
+                        })
+                        @Html.ValidationMessageFor(a => a.Venta.Nit, "", new
+                        {
+                            @class =
+                        "text-danger"
+                        })
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="position-relative form-group">
+                        <label class="">Direccion</label>
+                        @* <input placeholder="Descripción Producto" class="form-control"> *@
+                        @Html.TextBoxFor(a => a.Venta.Direccion, new
+                        { @class = "form-control", @id = "direccion", @placeholder = "Direccion" })
+                        @Html.ValidationMessageFor(a => a.Venta.Direccion, "", new
+                        {
+                            @class =
+                        "text-danger"
+                        })
+                    </div>
+                </div>
+            </div>
+
+
+            <br />
+
+            <div class="table-responsive">
+                <table class='table table-hover' id="tableventa">
+                    <thead>
+                        <tr>
+                            <th>Codigo</th>
+                            <th>Nombre Producto</th>
+                            <th>Cantidad</th>
+                            <th>Precio</th>
+                            <th>Cargo</th>
+                            <th>Descuento (%)</th>
+                            <th>Subtotal</th>
+                            <th>Total</th>
+                            @* <th>Acciones</th> *@
+                        </tr>
+                    </thead>
+                    <tbody id="contentdetalle">
+
+                        @if (Model.Venta != null)
+                        {
+                            foreach (var item in Model.Venta.DetalleVenta)
+                            {
+                                <tr>
+                                    <td>
+                                        @if (item.Producto != null)
+                                        {
+                                            @item.Producto.CodigoReferencia
+                                        }
+                                        else if (item.ExamenLabClinico != null)
+                                        {
+                                            @item.ExamenLabClinicoId
+                                        }
+                                        else
+                                        {
+                                            @item.ServicioId
+                                        }
+                                    </td>
+                                    <td>
+                                        @{
+                                            var nombre = "";
+                                            var producto = item.Producto ?? new Producto();
+                                            var servicio = item.Servicio ?? new Servicio();
+                                            var examen = item.ExamenLabClinico ?? new ExamenLabClinico();
+                                        }
+                                        @if (item.Producto != null)
+                                        {
+                                            nombre = producto.NombreProducto;
+                                        }
+                                        else if (item.ExamenLabClinico != null)
+                                        {
+                                            nombre = examen.NombreExamen;
+                                        }
+                                        else
+                                        {
+                                            nombre = servicio.NombreServicio;
+                                        }
+                                        <span>@nombre</span>
+                                    </td>
+                                    <td>@item.Cantidad</td>
+                                    <td>@item.Precio</td>
+                                    <td>@item.Cargo</td>
+                                    <td>@item.DescuentoPorcentaje</td>
+                                    <td>@item.Subtotal</td>
+                                    @* <td>@item.Total</td> *@
+                                    <td>
+                                        @{
+                                            decimal montoDescuentoFila = 0.00m;
+                                            decimal totalFila = item.Total; // Valor base de la fila
+
+                                            if (item.Cargo > 0)
+                                            {
+                                                totalFila += item.Cargo;
+                                                cargosTotal += item.Cargo; // acumulo cargos
+                                            }
+                                            else if (item.DescuentoPorcentaje > 0)
+                                            {
+                                                // Calculo monto real del descuento redondeado
+                                                montoDescuentoFila = Math.Round(item.Total * (item.DescuentoPorcentaje / 100m), 2);
+                                                totalFila -= montoDescuentoFila;
+                                            }
+
+                                            subtotal += item.Subtotal;
+                                            descuentoTotal += montoDescuentoFila;
+                                            totalGeneral += totalFila;
+                                        }
+                                        @totalFila.ToString("N2")
+                                    </td>
+                                    @* <td><button  type="button"  class="btn btn-danger btn-sm" onclick="eliminarFila(this,@item.Precio)">Quitar</button></td> *@
+                                    <td style="display: none;" class="idProd">@item.Id</td>
+                                </tr>
+                                @* subtotal += @item.Subtotal;
+                                descuento += @item.Descuento; *@
+                                @* total += @item.Total; *@
+
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <br />
+            <div class="text-right" style="font-size: 17px;">
+                <span><b>Subtotal:</b></span>
+                Q <span>@subtotal</span>
+            </div>
+            <div class="text-right" style="font-size: 17px;">
+                <span><b>Cargos Adicionales:</b></span>
+                Q <span>@cargosTotal</span>
+            </div>
+            <div class="text-right" style="font-size: 17px;">
+                <span><b>Descuento:</b></span>
+                Q <span>@descuentoTotal</span>
+            </div>
+            <div class="text-right" style="font-size: 17px;">
+                <span><b>Total:</b></span>
+                Q <span>@totalGeneral</span>
+            </div>
+        </div>
+    </div>
+
+
+    @section Scripts
+    {
+        <script src="~/js/FuncionesVenta.js"></script>
+    }

@@ -1,0 +1,265 @@
+@model farmamest.Models.CuentasPorCobrarViewModel;
+@{
+    ViewData["Title"] = "Detalles de cuenta";
+
+
+
+    var fechaRegistro = Model.CuentasPorCobrar.Paciente.FechaRegistro == null ? "-" : Convert.ToDateTime(Model.CuentasPorCobrar.Paciente.FechaRegistro).ToString("yyyy/MM/dd");
+
+
+
+    //Información de la cuenta
+
+    var fechaLimitePago = Model.CuentasPorCobrar.FechaLimitePago == null ? "-" : Convert.ToDateTime(Model.CuentasPorCobrar.FechaLimitePago).ToString("yyyy/MM/dd");
+
+    var valorCuenta = Model.CuentasPorCobrar.Valor ?? 0;
+
+    var cuentaPagada = Model.CuentasPorCobrar.Pagada ? "Si" : "No";
+
+    var observacionesCuenta = Model.CuentasPorCobrar.Observaciones ?? "-";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+@Html.HiddenFor(m => m.CuentasPorCobrar.PacienteId)
+@Html.HiddenFor(m => m.CuentaId)
+
+<div class="main-card mb-3 card">
+    <div class="card-body titulo-azul">
+        <div class="col-md-12 text-center">
+            <h4><b>Detalles de cuenta</b></h4><br />
+            @Model.CuentasPorCobrar.Paciente.Nombre
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <div id="tabs-datos-cuenta">
+                    <ul>
+                        <li><a href="#tab-paciente">Paciente</a></li>
+                        <li><a href="#tab-hospitalizaciones">Hospitalizaciones</a></li>
+                        <li><a href="#tab-paquetes" data-bind="click:abrirTabPaquetes">Paquetes</a></li>
+                        <li><a href="#tab-medicamentos" data-bind="click:abrirTabMedicamentos">Medicamentos</a></li>
+                        <li><a href="#tab-general">General</a></li>
+                        <li><a href="#tab-depositos" data-bind="click:abrirTabDepositos">Depositos</a></li>
+                    </ul>
+                    <div id="tab-paciente">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <button class="btn btn-primary" data-bind="click:verInformacionPaciente">
+                                    <i class="fas fa-external-link-alt"></i>&nbsp;
+                                    Ver informaci&oacute;n del paciente
+                                </button>
+                                <br /><br />
+                            </div>
+                            <div class="col-md-3">
+                                <b>Nombre</b><br />
+                                @Model.CuentasPorCobrar.Paciente.Nombre
+                            </div>
+                            <div class="col-md-3">
+                                <b>Fecha de registro</b><br />
+                                @fechaRegistro
+                            </div>
+                            <div class="col-md-3">
+                                <b>Nit</b><br />
+                                @Model.CuentasPorCobrar.Paciente.Nit
+                            </div>
+                            <div class="col-md-3">
+                                <b>Direcci&oacute;n</b><br />
+                                @Model.CuentasPorCobrar.Paciente.Direccion
+                            </div>
+                        </div>
+                        <br />
+
+
+                    </div>
+                    <div id="tab-paquetes">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Paquetes</b></h5>
+                                <hr />
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="text-primary col-md-12" style="display:none" id="texto-cargando-paquetes">
+                                Cargando paquetes...
+                            </div>
+                            <div class="text-danger col-md-12" style="display:none" id="texto-error-consultar-paquetes">
+                                Error de conexion al consultar paquetes.
+                                <a href="#" data-bind="click:consultarPaquetes">Reintentar</a>
+                            </div>
+                            <div class="col-md-12 table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Nombre del paquete</th>
+                                            <th>Valor</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!--ko foreach: paquetes-->
+                                        <tr>
+                                            <td data-bind="text:Fecha"></td>
+                                            <td data-bind="text:Nombre"></td>
+                                            <td data-bind="text:PrecioPaquete"></td>
+                                        </tr>
+                                        <!--/ko-->
+                                        <tr style="font-weight:bolder;background-color:lightgray">
+                                            <td colspan="2">
+                                                <b>TOTAL</b>
+                                            </td>
+                                            <td>
+                                                Q <span data-bind="text:valorTotalPaquetes"></span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="tab-hospitalizaciones">
+
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Informaci&oacute;n de la cuenta de hospitalizaci&oacute;n</b></h5>
+                                <hr />
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col-md-4">
+                                <b>Valor Hospitalizaciones</b><br />
+                                @Model.TotalHospitalizacion
+                            </div>
+                        </div>
+                    </div>
+                    <div id="tab-medicamentos">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Informaci&oacute;n de la cuenta de medicamentos</b></h5>
+                                <hr />
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="text-primary col-md-12" style="display:none" id="texto-cargando-medicamentos-hospitalizacion">
+                                Cargando medicamentos agregados a hospitalizacion...
+                            </div>
+                            <div class="text-danger col-md-12" style="display:none" id="texto-error-consultar-medicamentos-hospitalizacion">
+                                Error de conexion al consultar medicamentos agregados a hospitalizacion.
+                                <a href="#" data-bind="click:consultarMedicamentosHospitalizacion">Reintentar</a>
+                            </div>
+                            <div class="col-md-12 table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Producto</th>
+                                            <th>Cant. aplicada</th>
+                                            <th>Valor unitario</th>
+                                            <th>Subtotal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!--ko foreach: medicamentosHospitalizacion-->
+                                        <tr>
+                                            <td data-bind="text:Nombre"></td>
+                                            <td data-bind="text:CantidadAplicada"></td>
+                                            <td data-bind="text:Precio"></td>
+                                            <td data-bind="text:Subtotal"></td>
+                                        </tr>
+                                        <!--/ko-->
+                                        <tr style="font-weight:bolder;background-color:lightgray">
+                                            <td colspan="3">
+                                                <b>TOTAL</b>
+                                            </td>
+                                            <td>
+                                                Q <span data-bind="text:valorTotalMedicamentosHospitalizacion"></span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div id="tab-general">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Informaci&oacute;n de la cuenta general</b></h5>
+                                <hr />
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col-md-4">
+                                <b>Fecha l&iacute;mite de pago</b><br />
+                                @fechaLimitePago
+                            </div>
+                            <div class="col-md-4">
+                                <b>Valor pendiente</b><br />
+                                @(Model.CuentasPorCobrar.Valor ?? 0)
+                            </div>
+                            <div class="col-md-4">
+                                <b>Valor pagado</b><br />
+                                @(Model.CuentasPorCobrar.ValorPagado ?? 0)
+                            </div>
+                            <div class="col-md-4">
+                                <b>Pagada</b><br />
+                                @cuentaPagada
+                            </div>
+                            <div class="col-md-4">
+                                <b>Observaciones</b><br />
+                                @observacionesCuenta
+                            </div>
+                        </div>
+                    </div>
+                    <div id="tab-depositos">
+                        <div class="form-row">
+                            <div class="col-md-12 text-danger d-none"
+                                 id="texto-error-consultar-depositos">
+                                Error de conexion.
+                                <a href="#" data-bind="click:consultarDepositos">
+                                    Reintentar
+                                </a>
+                            </div>
+                            <div class="col-md-12 table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha y hora</th>
+                                            <th>Valor</th>
+                                            <th>Forma de pago</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!--ko foreach: depositos-->
+                                        <tr>
+                                            <td data-bind="text:Fecha"></td>
+                                            <td>Q <span data-bind="text:Monto"></span></td>
+                                            <td data-bind="text:FormaPago"></td>
+                                        </tr>
+                                        <!--/ko-->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="col-md-12">
+            <a class="btn btn-primary" href="/CuentasPorCobrar/Modificar?cuentaId=@Model.CuentasPorCobrar.Id">Modificar</a>
+            <a class="btn btn-primary" href="/CuentasPorCobrar/Pagar?cuentaId=@Model.CuentasPorCobrar.Id">Pagar</a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/ViewModelKo/CuentasPorCobrarDetallesVM.js"></script>
+}

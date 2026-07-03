@@ -1,0 +1,145 @@
+@using Database.Shared.Models
+@using sistema.Models
+@model ConsultasViewModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Ecografía endocavitaria";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    var fecha = DateTime.Now;
+}
+
+<style>
+    .report-container {
+        margin-top: 10px;
+        font-size: 12px;
+    }
+
+    .report-title {
+        text-align: center;
+        font-weight: bold;
+        font-size: 16px;
+        color: #0d0e36;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+
+    .report-subtitle {
+        text-align: center;
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+
+    .section-chip {
+        background-color: #eef2ff;
+        border-left: 3px solid #0d0e36;
+        text-align: center;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 12px;
+        padding: 6px 8px;
+        margin: 12px 0 8px 0;
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 6px;
+    }
+
+    .report-table td,
+    .report-table th {
+        border: 1px solid #e1e4ea;
+        padding: 6px 8px;
+        font-size: 12px;
+        vertical-align: top;
+    }
+
+    .label-cell {
+        font-weight: bold;
+        width: 22%;
+        white-space: nowrap;
+    }
+</style>
+
+<div class="report-container">
+    <!-- Título principal -->
+    <div class="report-title">
+        REPORTE - @ViewData["Title"]
+    </div>
+
+    <!-- Fecha de emisión -->
+    <div class="report-subtitle">
+        <b>Fecha y hora de emisión:</b> @fecha.ToString("dd/MM/yyyy HH:mm")
+    </div>
+
+    <!-- Datos del paciente -->
+    <table class="report-table">
+        <tbody>
+            <tr>
+                <td class="label-cell">Nombre</td>
+                <td>@Model.PacienteNombre</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Fecha</td>
+                <td>@fecha</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Edad</td>
+                <td>@Model.PacienteEdad</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Médico que receta</td>
+                <td>@Model.MedicoNombre</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Título de sección -->
+    <div class="section-chip">
+        ECOGRAFÍA ENDOCAVITARIA
+    </div>
+
+    <!-- Tabla de hallazgos -->
+    <table class="report-table">
+        <tbody>
+            <tr>
+                <td class="label-cell">Útero</td>
+                <td>@Model.EcografiaEndocavitariaUtero</td>
+                <td class="label-cell">Longitudinal</td>
+                <td>@Model.EcografiaEndocavitariaLongitudinal</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Transverso</td>
+                <td>@Model.EcografiaEndocavitariaTransverso</td>
+                <td class="label-cell">Endometrio</td>
+                <td>@Model.EcografiaEndocavitariaEndometrio</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Ovario derecho</td>
+                <td>@Model.EcografiaEndocavitariaOvarioDerecho</td>
+                <td class="label-cell">Ovario izquierdo</td>
+                <td>@Model.EcografiaEndocavitariaOvarioIzquierdo</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Fondo de saco</td>
+                <td>@Model.EcografiaEndocavitariaFondoSaco</td>
+                <td class="label-cell">Impresión clínica</td>
+                <td>@Model.EcografiaEndocavitariaImpresionClinica</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Comentario</td>
+                <td colspan="3">@Model.EcografiaEndocavitariaComentario</td>
+            </tr>
+        </tbody>
+    </table>
+</div>

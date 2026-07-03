@@ -1,0 +1,92 @@
+@using Database.Shared.Paginacion;
+@model PaginacionList<Database.Shared.Models.Venta> 
+
+@{
+    ViewData["Title"] = "Lista Pagos";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+<br/>
+<form asp-action="ListaPagos" method="get">
+    <div class="col-md-12">
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <input type="submit" value="Buscar" class="btn btn-success"></input>
+            </div>
+            <input type="text" name="buscar" value="@ViewData["CurrentFilter"]" class="form-control" placeholder="Buscar cuenta...">
+        </div>
+    </div>
+</form>
+<br/>
+<div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel">
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="table-responsive">
+                    <table class="mb-0 table table-hover ">
+                        <thead>
+                        <tr>
+                           <th>Fecha</th> 
+                           <th>Codigo Cliente</th>
+                           <th>Tipo Cliente</th>
+                            <th>Paciente</th>
+                            <th>Nit</th>
+                            <th>Forma de Pago</th>
+                            <th>Acciones</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                            @foreach(var item in Model)
+                            {
+                        <tr>
+                            <td>@item.FechaVenta</td>
+                            <td>@item.Id</td>
+                            <td>@item.Empleado.Nombre</td>
+                            <td>@item.Nombres</td>
+                            <td>@item.Nit</td>
+                            <td>
+                                @if(item.Pagos.Count() > 0)
+                                {
+                                     foreach (var pago in item.Pagos)
+                                    {
+                                    <span>@pago.FormaPago.NombreFormaPago - Q @pago.Monto</span>
+                                    }
+                                }
+                               
+                            </td>
+
+                            <td> 
+                                <a  class="btn btn-primary">
+                                    Ver detalles
+                                </a>
+                                <a class="btn btn-danger">
+                                    <i class="fas fa-file-pdf"></i> Recibo
+                                </a> 
+                            </td>
+                        </tr>
+                            }
+                        </tbody>
+                    </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+}
+
+<a asp-action="ListaPagos"
+   asp-route-sortOrder="@ViewData["CurrentSort"]"
+   asp-route-pageNumber="@(Model.PageIndex - 1)"
+   asp-route-currentFilter="@ViewData["CurrentFilter"]"
+   class="btn btn-danger btn-sm @prevDisabled">
+    Anterior
+</a>
+<a asp-action="ListaPagos"
+   asp-route-sortOrder="@ViewData["CurrentSort"]"
+   asp-route-pageNumber="@(Model.PageIndex + 1)"
+   asp-route-currentFilter="@ViewData["CurrentFilter"]"
+   class="btn btn-danger btn-sm @nextDisabled" class="">
+    Siguiente
+</a>

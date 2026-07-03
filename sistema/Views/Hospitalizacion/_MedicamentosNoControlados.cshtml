@@ -1,0 +1,207 @@
+@model sistema.Models.HospitalizacionDetallesViewModel
+
+<style>
+    /* Estilos para los diálogos (jQuery UI) */
+    .ui-dialog {
+        z-index: 1050 !important;
+    }
+    .ui-widget-overlay {
+        z-index: 1040 !important;
+    }
+</style>
+
+<div class="tab-pane tabs-animation fade" id="tab-content-medicamentos-no-controlados" role="tabpanel">
+    <div class="form-row">
+        <div class="col-md-12">
+            <div class="main-card mb-3 nota-clinica-card">
+                <div class="nota-header nota-header-kit">
+                    <div class="d-flex align-items-center">
+                        <div class="nota-header-icon nota-header-icon-kit">
+                            <i class="fas fa-capsules"></i>
+                        </div>
+                        <div>
+                            <h5 class="nota-header-title">Medicamentos  Controlados</h5>
+                            <p class="nota-header-subtitle">Registro de medicamentos  controlados utilizados durante el procedimiento</p>
+                        </div>
+                        <div>
+                            <button class="btn btn-nota-primary btn-nota-primary-kit"
+                                    data-bind="click: abrirModalAgregarMedNoControlado">
+                                <i class="fas fa-plus mr-1"></i> Agregar Medicamento
+                            </button>
+                            <button class="btn btn-nota-primary btn-nota-primary-kit"
+                                    data-bind="click: guardarMedicamentosNoControlados">
+                                <i class="fas fa-save mr-1"></i> Guardar Registro
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nota-card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label>Fecha del procedimiento</label>
+                            <input type="date" class="form-control" data-bind="value: fechaProcedimientoNoControlados" />
+                        </div>
+                        <div class="col-md-8">
+                            <label>Paciente</label>
+                            <input type="text" class="form-control" readonly data-bind="value: nombrePacienteNoControlados" />
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th style="width: 20%">Medicamento</th>
+                                    <th colspan="2" class="text-center">Unidades Entregadas (ampollas)</th>
+                                    <th>Utilizado (mg/mcg)</th>
+                                    <th>Descartado (mg/mcg)</th>
+                                    <th>Retornadas (ampollas)</th>
+                                    <th style="width: 5%"></th>
+                                </tr>
+                                <tr>
+                                    <th></th>
+                                    <th class="text-center">Inicial</th>
+                                    <th class="text-center">Extra</th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody data-bind="foreach: medicamentosNoControlados">
+                                <tr>
+                                    <td><strong data-bind="text: nombre"></strong></td>
+                                    <td><input type="number" class="form-control form-control-sm" data-bind="value: unidadesIniciales, valueUpdate: 'input'" step="0.5" min="0" placeholder="0.0" /></td>
+                                    <td><input type="number" class="form-control form-control-sm" data-bind="value: unidadesExtra, valueUpdate: 'input'" step="0.5" min="0" placeholder="0.0" /></td>
+                                    <td><input type="number" class="form-control form-control-sm" data-bind="value: utilizado, valueUpdate: 'input'" step="0.1" min="0" placeholder="0.0" /></td>
+                                    <td><input type="number" class="form-control form-control-sm" data-bind="value: descartado, valueUpdate: 'input'" step="0.1" min="0" placeholder="0.0" /></td>
+                                    <td><input type="number" class="form-control form-control-sm" data-bind="value: retornadas, valueUpdate: 'input'" step="0.5" min="0" placeholder="0.0" /></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-outline-danger" data-bind="click: $root.eliminarMedicamentoNoControlado" title="Eliminar">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-3 alert alert-info" data-bind="visible: mostrarAdvertenciaBalanceNoControlados()">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span data-bind="text: mensajeBalanceNoControlados"></span>
+                    </div>
+                </div> <!-- .nota-card-body -->
+
+                <div class="nota-footer">
+                    <span><i class="fas fa-capsules mr-1"></i> Medicamentos registrados: <strong data-bind="text: medicamentosNoControlados().length"></strong></span>
+                    <button class="btn btn-sm btn-outline-secondary" data-bind="click: verHistorialNoControlados">Ver historial</button>
+                </div>
+            </div> <!-- .main-card -->
+        </div> <!-- .col-md-12 -->
+    </div> <!-- .form-row -->
+</div> <!-- .tab-pane -->
+
+<!-- Dialog: Agregar medicamento (jQuery UI) -->
+<div id="modalAgregarMedNoControlado" style="display:none;" title="Agregar Medicamento Controlado">
+    <div class="form-group">
+        <label>Seleccione Medicamento</label>
+<select class="form-control"
+        data-bind="options: listaProductosNoControlados,
+                   optionsText: 'productoNombre',
+                   optionsValue: 'productoId',
+                   value: productoSeleccionadoNoControladoId,
+                   optionsCaption: 'Seleccione un medicamento...'">
+</select>
+    </div>
+    @* <div class="modal-footer" style="border-top: none; padding-top: 10px;">
+        <button type="button" class="btn btn-secondary" id="btnCancelarAgregarMedNoControlado">Cancelar</button>
+        <button type="button" class="btn btn-primary" data-bind="click: agregarMedicamentoNoControlado">Agregar</button>
+    </div> *@
+</div>
+
+<!-- Dialog: Historial (jQuery UI) -->
+<div id="modalHistorialMedNoControlados" style="display:none;" title="Historial de Medicamentos Controlados">
+    <div class="table-responsive">
+        <table class="table table-sm table-striped">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Medicamento</th>
+                    <th>Unid. Iniciales</th>
+                    <th>Unid. Extra</th>
+                    <th>Utilizado</th>
+                    <th>Descartado</th>
+                    <th>Retornadas</th>
+                </tr>
+            </thead>
+            <tbody data-bind="foreach: registrosPreviosNoControlados">
+                <tr>
+                    <td data-bind="text: fechaRegistro"></td>
+                    <td data-bind="text: nombre"></td>
+                    <td data-bind="text: unidadesIniciales"></td>
+                    <td data-bind="text: unidadesExtra"></td>
+                    <td data-bind="text: utilizado"></td>
+                    <td data-bind="text: descartado"></td>
+                    <td data-bind="text: retornadas"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    @* <div class="modal-footer" style="border-top: none; padding-top: 10px;">
+        <button type="button" class="btn btn-secondary" id="btnCerrarHistorialMedNoControlados">Cerrar</button>
+    </div> *@
+</div>
+
+<script>
+    $(document).ready(function () {
+        $("#modalAgregarMedNoControlado").dialog({
+            autoOpen: false,
+            width: 600,
+            modal: true,
+            buttons: [
+                {
+                    text: "Cancelar",
+                    class: "btn btn-secondary",
+                    click: function () {
+                        $(this).dialog("close");
+                    }
+                },
+                {
+                    text: "Agregar",
+                    class: "btn btn-primary",
+                    click: function () {
+                        if (detallesVm && detallesVm.agregarMedicamentoNoControlado) {
+                            detallesVm.agregarMedicamentoNoControlado();
+                        }
+                    }
+                }
+            ],
+            open: function () {
+                if (detallesVm) detallesVm.productoSeleccionadoNoControlado(null);
+            }
+        });
+
+        $("#modalHistorialMedNoControlados").dialog({
+            autoOpen: false,
+            width: 800,
+            modal: true,
+            buttons: [
+                {
+                    text: "Cerrar",
+                    class: "btn btn-secondary",
+                    click: function () {
+                        $(this).dialog("close");
+                    }
+                }
+            ]
+        });
+
+        $("#btnCancelarAgregarMedNoControlado").on("click", function () {
+            $("#modalAgregarMedNoControlado").dialog("close");
+        });
+        $("#btnCerrarHistorialMedNoControlados").on("click", function () {
+            $("#modalHistorialMedNoControlados").dialog("close");
+        });
+    });
+</script>

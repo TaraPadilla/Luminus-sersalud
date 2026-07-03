@@ -1,0 +1,40 @@
+@using sistema.Models
+@using Database.Shared.Models
+@model EmpleadoBaseViewModel
+
+@{
+    string tipoEmpleado = ViewData["TipoEmpleado"]?.ToString();
+    bool esMedico = tipoEmpleado == "Medico";
+    ViewData["Title"] = esMedico ? "Modificar Médico" : "Modificar Empleado";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<!-- ALERTA KO -->
+<div data-bind="visible: AlertaVisible" class="mb-3">
+    <div class="alert" role="alert" data-bind="css: AlertaCss, text: AlertaMensaje"></div>
+</div>
+
+@if (esMedico)
+{
+    @await Html.PartialAsync("_ModificarMedicoForm", Model)
+}
+else
+{
+    @await Html.PartialAsync("_ModificarEmpleadoForm", Model)
+}
+
+@section Scripts
+{
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.5.1/knockout-min.js"></script>
+    <script src="~/ViewModelKo/ModificarEmpleadoVM.js"></script>
+
+    <script>
+        // Para precargar KO con el empleado actual
+        var empleadoData = @Html.Raw(Json.Serialize(Model.Empleado));
+        // Para precargar especialidad seleccionada en KO si la usas
+        var especialidadSeleccionada = @Html.Raw(Json.Serialize(Model.EspecialidadIdSeleccionada));
+        // Para que KO también sepa el tipo del formulario
+        var tipoEmpleadoVista = @Html.Raw(Json.Serialize(tipoEmpleado));
+    </script>
+}

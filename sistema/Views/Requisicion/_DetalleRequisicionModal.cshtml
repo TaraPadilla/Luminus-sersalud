@@ -1,0 +1,250 @@
+@model sistema.Models.RequisicionViewModel
+
+@{
+    string Txt(string? v) => string.IsNullOrWhiteSpace(v) ? "-" : v.Trim();
+    string Num(int? v) => v.HasValue ? v.Value.ToString() : "-";
+    string Fecha(DateTime? v) => v.HasValue ? v.Value.ToString("dd/MM/yyyy") : "-";
+
+    var origenText = Model?.ListaBodegasOrigen?
+        .FirstOrDefault(x => x.Value == (Model.BodegaOrigenId?.ToString() ?? ""))?.Text ?? "-";
+
+    var destinoText = Model?.ListaBodegasDestino?
+        .FirstOrDefault(x => x.Value == (Model.BodegaDestinoId?.ToString() ?? ""))?.Text ?? "-";
+
+        var estadoActual = Model?.EstadoRequisicion.ToString() ?? "";
+    bool esVistoBueno = estadoActual == "VistoBuenoGerencia";
+
+    var nombreRol = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+
+}
+
+<div class="container-fluid px-0">
+
+    <!-- Encabezado (detalle, no formulario) -->
+    <div class="d-flex align-items-start justify-content-between flex-wrap mb-3">
+        <div class="w-100">
+            <h5 class="mb-1">Detalle de requisición</h5>
+
+            <div class="d-flex flex-wrap align-items-center w-100">
+                <span class="badge badge-primary mr-2 p-2">
+                    <span class="mr-1">Requisición:</span>
+                    <span class="font-weight-bold">@Num(Model.NumeroRequisicion)</span>
+                </span>
+
+                <span class="badge badge-dark mr-2 p-2">
+                    <span class="mr-1">Orden:</span>
+                    <span class="font-weight-bold">@Num(Model.NumeroOrden)</span>
+                </span>
+
+                <span class="badge badge-light border p-2 ml-auto">
+                    <span class="mr-1">Estado:</span>
+                    <span class="font-weight-bold">@Model.EstadoRequisicion</span>
+                </span>
+            </div>
+        </div>
+
+        <small class="text-muted mt-2">
+            Id: @(Model.RequisicionId?.ToString() ?? "-")
+        </small>
+    </div>
+
+    <!-- Subtítulo: desde (origen) a (destino) -->
+    <div class="alert alert-light border py-2 mb-3">
+        <div class="d-flex flex-wrap align-items-center">
+            <span class="font-weight-bold mr-2">Desde:</span>
+            <span class="mr-3">@origenText</span>
+
+            <span class="mx-2 text-muted">→</span>
+
+            <span class="font-weight-bold mr-2">Hasta:</span>
+            <span>@destinoText</span>
+        </div>
+    </div>
+
+    <!-- Datos generales -->
+    <div class="mb-3">
+        <h6 class="text-uppercase text-secondary font-weight-bold mb-2">Datos generales</h6>
+
+        <div class="row">
+            <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+                <small class="text-muted font-weight-bold d-block">Dirección</small>
+                <div class="border rounded bg-light px-2 py-1">@Txt(Model.Direccion)</div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xl-3 col-lg-3 col-md-3 col-sm-12 mb-2">
+                <small class="text-muted font-weight-bold d-block">Departamento</small>
+                <div class="border rounded bg-light px-2 py-1">@Txt(Model.Departamento)</div>
+            </div>
+
+            <div class="col-xl-3 col-lg-3 col-md-3 col-sm-12 mb-2">
+                <small class="text-muted font-weight-bold d-block">Unidad / Sección</small>
+                <div class="border rounded bg-light px-2 py-1">@Txt(Model.UnidadSeccion)</div>
+            </div>
+
+            <div class="col-xl-3 col-lg-3 col-md-3 col-sm-12 mb-2">
+                <small class="text-muted font-weight-bold d-block">Otros</small>
+                <div class="border rounded bg-light px-2 py-1">@Txt(Model.Otros)</div>
+            </div>
+
+            <div class="col-xl-3 col-lg-3 col-md-3 col-sm-12 mb-2">
+                <small class="text-muted font-weight-bold d-block">Fecha de solicitud</small>
+                <div class="border rounded bg-light px-2 py-1">@Fecha(Model.FechaSolicitud)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Observaciones -->
+    <div class="mb-3">
+        <h6 class="text-uppercase text-secondary font-weight-bold mb-2">Observaciones</h6>
+        <div class="border rounded bg-light p-2">
+            @if (string.IsNullOrWhiteSpace(Model.Observaciones))
+            {
+                <span class="text-muted">-</span>
+            }
+            else
+            {
+                <span>@Model.Observaciones</span>
+            }
+        </div>
+    </div>
+
+    <!-- Firmas y sellos -->
+    <div class="mb-3">
+        <h6 class="text-uppercase text-secondary font-weight-bold mb-2">Firmas y sellos</h6>
+
+        <div class="row">
+            <div class="col-lg-6 mb-2">
+                <small class="text-muted font-weight-bold d-block">Solicitante</small>
+                <div class="border rounded bg-light px-2 py-1">@Txt(Model.NombreSolicitante)</div>
+            </div>
+
+            <div class="col-lg-6 mb-2">
+                <small class="text-muted font-weight-bold d-block">Coordinador / Jefe / Director</small>
+                <div class="border rounded bg-light px-2 py-1">@Txt(Model.NombreJefaturaCoordinador)</div>
+            </div>
+
+            <div class="col-lg-6 mb-2">
+                <small class="text-muted font-weight-bold d-block">Gerente Administrativo Financiero / Director</small>
+                <div class="border rounded bg-light px-2 py-1">@Txt(Model.NombreGerenteAdministrativo)</div>
+            </div>
+
+            <div class="col-lg-6 mb-2">
+                <small class="text-muted font-weight-bold d-block">Encargado del Almacén / Auxiliar</small>
+                <div class="border rounded bg-light px-2 py-1">@Txt(Model.NombreEncargadoAlmacen)</div>
+            </div>
+
+            <div class="col-lg-6 mb-2">
+                <small class="text-muted font-weight-bold d-block">Receptor final</small>
+                <div class="border rounded bg-light px-2 py-1">@Txt(Model.NombreReceptorFinal)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Productos -->
+    <div class="mb-2">
+        <div class="d-flex align-items-center justify-content-between flex-wrap mb-2">
+            <h6 class="text-uppercase text-secondary font-weight-bold mb-0">Productos</h6>
+            <small class="text-muted">@(Model.Productos?.Count ?? 0) producto(s)</small>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0">
+                <thead class="thead-light">
+                    <tr>
+                        <th style="width: 110px;">Id</th>
+                        <th>Codigo / Producto</th>
+                        <th style="width: 140px;">Unidad</th>
+                        <th style="width: 110px;">Stock</th>
+                        <th style="width: 140px;">RFID</th>
+                        <th style="width: 120px;">Solicitado</th>
+                        <th style="width: 120px;">Despachado</th>
+                        <th style="width: 120px;">Diferencia</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Productos == null || !Model.Productos.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-3">No hay productos asociados.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var p in Model.Productos)
+                        {
+                            var solicitado = p.CantidadTrasladada;
+                            var despachado = p.CantidadDespachada.HasValue ? (decimal)p.CantidadDespachada.Value : (decimal?)null;
+                            var diferencia = despachado.HasValue ? (solicitado - despachado.Value) : (decimal?)null;
+
+                            var nombreLimpio = new string((p.ProductoNombre ?? "")
+                            .Where(c => char.IsLetterOrDigit(c) || c == ' ').ToArray())
+                            .Replace(" ", "_");
+    
+                            var serialCompleto = $"{p.ProductoId}-{nombreLimpio}";
+
+                            // RFID: por ahora vacío. Si tu VM tiene TagRfid/Etiqueta, aquí lo pintas.
+                            // No asumo nombres: uso vacío.
+                            var rfid = "";
+
+                            <tr>
+                                <td>@(p.ProductoId.ToString() ?? "-")</td>
+                                <td>@(string.IsNullOrWhiteSpace(p.ProductoNombre) ? "-" : p.ProductoNombre)</td>
+                                <td>@(string.IsNullOrWhiteSpace(p.UnidadMedidaVentaNombre) ? "-" : p.UnidadMedidaVentaNombre)</td>
+                                <td>@((int)p.CantidadExistente)</td>
+                                @* <td>@(string.IsNullOrWhiteSpace(rfid) ? "-" : rfid)</td> *@
+                                
+                                <td style="text-align: center; vertical-align: middle; min-width: 150px;">
+                                    <svg class="barcode-estatico" 
+                                         data-serial="@serialCompleto">
+                                    </svg>
+                                    <div style="font-size: 10px; color: #555; font-weight: bold; margin-top: 5px;">
+                                        <i class="fa fa-search-plus"></i> Ampliar Código
+                                    </div>
+                                </td>
+                               
+                                <td><span class="js-solicitado">@solicitado</span></td>
+
+                                <td>
+                                    @if(esVistoBueno && (nombreRol == "Encargado de Kardex" || nombreRol == "Asistente" || nombreRol == "Jefe de Area" || nombreRol == "Administrador") ) {
+                                        <input type="number" 
+                                               class="form-control form-control-sm js-input-despacho" 
+                                               data-req="@Model.RequisicionId" 
+                                               data-id="@p.ProductoId" 
+                                               value="@(despachado ?? 0)" 
+                                               min="0" />
+
+                                               <div class="invalid-feedback d-none" style="display: block; font-size: 0.7rem; font-weight: bold;">
+                                                    No puede superar lo solicitado (@(solicitado))
+                                                </div>
+                                    }
+                                    <span class="js-despachado-texto @(esVistoBueno ? "d-none" : "")">
+                                        @(despachado.HasValue ? despachado.Value.ToString() : "—")
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="badge badge-light border js-diferencia">
+                                        @(diferencia.HasValue ? diferencia.Value.ToString() : "—")
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+
+        <div class="d-flex justify-content-end mb-3">
+            @if(esVistoBueno) 
+            {
+                <button type="button" class="btn btn-success shadow-sm" onclick="confirmarDespachoGeneral()">
+                    <i class="fas fa-save mr-2"></i> Confirmar Todo el Despacho
+                </button>
+            }
+        </div>
+    </div>
+
+</div>

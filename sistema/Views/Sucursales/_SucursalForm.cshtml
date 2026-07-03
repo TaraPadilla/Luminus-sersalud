@@ -1,0 +1,28 @@
+@model sistema.Models.SucursalViewModel
+
+@Html.HiddenFor(a=>a.SucursalId)
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-4">
+                <div class="position-relative form-group">
+                    <label>Nombre</label>
+                    @Html.TextBoxFor(a=>a.Nombre,new{@class="form-control",@placeholder="Nombre"})
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="position-relative form-group">
+                    <label>Dirección</label>
+                    @Html.TextBoxFor(a=>a.Direccion,new{@class="form-control",@placeholder="Direccion"})
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="position-relative form-group">
+                    <label>Horario</label>
+                    @Html.TextBoxFor(a=>a.Horario,new{@class="form-control",@placeholder="Horario"})
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

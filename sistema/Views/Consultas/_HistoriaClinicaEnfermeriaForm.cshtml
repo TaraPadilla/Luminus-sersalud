@@ -1,0 +1,485 @@
+@model sistema.Models.ConsultasViewModel
+@using Database.Shared.Models
+
+@{
+    // ===== Helpers para formateo =====
+    string TextoONada(string? v) => string.IsNullOrWhiteSpace(v) ? "—" : v;
+
+    string Dec1(decimal? n) =>
+        n.HasValue ? n.Value.ToString("0.1", System.Globalization.CultureInfo.InvariantCulture) : "—";
+    string Dec2(decimal? n) =>
+        n.HasValue ? n.Value.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) : "—";
+    string EnteroONada(int? n) =>
+        n.HasValue ? n.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "—";
+
+    // Helper solo para el HISTÓRICO (no choca con los tuyos)
+    Func<object, string> Vh = (val) =>
+    {
+        if (val == null) return "Sin definir";
+        if (val is string s) return string.IsNullOrWhiteSpace(s) ? "Sin definir" : s;
+        return Convert.ToString(val);
+    };
+}
+
+@* Hidden IDs/FKs *@
+@Html.HiddenFor(m => m.Hce_ConsultaId)
+@Html.HiddenFor(m => m.Hce_Id)
+
+<style>
+  :root{
+    --ink:#1f2937;
+    --ink-soft:#334155;
+    --muted:#6b7280;
+    --brand:#0ea5e9;
+    --brand-ink:#0369a1;
+    --bg:#f7fbff;
+    --card:#ffffff;
+    --card-bdr:#e5edf7;
+    --accent:#dbeafe;
+  }
+  .oft-wrap{ background:var(--bg); color:var(--ink) }
+  .oft-card{
+    background:var(--card);
+    border:1px solid var(--card-bdr);
+    border-radius:.9rem;
+    box-shadow:0 8px 24px rgba(2,32,71,.06);
+  }
+  .oft-head{
+    display:flex; align-items:center; gap:.6rem;
+    color:var(--brand-ink);
+    font-weight:800; letter-spacing:.2px;
+    margin-bottom:.75rem;
+  }
+  .oft-head i{ font-size:1.3rem; color:var(--brand) }
+  .oft-sub{ color:var(--muted); font-size:.95rem; }
+  .oft-pill{
+    display:inline-block;
+    padding:.25rem .6rem; border-radius:9999px;
+    background:var(--accent); color:var(--brand-ink); font-weight:700; font-size:.8rem;
+  }
+  .table thead th{
+    background:var(--accent); color:var(--ink-soft);
+    border-bottom:1px solid var(--card-bdr);
+  }
+  .form-label{ font-weight:600; color:var(--ink-soft) }
+  .hint{ font-size:.85rem; color:var(--muted) }
+  .hr-soft{ border-top:1px dashed #e5edf7 }
+  .nav-pills .nav-link{ font-weight:700 }
+  .nav-pills .nav-link.active{
+    background:var(--brand);
+    box-shadow:0 6px 14px rgba(14,165,233,.25)
+  }
+</style>
+
+<div class="oft-wrap">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    @if (Model.HabilitarEdicion)
+    { <span class="oft-pill">MODO EDICIÓN</span> }
+    else
+    { <span class="oft-pill" style="background:#eaeef6;color:#475569">MODO LECTURA</span> }
+    <div class="text-danger" asp-validation-summary="ModelOnly"></div>
+  </div>
+
+  
+  @* ============================ Edicion ============================ *@
+  @if (Model.HabilitarEdicion)
+  {
+        @* 1. Tipo de consulta *@
+        <div class="oft-card mb-3 p-3 p-md-4">
+            <div class="oft-head"><i class="fas fa-tag"></i><h5 class="mb-0">1. Tipo de consulta</h5></div>
+            <p class="oft-sub">Nuevo / Primera / Reconsulta / Emergencia</p>
+            <select class="form-control" asp-for="Hce_TipoConsulta">
+                 <option value="Nuevo">Nuevo</option>
+                <option value="Primera consulta">Primera consulta</option>
+                <option value="Reconsulta">Reconsulta</option>
+                <option value="Emergencia">Emergencia</option>
+            </select>
+            <span class="text-danger" asp-validation-for="Hce_TipoConsulta"></span>
+        </div>
+
+        @* 2. Motivo de consulta *@
+        <div class="oft-card mb-3 p-3 p-md-4">
+            <div class="oft-head"><i class="fas fa-comment-medical"></i><h5 class="mb-0">2. Motivo de consulta</h5></div>
+            <textarea class="form-control" rows="3" asp-for="Hce_MotivoConsulta"></textarea>
+            <span class="text-danger" asp-validation-for="Hce_MotivoConsulta"></span>
+        </div>
+
+        @* 3. Antecedentes personales y familiares *@
+        <div class="oft-card mb-3 p-3 p-md-4">
+            <div class="oft-head"><i class="fas fa-clipboard-list"></i><h5 class="mb-0">3. Antecedentes personales y familiares</h5></div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Patológicos</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_AntecedentesPatologicos"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Quirúrgicos</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_AntecedentesQuirurgicos"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Traumáticos</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_AntecedentesTraumaticos"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Hospitalizaciones</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_Hospitalizaciones"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Alergias</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_Alergias"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Antecedentes familiares</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_AntecedentesFamiliares"></textarea>
+                </div>
+            </div>
+        </div>
+
+        @* 4. Hábitos personales *@
+        <div class="oft-card mb-3 p-3 p-md-4">
+            <div class="oft-head"><i class="fas fa-walking"></i><h5 class="mb-0">4. Hábitos personales</h5></div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Alimentación</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_HabitoAlimentacion"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Actividad física</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_ActividadFisica"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Consumo de alcohol</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_HabitoAlcoholTexto"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Consumo de tabaco</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_HabitoTabacoTexto"></textarea>
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label">Otros hábitos</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_OtrosHabitos"></textarea>
+                </div>
+            </div>
+        </div>
+
+        @* 5. Signos vitales y antropometría *@
+        <div class="oft-card mb-3 p-3 p-md-4">
+            <div class="oft-head"><i class="fas fa-heartbeat"></i><h5 class="mb-0">5. Signos vitales y antropometría</h5></div>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">PA (mmHg) texto</label>
+                    <input class="form-control" asp-for="Hce_PresionArterialTxt" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">FC (lpm)</label>
+                    <input class="form-control" type="number" step="1" asp-for="Hce_FC" />
+                    <span class="text-danger" asp-validation-for="Hce_FC"></span>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">FR (rpm)</label>
+                    <input class="form-control" type="number" step="1" asp-for="Hce_FR" />
+                    <span class="text-danger" asp-validation-for="Hce_FR"></span>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Temp (°C)</label>
+                    <input class="form-control" type="number" step="0.1" asp-for="Hce_TemperaturaC" />
+                    <span class="text-danger" asp-validation-for="Hce_TemperaturaC"></span>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">SpO₂ (%)</label>
+                    <input class="form-control" type="number" step="1" asp-for="Hce_SPO2" />
+                    <span class="text-danger" asp-validation-for="Hce_SPO2"></span>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Peso (kg)</label>
+                    <input class="form-control" type="number" step="0.01" asp-for="Hce_PesoKg" />
+                    <span class="text-danger" asp-validation-for="Hce_PesoKg"></span>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Talla (m)</label>
+                    <input class="form-control" type="number" step="0.01" asp-for="Hce_TallaM" />
+                    <span class="text-danger" asp-validation-for="Hce_TallaM"></span>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">IMC</label>
+                    <input class="form-control" type="number" step="0.01" asp-for="Hce_IMC" />
+                    <span class="text-danger" asp-validation-for="Hce_IMC"></span>
+                </div>
+            </div>
+        </div>
+
+        @* 6. Exploración física por aparatos y sistemas *@
+        <div class="oft-card mb-3 p-3 p-md-4">
+            <div class="oft-head"><i class="fas fa-stethoscope"></i><h5 class="mb-0">6. Exploración física por aparatos y sistemas</h5></div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Cabeza y cuello</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_CabezaCuello"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Tórax y pulmones</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_ToraxPulmones"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Corazón</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_Corazon"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Abdomen</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_Abdomen"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Extremidades</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_Extremidades"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Sistema neurológico</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_SistemaNeurologico"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Piel y anexos</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_PielAnexos"></textarea>
+                </div>
+            </div>
+        </div>
+
+        @* 7. Valoración de enfermería *@
+        <div class="oft-card mb-3 p-3 p-md-4">
+            <div class="oft-head"><i class="fas fa-list-ul"></i><h5 class="mb-0">7. Valoración de enfermería</h5></div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Estado de conciencia y orientación</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_ValConcienciaOrientacion"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Estado nutricional</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_ValEstadoNutricional"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Eliminación urinaria/intestinal</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_ValEliminacion"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Sueño y descanso</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_ValSuenoDescanso"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Actividad y movilidad</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_ValActividadMovilidad"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Autonomía en autocuidados</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_ValAutonomia"></textarea>
+                </div>
+            </div>
+        </div>
+
+        @* 8. Laboratorios *@
+        <div class="oft-card mb-3 p-3 p-md-4">
+            <div class="oft-head"><i class="fas fa-vial"></i><h5 class="mb-0">8. Laboratorios</h5></div>
+            <textarea class="form-control" rows="3" asp-for="Hce_Laboratorios"></textarea>
+        </div>
+
+        @* 9. Diagnóstico de enfermería *@
+        <div class="oft-card mb-3 p-3 p-md-4">
+            <div class="oft-head"><i class="fas fa-diagnoses"></i><h5 class="mb-0">9. Diagnóstico de enfermería</h5></div>
+            <textarea class="form-control" rows="3" asp-for="Hce_DiagnosticoEnfermeria"></textarea>
+        </div>
+
+        @* 10. Plan de cuidados / Intervenciones *@
+        <div class="oft-card mb-3 p-3 p-md-4">
+            <div class="oft-head"><i class="fas fa-hands-helping"></i><h5 class="mb-0">10. Plan de cuidados / Intervenciones</h5></div>
+            <div class="row g-3">
+                <div class="col-md-12">
+                    <label class="form-label">Acciones realizadas</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_AccionesRealizadas"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Medicamentos administrados</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_MedicamentosAdministrados"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Tratamiento</label>
+                    <textarea class="form-control" rows="2" asp-for="Hce_Tratamiento"></textarea>
+                </div>
+            </div>
+        </div>
+
+        @* 11. Seguimiento / Evolución / Cita *@
+        <div class="oft-card mb-4 p-3 p-md-4">
+            <div class="oft-head"><i class="fas fa-calendar-check"></i><h5 class="mb-0">11. Seguimiento / Evolución / Cita</h5></div>
+            <textarea class="form-control" rows="3" asp-for="Hce_Seguimiento"></textarea>
+        </div>
+  }
+
+  @* ============================ HISTÓRICO (SIEMPRE VISIBLE) ============================ *@
+  @{
+      var _hceHist = ViewBag.HceHistorialFull as IEnumerable<ConsultasHistoriaClinicaEnfermeria>;
+      var hceIdx = 0;
+  }
+
+  @if (_hceHist != null && _hceHist.Any())
+  {
+    <div class="mt-4">
+      <h3 class="h5 mb-3 text-secondary">Histórico Historia Clínica de Enfermería (completo)</h3>
+
+      <div class="accordion" id="hceHistAccordion">
+        @foreach (var h in _hceHist)
+        {
+          var collapseId = $"hceHist-{hceIdx}";
+          var headingId  = $"hceHead-{hceIdx}";
+          hceIdx++;
+
+          <div class="card mb-3">
+            <div class="card-header" id="@headingId">
+              <h2 class="mb-0">
+                <button class="btn btn-link collapsed w-100 text-left d-flex justify-content-between align-items-center"
+                        type="button"
+                        data-toggle="collapse"
+                        data-target="#@collapseId"
+                        aria-expanded="false"
+                        aria-controls="@collapseId">
+                  <div class="w-100 d-flex flex-column flex-md-row justify-content-between small">
+                    <div>
+                      <span class="fw-semibold text-dark">Fecha:</span>
+                      @{
+                        DateTime? f = h.Fecha;
+                      }
+                      @(f.HasValue ? f.Value.ToString("dd-MM-yyyy HH:mm") : "Sin definir")
+                    </div>
+                  </div>
+                </button>
+              </h2>
+            </div>
+
+            <div id="@collapseId" class="collapse" aria-labelledby="@headingId" data-parent="#hceHistAccordion">
+              <div class="card-body">
+                <div class="card oft-card border rounded shadow-sm mb-4">
+                  <div class="card-body">
+
+                    <!-- 1) Tipo de consulta -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-file-medical"></i><h5 class="mb-0">Tipo de consulta</h5></div>
+                      <div class="text-muted">@Vh(h.TipoConsulta)</div>
+                    </div>
+
+                    <!-- 2) Motivo de consulta -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-notes-medical"></i><h5 class="mb-0">Motivo de consulta</h5></div>
+                      <div class="text-muted">@Vh(h.MotivoConsulta)</div>
+                    </div>
+
+                    <!-- 3) Antecedentes personales y familiares -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-clipboard-list"></i><h5 class="mb-0">Antecedentes personales y familiares</h5></div>
+                      <div class="row">
+                        <div class="col-4 mb-3"><div class="text-dark text-uppercase"><strong>Patológicos</strong></div><div class="text-muted">@Vh(h.AntecedentesPatologicos)</div></div>
+                        <div class="col-4 mb-3"><div class="text-dark text-uppercase"><strong>Quirúrgicos</strong></div><div class="text-muted">@Vh(h.AntecedentesQuirurgicos)</div></div>
+                        <div class="col-4 mb-3"><div class="text-dark text-uppercase"><strong>Traumáticos</strong></div><div class="text-muted">@Vh(h.AntecedentesTraumaticos)</div></div>
+                        <div class="col-4 mb-3"><div class="text-dark text-uppercase"><strong>Hospitalizaciones</strong></div><div class="text-muted">@Vh(h.Hospitalizaciones)</div></div>
+                        <div class="col-4 mb-3"><div class="text-dark text-uppercase"><strong>Alergias</strong></div><div class="text-muted">@Vh(h.Alergias)</div></div>
+                        <div class="col-4 mb-3"><div class="text-dark text-uppercase"><strong>Familiares</strong></div><div class="text-muted">@Vh(h.AntecedentesFamiliares)</div></div>
+                      </div>
+                    </div>
+
+                    <!-- 4) Hábitos personales -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-user-check"></i><h5 class="mb-0">Hábitos personales</h5></div>
+                      <div class="row">
+                        <div class="col-6 mb-3"><div class="text-dark text-uppercase"><strong>Alimentación</strong></div><div class="text-muted">@Vh(h.HabitoAlimentacion)</div></div>
+                        <div class="col-6 mb-3"><div class="text-dark text-uppercase"><strong>Actividad física</strong></div><div class="text-muted">@Vh(h.ActividadFisica)</div></div>
+                        <div class="col-6 mb-3"><div class="text-dark text-uppercase"><strong>Consumo de alcohol</strong></div><div class="text-muted">@Vh(h.HabitoAlcoholTexto)</div></div>
+                        <div class="col-6 mb-3"><div class="text-dark text-uppercase"><strong>Consumo de tabaco</strong></div><div class="text-muted">@Vh(h.HabitoTabacoTexto)</div></div>
+                        <div class="col-12 mb-3"><div class="text-dark text-uppercase"><strong>Otros hábitos</strong></div><div class="text-muted">@Vh(h.OtrosHabitos)</div></div>
+                      </div>
+                    </div>
+
+                    <!-- 5) Signos vitales y antropometría -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-heartbeat"></i><h5 class="mb-0">Signos vitales y antropometría</h5></div>
+                      <div class="row">
+                        <div class="col-3 mb-3"><div class="text-dark text-uppercase"><strong>PA (mmHg) texto</strong></div><div class="text-muted">@Vh(h.PresionArterialTxt)</div></div>
+                        <div class="col-3 mb-3"><div class="text-dark text-uppercase"><strong>FC (lpm)</strong></div><div class="text-muted">@Vh(h.FC)</div></div>
+                        <div class="col-3 mb-3"><div class="text-dark text-uppercase"><strong>FR (rpm)</strong></div><div class="text-muted">@Vh(h.FR)</div></div>
+                        <div class="col-3 mb-3"><div class="text-dark text-uppercase"><strong>Temp (°C)</strong></div><div class="text-muted">@Vh(h.TemperaturaC)</div></div>
+                        <div class="col-3 mb-3"><div class="text-dark text-uppercase"><strong>SpO₂ (%)</strong></div><div class="text-muted">@Vh(h.SPO2)</div></div>
+                        <div class="col-3 mb-3"><div class="text-dark text-uppercase"><strong>Peso (kg)</strong></div><div class="text-muted">@Vh(h.PesoKg)</div></div>
+                        <div class="col-3 mb-3"><div class="text-dark text-uppercase"><strong>Talla (m)</strong></div><div class="text-muted">@Vh(h.TallaM)</div></div>
+                        <div class="col-3 mb-3"><div class="text-dark text-uppercase"><strong>IMC</strong></div><div class="text-muted">@Vh(h.IMC)</div></div>
+                      </div>
+                    </div>
+
+                    <!-- 6) Exploración física por aparatos y sistemas -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-stethoscope"></i><h5 class="mb-0">Exploración física por aparatos y sistemas</h5></div>
+                      <div class="row">
+                        <div class="col-3 mb-2"><div class="text-dark text-uppercase"><strong>Cabeza y cuello</strong></div><div class="text-muted">@Vh(h.CabezaCuello)</div></div>
+                        <div class="col-3 mb-2"><div class="text-dark text-uppercase"><strong>Tórax y pulmones</strong></div><div class="text-muted">@Vh(h.ToraxPulmones)</div></div>
+                        <div class="col-3 mb-2"><div class="text-dark text-uppercase"><strong>Corazón</strong></div><div class="text-muted">@Vh(h.Corazon)</div></div>
+                        <div class="col-3 mb-2"><div class="text-dark text-uppercase"><strong>Abdomen</strong></div><div class="text-muted">@Vh(h.Abdomen)</div></div>
+                        <div class="col-3 mb-2"><div class="text-dark text-uppercase"><strong>Extremidades</strong></div><div class="text-muted">@Vh(h.Extremidades)</div></div>
+                        <div class="col-3 mb-2"><div class="text-dark text-uppercase"><strong>Sistema neurológico</strong></div><div class="text-muted">@Vh(h.SistemaNeurologico)</div></div>
+                        <div class="col-6 mb-2"><div class="text-dark text-uppercase"><strong>Piel y anexos</strong></div><div class="text-muted">@Vh(h.PielAnexos)</div></div>
+                      </div>
+                    </div>
+
+                    <!-- 7) Valoración de enfermería -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-user-nurse"></i><h5 class="mb-0">Valoración de enfermería</h5></div>
+                      <div class="row">
+                        <div class="col-4 mb-2"><div class="text-dark text-uppercase"><strong>Estado de conciencia y orientación</strong></div><div class="text-muted">@Vh(h.ValConcienciaOrientacion)</div></div>
+                        <div class="col-4 mb-2"><div class="text-dark text-uppercase"><strong>Estado nutricional</strong></div><div class="text-muted">@Vh(h.ValEstadoNutricional)</div></div>
+                        <div class="col-4 mb-2"><div class="text-dark text-uppercase"><strong>Eliminación urinaria/intestinal</strong></div><div class="text-muted">@Vh(h.ValEliminacion)</div></div>
+                        <div class="col-4 mb-2"><div class="text-dark text-uppercase"><strong>Sueño y descanso</strong></div><div class="text-muted">@Vh(h.ValSuenoDescanso)</div></div>
+                        <div class="col-4 mb-2"><div class="text-dark text-uppercase"><strong>Actividad y movilidad</strong></div><div class="text-muted">@Vh(h.ValActividadMovilidad)</div></div>
+                        <div class="col-4 mb-2"><div class="text-dark text-uppercase"><strong>Autonomía en autocuidados</strong></div><div class="text-muted">@Vh(h.ValAutonomia)</div></div>
+                      </div>
+                    </div>
+
+                    <!-- 8) Laboratorios -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-vials"></i><h5 class="mb-0">Laboratorios</h5></div>
+                      <div class="text-muted">@Vh(h.Laboratorios)</div>
+                    </div>
+
+                    <!-- 9) Diagnóstico de enfermería -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-diagnoses"></i><h5 class="mb-0">Diagnóstico de enfermería</h5></div>
+                      <div class="text-muted">@Vh(h.DiagnosticoEnfermeria)</div>
+                    </div>
+
+                    <!-- 10) Plan de cuidados / Intervenciones -->
+                    <div class="border rounded mb-4 p-3">
+                      <div class="oft-head"><i class="fas fa-notes-medical"></i><h5 class="mb-0">Plan de cuidados / Intervenciones</h5></div>
+                      <div class="row">
+                        <div class="col-4 mb-2"><div class="text-dark text-uppercase"><strong>Acciones realizadas</strong></div><div class="text-muted">@Vh(h.AccionesRealizadas)</div></div>
+                        <div class="col-4 mb-2"><div class="text-dark text-uppercase"><strong>Medicamentos administrados</strong></div><div class="text-muted">@Vh(h.MedicamentosAdministrados)</div></div>
+                        <div class="col-4 mb-2"><div class="text-dark text-uppercase"><strong>Tratamiento</strong></div><div class="text-muted">@Vh(h.Tratamiento)</div></div>
+                      </div>
+                    </div>
+
+                    <!-- 11) Seguimiento / Evolución / Cita -->
+                    <div class="border rounded mb-1 p-3">
+                      <div class="oft-head"><i class="bi bi-clipboard2-check"></i><h5 class="mb-0">Seguimiento / Evolución / Cita</h5></div>
+                      <div class="text-muted">@Vh(h.Seguimiento)</div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            </div> <!-- /collapse -->
+          </div> <!-- /item -->
+        }
+      </div> <!-- /accordion -->
+    </div>
+  }
+  else
+  {
+    <div class="mt-3 small text-muted">No hay histórico de enfermería para este paciente.</div>
+  }
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

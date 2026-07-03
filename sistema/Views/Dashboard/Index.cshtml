@@ -1,0 +1,155 @@
+﻿@model sistema.Models.DashboardViewModel
+@{
+    ViewData["Title"] = "Inicio";
+}
+
+<div class="logoprincipal" style="">
+
+</div>
+
+@section css {
+    <style>
+        .app-main {
+            background-image: url("/assets/images/cubbas.png");
+            background-size: cover;
+        }
+
+        .logoprincipal img {
+            width: 350px;
+            display: block;
+            margin: auto;
+        }
+
+        .logoprincipal {
+            width: 100%;
+        }
+
+        @@media screen and (max-width: 620px) {
+            .logoprincipal img {
+                width: 250px;
+                display: block;
+                margin: auto;
+            }
+        }
+    </style>
+}
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Próximos cumpleaños</b></h5>
+            </div>
+            <div class="col-md-12">
+                <div class="table-responsive">
+                <table class="mb-0 table table-hover ">
+                    <thead>
+                        <tr>
+                            <th>Paciente</th>
+                            <th>Fecha</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Juan Pablo</td>
+                            <td>@DateTime.UtcNow.ToShortDateString()</td>
+                            <td>
+                                <a href="@Url.Action("Index","Home")"
+                                        class="btn btn-primary btn-sm">
+                                        Información del paciente
+                                    </a>
+                                    <a class="btn btn-success text-white" onclick="">
+                                        Enviar notificación (whatsapp)
+                                    </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Pacientes aplicables para membresía</b></h5>
+            </div>
+            <div class="col-md-12">
+                <div class="table-responsive">
+                <table class="mb-0 table table-hover ">
+                    <thead>
+                        <tr>
+                            <th>Paciente</th>
+                            <th>Fecha de inicio de tratamiento</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Juan Pablo</td>
+                            <td>@DateTime.UtcNow.ToShortDateString()</td>
+                            <td>
+                                <a href="@Url.Action("Index","Home")"
+                                        class="btn btn-primary btn-sm">
+                                        Aplicar membresía
+                                    </a>
+                                    <a class="btn btn-success text-white" onclick="">
+                                        Enviar notificación (whatsapp)
+                                    </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Cuentas préximas por cobrar</b></h5>
+            </div>
+            <div class="col-md-12">
+                <div class="table-responsive">
+                <table class="mb-0 table table-hover ">
+                    <thead>
+                        <tr>
+                            <th>Paciente</th>
+                            <th>Fecha de inscripcion</th>
+                            <th>Fecha límite de pago</th>
+                            <th>Días restantes para pago</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach(var cuenta in Model.CuentasProximasCobrar){
+                            <tr>
+                                <td>@cuenta.NombrePacienteText</td>
+                                <td></td>
+                                <td>@cuenta.FechaLimitePago</td>
+                                <td>@cuenta.DiasRestantesPagoText</td>
+                                <td>
+                                    <a asp-action="Pago" asp-controller="CuentasPorCobrar" class="btn btn-primary"
+                                            class="btn btn-primary btn-sm">
+                                            Pagar
+                                        </a>
+                                        <a class="btn btn-success text-white" onclick="">
+                                            Enviar notificación (whatsapp)
+                                        </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,3 @@
+-- Fecha del registro para ordenar histórico por PacienteId
+ALTER TABLE IF EXISTS "MedicamentosOtrosConsulta" 
+ADD COLUMN IF NOT EXISTS "FechaPrescripcion" TIMESTAMPTZ NOT NULL DEFAULT NOW();

@@ -1,0 +1,324 @@
+@model sistema.Models.CotizacionViewModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Cotización";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+
+    // Tipo de cotización que viene por ViewBag o por el modelo
+    var tipoCompraViewBag = ViewBag.TipoCompra as string; // "CompraDividida" | "ProveedorUnico" | null
+    var tipoCompraModel = Model?.TipoCompra;             // "CompraDividida" | "ProveedorUnico" | null
+    var tipoCompra = !string.IsNullOrWhiteSpace(tipoCompraModel)
+                        ? tipoCompraModel
+                        : tipoCompraViewBag;
+
+    bool esCompraDividida = string.Equals(tipoCompra, "CompraDividida", StringComparison.OrdinalIgnoreCase);
+}
+
+<style>
+    .report-container {
+        margin-top: 10px;
+        font-size: 12px;
+    }
+
+    .report-title {
+        text-align: center;
+        font-weight: bold;
+        font-size: 18px;
+        color: #ffffff;
+        background-color: #0d0e36;
+        padding: 8px 12px;
+        border-radius: 4px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 6px;
+    }
+
+    .report-subtitle {
+        text-align: center;
+        font-size: 12px;
+        margin-bottom: 10px;
+        color: #333333;
+    }
+
+    .report-meta {
+        font-size: 12px;
+        margin-bottom: 6px;
+    }
+
+    .report-meta b {
+        color: #0d0e36;
+    }
+
+    .report-legend {
+        font-size: 11px;
+        margin-bottom: 8px;
+        color: #333333;
+    }
+
+    .legend-box {
+        display: inline-block;
+        width: 14px;
+        height: 10px;
+        border-radius: 2px;
+        margin-right: 4px;
+        vertical-align: middle;
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    /* Fila de título de sección */
+    .report-table-title-row th {
+        background-color: #f3f4ff;
+        border-left: 3px solid #0d0e36;
+        color: #0d0e36;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: bold;
+        font-size: 12px;
+        text-align: center;
+        padding: 6px 8px;
+    }
+
+    .report-section-badge {
+        display: inline-block;
+        margin-left: 6px;
+        padding: 2px 6px;
+        font-size: 10px;
+        text-transform: uppercase;
+        border-radius: 3px;
+        border: 1px solid #0d0e36;
+        color: #0d0e36;
+        background-color: #ffffff;
+    }
+
+    /* Encabezados de columnas */
+    .report-table-header-row th {
+        background-color: #eef2ff;
+        color: #0d0e36;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 11px;
+        text-align: center;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table tbody td {
+        font-size: 12px;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+        text-align: center;
+    }
+
+    .report-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Proveedor con cantidad (fondo amarillo + borde) */
+    .principal {
+        background-color: #fff8b3 !important;
+        font-weight: 700;
+        border-bottom: 1px solid #e1c75f !important;
+    }
+
+    .sin-datos {
+        text-align: center;
+        font-style: italic;
+        color: #777;
+    }
+</style>
+
+<div class="report-container">
+    <!-- Título principal -->
+    <div class="report-title">
+        COTIZACIÓN DE PROVEEDORES
+    </div>
+
+    <!-- Subtítulo con fecha y hora -->
+    <div class="report-subtitle">
+        <b>Fecha y hora de emisión:</b> @fecha.ToString("dd/MM/yyyy HH:mm")
+    </div>
+
+    <!-- Meta simple de fecha -->
+    <div class="report-meta">
+        <b>Fecha:</b> @fecha.ToString("dd/MM/yyyy")
+    </div>
+
+    <!-- Leyenda -->
+    <div class="report-legend">
+        <span class="legend-box principal"></span>
+        <span><b>★ Proveedor ganador por producto.</b></span>
+        @if (!string.IsNullOrWhiteSpace(tipoCompra))
+        {
+            <span> &nbsp;|&nbsp;
+                Tipo de cotización:
+                @(esCompraDividida ? "Compra dividida" : "Proveedor único")
+            </span>
+        }
+    </div>
+
+    <!-- Tabla de productos cotizados -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="@(((Model.Proveedores?.Count ?? 0) + 3))">
+                    Productos cotizados
+                </th>
+            </tr>
+            <tr class="report-table-header-row">
+                <th>Código</th>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                @if (Model.Proveedores != null)
+                {
+                    foreach (var proveedor in Model.Proveedores)
+                    {
+                        <th>@proveedor</th>
+                    }
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Productos != null && Model.Productos.Any())
+            {
+                foreach (var producto in Model.Productos)
+                {
+                    // Clave consistente con el controlador
+                    var itemKey = !string.IsNullOrWhiteSpace(producto.ProductoId)
+                        ? producto.ProductoId
+                        : (!string.IsNullOrWhiteSpace(producto.CodigoReferencia)
+                            ? producto.CodigoReferencia
+                            : producto.ProductoNombre);
+
+                    // Resumen de cantidades en modo compra dividida: 20-30-...
+                    string resumenCantidades = "";
+                    if (esCompraDividida &&
+                        producto.CantidadesProveedores != null &&
+                        Model.Proveedores != null)
+                    {
+                        var cantidadesNoCero = new List<int>();
+
+                        foreach (var prov in Model.Proveedores)
+                        {
+                            if (producto.CantidadesProveedores.ContainsKey(prov))
+                            {
+                                var c = producto.CantidadesProveedores[prov];
+                                if (c > 0)
+                                {
+                                    cantidadesNoCero.Add(c);
+                                }
+                            }
+                        }
+
+                        if (cantidadesNoCero.Count > 1)
+                        {
+                            resumenCantidades = string.Join("-", cantidadesNoCero);
+                        }
+                    }
+
+                    // Determinar proveedor principal (el de mayor cantidad)
+                    string proveedorPrincipalDelItem = null;
+
+                    if (!string.IsNullOrWhiteSpace(itemKey) &&
+                        Model.ProveedorPrincipalPorItem != null &&
+                        Model.ProveedorPrincipalPorItem.ContainsKey(itemKey))
+                    {
+                        proveedorPrincipalDelItem = Model.ProveedorPrincipalPorItem[itemKey];
+                    }
+                    else if (producto.CantidadesProveedores != null &&
+                             producto.CantidadesProveedores.Count > 0)
+                    {
+                        string tempProv = null;
+                        int maxCant = 0;
+
+                        foreach (var kv in producto.CantidadesProveedores)
+                        {
+                            if (kv.Value > maxCant)
+                            {
+                                maxCant = kv.Value;
+                                tempProv = kv.Key;
+                            }
+                        }
+
+                        proveedorPrincipalDelItem = tempProv;
+                    }
+
+                    <tr>
+                        <td>@producto.CodigoReferencia</td>
+                        <td style="text-align:left;">@producto.ProductoNombre</td>
+                        <td>
+                            @producto.CantidadTrasladada
+                            @if (!string.IsNullOrWhiteSpace(resumenCantidades))
+                            {
+                                @: (@resumenCantidades)
+                            }
+                        </td>
+
+                        @if (Model.Proveedores != null)
+                        {
+                            foreach (var proveedor in Model.Proveedores)
+                            {
+                                // Cantidad asignada a este proveedor
+                                var cantidadProveedor =
+                                    (producto.CantidadesProveedores != null &&
+                                     producto.CantidadesProveedores.ContainsKey(proveedor))
+                                        ? producto.CantidadesProveedores[proveedor]
+                                        : 0;
+
+                                var tieneCantidad = cantidadProveedor > 0;
+
+                                // Celda se resalta si el proveedor tiene cantidad asignada
+                                var esPrincipalProveedor = tieneCantidad &&
+                                                           !string.IsNullOrWhiteSpace(proveedorPrincipalDelItem) &&
+                                                           proveedorPrincipalDelItem == proveedor;
+
+                                var clase = tieneCantidad ? "principal" : "";
+
+                                decimal precio = 0m;
+                                if (producto.PreciosProveedores != null &&
+                                    producto.PreciosProveedores.ContainsKey(proveedor))
+                                {
+                                    precio = producto.PreciosProveedores[proveedor];
+                                }
+
+                                <td class="@clase">
+                                    @if (precio > 0)
+                                    {
+                                        @:(@(esPrincipalProveedor ? "★ " : "")@precio)
+                                    }
+                                    else
+                                    {
+                                        @:0
+                                    }
+                                </td>
+                            }
+                        }
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="@(((Model.Proveedores?.Count ?? 0) + 3))" class="sin-datos">
+                        No hay productos registrados.
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

@@ -1,0 +1,145 @@
+@model sistema.Models.RequisicionViewModel
+
+@{
+    string tipoOriginal = ViewBag.TipoFirma ?? "";
+    string tipoFormateado = System.Text.RegularExpressions.Regex.Replace(tipoOriginal, "([A-Z])", " $1").Trim();
+}
+
+<div class="container-fluid py-2">
+    <div class="d-flex align-items-center mb-4 border-bottom pb-3">
+        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mr-3"
+             style="width: 45px; height: 45px;">
+            <i class="fa fa-file-signature fa-lg"></i>
+        </div>
+        <div>
+            <h5 class="mb-0 text-dark font-weight-bold">Autorización de Requisición</h5>
+            <span class="badge badge-pill badge-primary-soft text-primary border border-primary px-3">
+                <i class="fa fa-tag mr-1"></i> @tipoFormateado.ToUpper()
+            </span>
+        </div>
+    </div>
+
+    <input type="hidden" id="idRequisicionAutorizar" value="@Model.RequisicionId" />
+    <input type="hidden" id="tipoFirmaAutorizar" value="@tipoOriginal" />
+    <input type="hidden" id="nombreGerente" value="@Model.NombreGerenteAdministrativo" />
+    <input type="hidden" id="nombreJefatura" value="@Model.NombreJefaturaCoordinador" />
+    <input type="hidden" id="nombreAlmacen" value="@Model.NombreEncargadoAlmacen" />
+    <input type="hidden" id="nombreEntregado" value="@Model.EntregadoNombre" />
+
+    <div class="row justify-content-center">
+        <div class="col-md-11">
+
+            <div id="contenedorPrevisualizacion" class="mb-4 d-none">
+                <label class="text-muted small font-weight-bold uppercase mb-2 d-block">Firma Seleccionada</label>
+                <div class="card shadow-sm border-success">
+                    <div class="card-body p-2 bg-light d-flex align-items-center justify-content-center"
+                         style="height: 180px; position: relative;">
+                        <img id="imgFirmaPrev" src="" style="max-width: 90%; max-height: 90%; object-fit: contain;" />
+                        <button class="btn btn-sm btn-danger shadow" style="position: absolute; top: 10px; right: 10px;"
+                                onclick="resetearFirma()">
+                            <i class="fa fa-sync-alt"></i> Cambiar Método
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="selectorFirma">
+                <label class="text-muted small font-weight-bold uppercase mb-3 d-block text-center">Seleccione un método
+                    de firma</label>
+
+                    <div class="nav nav-pills nav-fill mb-3" id="pills-tab" role="tablist">
+                        <a class="nav-item nav-link border mr-2 py-3" id="pills-upload-tab" data-toggle="collapse"
+                               href="#colSubir" role="tab">
+                            <i class="fa fa-upload d-block mb-1 fa-lg"></i> Subir Imagen
+                        </a>
+
+                        <a class="nav-item nav-link border mr-2 py-3" id="pills-draw-tab" data-toggle="collapse"
+                               href="#colDibujar" role="tab" onclick="initCanvas()">
+                            <i class="fa fa-pencil-alt d-block mb-1 fa-lg"></i> Firma Digital
+                        </a>
+
+                        <!-- NUEVO: botón huella (solo visual, sin acción aún) -->
+                        <a class="nav-item nav-link border py-3" id="pills-fingerprint-tab" href="javascript:void(0)"
+                               role="tab">
+                            <i class="fa fa-fingerprint d-block mb-1 fa-lg"></i> Huella
+                        </a>
+                    </div>
+
+                    <div class="accordion" id="accordionMetodos">
+                        <div id="colSubir" class="collapse" data-parent="#accordionMetodos">
+                            <div class="card border-top-0 rounded-bottom shadow-sm">
+                                <div class="card-body bg-light">
+                                    <div class="custom-file shadow-sm">
+                                        <input type="file" class="custom-file-input" id="inputFirma" accept="image/*"
+                                               onchange="previsualizarArchivo(this)">
+                                        <label class="custom-file-label" for="inputFirma">Elegir archivo PNG/JPG...</label>
+                                    </div>
+                                    <small class="d-block mt-2 text-center text-uppercase text-muted"
+                                           style="letter-spacing: 0.5px; font-size: 0.7rem;">
+                                        <i class="fa-solid fa-check-circle text-success mr-1"></i>
+                                        Formato óptimo: <span class="badge badge-light border">Fondo Blanco</span> o <span
+                                        class="badge badge-light border">Transparente</span>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="colDibujar" class="collapse" data-parent="#accordionMetodos">
+                            <div class="card border-top-0 rounded-bottom shadow-sm">
+                                <div class="card-body p-1 text-center bg-light">
+                                    <canvas id="canvasFirma" width="600" height="250"
+                                            style="border: 1px dashed #adb5bd; cursor: crosshair; background: #fff; max-width: 100%; touch-action: none; border-radius: 4px;">
+                                    </canvas>
+                                    <div class="p-3">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm px-4"
+                                                onclick="limpiarCanvas('canvasFirma')">
+                                            <i class="fa fa-eraser mr-1"></i> Borrar Todo
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-sm px-4 ml-2 shadow"
+                                                onclick="usarFirmaCanvas()">
+                                            <i class="fa fa-check mr-1"></i> Confirmar Trazo
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-5 border-top pt-4 text-right">
+                    <button type="button" class="btn btn-secondary mr-2" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success btn-lg px-5 shadow" id="btnFinalizarAutorizacion"
+                            onclick="Autorizar()" disabled>
+                        <i class="fa fa-check-double mr-2"></i> Finalizar y Autorizar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .badge-primary-soft {
+            background-color: rgba(0, 123, 255, 0.1);
+        }
+
+        .nav-pills .nav-link {
+            color: #495057;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+        }
+
+        .nav-pills .nav-link:hover {
+            background-color: #f1f3f5;
+        }
+
+        .nav-pills .nav-link.active {
+            background-color: #007bff;
+            color: white !important;
+            border-color: #007bff;
+        }
+
+        .uppercase {
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+    </style>

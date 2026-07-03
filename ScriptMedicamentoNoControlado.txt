@@ -1,0 +1,24 @@
+CREATE TABLE IF NOT EXISTS "MedicamentoNoControlado" (
+    "Id" SERIAL4 NOT NULL,
+    "HospitalizacionId" INT4 NOT NULL,
+    "FechaProcedimiento" DATE,
+    "FechaRegistro" TIMESTAMP NOT NULL DEFAULT now(),
+    "ProductoId" INT4 NOT NULL,
+    "ProductoNombre" VARCHAR(200) NOT NULL,
+    "UnidadesIniciales" NUMERIC(10, 2) NOT NULL DEFAULT 0,
+    "UnidadesExtra" NUMERIC(10, 2) NOT NULL DEFAULT 0,
+    "Utilizado" NUMERIC(10, 2) NOT NULL DEFAULT 0,
+    "Descartado" NUMERIC(10, 2) NOT NULL DEFAULT 0,
+    "Retornadas" NUMERIC(10, 2) NOT NULL DEFAULT 0,
+    "UsuarioRegistroId" VARCHAR(450),
+    "Eliminado" BOOL NOT NULL DEFAULT false,
+    
+    -- Clave Primaria
+    CONSTRAINT "MedicamentoNoControlado_pkey" PRIMARY KEY ("Id"),
+    
+    -- Clave Foránea
+    CONSTRAINT "FK_MedicamentoNoControlado_Hospitalizaciones" 
+        FOREIGN KEY ("HospitalizacionId") 
+        REFERENCES "Hospitalizaciones"("Id") 
+        ON DELETE CASCADE
+);

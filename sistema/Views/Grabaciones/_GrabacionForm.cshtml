@@ -1,0 +1,25 @@
+@model sistema.Models.GrabacionViewModel
+@Html.HiddenFor(a => a.GrabacionId)
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-3">
+                <label>Número</label>
+                @Html.TextBoxFor(m => m.Numero, new { @class = "form-control", @placeholder = "Número" })
+            </div>
+            <div class="col-md-3">
+                <label>Nombre</label>
+                @Html.TextBoxFor(m => m.Nombre, new { @class = "form-control", @placeholder = "Nombre" })
+            </div>
+            <div class="col-md-3">
+                <label>Categoría</label>
+                @Html.TextBoxFor(m => m.Categoria, new { @class = "form-control", @placeholder = "Categoría" })
+            </div>
+            <div class="col-md-3">
+                <label>Palabra clave</label>
+                @Html.TextBoxFor(m => m.PalabraClave, new { @class = "form-control", @placeholder = "Palabra clave" })
+            </div>
+        </div>
+    </div>
+</div>

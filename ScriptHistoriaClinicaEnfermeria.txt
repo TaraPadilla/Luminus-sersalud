@@ -1,0 +1,100 @@
+-- =========================
+-- Tabla: ConsultasHistoriaClinicaEnfermeria (alineada al formulario)
+-- =========================
+CREATE TABLE IF NOT EXISTS "ConsultasHistoriaClinicaEnfermeria" (
+  "Id"                    BIGSERIAL PRIMARY KEY,
+
+  -- Claves foráneas
+  "PacienteId"            INT NOT NULL,
+  "ConsultaId"            INT NOT NULL,
+
+  -- 2) Tipo de consulta
+  "TipoConsulta"          TEXT,
+
+  -- 3) Motivo
+  "MotivoConsulta"        TEXT,
+
+  -- 4) Antecedentes personales y familiares
+  "AntecedentesPatologicos"   TEXT,
+  "AntecedentesQuirurgicos"   TEXT,
+  "AntecedentesTraumaticos"   TEXT,
+  "Hospitalizaciones"         TEXT,
+  "Alergias"                  TEXT,
+  "AntecedentesFamiliares"    TEXT,
+
+  -- 5) Hábitos personales
+  "HabitoAlimentacion"    TEXT,
+  "ActividadFisica"       TEXT,
+  "HabitoAlcoholTexto"    TEXT,
+  "HabitoTabacoTexto"     TEXT,
+  "OtrosHabitos"          TEXT,
+
+  -- 6) Signos vitales y antropometría
+  "PresionArterialTxt"    TEXT,           -- ej. "120/80 mmHg"
+  "FC"                    INT,            -- lpm
+  "FR"                    INT,            -- rpm
+  "TemperaturaC"          NUMERIC(4,1),   -- ej. 36.7
+  "SPO2"                  INT,            -- 0-100
+  "PesoKg"                NUMERIC(5,2),
+  "TallaM"                NUMERIC(4,2),
+  "IMC"                   NUMERIC(5,2),
+
+  -- 7) Exploración por aparatos y sistemas
+  "CabezaCuello"          TEXT,
+  "ToraxPulmones"         TEXT,
+  "Corazon"               TEXT,
+  "Abdomen"               TEXT,
+  "Extremidades"          TEXT,
+  "SistemaNeurologico"    TEXT,
+  "PielAnexos"            TEXT,
+
+  -- 8) Valoración de enfermería
+  "ValConcienciaOrientacion"  TEXT,
+  "ValEstadoNutricional"      TEXT,
+  "ValEliminacion"            TEXT,
+  "ValSuenoDescanso"          TEXT,
+  "ValActividadMovilidad"     TEXT,
+  "ValAutonomia"              TEXT,
+
+  -- 9) Laboratorios (texto libre)
+  "Laboratorios"          TEXT,
+
+  -- 10) Diagnóstico de enfermería
+  "DiagnosticoEnfermeria" TEXT,
+
+  -- 11) Plan de cuidados / Intervenciones
+  "AccionesRealizadas"        TEXT,
+  "MedicamentosAdministrados" TEXT,
+  "Tratamiento"               TEXT,
+
+  -- 12) Seguimiento / Evolución / Cita
+  "Seguimiento"           TEXT,
+
+  -- Unicidad 1:1 con Consulta
+  CONSTRAINT consultas_hce_consultaid_unique UNIQUE ("ConsultaId"),
+
+  -- FKs (ajusta nombres de tablas si difieren)
+  CONSTRAINT fk_hce_paciente
+    FOREIGN KEY ("PacienteId") REFERENCES "Pacientes"("Id")
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+
+  CONSTRAINT fk_hce_consulta
+    FOREIGN KEY ("ConsultaId") REFERENCES "Consultas"("Id")
+    ON UPDATE CASCADE ON DELETE CASCADE,
+
+  -- Validaciones mínimas
+  CONSTRAINT ck_hce_spo2_rango CHECK ("SPO2" IS NULL OR ("SPO2" BETWEEN 0 AND 100))
+);
+
+-- Índices
+CREATE INDEX IF NOT EXISTS idx_hce_paciente  ON "ConsultasHistoriaClinicaEnfermeria"("PacienteId");
+-- Ya existe UNIQUE por ConsultaId: consultas_hce_consultaid_unique
+
+-- Fecha del registro para ordenar histórico por PacienteId
+ALTER TABLE IF EXISTS "ConsultasHistoriaClinicaEnfermeria"
+ADD COLUMN IF NOT EXISTS "Fecha" TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
+-- Índice recomendado para consultas por paciente + orden por fecha
+CREATE INDEX IF NOT EXISTS idx_hce_paciente_fecha
+  ON "ConsultasHistoriaClinicaEnfermeria"("PacienteId", "Fecha" DESC);
+

@@ -1,0 +1,203 @@
+@model Database.Shared.Models.Ambulancia
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Config
+@{
+    ViewData["Title"] = "Nueva Ambulancia";
+    ViewData["ImagenLogo"] = Config["ImagenLogoBase64"];   
+    var hospitalizacionId = Context.Request.Query["hospitalizacionId"].FirstOrDefault();
+}
+
+<style>
+    label {
+        font-weight: 600;
+    }
+    .form-section {
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 1.5rem;
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const tipoViaje = document.getElementById("tipoViaje");
+
+        function toggleSecciones() {
+            const tipo = tipoViaje.value;
+            document.querySelectorAll("[data-visible-privado]").forEach(e => e.style.display = tipo === "Privado" ? "block" : "none");
+            document.querySelectorAll("[data-visible-igss]").forEach(e => e.style.display = tipo === "IGSS" ? "block" : "none");
+            document.querySelectorAll("[data-visible-precio]").forEach(e => e.style.display = tipo !== "IGSS" ? "block" : "none");
+        }
+
+        tipoViaje.addEventListener("change", toggleSecciones);
+        toggleSecciones();
+
+        document.querySelectorAll('input[name="AmbulanciaTipo"]').forEach(chk => {
+            chk.addEventListener('change', function () {
+                document.querySelectorAll('input[name="AmbulanciaTipo"]').forEach(el => {
+                    if (el !== this) el.checked = false;
+                });
+            });
+        });
+    });
+</script>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <h4 class="mb-4"><b>Registro de Servicio de Ambulancia</b></h4>
+        <br>
+        @if (!string.IsNullOrEmpty(hospitalizacionId))
+        {
+            <div class="alert alert-info" role="alert">
+                <b>Hospitalización asociada:</b> ID #@hospitalizacionId
+            </div>
+        }
+
+        <br>
+        <form asp-action="Nueva" method="post">
+            <input type="hidden" name="hospitalizacionId" value="@hospitalizacionId" />
+            <div class="form-row form-section">
+                <div class="col-md-6">
+                    <label>Tipo de viaje</label>
+                    <select asp-for="TipoViaje" class="form-control" id="tipoViaje">
+                        <option value="">-- Seleccione --</option>
+                        <option value="Privado">Privado</option>
+                        <option value="IGSS">IGSS</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label>Servicio que solicita</label>
+                    <input asp-for="ServicioSolicitado" class="form-control" />
+                </div>
+            </div>
+
+            <div class="form-row form-section">
+                <div class="col-md-3">
+                    <label>Fecha y hora</label>
+                    <input asp-for="FechaHoraSolicitud" class="form-control" type="datetime-local" />
+                </div>
+
+                <div class="col-md-3">
+                    <label>Cama</label>
+                    <input asp-for="Cama" class="form-control" />
+                </div>
+
+                <div class="col-md-6">
+                    <label>Nombre del paciente</label>
+                    <input asp-for="NombrePaciente" class="form-control" />
+                </div>
+            </div>
+
+            <div class="form-row form-section" data-visible-igss>
+                <div class="col-md-6">
+                    <label>Afiliación IGSS</label>
+                    <input asp-for="AfiliacionIGSS" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                    <label>Hora del examen o consulta</label>
+                    <input asp-for="HoraExamen" class="form-control" type="datetime-local" />
+                </div>
+            </div>
+
+            <div class="form-row form-section">
+                <div class="col-md-12">
+                    <label>Dirección de traslado</label>
+                    <input asp-for="DireccionTraslado" class="form-control" />
+                </div>
+
+                <div class="col-md-6">
+                    <label>Tipo de salida</label><br />
+                    <div class="form-check form-check-inline">
+                        <input asp-for="EsTraslado" class="form-check-input" type="checkbox" name="AmbulanciaTipo" id="chkTraslado" />
+                        <label class="form-check-label" for="chkTraslado">Traslado</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input asp-for="EsEgreso" class="form-check-input" type="checkbox" name="AmbulanciaTipo" id="chkEgreso" />
+                        <label class="form-check-label" for="chkEgreso">Egreso</label>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <label>Forma de conducción</label>
+                    <select asp-for="FormaConduccion" class="form-control">
+                        <option value="Camilla">Camilla</option>
+                        <option value="Silla de ruedas">Silla de ruedas</option>
+                        <option value="Ambulatorio">Ambulatorio</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row form-section">
+                <div class="col-md-6">
+                    <label>Hora de salida</label>
+                    <input asp-for="HoraSalidaAmbulancia" type="datetime-local" class="form-control" />
+                </div>
+
+                <div class="col-md-6" data-visible-privado>
+                    <label>Hora de entrada</label>
+                    <input asp-for="HoraEntradaAmbulancia" type="datetime-local" class="form-control" />
+                </div>
+
+                <div class="col-md-4">
+                    <label>Ambulancia unidad</label>
+                    <input asp-for="AmbulanciaUnidad" class="form-control" />
+                </div>
+
+                <div class="col-md-4" data-visible-privado>
+                    <label>Nombre del piloto</label>
+                    <input asp-for="NombrePiloto" class="form-control" />
+                </div>
+
+                <div class="col-md-4">
+                    <label>Examen y/o consulta</label>
+                    <input asp-for="ExamenConsulta" class="form-control" />
+                </div>
+            </div>
+
+            <div class="form-row form-section">
+                <div class="col-md-6" data-visible-privado>
+                    <label>¿Oxígeno?</label>
+                    <select asp-for="Oxigeno" class="form-control">
+                        <option value="true">Sí</option>
+                        <option value="false">No</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6" data-visible-privado>
+                    <label>Cantidad de oxígeno</label>
+                    <input asp-for="CantidadOxigeno" class="form-control" type="number" />
+                </div>
+
+                <div class="col-md-6">
+                    <label>¿Enfermera acompaña?</label>
+                    <select asp-for="EnfermeraAcompania" class="form-control">
+                        <option value="true">Sí</option>
+                        <option value="false">No</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- NUEVO CAMPO DE PRECIO -->
+            <div class="form-row form-section" data-visible-precio>
+                <div class="col-md-6">
+                    <label>Precio</label>
+                    <input asp-for="Precio" class="form-control" type="number" step="0.01" min="0" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="col-md-12">
+                    <label>Observaciones</label>
+                    <textarea asp-for="Observaciones" class="form-control" rows="3"></textarea>
+                </div>
+            </div>
+
+            <div class="form-row mt-4">
+                <div class="col-md-12">
+                    <button type="submit" class="btn btn-success">Guardar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

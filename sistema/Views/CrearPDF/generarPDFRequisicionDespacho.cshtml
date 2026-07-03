@@ -1,0 +1,330 @@
+@using Database.Shared.Models
+@using System.Globalization
+@using sistema.Models
+@model RequisicionViewModel
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Config
+
+@{
+    // =========================
+    // Header (logo / empresa)
+    // =========================
+    Layout = "_LayoutRequisicionDespacho";
+    var nombreEmpresaDefault = Config["EstablecimientoNombreEmpresa"] ?? "";
+    var logo = Config["ImagenLogoBase64"] ?? "";
+
+    // ============================================================
+    // CONFIGURACIÓN DE PAGINACIÓN
+    // ============================================================
+    // Nota: Ajusta a 27/28 si el alto real lo permite. Por ahora lo dejas en 24.
+    const int FILAS_POR_PAGINA = 27;
+
+    var productos = Model.Productos?.ToList() ?? new List<TrasladoProductoViewModel>();
+    var totalProductos = productos.Count;
+    var totalPaginas = Math.Max(1, (int)Math.Ceiling(totalProductos / (double)FILAS_POR_PAGINA));
+}
+
+<div class="reporte-contenido">
+
+@for (int pagina = 0; pagina < totalPaginas; pagina++)
+{
+    var inicio = pagina * FILAS_POR_PAGINA;
+    var itemsPagina = productos.Skip(inicio).Take(FILAS_POR_PAGINA).ToList();
+
+    <div style="page-break-inside: avoid;">
+
+        <!-- ============================================================
+             HEADER (LOGO + TÍTULOS) - SE REPITE EN CADA PÁGINA
+             Ajustado para verse como la imagen: logo a la izquierda y
+             texto centrado vertical/horizontal respecto al logo.
+             ============================================================ -->
+        <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 10px; font-family: sans-serif;">
+            <tr>
+                <td style="width: 90px; border: none; vertical-align: middle; text-align: left; padding: 0;">
+                    @if (!string.IsNullOrWhiteSpace(logo))
+                    {
+                        <img src="@logo"
+                             alt="Logo"
+                             style="width: 80px; height: auto; display: block;" />
+                    }
+                </td>
+                <td style="border: none; vertical-align: middle; text-align: center; padding: 0 10px;">
+                    <div style="font-weight: bold; font-size: 14px; line-height: 16px;">
+                        @nombreEmpresaDefault
+                    </div>
+                    <div style="font-weight: normal; font-size: 11px; line-height: 14px; margin-top: 2px;">
+                        Requisición de despacho del Almacén de @Model.NombreBodega
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <!-- ============================================================
+             ENCABEZADO (SE REPITE EN CADA PÁGINA)
+             ============================================================ -->
+        <div style="text-align: right; color: red; font-weight: bold; font-size: 14px; margin-bottom: 4px; font-family: sans-serif;">
+            Nº @Model.NumeroRequisicion
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; border: 1px solid black; font-family: sans-serif; margin-bottom: 10px;">
+            <tr>
+                <td width="20%" style="padding: 5px; border: 1px solid black; background-color: #f9f9f9;">
+                    <strong>Dirección:</strong>
+                </td>
+                <td style="padding: 5px; border: 1px solid black;">@Model.Direccion</td>
+            </tr>
+
+            <tr>
+                <td style="padding: 5px; border: 1px solid black; background-color: #f9f9f9;">
+                    <strong>Departamento:</strong>
+                </td>
+                <td style="padding: 5px; border: 1px solid black;">@Model.Departamento</td>
+            </tr>
+
+            <tr>
+                <td style="padding: 5px; border: 1px solid black; background-color: #f9f9f9;">
+                    <strong>Unidad/Sección:</strong>
+                </td>
+                <td style="padding: 5px; border: 1px solid black;">@Model.UnidadSeccion</td>
+            </tr>
+
+            <tr>
+                <td style="padding: 5px; border: 1px solid black; background-color: #f9f9f9;">
+                    <strong>Otros:</strong>
+                </td>
+                <td style="padding: 5px; border: 1px solid black;">@Model.Otros</td>
+            </tr>
+        </table>
+
+        <!-- ============================================================
+             BODY: LISTADO (PAGINADO, IMPRIME TODOS LOS PRODUCTOS)
+             ============================================================ -->
+        <table style="width: 100%; border-collapse: collapse; border: 1px solid black; font-family: sans-serif; table-layout: fixed; margin-bottom: 10px;">
+            <thead>
+                <tr style="background-color: #f2f2f2; text-align: center;">
+                    <th style="border: 1px solid black; font-size: 10px; width: 8%; padding: 5px;">No.</th>
+                    <th style="border: 1px solid black; font-size: 10px; width: 50%; padding: 5px;">Descripción del Artículo / Producto</th>
+                    <th style="border: 1px solid black; font-size: 10px; width: 22%; padding: 5px;">Unidad de Medida</th>
+                    <th style="border: 1px solid black; font-size: 10px; width: 20%; padding: 5px;">Cantidad Solicitada</th>
+                    <th style="border: 1px solid black; font-size: 10px; width: 20%; padding: 5px;">Cantidad Despachada</th>
+                </tr>
+            </thead>
+            <tbody>
+            @for (int i = 0; i < FILAS_POR_PAGINA; i++)
+            {
+                var item = i < itemsPagina.Count ? itemsPagina[i] : null;
+                var correlativo = inicio + i + 1;
+
+                <tr style="height: 25px;">
+                    <td style="border: 1px solid black; text-align: center; font-size: 11px;">
+                        @(item == null ? "" : correlativo.ToString())
+                    </td>
+
+                    <td style="border: 1px solid black; font-size: 11px; padding-left: 5px;">
+                        @(item?.ProductoNombre ?? "")
+                    </td>
+
+                    <td style="border: 1px solid black; text-align: center; font-size: 11px;">
+                        @(item?.UnidadMedidaVentaNombre ?? "")
+                    </td>
+
+                    <td style="border: 1px solid black; text-align: center; font-size: 11px;">
+                        @(item != null ? item.CantidadTrasladada.ToString() : "")
+                    </td>
+
+                    <td style="border: 1px solid black; text-align: center; font-size: 11px;">
+                        @((item?.CantidadDespachada.HasValue ?? false) ? item.CantidadDespachada.Value.ToString() : "")
+                    </td>
+                </tr>
+            }
+            </tbody>
+
+            @* Observaciones solo en la última página *@
+            @if (pagina == totalPaginas - 1)
+            {
+                <tr>
+                    <td colspan="5" style="border: 1px solid black; font-size: 11px; padding: 5px;">
+                        <strong>Observaciones:</strong> @Model.Observaciones
+                    </td>
+                </tr>
+            }
+        </table>
+
+        <!-- ============================================================
+             FOOTER: FIRMAS (SE REPITE EN CADA PÁGINA)
+             ============================================================ -->
+        <table style="width: 100%; border-collapse: collapse; border: 1px solid black; font-family: sans-serif;">
+            <tr>
+                <td width="50%" style="padding: 10px; vertical-align: top;">
+                    <table style="width: 100%; border: none; border-collapse: collapse;">
+                        <tr>
+                            <td style="vertical-align: middle; border: none;">
+                                <span style="font-size: 10px; font-family: sans-serif;"><strong>Fecha de Solicitud:</strong></span>
+                            </td>
+                            <td style="text-align: right; border: none;">
+                                <table style="display: inline-table; border-collapse: collapse; border: 1px solid black; font-family: sans-serif;">
+                                    <tr style="font-size: 8px; text-align: center; background-color: #f2f2f2;">
+                                        <td style="border: 1px solid black; width: 25px; padding: 2px;">Día</td>
+                                        <td style="border: 1px solid black; width: 25px; padding: 2px;">Mes</td>
+                                        <td style="border: 1px solid black; width: 35px; padding: 2px;">Año</td>
+                                    </tr>
+                                    <tr style="height: 22px; text-align: center; font-size: 11px;">
+                                        <td style="border: 1px solid black;">
+                                            @(Model.FechaSolicitud.HasValue ? Model.FechaSolicitud.Value.Day.ToString() : "")
+                                        </td>
+                                        <td style="border: 1px solid black;">
+                                            @(Model.FechaSolicitud.HasValue ? Model.FechaSolicitud.Value.Month.ToString() : "")
+                                        </td>
+                                        <td style="border: 1px solid black;">
+                                            @(Model.FechaSolicitud.HasValue ? Model.FechaSolicitud.Value.Year.ToString() : "")
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <div style="text-align: center; width: 100%; margin-top: 10px;">
+                        <div style="position: relative; width: 90%; margin: 0 auto; height: 50px;">
+                            <div style="position: absolute; left: 0; bottom: 2px; font-size: 11px; font-family: sans-serif; text-align: left;">
+                                @(Model.NombreSolicitante ?? "")
+                            </div>
+                            <div style="width: 100%; text-align: center;">
+                                @if (!string.IsNullOrEmpty(Model.FirmaSolicitante))
+                                {
+                                    <img src="@Model.FirmaSolicitante" alt="Firma"
+                                         style="width: 150px; height: auto; margin-bottom: -15px; position: relative; z-index: 10;" />
+                                }
+                            </div>
+                        </div>
+                        <div style="border-top: 1px solid black; padding-top: 4px; font-size: 9px; font-family: sans-serif; width: 90%; margin: 0 auto;">
+                            Nombre y firma del solicitante
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; width: 100%; margin-top: 10px;">
+                        <div style="width: 90%; margin: 0 auto; text-align: right; margin-bottom: -10px;">
+                            <strong style="font-size: 10px; font-family: sans-serif;">Sello</strong>
+                        </div>
+                        <div style="position: relative; width: 90%; margin: 0 auto; height: 50px;">
+                            <div style="position: absolute; left: 0; bottom: 2px; font-size: 11px; font-family: sans-serif; text-align: left;">
+                                @(Model.JefaturaNombre ?? "")
+                            </div>
+                            <div style="width: 100%; text-align: center;">
+                                @if (!string.IsNullOrEmpty(Model.VOBOJefatura))
+                                {
+                                    <img src="@Model.VOBOJefatura" alt="Firma"
+                                         style="width: 150px; height: auto; margin-bottom: -15px; position: relative; z-index: 10;" />
+                                }
+                            </div>
+                        </div>
+                        <div style="border-top: 1px solid black; padding-top: 4px; font-size: 9px; font-family: sans-serif; width: 90%; margin: 0 auto;">
+                            Nombre y firma Coordinador / Jefe Inmediato
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; width: 100%; margin-top: 10px;">
+                        <div style="width: 90%; margin: 0 auto; text-align: left; margin-bottom: -10px;">
+                            <strong style="font-size: 10px; font-family: sans-serif;">Vo.Bo.</strong>
+                        </div>
+                        <div style="position: relative; width: 90%; margin: 0 auto; height: 50px;">
+                            <div style="position: absolute; left: 0; bottom: 2px; font-size: 11px; font-family: sans-serif; text-align: left;">
+                                @(Model.GerenciaNombre ?? "")
+                            </div>
+                            <div style="width: 100%; text-align: center;">
+                                @if (!string.IsNullOrEmpty(Model.AutorizacionGerencia))
+                                {
+                                    <img src="@Model.AutorizacionGerencia" alt="Firma"
+                                         style="width: 150px; height: auto; margin-bottom: -15px; position: relative; z-index: 10;" />
+                                }
+                            </div>
+                        </div>
+                        <div style="border-top: 1px solid black; padding-top: 4px; font-size: 8px; font-family: sans-serif; width: 90%; margin: 0 auto;">
+                            Nombre y Firma Gerente Administrativo Financiero / Jefe Administrativo / Director
+                        </div>
+                    </div>
+                </td>
+
+                <td width="50%" style="padding: 10px; vertical-align: top; border-left: 1px solid black; font-family: sans-serif; position: relative;">
+
+                    <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 50px;">
+                        <tr>
+                            <td style="width: 35%; vertical-align: top; border: none;">
+                                <strong style="font-size: 10px; display: block; margin-bottom: 15px;">Despachado por:</strong>
+                                <strong style="font-size: 10px; white-space: nowrap;">Sello</strong>
+                            </td>
+                            <td style="width: 65%; vertical-align: bottom; border: none;">
+                                <div style="position: relative; width: 100%; height: 50px;">
+                                    <div style="position: absolute; left: 0; bottom: 2px; font-size: 11px; text-align: left; z-index: 5;">
+                                        @(Model.NombreEncargadoAlmacen ?? "")
+                                    </div>
+                                    <div style="width: 100%; text-align: center;">
+                                        @if (!string.IsNullOrEmpty(Model.AutorizacionAlmacen))
+                                        {
+                                            <img src="@Model.AutorizacionAlmacen" alt="Firma"
+                                                 style="width: 150px; height: auto; margin-bottom: -15px; position: relative; z-index: 10;" />
+                                        }
+                                    </div>
+                                </div>
+                                <div style="border-top: 1px solid black; text-align: center; padding-top: 2px;">
+                                    <span style="font-size: 8px;">Nombre de Encargado de Almacén / Auxiliar de Almacén</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 30px;">
+                        <tr>
+                            <td style="width: 35%; vertical-align: top; border: none;">
+                                <strong style="font-size: 10px; display: block;">Recibí conforme:</strong>
+                            </td>
+                            <td style="width: 65%; vertical-align: bottom; border: none;">
+                                <div style="border-top: 1px solid black; text-align: center; margin-top: 10px;">
+                                    <span style="font-size: 8px;">Nombre</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 30px;">
+                        <tr>
+                            <td style="width: 35%; vertical-align: top; border: none;">
+                                <strong style="font-size: 10px; display: block; margin-bottom: 10px;">Hora de confirmación:</strong>
+                                <div style="border: 1px solid black; width: 100px; height: 20px; text-align: center; font-size: 10px; line-height: 20px;">
+                                             
+                                </div>
+                            </td>
+                            <td style="width: 65%; vertical-align: bottom; border: none; padding-left: 10px;">
+                                <div style="width: 100%; height: 35px;"></div>
+                                <div style="border-top: 1px solid black; text-align: center; padding-top: 2px;">
+                                    <span style="font-size: 8px;">Firma</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <table style="width: 100%; border-collapse: collapse; border: none;">
+                        <tr>
+                            <td style="width: 35%; vertical-align: bottom; border: none; padding-bottom: 5px;">
+                                <strong style="font-size: 10px; display: block;">Fecha de Entrega:</strong>
+                            </td>
+                            <td style="width: 65%; vertical-align: bottom; border: none;">
+                                <div style="border-bottom: 1px solid black; width: 100%; height: 20px;"></div>
+                            </td>
+                        </tr>
+                    </table>
+
+                </td>
+            </tr>
+        </table>
+
+    </div>
+
+    @* Salto de página entre páginas *@
+    @if (pagina < totalPaginas - 1)
+    {
+        <div style="page-break-after: always;"></div>
+    }
+}
+
+</div>

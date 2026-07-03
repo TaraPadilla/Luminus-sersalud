@@ -1,0 +1,2141 @@
+@using Database.Shared.Enumeraciones
+@model Database.Shared.Models.Paciente
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+
+@{
+    // Leer el valor del appsettings.json. 
+    string sufijoLayout = Configuration["Cliente"]; 
+    
+    // Concatenar para formar el nombre del Layout (ejemplo: "_Layout" + "SS")
+    // Si la clave trae el nombre completo (ej. "_LayoutSS"), simplemente asignalo directo.
+    Layout = $"_Layout{sufijoLayout}";
+    ViewData["Title"] = "Información del paciente";
+    var fechaNacimiento = Model.FechaNacimiento == null ? ""
+    : Convert.ToDateTime(Model.FechaNacimiento).ToShortDateString();
+    var ocupacion = Model.Ocupacion ?? "-";
+    var religion = Model.Religion ?? "-";
+    var estadoCivil = Model.EstadoCivil ?? "-";
+    var contactoEmergencia = Model.ContactoEmergencia ?? "-";
+    var numeroContactoEmergencia = Model.NumeroContactoEmergencia ?? "-";
+    var nombreContactoEmergencia = Model.NombreContactoEmergencia ?? "-";
+    var nacionalidad = Model.Nacionalidad ?? "-";
+    var paisResidencia = Model.PaisResidencia ?? "-";
+    var departamentoResidencia = Model.DepartamentoResidencia ?? "-";
+    var municipioResidencia = Model.MunicipioResidencia ?? "-";
+
+    var seguroEpss = Model.SeguroEpss == null ? "-" : (Model.SeguroEpss.Nombre ?? "-");
+
+    //Información de nacimiento
+    var pesoAlNacer = Model.PesoAlNacer ?? "-";
+    var talla = Model.Talla ?? "-";
+    var circunferenciaCefalica = Model.CircunferenciaCefalica ?? "-";
+    var tipoParto = "-";
+    if (Model.TipoParto != null)
+    {
+        if (Model.TipoParto == "normal")
+        {
+            tipoParto = "Normal";
+        }
+        else
+        {
+            tipoParto = "Cesarea";
+        }
+    }
+
+    //Datos de IGSS
+    var igssTipoAfiliacion = Model.IgssTipoAfiliacion ?? "-";
+    var igssNumeroAfiliacion = Model.IgssNumeroAfiliacion ?? "-";
+    var igssCantidadDependientes = Model.IgssCantidadDependientes ?? 0;
+    var igssParentescoDependientes = Model.IgssParentescoDependientes ?? "-";
+
+    //Antecedentes
+    var antMedicos = Model.AntecedentesMedicos ?? "-";
+    var antQuirurgicos = Model.AntecedentesQuirurgicos ?? "-";
+    var antTraumaticos = Model.AntecedentesTraumaticos ?? "-";
+    var antAlergias = Model.AntecedentesAlergias ?? "-";
+    var antFarmacoDependencias = Model.AntecedentesVicios ?? "-";
+    var antMedicamentos = Model.AntecedentesMedicamentos ?? "-";
+
+    //Antecedentes personales
+    var antPersonalesObservaciones = Model.AntecedentesPersonalesObservaciones ?? "-";
+    var antPersonalesOtros = Model.AntecedentesPersonalesOtros ?? "-";
+
+}
+@Html.HiddenFor(m=>m.Id)
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <span class="h4"><b>Información de paciente</b></span><br />
+            <span class="h5">@Model.Nombre</span><br />
+           @*  @if (Model.EstadoPacienteId == null || Model.EstadoPacienteId == (int)EstadoPacienteEnum.Inactivo)
+            {
+                <span class="text-danger alert-danger p-1 rounded"><b>Inactivo</b></span>
+            }
+            else
+            {
+                <span class="text-success alert-success p-1 rounded"><b>Activo</b></span>
+            } *@
+            <hr />
+        </div>
+        <div class="col-md-12">
+            <a asp-action="Lista" asp-controller="Pacientes"
+               class="enlace-redirigir btn btn-warning text-ligth">
+                Lista de pacientes
+            </a>
+            <a asp-action="Modificar" asp-controller="Pacientes"
+               asp-route-id="@Model.Id" class="enlace-redirigir btn btn-primary text-ligth">
+                Editar paciente
+            </a>
+            @* @if (Model.EstadoPacienteId != null &&
+            Model.EstadoPacienteId == (int)EstadoPacienteEnum.Activo)
+            {
+                <a asp-action="CambiarFase" asp-controller="Pacientes"
+               asp-route-id="@Model.Id" class="enlace-redirigir btn btn-primary text-ligth">
+                    Cambiar fase de tratamiento
+                </a>
+            } *@
+            @if (Model.EstadoPacienteId == (int)EstadoPacienteEnum.Activo)
+            {
+                <a asp-action="RegistrarRetiro" asp-controller="Pacientes"
+               asp-route-pacienteId="@Model.Id" class="enlace-redirigir btn btn-primary text-ligth">
+                    Registrar retiro
+                </a>
+            }
+            @if (Model.EstadoPacienteId == (int)EstadoPacienteEnum.Inactivo)
+            {
+                <a asp-action="RetomarServicio" asp-controller="Pacientes"
+               asp-route-pacienteId="@Model.Id" class="enlace-redirigir btn btn-primary text-ligth">
+                    Retomar servicio
+                </a>
+            }
+            <a asp-action="PacientesExpedientePDF" asp-controller="CrearPDF"
+               asp-route-pacienteId="@Model.Id" class="enlace-redirigir btn btn-danger text-ligth">
+                Descargar expediente
+            </a>
+            <a asp-action="CarneVacunacionJovenes" asp-controller="CrearPDF"
+               asp-route-idPaciente="@Model.Id" class="enlace-redirigir btn btn-danger text-ligth">
+                Descargar carné de vacunación
+            </a>
+        </div>
+    </div>
+</div>
+
+
+<div class="main-card mb-3 card">
+    <div class="card-header">
+        <div class="btn-actions-pane-right">
+            <div class="nav">
+                <a data-toggle="tab" href="#tab-eg2-0"
+                   class="btn-pill btn-wide mr-1 ml-1 active btn btn-outline-alternate btn-sm">Datos personales</a>
+                <a data-toggle="tab" href="#tab-eg2-1"
+                   class="btn-pill btn-wide mr-1 ml-1 btn btn-outline-alternate btn-sm">Antecedentes</a>
+                <a data-toggle="tab" href="#tab-eg2-2"
+                   class="btn-pill btn-wide mr-1 ml-1 btn btn-outline-alternate btn-sm">Médico</a>
+                <a data-toggle="tab" href="#tab-eg2-3"
+                   class="btn-pill btn-wide mr-1 ml-1 btn btn-outline-alternate btn-sm">Historia médica</a>
+                <a data-toggle="tab" href="#tab-eg2-4"
+                   class="btn-pill btn-wide mr-1 ml-1 btn btn-outline-alternate btn-sm">Pediátricos</a>
+                <a data-toggle="tab" href="#tab-eg2-5"
+                   class="btn-pill btn-wide mr-1 ml-1 btn btn-outline-alternate btn-sm">Ginecológicos</a>
+
+                   @*Este sistema no utiliza estos TABS, por ello se los coloca la clase 'd-none'*@
+                <a data-toggle="tab" href="#tab-eg2-7"
+                   class="btn-pill btn-wide mr-1 ml-1 btn btn-outline-alternate btn-sm d-none">Políticas de pago</a>
+                <a data-toggle="tab" href="#tab-eg2-8"
+                   class="btn-pill btn-wide mr-1 ml-1 btn btn-outline-alternate btn-sm d-none">Declaración de consentimiento</a>
+                <a data-toggle="tab" href="#tab-eg2-9"
+                   class="btn-pill btn-wide mr-1 ml-1 btn btn-outline-alternate btn-sm d-none">Datos de pago</a>
+                <a data-toggle="tab" href="#tab-eg2-6"
+                   class="btn-pill btn-wide mr-1 ml-1 btn btn-outline-alternate btn-sm d-none">Neurológicos</a>
+                <a data-toggle="tab" href="#tab-historial-membresia"
+                   class="btn-pill btn-wide mr-1 ml-1 btn btn-outline-alternate btn-sm d-none">Historial de membresia</a>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="tab-content">
+            <div class="tab-pane active" id="tab-eg2-0" role="tabpanel">
+                <div class="main-card mb-3 card col-md-12">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Datos personales</b></h5>
+                                <hr>
+                            </div>
+                            <div class="col-md-4">
+                                <b>Fecha de registro</b><br />
+                                @{
+                                    var fechaRegistro = Model.FechaRegistro == null ? "" : Convert.ToDateTime(Model.FechaRegistro).ToString("yyyy-MM-dd");
+                                }
+                                @fechaRegistro
+                            </div>
+                            <div class="col-md-4">
+                                <div class="position-relative form-group">
+                                    <b>Nombre completo del paciente</b><br />
+                                    @Model.Nombre
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="position-relative form-group">
+                                    <b>Alias del paciente</b><br />
+                                    @Model.Alias
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="position-relative form-group">
+                                    <b>Sexo</b><br />
+                                    @Model.sexoText
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="position-relative form-group">
+                                    <b>Fecha de nacimiento</b><br />
+                                    @fechaNacimiento
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="position-relative form-group">
+                                    <b>Edad</b><br />
+                                    @Model.Edad
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="position-relative form-group">
+                                    <b>Tipo de sangre</b><br />
+                                    @Model.TipoDeSangre
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <b>Teléfono</b><br />
+                                @Model.Telefono
+                            </div>
+                            <div class="col-md-4">
+                                <b>Celular</b><br />
+                                @Model.Celular
+                            </div>
+                            <div class="col-md-4">
+                                <b>Email</b><br />
+                                @Model.Email
+                            </div>
+                            <div class="col-md-4">
+                                <b>Contraseña</b><br />
+                                @Model.Contrasennia
+                            </div>
+                            <div class="col-md-4">
+                                <b>NIT</b><br />
+                                @Model.Nit
+                            </div>
+                            <div class="col-md-4">
+                                <b>DPI</b><br />
+                                @Model.Dpi
+                            </div>
+                            <div class="col-md-4">
+                                <b>Dirección</b><br />
+                                @Model.Direccion
+                            </div>
+                            <div class="col-md-4">
+                                <b>Número de afiliación</b><br />
+                                @Model.no_IGGS
+                            </div>
+                            <div class="col-md-4">
+                                <b>¿Está afiliado?</b><br />
+                                @{
+                                    var estaAfiliado = "Sí";
+                                    if (!(bool)Model.esta_Afiliado)
+                                    {
+                                        estaAfiliado = "No";
+                                    }
+                                }
+                                @estaAfiliado
+                            </div>
+                            <div class="col-md-4">
+                                <b>Seguro EPSS</b><br />
+                                @seguroEpss
+                            </div>
+                            <div class="col-md-4">
+                                <b>Código EPSS</b><br />
+                                @Model.CodigoEPS
+                            </div>
+                            <div class="col-md-4">
+                                <b>Religion</b><br />
+                                @religion
+                            </div>
+                            <div class="col-md-4">
+                                <b>Ocupación</b><br />
+                                @ocupacion
+                            </div>
+                            <div class="col-md-4">
+                                <b>Estado civil</b><br />
+                                @estadoCivil
+                            </div>
+                            <div class="col-md-4">
+                                <b>Contacto de emergencia</b><br />
+                                @contactoEmergencia
+                            </div>
+                            <div class="col-md-4">
+                                <b>Número de contacto de emergencia</b><br />
+                                @numeroContactoEmergencia
+                            </div>
+                            <div class="col-md-4">
+                                <b>Nombre del contacto de emergencia</b><br />
+                                @nombreContactoEmergencia
+                            </div>
+                            <div class="col-md-4">
+                                <b>Nacionalidad</b><br />
+                                @nacionalidad
+                            </div>
+                            <div class="col-md-4">
+                                <b>País de residencia</b><br />
+                                @paisResidencia
+                            </div>
+                            <div class="col-md-4">
+                                <b>Departamento de residencia</b><br />
+                                @departamentoResidencia
+                            </div>
+                            <div class="col-md-4">
+                                <b>Municipio de residencia</b><br />
+                                @municipioResidencia
+                            </div>
+
+                            <div class="col-md-4">
+                                <b>Tipo de paciente</b><br />
+                                @{
+                                    var tipoPaciente = Model.TipoPaciente == null ? "-" : Model.TipoPaciente.NombreTipo;
+                                }
+                                @tipoPaciente
+                            </div>
+                            <div class="col-md-4">
+                                <b>Modalidad de atención</b><br />
+                                @{
+                                    var modalidadAtencion = "Presencial";
+                                    if (Model.ModalidadAtencion == "virtual")
+                                    {
+                                        modalidadAtencion = "Virtual";
+                                    }
+                                }
+                                @modalidadAtencion
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="main-card mb-3 card col-md-12">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Fotografía del paciente</b></h5>
+                                <hr>
+                            </div>
+                            @if (Model.UrlFotografiaPaciente == null
+                            || Model.UrlFotografiaPaciente.Trim() == "")
+                            {
+                                <div class="col-md-11">
+                                    <input type="file" class="form-control" id="fotografia-paciente" />
+                                    <input type="hidden" id="base-64-fotografia">
+                                </div>
+                                <div class="col-md-1">
+                                    <button class="btn btn-primary" data-bind="click:subirFotografiaPaciente">Subir</button>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="col-md-12">
+                                    <img src="@Model.UrlFotografiaPaciente" width="300" />
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="main-card mb-3 card col-md-12">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Beneficiarios EPSS</b></h5>
+                                <hr>
+                            </div>
+                            <div class="col-md-12">
+                                <br>
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        @if (Model.PersonasSeguro == null || Model.PersonasSeguro.Count == 0)
+                                        {
+                                            <thead>
+                                                <tr>
+                                                    <th>No hay beneficiarios registrados</th>
+                                                </tr>
+                                            </thead>
+                                        }
+                                        else
+                                        {
+                                            <thead>
+                                                <tr>
+                                                    <th>Tipo</th>
+                                                    <th>Nit</th>
+                                                    <th>Nombres</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var beneficiario in Model.PersonasSeguro)
+                                                {
+                                                    <tr>
+                                                        <td>@beneficiario.Tipo</td>
+                                                        <td>@beneficiario.Nit</td>
+                                                        <td>@beneficiario.Name</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        }
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="main-card mb-3 card col-md-12">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Datos de IGSS</b></h5>
+                                <hr>
+                            </div>
+                            <div class="col-md-3">
+                                <b>Tipo de afiliación</b><br />
+                                @igssTipoAfiliacion
+                            </div>
+                            <div class="col-md-3">
+                                <b>Número de afiliación</b><br />
+                                @igssNumeroAfiliacion
+                            </div>
+                            <div class="col-md-3">
+                                <b>Cantidad de dependientes</b><br />
+                                @igssCantidadDependientes
+                            </div>
+                            <div class="col-md-3">
+                                <b>Parentesco de dependientes</b><br />
+                                @igssParentescoDependientes
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="main-card mb-3 card col-md-12">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Información de nacimiento</b></h5>
+                                <hr>
+                            </div>
+                            <div class="col-md-3">
+                                <b>PAN (Peso al nacer)</b><br />
+                                @pesoAlNacer
+                            </div>
+                            <div class="col-md-3">
+                                <b>Talla (estatura del niño)</b><br />
+                                @talla
+                            </div>
+                            <div class="col-md-3">
+                                <b>Circunferencia cefálica (CC)</b><br />
+                                @circunferenciaCefalica
+                            </div>
+                            <div class="col-md-3">
+                                <b>Tipo de parto</b><br />
+                                @tipoParto
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="main-card mb-3 card col-md-12">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Archivos</b></h5>
+                                <hr>
+                            </div>
+                            <div class="col-md-4">
+                                <input placeholder="Nombre de archivo" type="text"
+                                       class="form-control" data-bind="value:nombreNuevoArchivo" />
+                            </div>
+                            <div class="col-md-7">
+                                <input type="file" class="form-control" id="nuevo-archivo" />
+                                <input type="hidden" id="base-64-nuevo-archivo" />
+                            </div>
+                            <div class="col-md-1">
+                                <button class="btn btn-primary" data-bind="click:subirArchivoPaciente">Subir</button>
+                            </div>
+                            <div class="col-md-12">
+                                <table class="table table-hover">
+                                    @if (Model.PacienteArchivos == null || Model.PacienteArchivos.Count == 0)
+                                    {
+                                        <thead>
+                                            <tr>
+                                                <th>No hay archivos subidos</th>
+                                            </tr>
+                                        </thead>
+                                    }
+                                    else
+                                    {
+                                        <thead>
+                                            <tr>
+                                                <th>Nombre</th>
+                                                <th>Ruta</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        foreach (var archivo in Model.PacienteArchivos)
+                                        {
+                                            <tbody>
+                                                <tr>
+                                                    <td>@archivo.NombreArchivo</td>
+                                                    <td>@archivo.UrlArchivo</td>
+                                                    <td>
+                                                        <a download href="@archivo.UrlArchivo" target="_blank"
+                                                   class="btn btn-primary text-light">Descargar</a>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        }
+                                    }
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="main-card mb-3 card col-md-12">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Firma</b></h5>
+                                <hr>
+                            </div>
+                            @if (Model.UrlFirmaRegistro == null || Model.UrlFirmaRegistro.Trim() == "")
+                            {
+                                <div class="col-md-11">
+                                    No hay firma de registro
+                                </div>
+                                <div class="col-md-1">
+                                    <button class="btn btn-primary" data-bind="click:abrirModalAgregarFirmaRegistro">Agregar firma</button>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="col-md-12">
+                                    <img src="@Model.UrlFirmaRegistro" width="300" />
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane" id="tab-eg2-1" role="tabpanel">
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Antecedentes familiares</b></h5>
+                                <hr>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center">Antecedente</th>
+                                                <th class="text-center">Madre</th>
+                                                <th class="text-center">Abuela</th>
+                                                <th class="text-center">Abuelo</th>
+                                                <th class="text-center">Otros</th>
+                                                <th class="text-center">Padre</th>
+                                                <th class="text-center">Abuela</th>
+                                                <th class="text-center">Abuelo</th>
+                                                <th class="text-center">Hermanos</th>
+                                                <th class="text-center">Otros</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var antecedenteFamiliar in Model.PatologiasPaciente)
+                                            {
+                                                <tr>
+                                                    <td>@antecedenteFamiliar.TipoPatologia.Tipo</td>
+                                                    <td>
+                                                        @if (antecedenteFamiliar.Madre)
+                                                        {
+                                                            <label class="badge badge-success">Si</label>
+                                                        }
+                                                        else
+                                                        {
+                                                            <label class="badge badge-danger">No</label>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        @if (antecedenteFamiliar.AbuelaMaterna)
+                                                        {
+                                                            <label class="badge badge-success">Si</label>
+                                                        }
+                                                        else
+                                                        {
+                                                            <label class="badge badge-danger">No</label>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        @if (antecedenteFamiliar.AbueloMaterno)
+                                                        {
+                                                            <label class="badge badge-success">Si</label>
+                                                        }
+                                                        else
+                                                        {
+                                                            <label class="badge badge-danger">No</label>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        @if (antecedenteFamiliar.OtrosMaterno)
+                                                        {
+                                                            <label class="badge badge-success">Si</label>
+                                                        }
+                                                        else
+                                                        {
+                                                            <label class="badge badge-danger">No</label>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        @if (antecedenteFamiliar.Padre)
+                                                        {
+                                                            <label class="badge badge-success">Si</label>
+                                                        }
+                                                        else
+                                                        {
+                                                            <label class="badge badge-danger">No</label>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        @if (antecedenteFamiliar.AbuelaPaterna)
+                                                        {
+                                                            <label class="badge badge-success">Si</label>
+                                                        }
+                                                        else
+                                                        {
+                                                            <label class="badge badge-danger">No</label>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        @if (antecedenteFamiliar.AbueloPaterno)
+                                                        {
+                                                            <label class="badge badge-success">Si</label>
+                                                        }
+                                                        else
+                                                        {
+                                                            <label class="badge badge-danger">No</label>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        @if (antecedenteFamiliar.Hermanos)
+                                                        {
+                                                            <label class="badge badge-success">Si</label>
+                                                        }
+                                                        else
+                                                        {
+                                                            <label class="badge badge-danger">No</label>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        @if (antecedenteFamiliar.OtrosPaterno)
+                                                        {
+                                                            <label class="badge badge-success">Si</label>
+                                                        }
+                                                        else
+                                                        {
+                                                            <label class="badge badge-danger">No</label>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        @antecedenteFamiliar.DescripcionOtraPatologia
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Antecedentes personales y patológicos</b></h5>
+                                <hr>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Nombre</th>
+                                                <th>Presentó el antecedente</th>
+                                                <th>Fecha</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @if (Model.PacientesAntecedentesPersonales == null || Model.PacientesAntecedentesPersonales.Count == 0)
+                                            {
+                                                <tr>
+                                                    <td colspan="3">No hay antecedentes registrados</td>
+                                                </tr>
+                                            }
+                                            else
+                                            {
+                                                @foreach (var antecedente in Model.PacientesAntecedentesPersonales)
+                                                {
+                                                    var presentoAntecedente = @antecedente.PresentoAntecedente ? "Sí" : "No";
+                                                    var fechaAntecedente = antecedente.FechaAntecedente == null ? "-"
+                                                    : Convert.ToDateTime(antecedente.FechaAntecedente).ToString("yyyy/MM/dd");
+                                                    <tr>
+                                                        <td>@antecedente.AntecedentePersonal.NombreAntecedente</td>
+                                                        <td>@presentoAntecedente</td>
+                                                        <td>@fechaAntecedente</td>
+                                                    </tr>
+                                                }
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <b>Observaciones</b><br />
+                                @antPersonalesObservaciones
+                            </div>
+                            <div class="col-md-6">
+                                <b>Otros</b><br />
+                                @antPersonalesOtros
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Otras preguntas</b></h5>
+                                <hr>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Pregunta</th>
+                                                <th>Respuesta</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @if (Model.PacientesPreguntasRegistro == null || Model.PacientesPreguntasRegistro.Count() == 0)
+                                            {
+                                                <tr>
+                                                    <td colspan="2">No hay preguntas registradas</td>
+                                                </tr>
+                                            }
+                                            else
+                                            {
+                                                @foreach (var pregunta in Model.PacientesPreguntasRegistro)
+                                                {
+                                                    <tr>
+                                                        <td>@pregunta.PreguntaRegistro.Pregunta</td>
+                                                        <td>@pregunta.Respuesta</td>
+                                                    </tr>
+                                                }
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <div class="position-relative form-group">
+                                    <h5><b>Alergias</b></h5>
+                                    <hr>
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <tr>
+                                            <td><b>Anestesia local</b></td>
+                                            <td>
+                                                @switch (@Model.AlergiaAnestesiaLocal)
+                                                {
+                                                    case "si":
+                                                        <label class="badge badge-success">Si</label>
+                                                        break;
+                                                    case "no":
+                                                        <label class="badge badge-danger">No</label>
+                                                        break;
+                                                    case "ns":
+                                                        <label class="badge badge-warning">N/S</label>
+                                                        break;
+                                                    default:
+                                                        <label class="badge badge-warning">-</label>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td><b>Aspirina</b></td>
+                                            <td>
+                                                @switch (@Model.AlergiaAspirina)
+                                                {
+                                                    case "si":
+                                                        <label class="badge badge-success">Si</label>
+                                                        break;
+                                                    case "no":
+                                                        <label class="badge badge-danger">No</label>
+                                                        break;
+                                                    case "ns":
+                                                        <label class="badge badge-warning">N/S</label>
+                                                        break;
+                                                    default:
+                                                        <label class="badge badge-warning">-</label>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td><b>Penicilina u otros antibióticos</b></td>
+                                            <td>
+                                                @switch (@Model.AlergiaPenicilina)
+                                                {
+                                                    case "si":
+                                                        <label class="badge badge-success">Si</label>
+                                                        break;
+                                                    case "no":
+                                                        <label class="badge badge-danger">No</label>
+                                                        break;
+                                                    case "ns":
+                                                        <label class="badge badge-warning">N/S</label>
+                                                        break;
+                                                    default:
+                                                        <label class="badge badge-warning">-</label>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td><b>Barbitúricos o pastillas para dormir</b></td>
+                                            <td>
+                                                @switch (@Model.AlergiaBarbiturios)
+                                                {
+                                                    case "si":
+                                                        <label class="badge badge-success">Si</label>
+                                                        break;
+                                                    case "no":
+                                                        <label class="badge badge-danger">No</label>
+                                                        break;
+                                                    case "ns":
+                                                        <label class="badge badge-warning">N/S</label>
+                                                        break;
+                                                    default:
+                                                        <label class="badge badge-warning">-</label>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td><b>Sulfas</b></td>
+                                            <td>
+                                                @switch (@Model.AlergiaSulfas)
+                                                {
+                                                    case "si":
+                                                        <label class="badge badge-success">Si</label>
+                                                        break;
+                                                    case "no":
+                                                        <label class="badge badge-danger">No</label>
+                                                        break;
+                                                    case "ns":
+                                                        <label class="badge badge-warning">N/S</label>
+                                                        break;
+                                                    default:
+                                                        <label class="badge badge-warning">-</label>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td><b>Codeína u otros narcóticos</b></td>
+                                            <td>
+                                                @switch (@Model.AlergiaCodeina)
+                                                {
+                                                    case "si":
+                                                        <label class="badge badge-success">Si</label>
+                                                        break;
+                                                    case "no":
+                                                        <label class="badge badge-danger">No</label>
+                                                        break;
+                                                    case "ns":
+                                                        <label class="badge badge-warning">N/S</label>
+                                                        break;
+                                                    default:
+                                                        <label class="badge badge-warning">-</label>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td><b>Metales</b></td>
+                                            <td>
+                                                @switch (@Model.AlergiaMetales)
+                                                {
+                                                    case "si":
+                                                        <label class="badge badge-success">Si</label>
+                                                        break;
+                                                    case "no":
+                                                        <label class="badge badge-danger">No</label>
+                                                        break;
+                                                    case "ns":
+                                                        <label class="badge badge-warning">N/S</label>
+                                                        break;
+                                                    default:
+                                                        <label class="badge badge-warning">-</label>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td><b>Latex (goma)</b></td>
+                                            <td>
+                                                @switch (@Model.AlergiaLatex)
+                                                {
+                                                    case "si":
+                                                        <label class="badge badge-success">Si</label>
+                                                        break;
+                                                    case "no":
+                                                        <label class="badge badge-danger">No</label>
+                                                        break;
+                                                    case "ns":
+                                                        <label class="badge badge-warning">N/S</label>
+                                                        break;
+                                                    default:
+                                                        <label class="badge badge-warning">-</label>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td><b>Yodo</b></td>
+                                            <td>
+                                                @switch (@Model.AlergiaYodo)
+                                                {
+                                                    case "si":
+                                                        <label class="badge badge-success">Si</label>
+                                                        break;
+                                                    case "no":
+                                                        <label class="badge badge-danger">No</label>
+                                                        break;
+                                                    case "ns":
+                                                        <label class="badge badge-warning">N/S</label>
+                                                        break;
+                                                    default:
+                                                        <label class="badge badge-warning">-</label>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td><b>Polen</b></td>
+                                            <td>
+                                                @switch (@Model.AlergiaPolen)
+                                                {
+                                                    case "si":
+                                                        <label class="badge badge-success">Si</label>
+                                                        break;
+                                                    case "no":
+                                                        <label class="badge badge-danger">No</label>
+                                                        break;
+                                                    case "ns":
+                                                        <label class="badge badge-warning">N/S</label>
+                                                        break;
+                                                    default:
+                                                        <label class="badge badge-warning">-</label>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td><b>Animales</b></td>
+                                            <td>
+                                                @switch (@Model.AlergiaAnimales)
+                                                {
+                                                    case "si":
+                                                        <label class="badge badge-success">Si</label>
+                                                        break;
+                                                    case "no":
+                                                        <label class="badge badge-danger">No</label>
+                                                        break;
+                                                    case "ns":
+                                                        <label class="badge badge-warning">N/S</label>
+                                                        break;
+                                                    default:
+                                                        <label class="badge badge-warning">-</label>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td><b>Alimentos</b></td>
+                                            <td>
+                                                @switch (@Model.AlergiaAlimentos)
+                                                {
+                                                    case "si":
+                                                        <label class="badge badge-success">Si</label>
+                                                        break;
+                                                    case "no":
+                                                        <label class="badge badge-danger">No</label>
+                                                        break;
+                                                    case "ns":
+                                                        <label class="badge badge-warning">N/S</label>
+                                                        break;
+                                                    default:
+                                                        <label class="badge badge-warning">-</label>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td><b>Otros</b></td>
+                                            <td>
+                                                @switch (@Model.AlergiaOtros)
+                                                {
+                                                    case "si":
+                                                        <label class="badge badge-success">Si</label>
+                                                        break;
+                                                    case "no":
+                                                        <label class="badge badge-danger">No</label>
+                                                        break;
+                                                    case "ns":
+                                                        <label class="badge badge-warning">N/S</label>
+                                                        break;
+                                                    default:
+                                                        <label class="badge badge-warning">-</label>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td><i>@Model.AlergiaOtrosDescripcion</i></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Información médica</b></h5>
+                                <hr>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th></th>
+                                                <th></th>
+                                                <th></th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><b>Usa lentes de contacto</b></td>
+                                                <td>@Model.MedicaUsaLentesContacto</td>
+                                                <td>Descripción: <i>@Model.MedicaUsaLentesContactoDescripcion</i></td>
+                                                <td></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Articulaciones artificiales</b></td>
+                                                <td>@Model.MedicaArticulacionesArtificiales</td>
+                                                <td>Fecha: <i>@Model.MedicaArticulacionesArtificialesFecha</i></td>
+                                                <td>¿Ha tenido complicaciones? <i>@Model.MedicaArticulacionesArtificialesComplicaciones</i></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>¿Ha tomado o toma actualmente alendronato, risedronato?</b></td>
+                                                <td>@Model.MedicaTomaAlendronato</td>
+                                                <td></td>
+                                                <td>Fecha: @Model.MedicaTomaAlendronatoFecha</td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Tratamiento por dolor de huesos, hipercalcemia o alteraciones esqueléticas</b></td>
+                                                <td>@Model.MedicaTratamientoDolorHuesos</td>
+                                                <td>Fecha de inicio del tratamiento: @Model.MedicaTratamientoDolorHuesosFechaInicio</td>
+                                                <td>Describa su caso: @Model.MedicaTratamientoDolorHuesosDescripcionCaso</td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Sustancias reguladoras de drogas</b></td>
+                                                <td>@Model.MedicaSustanciasReguladorasDrogas</td>
+                                                <td>Fecha: @Model.MedicaSustanciasReguladorasDrogasFecha</td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>¿Usa tabaco?</b></td>
+                                                <td>@Model.MedicaUsaTabaco</td>
+                                                <td></td>
+                                                <td></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Bebidas alcohólicas</b></td>
+                                                <td>@Model.MedicaBebidasAlcoholicas</td>
+                                                <td></td>
+                                                <td>Descríbalo: @Model.MedicaBebidasAlcoholicasDescripcion</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Información dental</b></h5>
+                                <hr />
+                            </div>
+                            <div class="col-md-12">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th></th>
+                                                <th></th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><b>Sangrado al cepillar</b></td>
+                                                <td>@Model.DentalSangradoCepillar</td>
+                                                <td></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Dolor con frío, calor o dulces</b></td>
+                                                <td>@Model.DentalDolorFrio</td>
+                                                <td></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Dolor al presionar</b></td>
+                                                <td>@Model.DentalDolorPresionar</td>
+                                                <td></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Objetos atorados, alimentos o seda dental entre los dientes</b></td>
+                                                <td>@Model.DentalObjetosAtorados</td>
+                                                <td></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Boca seca</b></td>
+                                                <td>@Model.DentalBocaSeca</td>
+                                                <td></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Tratamiento periondal encía</b></td>
+                                                <td>@Model.DentalTratamientoPeriondal</td>
+                                                <td></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Tratamiento de ortodoncia con aparatos</b></td>
+                                                <td>@Model.DentalTratamientoOrtodoncia</td>
+                                                <td></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Problemas asociados a tratamiento dental</b></td>
+                                                <td>@Model.DentalProblemasTratamientoDental</td>
+                                                <td>Descríbalo: @Model.DentalProblemasTratamientoDentalDescripcion</td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>¿El agua del domicilio es fluorada?</b></td>
+                                                <td>@Model.DentalFluoradaAguaDomicilio</td>
+                                                <td></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>¿Bebe agua embotellada o filtrada?</b></td>
+                                                <td>@Model.DentalBebeAguaFiltrada</td>
+                                                <td></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Dolor de oídos o cuello</b></td>
+                                                <td>@Model.DentalDolorOidos</td>
+                                                <td></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Molestia ruido alto en mandíbula</b></td>
+                                                <td>@Model.DentalMolestiaRuidoAlto</td>
+                                                <td>Especifique: <i>@Model.DentalMolestiaRuidoAltoDescripcion</i></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Brumismo o hace rechinar dientes</b></td>
+                                                <td>@Model.DentalBrumismo</td>
+                                                <td></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Lesiones o ulceras en boca</b></td>
+                                                <td>@Model.DentalLesiones</td>
+                                                <td>Especifique: <i>@Model.DentalLesionesDescripcion</i></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>¿Usa dentaduras (placas) completas o parciales?</b></td>
+                                                <td>@Model.DentalDentaduraPlacas</td>
+                                                <td>Especifique: <i>@Model.DentalDentaduraPlacasDescripcion</i></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Actividades energicas de recreacion</b></td>
+                                                <td>@Model.DentalActividadesRecreacion</td>
+                                                <td>Especifique: <i>@Model.DentalActividadesRecreacionDescripcion</i></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Lesiones en cabeza o boca</b></td>
+                                                <td>@Model.DentalLesionesCabeza</td>
+                                                <td>Observaciones: <i>@Model.DentalLesionesCabezaDescripcion</i></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Análisis facial</b></h5>
+                                <hr />
+                            </div>
+                            <div class="col-md-12">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <tbody>
+                                            <tr>
+                                                <td><b>Patrón facial</b></td>
+                                                <td>
+                                                    @if (@Model.FacialPatron != null)
+                                                    {
+                                                        <label class="badge badge-success">@Model.FacialPatron</label>
+                                                    }
+                                                    else
+                                                    {
+                                                        <label class="badge badge-warning">-</label>
+                                                    }
+                                                </td>
+                                                <td>Observaciones: <i>@Model.FacialPatronObservaciones</i></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Perfil</b></td>
+                                                <td>
+                                                    @if (@Model.FacialPerfil != null)
+                                                    {
+                                                        <label class="badge badge-success">@Model.FacialPerfil</label>
+                                                    }
+                                                    else
+                                                    {
+                                                        <label class="badge badge-warning">-</label>
+                                                    }
+                                                </td>
+                                                <td>Observaciones: <i>@Model.FacialPerfilObservaciones</i></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Asimetría</b></td>
+                                                <td>
+                                                    @if (@Model.FacialAsimetria != null)
+                                                    {
+                                                        <label class="badge badge-success">@Model.FacialAsimetria</label>
+                                                    }
+                                                    else
+                                                    {
+                                                        <label class="badge badge-warning">-</label>
+                                                    }
+                                                </td>
+                                                <td>Observaciones: <i>@Model.FacialAsimetriaObservaciones</i></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Altura facial equilibrada</b></td>
+                                                <td>
+                                                    @if (@Model.FacialAlturaFacialEquilibrada != null)
+                                                    {
+                                                        <label class="badge badge-success">@Model.FacialAlturaFacialEquilibrada</label>
+                                                    }
+                                                    else
+                                                    {
+                                                        <label class="badge badge-warning">-</label>
+                                                    }
+                                                </td>
+                                                <td>Observaciones: <i>@Model.FacialAlturaFacialEquilibradaObservaciones</i></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Ancho facial equilibrada</b></td>
+                                                <td>
+                                                    @if (@Model.FacialAnchoFacialEquilibrada != null)
+                                                    {
+                                                        <label class="badge badge-success">@Model.FacialAnchoFacialEquilibrada</label>
+                                                    }
+                                                    else
+                                                    {
+                                                        <label class="badge badge-warning">-</label>
+                                                    }
+                                                </td>
+                                                <td>Observaciones: <i>@Model.FacialAnchoFacialEquilibradaObservaciones</i></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Perfil maxilar</b></td>
+                                                <td>
+                                                    @if (@Model.FacialPerfilMaxilar != null)
+                                                    {
+                                                        <label class="badge badge-success">@Model.FacialPerfilMaxilar</label>
+                                                    }
+                                                    else
+                                                    {
+                                                        <label class="badge badge-warning">-</label>
+                                                    }
+                                                </td>
+                                                <td>Observaciones: <i>@Model.FacialPerfilMaxilarObservaciones</i></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Perfil mandibular</b></td>
+                                                <td>
+                                                    @if (@Model.FacialPerfilMandibular != null)
+                                                    {
+                                                        <label class="badge badge-success">@Model.FacialPerfilMandibular</label>
+                                                    }
+                                                    else
+                                                    {
+                                                        <label class="badge badge-warning">-</label>
+                                                    }
+                                                </td>
+                                                <td>Observaciones: <i>@Model.FacialPerfilMandibularObservaciones</i></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Surco labial mentón</b></td>
+                                                <td>
+                                                    @if (@Model.FacialSurcoLabialMenton != null)
+                                                    {
+                                                        <label class="badge badge-success">@Model.FacialSurcoLabialMenton</label>
+                                                    }
+                                                    else
+                                                    {
+                                                        <label class="badge badge-warning">-</label>
+                                                    }
+                                                </td>
+                                                <td>Observaciones: <i>@Model.FacialSurcoLabialMentonObservaciones</i></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Labios en reposo</b></td>
+                                                <td>
+                                                    @if (@Model.FacialLabiosReposo != null)
+                                                    {
+                                                        <label class="badge badge-success">@Model.FacialLabiosReposo</label>
+                                                    }
+                                                    else
+                                                    {
+                                                        <label class="badge badge-warning">-</label>
+                                                    }
+                                                </td>
+                                                <td></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Análisis funcional</b></h5>
+                                <hr />
+                            </div>
+                            <div class="col-md-12">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <tbody>
+                                            <tr>
+                                                <td><b>Actividad comisurial</b></td>
+                                                <td>@Model.DentalBocaSeca</td>
+                                                <td></td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Actividad lingual</b></td>
+                                                <td>@Model.FuncionalActividadLingual</td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Labio superior</b></td>
+                                                <td>@Model.FuncionalLabioSuperior</td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Labio inferior</b></td>
+                                                <td>@Model.FuncionalLabioInferior</td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Masetero</b></td>
+                                                <td>@Model.FuncionalMasetero</td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Mentoniano</b></td>
+                                                <td>@Model.FuncionalMentoniano</td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Respiración</b></td>
+                                                <td>@Model.FuncionalRespiracion</td>
+                                            </tr>
+                                            <tr>
+                                                <td><b>Deglución</b></td>
+                                                <td>@Model.FuncionalDeglucion</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Patrón facial</b></h5>
+                                <hr />
+                            </div>
+                            <div class="col-md-12">
+                                <b>Patrón facial:</b> @Model.PatronFacial<br />
+                                <b>Característica patrón facial:</b> @Model.CaracteristicaPatronFacial
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane" id="tab-eg2-2" role="tabpanel">
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Antecedentes</b></h5>
+                                <hr />
+                            </div>
+                            <div class="col-md-6">
+                                <b>Médicos</b><br />
+                                @antMedicos
+                            </div>
+                            <div class="col-md-6">
+                                <b>Quirúrgicos</b><br />
+                                @antQuirurgicos
+                            </div>
+                            <div class="col-md-6">
+                                <b>Traumáticos</b><br />
+                                @antTraumaticos
+                            </div>
+                            <div class="col-md-6">
+                                <b>Alergias</b><br />
+                                @antAlergias
+                            </div>
+                            <div class="col-md-6">
+                                <b>Farmacodependencias</b><br />
+                                @antFarmacoDependencias
+                            </div>
+                            <div class="col-md-6">
+                                <b>Medicamentos</b><br />
+                                @antMedicamentos
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane" id="tab-eg2-3" role="tabpanel">
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Historia médica</b></h5>
+                                <hr />
+                            </div>
+                            <div class="col-md-4">
+                                <div class="position-relative form-group">
+                                    <label>Nombre de médico personal</label>
+                                    @Html.TextBoxFor(m => m.HistoriaMedicoPersonal, new { @class = "form-control" })
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="position-relative form-group">
+                                    <label>Teléfono de médico personal</label>
+                                    @Html.TextBoxFor(m => m.HistoriaTelefonoMedico, new { @class = "form-control" })
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="position-relative form-group">
+                                    <label>Especialidad de médico personal</label>
+                                    @Html.TextBoxFor(m => m.HistoriaEspecialidadMedico, new { @class = "form-control" })
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label>¿Se encuentra bajo algún tratamiento médico?</label>
+                                <select asp-for="HistoriaTratamientoMedico" class="form-control">
+                                    <option value="false">No</option>
+                                    <option value="true">Sí</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label>¿Sangra mucho cuando se corta?</label>
+                                <select asp-for="HistoriaSangraMuchoCortarse" class="form-control">
+                                    <option value="false">No</option>
+                                    <option value="true">Sí</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="HistoriaHospitalizado">¿Ha sido hospitalizado(a) alguna vez?</label>
+                                <select asp-for="HistoriaHospitalizado" class="form-control">
+                                    <option value="false">No</option>
+                                    <option value="true">Sí</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="HistoriaOperado">¿Ha sido operado(a) alguna vez (incluyendo cirugías estéticas)?</label>
+                                <select asp-for="HistoriaOperado" class="form-control">
+                                    <option value="false">No</option>
+                                    <option value="true">Sí</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label>¿Ha experimentado alergia a la penicilina o alguna otra medicina?</label>
+                                <select asp-for="HistoriaAlergiaMedicina" class="form-control">
+                                    <option value="false">No</option>
+                                    <option value="true">Sí</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="HistoriaAlergiaComida">¿Ha experimentado alergia a comida, polen, animales, polvo, otros?</label>
+                                <select asp-for="HistoriaAlergiaComida" class="form-control">
+                                    <option value="false">No</option>
+                                    <option value="true">Sí</option>
+                                </select>
+                                @Html.TextBoxFor(m => m.HistoriaAlergiaOtros,
+                                new { @class = "form-control",@placeholder="¿Cuáles?" })
+                            </div>
+                            <div class="col-md-4">
+                                <label for="HistoriaProblemaEmocional">¿Tiene algún problema emocional?</label>
+                                <select asp-for="HistoriaProblemaEmocional" class="form-control">
+                                    <option value="false">No</option>
+                                    <option value="true">Sí</option>
+                                </select>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="position-relative form-group">
+                                    <label>Observaciones</label>
+                                    @Html.TextAreaFor(m => m.HistoriaObservaciones, new { @class = "form-control",@placeholder="Observaciones" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane" id="tab-eg2-4" role="tabpanel">
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-4">
+                                Nombre del padre<br>
+                                @Html.TextBoxFor(a => a.NombrePadre, new { @class = "form-control", @placeholder = "Nombre padre" })
+                                @Html.ValidationMessageFor(a => a.NombrePadre, "", new { @class = "text-danger" })
+                            </div>
+                            <div class="col-md-4">
+                                Nombre de la madre
+                                @Html.TextBoxFor(a => a.NombreMadre, new { @class = "form-control", @placeholder = "Nombre madre" })
+                                @Html.ValidationMessageFor(a => a.NombreMadre, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Información de la madre del paciente</b></h5>
+                                <hr />
+                            </div>
+                            <div class="col-md-4">
+                                <b>Fecha de nacimiento</b><br>
+                                @Model.MadreFechaNacimiento
+                            </div>
+                            <div class="col-md-4">
+                                <b>¿Cuántos embarazos ha tenido?</b><br>
+                                @Model.MadreEmbarazos
+                            </div>
+                            <div class="col-md-4">
+                                <b>¿Cuántos partos normales ha tenido?</b><br>
+                                @Model.MadrePartosNormales
+                            </div>
+                            <div class="col-md-4">
+                                ¿Cuántas cesareas ha tenido?<br>
+                                @Html.TextBoxFor(a => a.MadreCesareas, new { type = "number", @class = "form-control" })
+                                @Html.ValidationMessageFor(a => a.MadreCesareas, "", new { @class = "text-danger" })
+                            </div>
+                            <div class="col-md-4">
+                                ¿Cuántos abortos ha tenido?<br>
+                                @Html.TextBoxFor(a => a.MadreAbortos, new { type = "number", @class = "form-control" })
+                                @Html.ValidationMessageFor(a => a.MadreAbortos, "", new { @class = "text-danger" })
+                            </div>
+                            <div class="col-md-4">
+                                Hijos vivos (HV)<br>
+                                @Html.TextBoxFor(a => a.MadreHijosVivos, new { type = "number", @class = "form-control" })
+                                @Html.ValidationMessageFor(a => a.MadreHijosVivos, "", new { @class = "text-danger" })
+                            </div>
+                            <div class="col-md-4">
+                                Hijos muertos (HM)<br>
+                                @Html.TextBoxFor(a => a.MadreHijosMuertos, new { type = "number", @class = "form-control" })
+                                @Html.ValidationMessageFor(a => a.MadreHijosMuertos, "", new { @class = "text-danger" })
+                            </div>
+                            <div class="col-md-4">
+                                Complicaciones (opcional)
+                                @Html.TextBoxFor(a => a.MadreComplicaciones, new { @class = "form-control" })
+                                @Html.ValidationMessageFor(a => a.MadreComplicaciones, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="col-md-12">
+                                <h5><b>Vacunas</b></h5>
+                                <hr>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Vacuna</th>
+                                                <th>Primera</th>
+                                                <th>Segunda</th>
+                                                <th>Tercera</th>
+                                                <th>Primer refuerzo</th>
+                                                <th>Segundo refuerzo</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @if (Model.VacunasPaciente == null || Model.VacunasPaciente.Count() == 0)
+                                            {
+                                                <tr>
+                                                    <td colspan="6">No hay vacunas registradas</td>
+                                                </tr>
+                                            }
+                                            else
+                                            {
+                                                @foreach (var vacuna in Model.VacunasPaciente)
+                                                {
+                                                    <tr>
+                                                        <td>@vacuna.Vacuna.Nombre</td>
+                                                        <td>@vacuna.Primera<br />@vacuna.FechaPrimera</td>
+                                                        <td>@vacuna.Segunda<br />@vacuna.FechaSegunda</td>
+                                                        <td>@vacuna.Tercera<br />@vacuna.FechaTercera</td>
+                                                        <td>@vacuna.PrimerRefuerzo<br />@vacuna.FechaPrimerRefuerzo</td>
+                                                        <td>@vacuna.SegundoRefuerzo<br />@vacuna.FechaSegundoRefuerzo</td>
+                                                    </tr>
+                                                }
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane" id="tab-eg2-5" role="tabpanel">
+                <div class="form-row">
+                    @*<label class="font-weight-bold">GINECOLÓGICOS</label> &nbsp; &nbsp;*@
+                </div>
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <div class="form-row">
+                            @*Datos de la informacion Ginecologica*@
+                            <div class="col-md-12">
+                                <h5><b>Información Ginecologica del paciente</b></h5>
+                                <hr />
+                            </div>
+                            <div class="col-md-4">
+                                <b>Ciclo Ginecologico</b><br>
+                                @Model.CicloMenstGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>ETS</b><br>
+                                @Model.ETSGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>VIH</b><br>
+                                @Model.VIHGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Grupo Factor</b><br>
+                                @Model.GrupoFactorGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Torch</b><br>
+                                @Model.TorchGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Inicio de vida sexual</b><br>
+                                @Model.InicioVidaSexualGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Numero de Parejas Sexuales</b><br>
+                                @Model.ParejasSexGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Obesidad</b><br>
+                                @Model.ObesidadGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Desnutricion</b><br>
+                                @Model.DesnutricionGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Indice Q</b><br>
+                                @Model.QGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Indice P</b><br>
+                                @Model.PGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Indice AB Ginecologico</b><br>
+                                @Model.ABGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Indice C</b><br>
+                                @Model.CGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Fecha Ultima Regla</b><br>
+                                @Model.FURGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Muerte Neonatal</b><br>
+                                @Model.MuerteNeoGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>FPP</b><br>
+                                @Model.FPPGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>HVG</b><br>
+                                @Model.HVGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Muerte</b><br>
+                                @Model.MuerteGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Control Prenatal</b><br>
+                                @Model.ControlPrenatalGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Comadrona</b><br>
+                                @Model.ComadronaGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Numero de Controles</b><br>
+                                @Model.NoControlesGine
+                            </div>
+                            @*Fin campos informacion ginecologica*@
+
+                            @*Datos de la informacion Mamá*@
+                            <!--<div class="col-md-12">
+                                <h5><b>Información de la Mamá</b></h5>
+                                <hr />
+                            </div>
+                            <div class="col-md-4">
+                                <b>Uterio Gravio</b><br>
+                                @Model.UteroGravioGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Abdomen Obstetrico</b><br>
+                                @Model.AbdomenObstetricoGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>FCB</b><br>
+                                @Model.FCBGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>AU</b><br>
+                                @Model.AUGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Presentacion de Leopold</b><br>
+                                @Model.PresentacionLeopoldGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Otras</b><br>
+                                @Model.OtrasGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Actividad Uterina</b><br>
+                                @Model.ActividadUterinaGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Movimient oFetal Percetible </b><br>
+                                @Model.MovimientoFetalPercetibleGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Especifique</b><br>
+                                @Model.EspecifiqueGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Tacto Vaginal</b><br>
+                                @Model.TactoVaginalGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Indice D</b><br>
+                                @Model.DGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>cms</b><br>
+                                @Model.CMSGine
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <b>B%</b><br>
+                                @Model.BPorcientoGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Altiutud</b><br>
+                                @Model.AltiutudGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Variedad Posicion</b><br>
+                                @Model.VariedadPosicionGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Membranas Ovulares</b><br>
+                                @Model.MembranasOvularesGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Liquido Amniotico </b><br>
+                                @Model.LiquidoAmnioticoGine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Especifique</b><br>
+                                @Model.Especifique2Gine
+                            </div>
+                            <div class="col-md-4">
+                                <b>Pelvis</b><br>
+                                @Model.PelvisGine
+                            </div>-->
+                           
+                            @*Fin campos informacion ginecologica*@
+
+                        </div>
+                    </div>
+                </div>
+           </div>
+                <div class="tab-pane" id="tab-eg2-6" role="tabpanel">
+                    <div class="form-row">
+                        <label class="font-weight-bold">NEUROLÓGICOS</label> &nbsp; &nbsp;
+                    </div>
+                </div>
+                <div class="tab-pane" id="tab-eg2-7" role="tabpanel">
+                    <div class="form-row">
+                        <div class="col-md-12">
+                            <h5><b>Políticas de pago y cancelación del servicio</b></h5>
+                            <hr />
+                        </div>
+                        <div class="col-md-12">
+                            Lea con atención las políticas de pago y cancelación del servicio<br>
+                            <p>
+                                <i>
+                                    La fecha de inicio del tratamiento del paciente se tomará
+                                    como referencia de fechas de pago (fecha de registro).
+                                    Al no hacerse efectivo el abono mensual en la fecha correspondiente,
+                                    el paciente contará con un máximo de 5 días para recalendarizar
+                                    su cita y realizar el pago, evitando así el bloqueo para acceder
+                                    al sistema del perfil en internet, grabaciones y sesiones en vivo
+                                    del tratamiento.<br><br>
+                                    Si fuera necesario recalendarizar la cita previamente programada,
+                                    esta deberá hacerse con 24 horas de anticipación. De lo
+                                    contrario, se hará un recargo de Q200 a su abono mensual.
+                                </i><br><br>
+                                @{
+                                    var politicasPagoAceptaTerminos = true;
+                                    if (Model.PoliticasPagoAceptaTerminos == null || !(bool)Model.PoliticasPagoAceptaTerminos)
+                                    {
+                                        politicasPagoAceptaTerminos = false;
+                                    }
+                                }
+                                @Html.CheckBoxFor(p => politicasPagoAceptaTerminos, new { @disabled = "true" })
+                                <label for="PoliticasPagoAceptaTerminos">Acepto conocer y cumplir los términos del presente documento</label>
+                            </p>
+                        </div>
+                        <div class="main-card mb-3 card col-md-12">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-12">
+                                        <h5><b>Firma</b></h5>
+                                        <hr>
+                                    </div>
+                                    @if (Model.UrlFirmaPoliticas == null || Model.UrlFirmaPoliticas.Trim() == "")
+                                    {
+                                        <div class="col-md-11">
+                                            No hay firma registrada
+                                        </div>
+                                        <div class="col-md-1">
+                                            <button class="btn btn-primary" data-bind="click:abrirModalAgregarFirmaPoliticasPago">Agregar firma</button>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="col-md-12">
+                                            <img src="@Model.UrlFirmaPoliticas" width="300" />
+                                        </div>
+                                        <div class="col-md-1">
+                                            <button class="btn btn-primary" data-bind="click:abrirModalAgregarFirmaPoliticasPago">Cambiar firma</button>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="tab-eg2-8" role="tabpanel">
+                    <div class="form-row">
+                        <div class="col-md-12">
+                            <h5><b>Declaración de consentimiento</b></h5>
+                            <hr />
+                        </div>
+                        <div class="col-md-12">
+                            Por medio de la presente, en uso de mis facultades, declaro participar por voluntad propia
+                            del tratamiento integral de adelgazamiento PlusVida, conociendo en detalle las indicaciones del mismo,
+                            asumiendo la responsabilidad de su cumplimiento y desligando de toda responsabilidad
+                            a PlusVida y a su equipo profesional de cualquier incidencia que pudiera ocurrir.<br /><br />
+                            Declaro que toda la información aquí completada es verídica.<br />
+                        </div>
+                        <div class="main-card mb-3 card col-md-12">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-12">
+                                        <h5><b>Firma</b></h5>
+                                        <hr>
+                                    </div>
+                                    @if (Model.UrlFirmaConsentimiento == null || Model.UrlFirmaConsentimiento.Trim() == "")
+                                    {
+                                        <div class="col-md-11">
+                                            No hay firma registrada
+                                        </div>
+                                        <div class="col-md-1">
+                                            <button class="btn btn-primary"
+                                                    data-bind="click:abrirModalAgregarFirmaDeclaracionConsentimiento">
+                                                Agregar firma
+                                            </button>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="col-md-12">
+                                            <img src="@Model.UrlFirmaConsentimiento" width="300" />
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="tab-eg2-9" role="tabpanel">
+                    <div class="form-row">
+                        <div class="col-md-12">
+                            <h5><b>Tarjeta de crédito</b></h5>
+                            <hr />
+                        </div>
+                        <div class="col-md-12">
+                            <b>Número de tarjeta</b><br />
+                            @Html.TextBoxFor(p => p.NumeroTarjetaCredito, new { @class = "form-control", @readonly = "true", @type = "password" })
+                        </div>
+                        <div class="main-card mb-3 card col-md-12">
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-12">
+                                        <h5><b>Firma</b></h5>
+                                        <hr>
+                                    </div>
+                                    @if (Model.UrlFirmaTarjetaCredito == null || Model.UrlFirmaTarjetaCredito.Trim() == "")
+                                    {
+                                        <div class="col-md-11">
+                                            No hay firma registrada
+                                        </div>
+                                        <div class="col-md-1">
+                                            <button class="btn btn-primary"
+                                                    data-bind="click:abrirModalAgregarFirmaTarjetaCredito">
+                                                Agregar firma
+                                            </button>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="col-md-12">
+                                            <img src="@Model.UrlFirmaTarjetaCredito" width="300" />
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="tab-historial-membresia" role="tabpanel">
+                    <div class="form-row">
+                        <div class="col-md-12 table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Accion</th>
+                                        <th>Fecha de recontacto</th>
+                                        <th>Observaciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.PacienteHistorial != null && Model.PacienteHistorial.Count() > 0)
+                                    {
+                                        foreach (var historico in Model.PacienteHistorial)
+                                        {
+                                            string fechaRecontacto = "-";
+                                            if (historico.FechaContacto != null)
+                                            {
+                                                fechaRecontacto = ((DateTime)historico.FechaContacto)
+                                                .ToShortDateString();
+                                            }
+                                            <tr>
+                                                <td>@historico.Fecha</td>
+                                                <td>
+                                                    @(historico.AccionPaciente!=null
+                                        ?historico.AccionPaciente.NombreAccion
+                                        :"-")
+                                                </td>
+                                                <td>
+                                                    @fechaRecontacto
+                                                </td>
+                                                <td>
+                                                    @historico.MotivoRetiro
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td>
+                                                <i>No hay registros</i>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </div>
+</div>
+
+@section Modales{
+<div id="mdl-firma-registro" title="Firma de registro" style="display:none">
+    <div class="main-card mb-3 card col-md-12">
+        <div class="card-body">
+            <div class="form-row">
+                <div class="col-md-10">
+                    <h5><b>Firma</b></h5>
+                    <hr>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary" data-bind="click:subirFirmaRegistro">Guardar firma</button>
+                </div>
+                <div class="col-md-12">
+                    <canvas id="firma-registro" style="width: 900px;height: 300px;background-color: #ffffff;border: 1px solid black;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="mdl-firma-politicas-pago" title="Firma de políticas de pago" style="display:none">
+    <div class="main-card mb-3 card col-md-12">
+        <div class="card-body">
+            <div class="form-row">
+                <div class="col-md-10">
+                    <h5><b>Firma</b></h5>
+                    <hr>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary" data-bind="click:subirFirmaPoliticasPago">Guardar firma</button>
+                </div>
+                <div class="col-md-12">
+                    <canvas id="firma-politicas-pago" style="width: 900px;height: 300px;background-color: #ffffff;border: 1px solid black;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="mdl-firma-declaracion-consentimiento" title="Firma de declaración de consentimiento" style="display:none">
+    <div class="main-card mb-3 card col-md-12">
+        <div class="card-body">
+            <div class="form-row">
+                <div class="col-md-10">
+                    <h5><b>Firma</b></h5>
+                    <hr>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary" data-bind="click:subirFirmaDeclaracionConsentimiento">Guardar firma</button>
+                </div>
+                <div class="col-md-12">
+                    <canvas id="firma-declaracion-consentimiento" style="width: 900px;height: 300px;background-color: #ffffff;border: 1px solid black;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="mdl-firma-datos-pago" title="Firma de datos de pago" style="display:none">
+    <div class="main-card mb-3 card col-md-12">
+        <div class="card-body">
+            <div class="form-row">
+                <div class="col-md-10">
+                    <h5><b>Firma</b></h5>
+                    <hr>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary" data-bind="click:subirFirmaTarjetaCredito">Guardar firma</button>
+                </div>
+                <div class="col-md-12">
+                    <canvas id="firma-tarjeta-credito" style="width: 900px;height: 300px;background-color: #ffffff;border: 1px solid black;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+}
+
+@section Scripts{
+<script type="text/javascript" src="~/ViewModelKo/PacienteInformacionVM.js"></script>
+}

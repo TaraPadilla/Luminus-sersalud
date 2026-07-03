@@ -1,0 +1,231 @@
+@model sistema.Models.ConsultasViewModel
+
+<br />
+<div class="card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Evaluacion obstetrica</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-12">
+                <div class="form-row">
+                    @* <div class="col-md-3">
+                    <div class="position-relative form-group">
+                    <label class="">Abdomen Obstetrico</label>
+                    @Html.TextBoxFor(m => m.EvaluacionObstetricaAbdomenObstetrico, new { @placeholder = "Abdomen Obstetrico " })
+                    </div>
+                    </div> *@
+                    <div class="col-md-3">
+                        <div class="position-relative form-group">
+                            <b class="">Utero Gravido</b>
+                            <select asp-for="EvaluacionObstetricaUteroGravio" class="form-control dato-consulta">
+                                <option value="NO">NO</option>
+                                <option value="SI">SI</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="position-relative form-group">
+                            <b class="">FCF</b>
+                            @Html.TextBoxFor(a => a.EvaluacionObstetricaFcf, new { @class = "form-control dato-consulta", @placeholder = "FCF" })
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="position-relative form-group">
+                            <b class="">AU</b>
+                            @Html.TextBoxFor(a => a.EvaluacionObstetricaAu, new { @class = "form-control dato-consulta", @placeholder = " " })
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="position-relative form-group">
+                            <b class="">Presentaci&oacute;n por Leopold</b>
+                            <select asp-for="EvaluacionObstetricaPresentacionLeopold" class="form-control dato-consulta">
+                                <option value="CEFALICO">CEFALICO</option>
+                                <option value="PODIALICO">PODIALICO</option>
+                                <option value="TRANSVERSO">TRANSVERSO</option>
+                                <option value="OBLICUO">OBLICUO</option>
+                                @* <option value="Cicatriz">Cicatriz</option> *@
+                            </select>
+                        </div>
+                    </div>
+                    @*MANANTIALES no utiliza este campo*@
+                    @* <div class="col-md-3">
+                    <div class="position-relative form-group">
+                    <label class="">Otras</label>
+                    @Html.TextBoxFor(a => a.EvaluacionObstetricaOtras, new { @class = "form-control", @type = "text" })
+                    </div>
+                    </div> *@
+                    <div class="col-md-3">
+                        <div class="position-relative form-group">
+                            <b class="">Actividad Uterina </b>
+                            <select asp-for="EvaluacionObstetricaActividadUterina" class="form-control dato-consulta">
+                                <option value="No">No</option>
+                                <option value="Si">Si</option>
+                                <option value="Regular">Regular</option>
+                                <option value="Irregular">Irregular</option>
+                            </select>
+
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="position-relative form-group">
+                            <b class="">Movimiento Fetal</b>
+                            @Html.TextBoxFor(a => a.EvaluacionObstetricaMovimientoFetalPercetible, new { @class = "form-control dato-consulta", @placeholder = "" })
+                        </div>
+                    </div>
+                    @*MANANTIALES no utiliza este campo*@
+                    @*<div class="col-md-3">
+                    <div class="position-relative form-group">
+                    <label class="">Especifique </label>
+                    @Html.TextBoxFor(a => a.MovimientofetalEspecifique, new { @class = "form-control", @type = "text" })
+                    </div>
+                    </div>*@
+                    <div class="col-md-3">
+                        <div class="position-relative form-group">
+                            <b class="">Tacto Vaginal </b>
+                            @Html.TextBoxFor(a => a.EvaluacionObstetricaTactoVaginal, new { @class = "form-control dato-consulta", @placeholder = "" })
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="position-relative form-group">
+                            <b class="">D</b>
+                            @Html.TextBoxFor(a => a.EvaluacionObstetricaD, new { @class = "form-control dato-consulta", @placeholder = "" })
+                        </div>
+                    </div>
+
+                    @* <div class="col-md-3">
+                    <div class="position-relative form-group">
+                    <label class="">C</label>
+                    @Html.TextBoxFor(a => a.EvaluacionObstetricaCms, new { @class = "form-control", @placeholder = "" })
+                    </div>
+                    </div> *@
+                    <div class="col-md-3">
+                        <div class="position-relative form-group">
+                            <b class="">Consistencia</b>
+                            <select class="form-control dato-consulta" asp-for="EvaluacionObstetricaConsistencia">
+                                <option value="FIRME">FIRME</option>
+                                <option value="MEDIA">MEDIA</option>
+                                <option value="BLANDA">BLANDA</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="position-relative form-group">
+                            <b class="">B%</b>
+                            @Html.TextBoxFor(a => a.EvaluacionObstetricaBPorciento, new { @class = "form-control dato-consulta", @placeholder = " " })
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="position-relative form-group">
+                            <b class="">Altitud</b>
+                            <select asp-for="EvaluacionObstetricaAltitud" class="form-control dato-consulta">
+                                <option value="-3">-3</option>
+                                <option value="-2">-2</option>
+                                <option value="-1">-1</option>
+                                <option value="0">0</option>
+                                <option value="+1">+1</option>
+                                <option value="+2">+2</option>
+                                <option value="+3">+3</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="position-relative form-group">
+                            <b class="">Posici&oacute;n cervix</b>
+                            <select class="form-control dato-consulta" asp-for="EvaluacionObstetricaPosicionCervix">
+                                <option value="POSTERIOR">POSTERIOR</option>
+                                <option value="MEDIO">MEDIO</option>
+                                <option value="ANTERIOR">ANTERIOR</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="position-relative form-group">
+                            <b class="">Bishop</b>
+                            @Html.TextBoxFor(a => a.EvaluacionObstetricaBishop, new { @class = "form-control dato-consulta", @placeholder = " " })
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="position-relative form-group">
+                            <b class="">Membranas ovulares</b>
+                            <select asp-for="EvaluacionObstetricaMembranasOvulares" class="form-control dato-consulta">
+                                <option value="Enteras">Enteras</option>
+                                <option value="Rotas">Rotas</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="position-relative form-group">
+                            <b class="">Liquido Amniotico</b>
+                            <select class="form-control dato-consulta" asp-for="EvaluacionObstetricaLiquidoAmniotico">
+                                <option value="LIQUIDO CLARO">LIQUIDO CLARO</option>
+                                <option value="LIQUIDO CON MANCHAS DE MECONIO">LIQUIDO CON MANCHAS DE MECONIO</option>
+                                <option value="MECONIO ESPESO">MECONIO ESPESO</option>
+                                <option value="LIQUIDO CON MANCHAS DE SANGRE">LIQUIDO CON MANCHAS DE SANGRE</option>
+                            </select>
+
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="position-relative form-group">
+                            <b class="">Especifique</b>
+                            @Html.TextBoxFor(a => a.EvaluacionObstetricaLiquidoAmnioticoEspecifique, new
+                                {
+                                    @class = "form-control dato-consulta",
+                                    @placeholder = "Tiene Comadrona"
+                                })
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="position-relative form-group">
+                            <b class="">Pelvis</b>
+                            @Html.TextBoxFor(a => a.EvaluacionObstetricaPelvis, new { @class = "form-control dato-consulta", @type = "text" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br />
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Evaluacion obstetrica (historial)</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-12 text-primary texto-cargando-historial" style="display:none">
+                Cargando historial...
+            </div>
+            <div class="col-md-12 text-danger texto-error-cargando-historial" style="display:none">
+                Error de servidor y/o conexion. <a href="#" data-bind="click:consultarHistorialConsultas">Reintentar</a>
+            </div>
+            <!--ko foreach:historialConsultas-->
+            <div class="col-md-12" style="background-color:lightgray"><b>Fecha: </b><span data-bind="text:Fecha"></span></div>
+            <div class="col-md-2"><b>Utero gravio:</b><br /><span data-bind="text:EvaluacionObstetricaUteroGravio"></span></div>
+            <div class="col-md-2"><b>FCF:</b><br /><span data-bind="text:EvaluacionObstetricaFcf"></span></div>
+            <div class="col-md-2"><b>AU:</b><br /><span data-bind="text:EvaluacionObstetricaAu"></span></div>
+            <div class="col-md-2"><b>Presentacion por Leopold:</b><br /><span data-bind="text:EvaluacionObstetricaPresentacionLeopold"></span></div>
+            <div class="col-md-2"><b>Otras:</b><br /><span data-bind="text:EvaluacionObstetricaOtras"></span></div>
+            <div class="col-md-2"><b>Actividad uterina:</b><br /><span data-bind="text:EvaluacionObstetricaActividadUterina"></span></div>
+            <div class="col-md-2"><b>Movimiento Fetal Perceptible:</b><br /><span data-bind="text:EvaluacionObstetricaMovimientoFetalPercetible"></span></div>
+            <div class="col-md-2"><b>Especifique:</b><br /><span data-bind="text:EvaluacionObstetricaMovimientoFetalEspecifique"></span></div>
+            <div class="col-md-2"><b>Tacto vaginal:</b><br /><span data-bind="text:EvaluacionObstetricaTactoVaginal"></span></div>
+            <div class="col-md-2"><b>D:</b><br /><span data-bind="text:EvaluacionObstetricaD"></span></div>
+            <div class="col-md-2"><b>B%:</b><br /><span data-bind="text:EvaluacionObstetricaBPorciento"></span></div>
+            <div class="col-md-2"><b>Altitud:</b><br /><span data-bind="text:EvaluacionObstetricaAltitud"></span></div>
+            <div class="col-md-2"><b>Posici&oacute;n Cervix:</b><br /><span data-bind="text:EvaluacionObstetricaPosicionCervix"></span></div>
+            <div class="col-md-2"><b>Membranas ovulares:</b><br /><span data-bind="text:EvaluacionObstetricaMembranasOvulares"></span></div>
+            <div class="col-md-2"><b>Liquido amniotico:</b><br /><span data-bind="text:EvaluacionObstetricaLiquidoAmniotico"></span></div>
+            <div class="col-md-2"><b>Especifique:</b><br /><span data-bind="text:EvaluacionObstetricaLiquidoAmnioticoEspecifique"></span></div>
+            <div class="col-md-2"><b>Pelvis:</b><br /><span data-bind="text:EvaluacionObstetricaPelvis"></span></div>
+            <div class="col-md-2"><b>Consistencia:</b><br /><span data-bind="text:EvaluacionObstetricaConsistencia"></span></div>
+            <div class="col-md-2"><b>CMS:</b><br /><span data-bind="text:EvaluacionObstetricaCms"></span></div>
+            <!--/ko-->
+            <!--ko if:historialConsultas().length==0-->
+            <div class="col-md-12">
+                No hay registro de consultas anteriores
+            </div>
+            <!--/ko-->
+        </div>
+    </div>
+</div>

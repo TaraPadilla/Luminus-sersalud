@@ -1,0 +1,269 @@
+﻿@using sistema.Models
+@model InventarioProductoViewModel
+@Html.HiddenFor(p => p.Id)
+@Html.HiddenFor(p => p.CategoriaId)
+@Html.HiddenFor(p => p.MarcaId)
+@Html.HiddenFor(p => p.GrupoId)
+@Html.HiddenFor(p => p.PresentacionId)
+@Html.HiddenFor(p => p.ViadminId)
+@Html.HiddenFor(p => p.LaboratorioId)
+@Html.HiddenFor(p => p.TipoBodegaId)
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <h5><b>Datos del producto</b></h5>
+                        <hr />
+                    </div>
+                    <div class="col-md-12 form-row">
+                        <div class="col-md-6">
+                            <div>
+                                <label>Fecha de vencimiento</label>
+                                <input type="datetime-local" class="form-control" asp-for="FechaVencimiento" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div>
+                                <label>Stock</label>
+                                @Html.TextBoxFor(a => a.Stock, new
+                                    {
+                                        @class = "form-control",
+                                        @placeholder = "Stock",
+                                        @readonly="readonly"
+                                    })
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div>
+                                <label>Nombre comercial</label>
+                                @Html.TextBoxFor(a => a.Nombre, new 
+                                    { 
+                                      @class = "form-control",
+                                      @placeholder = "Nombre comercial",
+                                      @readonly = "readonly"
+                                    
+                                    })
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div>
+                                <label>Código de referencia</label>
+                                @Html.TextBoxFor(a => a.CodigoReferencia, new
+                                    {
+                                        @class = "form-control",
+                                        @placeholder = "Código de referencia",
+                                        @readonly = "readonly"
+                                    })
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 ">
+                            @*<label>Fecha de Vencimiento</label>
+                            <input type="date" class="form-control" asp-for="Nombre">*@
+                            @*@Html.TextBoxFor(a => a.Nombre, new {@class="form-control", @placeholder="Nombre comercial"})*@
+                        </div>
+                        <div class="col-md-6 ">
+                            <label></label>
+                            @*<input type="date" class="form-control" asp-for="Nombre">*@
+                            @*@Html.TextBoxFor(a => a.Nombre, new {@class="form-control", @placeholder="Nombre comercial"})*@
+                        </div>
+
+                    </div>
+
+                  
+
+                    <div class="col-md-12 form-row">
+                        <div class="col-md-6">
+                            <div class="col-md-12">
+                                <label>Categoría</label>
+                            </div>
+                            <div class="col-md-12">
+                                <select class="form-control" readonly disabled data-bind="options: categorias,
+                                                                        optionsText: 'NombreCategoria',
+                                                                        value: categoriaSeleccionada,
+                                                                         optionsCaption:'No tiene.'">
+                                </select>
+                            </div>
+
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="col-md-12">
+                                <label>Marca</label>
+                            </div>
+                            <div class="col-md-12">
+                                <select class="form-control" readonly disabled data-bind="options: marcas,
+                                                                        optionsText: 'NombreMarca',
+                                                                        value: marcaSeleccionada,
+                                                                         optionsCaption:'No tiene.'">
+                                </select>
+                            </div>
+
+                        </div>
+                        <div class="col-md-6 ">
+                            
+                        </div>
+                        <div class="col-md-6 ">
+                            <label></label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-12 form-row">
+                        <div class="col-md-6">
+                            <div class="col-md-12">
+                                <label>Grupo terapéutico</label>
+                            </div>
+                            <div class="col-md-12">
+                                <select class="form-control" readonly disabled data-bind="options: gruposT,
+                                                                        optionsText: 'NombreGrupoT',
+                                                                        value: grupoTSeleccionado,
+                                                                         optionsCaption:'No tiene.'">
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="col-md-12">
+                                <label>Presentación</label>
+                            </div>
+                            <div class="col-md-12">
+                                <select class="form-control" readonly disabled  data-bind="options: presentaciones,
+                                                                        optionsText: 'PresentProducto',
+                                                                        value: presentacionSeleccionada,
+                                                                         optionsCaption:'No tiene.'">
+                                </select>
+                            </div>
+
+                        </div>
+                        <div class="col-md-6 ">
+                            @*<label>Fecha de Vencimiento</label>
+                            <input type="date" class="form-control" asp-for="Nombre">*@
+                            @*@Html.TextBoxFor(a => a.Nombre, new {@class="form-control", @placeholder="Nombre comercial"})*@
+                        </div>
+                        <div class="col-md-6 ">
+                            <label></label>
+                            @*<input type="date" class="form-control" asp-for="Nombre">*@
+                            @*@Html.TextBoxFor(a => a.Nombre, new {@class="form-control", @placeholder="Nombre comercial"})*@
+                        </div>
+                    </div>
+                    <div class="col-md-12 form-row">
+
+                        <div class="col-md-6">
+                            <div class="col-md-12">
+                                <label>Vía de administración</label>
+                            </div>
+                            <div class="col-md-12">
+                                <select class="form-control" readonly disabled  data-bind="options: viasAdministracion,
+                                                                        optionsText: 'NombreViadmin',
+                                                                        value: viaAdministracionSeleccionada,
+                                                                         optionsCaption:'No tiene.'">
+                                </select>
+                            </div>
+                         
+                        </div>
+                        <div class="col-md-6">
+                            <div class="col-md-12">
+                                <label>Casa medica</label>
+                            </div>
+                            <div class="col-md-12">
+                                <select class="form-control" readonly disabled data-bind="options: laboratorios,
+                                                                        optionsText: 'NombreLaboratorioProducto',
+                                                                        value: laboratorioSeleccionado,
+                                                                         optionsCaption:'No tiene.'">
+                                </select>
+                            </div>
+                           
+                        </div>
+                    </div>
+                   
+                    <div class="col-md-12 mt-3">
+                        <label class="">Activo y concentración</label>
+                        @Html.TextBoxFor(a => a.ActivoConcentracion, new
+                            {
+                                @class = "form-control",
+                                @placeholder = "Activo y concentración",
+                                @readonly = "readonly"
+                            })
+                    </div>
+                    <div class="col-md-12 mt-3">
+                        <label class="">Imagen de referencia</label>
+                        @Html.TextBoxFor(a => a.UrlImagen, new
+                            {
+                                @class = "form-control",
+                                @placeholder = "Pegar link imagen...",
+                                @readonly = "readonly"
+                            })
+                    </div>
+                    <div class="col-md-12 mt-3">
+                        <label>Descripción</label>
+                        @Html.TextAreaFor(a => a.Descripcion, new
+                            {
+                                @class = "form-control ",
+                                @placeholder = "Descripción",
+                                @readonly = "readonly"
+                            })
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <h5><b>Tabla de equivalencias</b></h5>
+                        <hr />
+                    </div>
+                   
+                    <div class="col-md-12">
+                        <br />
+                        <table class="table-hover mb-0 table">
+                            <thead>
+                                <tr>
+                                    <th><b>Unidad de compra</b></th>
+                                    <th><b>Unidad de venta</b></th>
+                                    <th><b>Cantidad equivalente</b></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!--ko foreach: equivalenciasProducto-->
+                                <tr>
+                                    <td data-bind="text: UnidadMedidaCompraNombre"></td>
+                                    <td data-bind="text: UnidadMedidaVentaNombre"></td>
+                                    <td><input type="number" step=".01" class="form-control" data-bind="value: CantidadEquivalente" readonly /></td>
+                                   @*  <td><button class="btn btn-danger" data-bind="click: $root.quitarEquivale">Quitar</button></td> *@
+                                </tr>
+                                <!--/ko-->
+                                <!--ko if:equivalenciasProducto().length ==0-->
+                                <tr>
+                                    <td colspan="4">
+                                        <i>No hay equivalencias agregadas</i>
+                                    </td>
+                                </tr>
+                                <!--/ko-->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .unidad-compra.unidad-seleccionada,
+    .unidad-venta.unidad-seleccionada {
+        background-color: lightgray;
+    }
+
+    .unidad-compra,
+    .unidad-venta {
+        background-color: white;
+        border: 1px solid gray;
+        padding: 5px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+</style>

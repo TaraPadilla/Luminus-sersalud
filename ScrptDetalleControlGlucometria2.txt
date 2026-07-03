@@ -1,0 +1,19 @@
+CREATE TABLE IF NOT EXISTS "DetalleControlGlucometria2" (
+    "Id" SERIAL PRIMARY KEY,
+    "ControlGlucometria2Id" INT NOT NULL,
+    "Aplicado" BOOLEAN NOT NULL DEFAULT FALSE,
+    "FechaAplicacion" TIMESTAMP NULL,
+    "UserId" VARCHAR(100) NULL,
+    "Eliminado" BOOLEAN NOT NULL DEFAULT FALSE,
+    "ProfesionalId" VARCHAR(100) NULL,
+
+    -- Relaciones
+    CONSTRAINT "fk_controlglucometria2" FOREIGN KEY ("ControlGlucometria2Id")
+        REFERENCES "ControlGlucometria2" ("Id") ON DELETE CASCADE,
+
+    CONSTRAINT "fk_user" FOREIGN KEY ("UserId")
+        REFERENCES "AspNetUsers" ("Id") ON DELETE SET NULL,
+
+    CONSTRAINT "fk_profesional" FOREIGN KEY ("ProfesionalId")
+        REFERENCES "AspNetUsers" ("Id") ON DELETE SET NULL
+);

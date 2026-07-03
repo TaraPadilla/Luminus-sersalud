@@ -1,0 +1,497 @@
+@model farmamest.Models.EstadoCuentaViewModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Estado de Cuenta Hospitalario";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+
+    var honorariosValidos = Model.Honorarios
+        .Where(h => h.Medico != "Seleccione un médico" || h.Monto != 0.0m)
+        .ToList();
+}
+
+<style>
+    .report-container {
+        margin-top: 10px;
+        font-size: 12px;
+    }
+
+    .report-title {
+        text-align: center;
+        font-weight: bold;
+        font-size: 16px;
+        color: #0d0e36;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+
+    .report-subtitle {
+        text-align: center;
+        font-size: 12px;
+        margin-bottom: 12px;
+    }
+
+    .section-heading {
+        font-size: 13px;
+        font-weight: bold;
+        color: #0d0e36;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin: 10px 0 6px;
+        padding-left: 8px;
+        border-left: 3px solid #0d0e36;
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 12px;
+    }
+
+    .report-table th {
+        background-color: #eef2ff;
+        color: #0d0e36;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 11px;
+        text-align: left;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table td {
+        font-size: 12px;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+</style>
+
+<div class="report-container">
+    <!-- Título principal -->
+    <div class="report-title">
+        REPORTE - @ViewData["Title"]
+    </div>
+
+    <!-- Fecha y hora de emisión -->
+    <div class="report-subtitle">
+        <b>Fecha y hora de emisión:</b> @fecha.ToString("dd/MM/yyyy HH:mm")
+    </div>
+
+    <!-- Paciente -->
+    <div class="section-heading">Paciente</div>
+    <table class="report-table">
+        <tbody>
+            <tr>
+                <th>Nombre</th>
+                <td>@Model.Paciente.Nombre</td>
+            </tr>
+            <tr>
+                <th>Teléfono</th>
+                <td>@Model.Paciente.Telefono</td>
+            </tr>
+            <tr>
+                <th>Celular</th>
+                <td>@Model.Paciente.Celular</td>
+            </tr>
+            <tr>
+                <th>Dirección</th>
+                <td>@Model.Paciente.Direccion</td>
+            </tr>
+            <tr>
+                <th>Edad</th>
+                <td>@Model.Paciente.Edad</td>
+            </tr>
+            <tr>
+                <th>Sexo</th>
+                <td>@Model.Paciente.Sexo</td>
+            </tr>
+            <tr>
+                <th>NIT</th>
+                <td>@Model.Paciente.Nit</td>
+            </tr>
+            <tr>
+                <th>DPI</th>
+                <td>@Model.Paciente.Dpi</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Responsable -->
+    <div class="section-heading">Responsable</div>
+    <table class="report-table">
+        <tbody>
+            <tr>
+                <th>Nombre</th>
+                <td>@Model.Responsable.Nombre</td>
+            </tr>
+            <tr>
+                <th>NIT</th>
+                <td>@Model.Responsable.Nit</td>
+            </tr>
+            <tr>
+                <th>Dirección</th>
+                <td>@Model.Responsable.Direccion</td>
+            </tr>
+            <tr>
+                <th>Correo</th>
+                <td>@Model.Responsable.Correo</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Habitación -->
+    <div class="section-heading">Habitación</div>
+    <table class="report-table">
+        <tbody>
+            <tr>
+                <th>Número</th>
+                <td>@Model.Habitacion.Numero</td>
+            </tr>
+            <tr>
+                <th>Categoría</th>
+                <td>@Model.Habitacion.Categoria</td>
+            </tr>
+            <tr>
+                <th>Tarifa</th>
+                <td>@Model.Habitacion.Tarifa</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Productos -->
+    @* @foreach (var grupo in Model.Productos.GroupBy(p => p.Tipo))
+    {
+        <div class="section-heading">@grupo.Key</div>
+
+        @if (grupo.Key == "Emergencia")
+        {
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Item</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var producto in grupo)
+                    {
+                        <tr>
+                            <td>@producto.Fecha</td>
+                            <td>@producto.Item</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Item</th>
+                        <th>Cantidad</th>
+                        <th>Precio unitario</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var producto in grupo)
+                    {
+                        <tr>
+                            <td>@producto.Fecha</td>
+                            <td>@producto.Item</td>
+                            <td>@producto.Cantidad</td>
+                            <td>
+                                @if (producto.PrecioUnitario == 0)
+                                {
+                                    @: <!-- Campo vacío -->
+                                }
+                                else
+                                {
+                                    @producto.PrecioUnitario
+                                }
+                            </td>
+                            <td>
+                                @if (producto.Subtotal == 0)
+                                {
+                                    @: <!-- Campo vacío -->
+                                }
+                                else
+                                {
+                                    @producto.Subtotal
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    } *@
+
+
+
+    <!-- ========== PRODUCTOS / SERVICIOS ========== -->
+    @foreach (var grupo in Model.Productos.GroupBy(p => p.Tipo).Where(g => g.Key != "Paquete"))
+    {
+        <div class="section-heading">@grupo.Key</div>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Item</th>
+                    <th>Cantidad</th>
+                    <th>Precio unitario</th>
+                    <th>% Desc</th>
+                    <th>Cargo</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var producto in grupo)
+                {
+                    <tr>
+                        <td>@producto.Fecha</td>
+                        <td>@producto.Item</td>
+                        <td>@producto.Cantidad</td>
+                        <td>@(producto.PrecioUnitario == 0 ? "" : producto.PrecioUnitario.ToString("N2"))</td>
+                        <td>@(producto.DescPct == 0 ? "" : producto.DescPct.ToString("N2") + "%")</td>
+                        <td>@(producto.Cargo == 0 ? "" : producto.Cargo.ToString("N2"))</td>
+                        <td>@(producto.Subtotal == 0 ? "" : producto.Subtotal.ToString("N2"))</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <!-- ========== GLOBAL DISCOUNT ROW ========== -->
+    @if (Model.DescuentoGlobal > 0)
+    {
+        <div class="section-heading">Ajustes</div>
+        <table class="report-table">
+            <tbody>
+                <tr>
+                    <th>Descuento global</th>
+                    <td>@Model.DescuentoGlobal.ToString("N2")</td>
+                </tr>
+            </tbody>
+        </table>
+    }
+
+    <!-- ========== PAQUETES ========== -->
+    @if (Model.Paquetes != null && Model.Paquetes.Any())
+    {
+        <div class="section-heading">PAQUETES</div>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Item</th>
+                    <th>Cantidad</th>
+                    <th>Precio unitario</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model.Paquetes)
+                {
+                    <tr>
+                        <td>@p.Fecha</td>
+                        <td>@p.Nombre</td>
+                        <td>@p.Cantidad</td>
+                        <td>@p.PrecioUnitario</td>
+                        <td>@p.Subtotal</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+   
+    <!-- ========== GASTOS ADMINISTRATIVOS ========== -->
+    @if (Model.GastosAdministrativos != null && Model.GastosAdministrativos.Any())
+    {
+        <div class="section-heading">GASTOS ADMINISTRATIVOS</div>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    @* <th>Porcentaje aplicado</th> *@
+                    <th>Monto</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var g in Model.GastosAdministrativos)
+                {
+                    <tr>
+                        <td>@g.Fecha.ToString("dd/MM/yyyy")</td>
+                        @* <td>@g.PorcentajeAplicado.ToString("0.00")%</td> *@
+                        <td>@g.Monto.ToString("0.00")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+   
+    <!-- Honorarios -->
+    @if (honorariosValidos.Any())
+    {
+        <div class="section-heading">Honorarios</div>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Médico</th>
+                    <th>Monto</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var honorario in honorariosValidos)
+                {
+                    <tr>
+                        <td>@honorario.Medico</td>
+                        <td>@honorario.Monto</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <!-- Pagos -->
+    <div class="section-heading">Pagos</div>
+    <table class="report-table">
+        <tbody>
+            <tr>
+                <th>Total cuenta</th>
+                <td>
+                    @if (Model.Pagos.TotalCuenta == 0)
+                    {
+                        @: <!-- Campo vacío -->
+                    }
+                    else
+                    {
+                        @Model.Pagos.TotalCuenta
+                    }
+                </td>
+            </tr>
+            <tr>
+                <th>Total aseguradora</th>
+                <td>
+                    @if (Model.Pagos.TotalAseguradora == 0)
+                    {
+                        @: <!-- Campo vacío -->
+                    }
+                    else
+                    {
+                        @Model.Pagos.TotalAseguradora
+                    }
+                </td>
+            </tr>
+            <tr>
+                <th>Total no elegibles</th>
+                <td>
+                    @if (Model.Pagos.TotalNoElegibles == 0)
+                    {
+                        @: <!-- Campo vacío -->
+                    }
+                    else
+                    {
+                        @Model.Pagos.TotalNoElegibles
+                    }
+                </td>
+            </tr>
+            <tr>
+                <th>Deducibles</th>
+                <td>
+                    @if (Model.Pagos.Deducibles == 0)
+                    {
+                        @: <!-- Campo vacío -->
+                    }
+                    else
+                    {
+                        @Model.Pagos.Deducibles
+                    }
+                </td>
+            </tr>
+            <tr>
+                <th>Coaseguro</th>
+                <td>
+                    @if (Model.Pagos.Coaseguro == 0)
+                    {
+                        @: <!-- Campo vacío -->
+                    }
+                    else
+                    {
+                        @Model.Pagos.Coaseguro
+                    }
+                </td>
+            </tr>
+            <tr>
+                <th>Copago</th>
+                <td>
+                    @if (Model.Pagos.Copago == 0)
+                    {
+                        @: <!-- Campo vacío -->
+                    }
+                    else
+                    {
+                        @Model.Pagos.Copago
+                    }
+                </td>
+            </tr>
+            <tr>
+                <th>IVA</th>
+                <td>
+                    @if (Model.Pagos.IVA == 0)
+                    {
+                        @: <!-- Campo vacío -->
+                    }
+                    else
+                    {
+                        @Model.Pagos.IVA
+                    }
+                </td>
+            </tr>
+            <tr>
+                <th>Pago paciente</th>
+                <td>
+                    @if (Model.Pagos.PagoPaciente == 0)
+                    {
+                        @: <!-- Campo vacío -->
+                    }
+                    else
+                    {
+                        @Model.Pagos.PagoPaciente
+                    }
+                </td>
+            </tr>
+            <tr>
+                <th>Pago seguro</th>
+                <td>
+                    @if (Model.Pagos.PagoSeguro == 0)
+                    {
+                        @: <!-- Campo vacío -->
+                    }
+                    else
+                    {
+                        @Model.Pagos.PagoSeguro
+                    }
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>

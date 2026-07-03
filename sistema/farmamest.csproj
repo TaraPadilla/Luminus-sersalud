@@ -1,0 +1,173 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+<PropertyGroup>
+  <TargetFramework>net8.0</TargetFramework>
+</PropertyGroup>
+
+<PropertyGroup>
+  <NoWarn>CS8632;CS0108;MVC1000;CS8073;CS0168;CS1998;CS0169</NoWarn>
+</PropertyGroup>
+
+
+  <PropertyGroup>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="Views\Grafica\IndexGrafica.cshtml" />
+    <None Include="wwwroot\assets\fonts\fa-solid-900.svg" />
+    <None Include="wwwroot\assets\fonts\fa-solid-900.woff2" />
+    <None Include="wwwroot\assets\fonts\Pe-icon-7-stroke.svg" />
+    <None Include="wwwroot\assets\scripts\main.js" />
+    <None Include="wwwroot\js\bootstrap.bundle.min.js" />
+    <None Include="wwwroot\js\DataTables\DataTables-1.13.4\js\dataTables.bootstrap.js" />
+    <None Include="wwwroot\js\DataTables\DataTables-1.13.4\js\dataTables.bootstrap.min.js" />
+    <None Include="wwwroot\js\DataTables\DataTables-1.13.4\js\dataTables.bootstrap4.js" />
+    <None Include="wwwroot\js\DataTables\DataTables-1.13.4\js\dataTables.bootstrap4.min.js" />
+    <None Include="wwwroot\js\DataTables\DataTables-1.13.4\js\dataTables.bootstrap5.js" />
+    <None Include="wwwroot\js\DataTables\DataTables-1.13.4\js\dataTables.bootstrap5.min.js" />
+    <None Include="wwwroot\js\DataTables\DataTables-1.13.4\js\dataTables.bulma.js" />
+    <None Include="wwwroot\js\DataTables\DataTables-1.13.4\js\dataTables.bulma.min.js" />
+    <None Include="wwwroot\js\DataTables\DataTables-1.13.4\js\dataTables.dataTables.js" />
+    <None Include="wwwroot\js\DataTables\DataTables-1.13.4\js\dataTables.dataTables.min.js" />
+    <None Include="wwwroot\js\DataTables\DataTables-1.13.4\js\dataTables.foundation.js" />
+    <None Include="wwwroot\js\DataTables\DataTables-1.13.4\js\dataTables.foundation.min.js" />
+    <None Include="wwwroot\js\DataTables\DataTables-1.13.4\js\dataTables.jqueryui.js" />
+    <None Include="wwwroot\js\DataTables\DataTables-1.13.4\js\dataTables.jqueryui.min.js" />
+    <None Include="wwwroot\js\DataTables\DataTables-1.13.4\js\dataTables.semanticui.js" />
+    <None Include="wwwroot\js\DataTables\DataTables-1.13.4\js\dataTables.semanticui.min.js" />
+    <None Include="wwwroot\js\DataTables\DataTables-1.13.4\js\jquery.dataTables.js" />
+    <None Include="wwwroot\js\DataTables\DataTables-1.13.4\js\jquery.dataTables.min.js" />
+    <None Include="wwwroot\js\DataTables\datatables.js" />
+    <None Include="wwwroot\js\DataTables\datatables.min.js" />
+    <None Include="wwwroot\js\daterangepicker.js" />
+    <None Include="wwwroot\js\daypilot-all.min.js" />
+    <None Include="wwwroot\js\FuncionesCaja.js" />
+    <None Include="wwwroot\js\FuncionesCajaClinica.js" />
+    <None Include="wwwroot\js\FuncionesCotizacion.js" />
+    <None Include="wwwroot\js\FuncionesEnvio.js" />
+    <None Include="wwwroot\js\FuncionesVenta.js" />
+    <None Include="wwwroot\js\FuncionesVentaServicio.js" />
+    <None Include="wwwroot\js\FuncionGrafica.js" />
+    <None Include="wwwroot\js\jquery-ui.js" />
+    <None Include="wwwroot\js\jquery-ui.min.js" />
+    <None Include="wwwroot\js\jquery.js" />
+    <None Include="wwwroot\js\moment.min.js" />
+    <None Include="wwwroot\js\select2.full.min.js" />
+    <None Include="wwwroot\js\site.js" />
+    <None Include="wwwroot\js\tempusdominus-bootstrap-4.min.js" />
+    <None Include="wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\css\bootstrap-grid.min.css.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.css.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.min.css.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\css\bootstrap.css.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\css\bootstrap.min.css.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\js\bootstrap.bundle.js" />
+    <None Include="wwwroot\lib\bootstrap\dist\js\bootstrap.bundle.js.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\js\bootstrap.bundle.min.js" />
+    <None Include="wwwroot\lib\bootstrap\dist\js\bootstrap.bundle.min.js.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\js\bootstrap.js" />
+    <None Include="wwwroot\lib\bootstrap\dist\js\bootstrap.js.map" />
+    <None Include="wwwroot\lib\bootstrap\dist\js\bootstrap.min.js" />
+    <None Include="wwwroot\lib\bootstrap\dist\js\bootstrap.min.js.map" />
+    <None Include="wwwroot\lib\bootstrap\LICENSE" />
+    <None Include="wwwroot\lib\jquery-validation-unobtrusive\jquery.validate.unobtrusive.js" />
+    <None Include="wwwroot\lib\jquery-validation-unobtrusive\jquery.validate.unobtrusive.min.js" />
+    <None Include="wwwroot\lib\jquery-validation\dist\additional-methods.js" />
+    <None Include="wwwroot\lib\jquery-validation\dist\additional-methods.min.js" />
+    <None Include="wwwroot\lib\jquery-validation\dist\jquery.validate.js" />
+    <None Include="wwwroot\lib\jquery-validation\dist\jquery.validate.min.js" />
+    <None Include="wwwroot\lib\jquery-validation\LICENSE.md" />
+    <None Include="wwwroot\lib\jquery\dist\jquery.js" />
+    <None Include="wwwroot\lib\jquery\dist\jquery.min.js" />
+    <None Include="wwwroot\lib\jquery\dist\jquery.min.map" />
+    <None Include="wwwroot\lib\knockout\knockout-3.5.1.js" />
+  </ItemGroup>
+
+<ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.102.1" />
+    <PackageReference Include="DocumentFormat.OpenXml" Version="2.19.0" />
+    <PackageReference Include="EPPlus" Version="5.8.0" />
+    <PackageReference Include="ExcelDataReader" Version="3.7.0" />
+    <PackageReference Include="Fido2" Version="3.0.1" />
+    <PackageReference Include="Fido2.AspNet" Version="3.0.1" />
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.23" />
+    <PackageReference Include="Hangfire.PostgreSql" Version="1.21.1" />
+    <PackageReference Include="IronXL.Excel" Version="2023.12.19" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.3.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
+
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0">
+
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+
+
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Npgsql" Version="8.0.3" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" />
+    <PackageReference Include="Rotativa.AspNetCore" Version="1.2.0-beta" />
+    <PackageReference Include="SixLabors.Fonts" Version="2.0.0" />
+    <PackageReference Include="Wkhtmltopdf.NetCore" Version="3.0.2" />
+</ItemGroup>
+
+
+
+  <ItemGroup>
+    <ProjectReference Include="..\Database.Shared\Database.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="Views\Compra\Modificar.cshtml">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Update="Views\Consultas\_AntPatologicosPaciente.cshtml">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Update="Views\Consultas\_ConsultaHabitacionesDisponibles.cshtml">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Update="Views\Consultas\_ConsultaArchivos.cshtml">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Update="Views\Shared\_HojaMembreteLayout.cshtml">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Update="wwwroot\ViewModelKo\UsuariosListaVM.js">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\archivos_consultas\" />
+    <Folder Include="wwwroot\hospitalizacion-consentimientos\" />
+  </ItemGroup>
+
+  <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>
+
+  <ItemGroup>
+    <UpToDateCheckInput Remove="Views\Productos\HistoricoProductos.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="Views\Productos\HistoricoProductos.cshtml" />
+  </ItemGroup>
+
+ 
+
+</Project>

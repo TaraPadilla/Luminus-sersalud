@@ -1,0 +1,199 @@
+ @{
+
+
+DateTime fecha = DateTime.Now;
+
+
+}
+
+@model IEnumerable<Database.Shared.Models.Venta>
+
+
+
+
+@* <div class="col-md-12">
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <h5 class="card-title">Vertical Bars</h5>
+            <canvas id="canvas"></canvas>
+        </div>
+    </div>
+    
+</div> *@
+
+<div class="form">
+                    <div class="col-md-12">
+                        <div class="main-card mb-3 card">
+                          <div class="card-body">
+
+                               <form asp-controller="Venta" asp-action="GraficaVentas" method="post">
+                     <div class="form-row">
+                     <div class="col-md-6">
+                    <label>Desde</label>
+                    <select class="form-control select2bs4" style="width: 100%;" name="mesdesde">
+                        <option value="1">Enero</option>
+                        <option value="2">Febrero</option>
+                        <option value="3">Marzo</option>
+                        <option value="4">Abril</option>
+                        <option value="5">Mayo</option>
+                        <option value="6">Junio</option>
+                        <option value="7">Julio</option>
+                        <option value="8">Agosto</option>
+                        <option value="9">Septiembre</option>
+                        <option value="10">Octubre</option>
+                        <option value="11">Noviembre</option>
+                        <option value="12">Diciembre</option>
+                    </select>
+
+                </div>
+                <div class="col-md-6">
+                    <label>Hasta</label>
+                    <select class="form-control select2bs4" style="width: 100%;" name="meshasta">
+                         <option value="1">Enero</option>
+                        <option value="2">Febrero</option>
+                        <option value="3">Marzo</option>
+                        <option value="4">Abril</option>
+                        <option value="5">Mayo</option>
+                        <option value="6">Junio</option>
+                        <option value="7">Julio</option>
+                        <option value="8">Agosto</option>
+                        <option value="9">Septiembre</option>
+                        <option value="10">Octubre</option>
+                        <option value="11">Noviembre</option>
+                        <option value="12">Diciembre</option>
+                    </select>
+
+                </div>
+                   
+                    
+                </div>
+
+                <br/>
+                <button class="btn btn-primary" >Ver Grafica</button>
+                </form>
+
+
+
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+
+
+
+ <div class="col-lg-9">
+                       
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <i class="fas fa-chart-bar mr-1"></i>
+                                        Total Ventas
+                                    </div>
+                                    <div class="card-body">
+                                        
+                                        <canvas id="MiGrafica2" width="100%" height="50"></canvas>
+                                    
+                                    
+                                    </div>
+                                    
+                                    <script>
+                  
+                                    </script>
+                                    
+                                </div>
+                   </div>
+
+
+
+@{
+    // codigo C#
+var vendedores = new List<string>(){"Pedro", "Juan", "Maria", "Diego"};
+var valores = new List<int>(){12,15,16,25 };   
+
+}
+
+@section Scripts
+{
+
+<script type="text/javascript">
+    var ctx = document.getElementById('MiGrafica2');
+
+    var arrayVendedores = new Array();
+    var arrayDatos = new Array();
+
+    
+
+    @foreach (var item in Model)
+   {
+       @:arrayVendedores.push("@item.Empleado.Nombre");
+    }
+
+     @foreach (var item in Model)
+   {
+        @:arrayDatos.push("@item.Empleado.Ventas.Count();");
+   }
+
+  
+
+    var myChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: arrayVendedores,
+        datasets: [{
+            label: 'Numero de Transacciones',
+            data: arrayDatos,
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.2)',
+                'rgba(54, 162, 235, 0.2)',
+                'rgba(255, 206, 86, 0.2)',
+                'rgba(75, 192, 192, 0.2)',
+                'rgba(153, 102, 255, 0.2)',
+                'rgba(255, 159, 64, 0.2)'
+            ],
+            borderColor: [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(153, 102, 255, 1)',
+                'rgba(255, 159, 64, 1)'
+            ],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        scales: {
+            yAxes: [{
+                ticks: {
+                    beginAtZero: true
+                }
+            }]
+        }
+    }
+}); 
+
+
+
+
+
+</script>
+
+<script type="text/javascript">
+$(function(){
+        $('.select2').select2({
+            tags: true
+        });
+        
+    $('.select2bs4').select2({
+      theme: 'bootstrap4',
+      tags: true,
+    });
+
+</script>
+
+
+
+}

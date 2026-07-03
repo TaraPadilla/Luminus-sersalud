@@ -1,0 +1,366 @@
+@{
+    ViewData["Title"] = "Importar exámenes (Laboratorio Clínico)";
+}
+
+@functions{
+    // Helper genérico para leer propiedades sin depender de dynamic
+    string Prop(object o, string name)
+    {
+        if (o == null) return string.Empty;
+        var t = o.GetType();
+        var p = t.GetProperty(name);
+        if (p == null) return string.Empty;
+        var v = p.GetValue(o);
+        return v?.ToString() ?? string.Empty;
+    }
+}
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12 text-center">
+                <h4><b>Importar exámenes del Laboratorio (hoja: LABORATORIO, RX, ULTRASONIDO)</b></h4>
+                <hr />
+            </div>
+
+            <div class="col-md-12">
+                <form asp-controller="Productos"
+                      asp-action="ImportarDesdeLaboratorioClinico"
+                      method="post"
+                      enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <div class="form-group">
+                        <label for="excel"><b>Cargar Excel</b></label>
+                        <input id="excel"
+                               name="excel"
+                               type="file"
+                               class="form-control"
+                               accept=".xlsx,.xls"
+                               required />
+                        <small class="form-text text-muted">
+                            Se procesarán únicamente las hojas <b>LABORATORIO</b>, <b>RX</b> y <b>ULTRASONIDO</b>.
+                        </small>
+                    </div>
+
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-primary">
+                            Procesar archivo
+                        </button>
+                        <a asp-controller="Productos" asp-action="ImportarDesdeLaboratorioClinico" class="btn btn-secondary">
+                            Limpiar
+                        </a>
+                    </div>
+                </form>
+
+                @* Resumen del armado y botón para insertar *@
+                @if (ViewData["ResumenImportacion"] is not null)
+                {
+                    dynamic r = ViewData["ResumenImportacion"];
+                    <div class="alert alert-info mt-3">
+                        <b>Resumen de armado (global):</b><br />
+                        Catálogos detectados: @r.Catalogos<br />
+                        Ítems totales: @r.TotalItems
+                    </div>
+
+                    @* Resumen por hoja: LABORATORIO / RX / ULTRASONIDO *@
+                    @if (ViewData["ResumenImportacionPorHoja"] is IEnumerable<object> resumenHojaObj)
+                    {
+                        <div class="mt-2">
+                            <h5><b>Detalle de armado por hoja</b></h5>
+                            <table class="table table-sm table-bordered">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Hoja</th>
+                                        <th>Catálogos</th>
+                                        <th>Ítems</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                @foreach (var hObj in resumenHojaObj)
+                                {
+                                    dynamic h = hObj;   // ← aquí forzamos dynamic
+                                    <tr>
+                                        <td>@h.Hoja</td>
+                                        <td>@h.Catalogos</td>
+                                        <td>@h.TotalItems</td>
+                                    </tr>
+                                }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+
+                    <form asp-controller="Productos"
+                          asp-action="InsertarDesdeLaboratorioClinico"
+                          method="post" class="mt-2">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-success">
+                            Insertar en BD
+                        </button>
+                    </form>
+                }
+
+                @* Resumen de inserción *@
+                @if (ViewData["ResumenInsercion"] is not null)
+                {
+                    dynamic ins = ViewData["ResumenInsercion"];
+                    <div class="alert alert-success mt-3">
+                        <b>Resumen de inserción (global):</b><br />
+                        Categorías creadas: @ins.CategoriasCreadas<br />
+                        Exámenes insertados: @ins.ExamenesInsertados<br />
+                        Duplicados (por nombre+categoría) omitidos: @ins.DuplicadosSaltados
+                    </div>
+
+                    @* Resumen de inserción por hoja *@
+                    @if (ViewData["ResumenInsercionPorHoja"] is IEnumerable<object> resumenInsHojaObj)
+                    {
+                        <div class="mt-2">
+                            <h5><b>Detalle de inserción por hoja</b></h5>
+                            <table class="table table-sm table-bordered">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Hoja</th>
+                                        <th>Catálogos</th>
+                                        <th>Exámenes insertados</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                @foreach (var hObj in resumenInsHojaObj)
+                                {
+                                    dynamic h = hObj;   // ← dynamic
+                                    <tr>
+                                        <td>@h.Hoja</td>
+                                        <td>@h.Catalogos</td>
+                                        <td>@h.ExamenesInsertados</td>
+                                    </tr>
+                                }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+
+                    @* Listado de estudios insertados (trazabilidad fina) *@
+                    @if (ViewData["EstudiosInsertados"] is IEnumerable<object> estudiosObj)
+                    {
+                        <div class="mt-3">
+                            <h5><b>Estudios insertados (por hoja y catálogo)</b></h5>
+                            <small class="text-muted">
+                                Solo se muestran los estudios que realmente se insertaron (no los duplicados omitidos).
+                            </small>
+
+                            <div class="table-responsive mt-2" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-sm table-striped table-bordered">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Hoja</th>
+                                            <th>Catálogo</th>
+                                            <th>Estudio</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    @foreach (var eObj in estudiosObj)
+                                    {
+                                        dynamic e = eObj;   // ← dynamic
+                                        <tr>
+                                            <td>@e.Hoja</td>
+                                            <td>@e.Catalogo</td>
+                                            <td>@e.Estudio</td>
+                                        </tr>
+                                    }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    }
+                }
+
+                @* Errores *@
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger mt-3">
+                        @foreach (var e in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <div>@e.ErrorMessage</div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ======================================================================= *@
+@*   SECCIÓN ADICIONAL: SERVICIOS (BANCO DE SANGRE / PROCEDIMIENTOS)       *@
+@*   NO AFECTA LA LÓGICA NI EL CÓDIGO DE EXÁMENES ANTERIOR                *@
+@* ======================================================================= *@
+
+<div class="main-card mb-3 card mt-4">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12 text-center">
+                <h4><b>Importar servicios (BANCO DE SANGRE / PROCEDIMIENTOS)</b></h4>
+                <hr />
+            </div>
+
+            <div class="col-md-12">
+                <form asp-controller="Productos"
+                      asp-action="ImportarServiciosBancoProcedimientos"
+                      method="post"
+                      enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <div class="form-group">
+                        <label for="excelServicios"><b>Cargar Excel de servicios</b></label>
+                        <input id="excelServicios"
+                               name="excel"
+                               type="file"
+                               class="form-control"
+                               accept=".xlsx,.xls" />
+                        <small class="form-text text-muted">
+                            Se procesarán únicamente las hojas <b>BANCO DE SANGRE</b> y <b>PROCEDIMIENTOS</b>.
+                        </small>
+                    </div>
+
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-primary">
+                            Procesar archivo (servicios)
+                        </button>
+                        <a asp-controller="Productos" asp-action="ImportarServiciosBancoProcedimientos" class="btn btn-secondary">
+                            Limpiar
+                        </a>
+                    </div>
+                </form>
+
+                @* Resumen de armado de servicios *@
+                @if (ViewData["ResumenImportacionServicios"] is not null)
+                {
+                    dynamic rServ = ViewData["ResumenImportacionServicios"];
+                    <div class="alert alert-info mt-3">
+                        <b>Resumen de armado (servicios):</b><br />
+                        Hojas con datos: @rServ.HojasConDatos<br />
+                        Servicios totales: @rServ.TotalServicios
+                    </div>
+
+                    @if (ViewData["ResumenImportacionPorHojaServicios"] is IEnumerable<object> resumenHojaServObj)
+                    {
+                        <div class="mt-2">
+                            <h5><b>Detalle de armado de servicios por hoja</b></h5>
+                            <table class="table table-sm table-bordered">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Hoja</th>
+                                        <th>Servicios</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                @foreach (var hObj in resumenHojaServObj)
+                                {
+                                    dynamic h = hObj;
+                                    <tr>
+                                        <td>@h.Hoja</td>
+                                        <td>@h.Servicios</td>
+                                    </tr>
+                                }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+
+                    <form asp-controller="Productos"
+                          asp-action="InsertarServiciosBancoProcedimientos"
+                          method="post" class="mt-2">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-success">
+                            Insertar servicios en BD
+                        </button>
+                    </form>
+                }
+
+                @* Resumen de inserción de servicios *@
+                @if (ViewData["ResumenInsercionServicios"] is not null)
+                {
+                    dynamic insServ = ViewData["ResumenInsercionServicios"];
+                    <div class="alert alert-success mt-3">
+                        <b>Resumen de inserción (servicios):</b><br />
+                        Servicios insertados: @insServ.ServiciosInsertados<br />
+                        Duplicados omitidos: @insServ.DuplicadosSaltados<br />
+                        Precios creados: @insServ.PreciosCreados
+                    </div>
+
+                    @if (ViewData["ResumenInsercionPorHojaServicios"] is IEnumerable<object> resumenInsHojaServObj)
+                    {
+                        <div class="mt-2">
+                            <h5><b>Detalle de inserción de servicios por hoja</b></h5>
+                            <table class="table table-sm table-bordered">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Hoja</th>
+                                        <th>Servicios insertados</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                @foreach (var hObj in resumenInsHojaServObj)
+                                {
+                                    dynamic h = hObj;
+                                    <tr>
+                                        <td>@h.Hoja</td>
+                                        <td>@h.ServiciosInsertados</td>
+                                    </tr>
+                                }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+
+                    @* Listado de servicios insertados (trazabilidad fina) *@
+                    @if (ViewData["ServiciosInsertados"] is IEnumerable<object> serviciosObj)
+                    {
+                        <div class="mt-3">
+                            <h5><b>Servicios insertados (por hoja)</b></h5>
+                            <small class="text-muted">
+                                Solo se muestran los servicios que realmente se insertaron (no los duplicados omitidos).
+                            </small>
+
+                            <div class="table-responsive mt-2" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-sm table-striped table-bordered">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Hoja</th>
+                                            <th>Nombre servicio</th>
+                                            <th>Código interno</th>
+                                            <th>Costo</th>
+                                            <th>Precio normal</th>
+                                            <th>Precio 75%</th>
+                                            <th>Precio cortesía</th>
+                                            <th>Precio honorarios</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    @foreach (var eObj in serviciosObj)
+                                    {
+                                        <tr>
+                                            <td>@Prop(eObj, "Hoja")</td>
+                                            <td>@Prop(eObj, "NombreServicio")</td>
+                                            <td>@Prop(eObj, "CodigoInterno")</td>
+                                            <td>@Prop(eObj, "Costo")</td>
+                                            <td>@Prop(eObj, "PrecioNormal")</td>
+                                            <td>@Prop(eObj, "Precio75")</td>
+                                            <td>@Prop(eObj, "PrecioCortesia")</td>
+                                            <td>@Prop(eObj, "PrecioHonorarios")</td>
+                                        </tr>
+                                    }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>

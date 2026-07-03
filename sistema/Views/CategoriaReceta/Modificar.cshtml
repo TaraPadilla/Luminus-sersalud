@@ -1,0 +1,59 @@
+@model sistema.Models.CategoriaRecetaCrudViewModel
+
+@{
+    ViewData["Title"] = "Modificar Categoría";
+}
+
+<div class="container-fluid animated fadeIn">
+    <div class="card shadow-sm border-0 mb-4">
+        @* Encabezado con el mismo estilo de la lista *@
+        <div class="card-header bg-white py-3">
+            <h5 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-edit mr-2"></i>Modificar Categoría
+            </h5>
+            <small class="text-muted text-uppercase" style="letter-spacing: 1px;">Edición de Categorías de Recetas</small>
+        </div>
+
+        <div class="card-body px-lg-5 py-4">
+            @* Formulario con espaciado mejorado *@
+            <form asp-action="Modificar" asp-controller="CategoriaReceta" method="post" class="needs-validation">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+
+                <div class="row">
+                    <div class="col-12">
+                        @* El Partial mantiene la lógica de los inputs *@
+                        @await Html.PartialAsync("_CategoriaRecetaForm", Model)
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="d-flex justify-content-end align-items-center">
+                    @* Botón Volver - Estilo sutil *@
+                    <a asp-action="Lista" asp-controller="CategoriaReceta" class="btn btn-light border px-4 mr-2">
+                        <i class="fas fa-arrow-left mr-1"></i> Volver a la lista
+                    </a>
+                    
+                    @* Botón Guardar - Estilo principal con sombra *@
+                    <button type="submit" class="btn btn-primary px-5 shadow-sm">
+                        <i class="fas fa-save mr-1"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Animación de enfoque para los inputs del formulario
+            $('input, textarea, select').focus(function() {
+                $(this).closest('.form-group').find('label').addClass('text-primary font-weight-bold');
+            }).blur(function() {
+                $(this).closest('.form-group').find('label').removeClass('text-primary font-weight-bold');
+            });
+        });
+    </script>
+}

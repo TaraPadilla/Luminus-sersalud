@@ -1,0 +1,85 @@
+-- Tabla única para la VALORACIÓN INICIAL DE ENFERMERÍA (Sueroterapia)
+-- Tabla y columnas en PascalCase para coherencia con .NET/EF Core
+
+CREATE TABLE IF NOT EXISTS "ConsultasValoracionInicialEnfermeria" (
+  "Id"                  BIGSERIAL PRIMARY KEY,
+  "PacienteId"         INT NOT NULL,
+  "ConsultaId"         INT NOT NULL,
+
+  -- 1. Datos de valoraciónA
+  "Motivo"               TEXT,
+  "DiagnosticoMedico"   TEXT,
+  "Labs"                 TEXT,
+
+  -- 2. ¿Cómo se enteró del servicio? (checkbox múltiple)
+  "Medio"                TEXT[],
+
+  -- 3. Oxigenación y Circulación
+  "Resp"                 TEXT[],   -- checkbox múltiple
+  "Circ"                 TEXT[],   -- checkbox múltiple
+
+  -- 4. Necesidad de Nutrición
+  "Nutricion"            TEXT[],   -- checkbox múltiple
+  "NutricionObs"        TEXT,
+
+  -- 5. Necesidad de Eliminación
+  "Urinario"             TEXT[],   -- checkbox múltiple
+  "Intestinal"           TEXT[],   -- checkbox múltiple
+
+  -- 6. Movilización y Estado de Conciencia
+  "Mov"                  TEXT[],   -- checkbox múltiple
+  "Conciencia"           TEXT[],   -- checkbox múltiple
+
+  -- 7. Autocuidado y Reposo
+  "Sueno"                TEXT[],   -- checkbox múltiple
+  "Vestirse"             TEXT,     -- radio
+  "Higiene"              TEXT,     -- radio
+  "Piel"                 TEXT[],   -- checkbox múltiple
+  "PielUbicacion"       TEXT,
+
+  -- 8. Necesidad de Comunicación
+  "Lenguaje"             TEXT[],   -- checkbox múltiple
+  "Vision"               TEXT[],   -- checkbox múltiple
+  "Oido"                 TEXT[],   -- checkbox múltiple
+
+  -- 9. Seguridad y Psicosociales
+  "Seg"                  TEXT[],   -- checkbox múltiple
+  "Religiosos"           TEXT,     -- radio ("si" / "no")
+  "CreenciasObservaciones" TEXT,
+  "ConoceMotivo"        TEXT,     -- radio ("si" / "no")
+  "NecesitaInfo"        TEXT,     -- radio ("si" / "no")
+
+  -- 10. Medicación y Plan
+  "MedicacionActual"    TEXT,
+  "PlanTerapeutico"     TEXT,
+
+  -- Unicidad 1:1 con la consulta
+  CONSTRAINT valoracion_enf_consultaid_unique UNIQUE ("ConsultaId"),
+
+  -- Llaves foráneas (mismo patrón que en Oftalmología)
+  CONSTRAINT fk_ve_paciente
+    FOREIGN KEY ("PacienteId")
+    REFERENCES "Pacientes"("Id")
+    ON UPDATE CASCADE
+    ON DELETE RESTRICT,
+
+  CONSTRAINT fk_ve_consulta
+    FOREIGN KEY ("ConsultaId")
+    REFERENCES "Consultas"("Id")
+    ON UPDATE CASCADE
+    ON DELETE CASCADE
+);
+
+-- Índices
+CREATE INDEX IF NOT EXISTS idx_ve_paciente ON "ConsultasValoracionInicialEnfermeria"("PacienteId");
+-- Alternativa al constraint UNIQUE (no necesaria si ya está el constraint):
+-- CREATE UNIQUE INDEX IF NOT EXISTS ux_ve_consulta ON "ValoracionEnfermeria"("ConsultaId");
+
+
+-- Fecha del registro para ordenar histórico por PacienteId
+ALTER TABLE IF EXISTS "ConsultasValoracionInicialEnfermeria"
+ADD COLUMN IF NOT EXISTS "Fecha" TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
+-- Índice recomendado para consultas por paciente + orden por fecha
+CREATE INDEX IF NOT EXISTS idx_ve_paciente_fecha
+  ON "ConsultasValoracionInicialEnfermeria"("PacienteId", "Fecha" DESC);

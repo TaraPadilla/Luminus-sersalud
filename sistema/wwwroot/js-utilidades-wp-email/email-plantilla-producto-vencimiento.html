@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Alerta de Inventario</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.6; color: #333333; background-color: #f4f5f7; padding: 30px; }
+      .page-wrapper { max-width: 700px; margin: 0 auto; }
+      .card { background-color: #ffffff; padding: 30px 35px; border-radius: 10px; border: 1px solid #e0e0e0; }
+      .header { text-align: center; margin-bottom: 25px; }
+      .header-logo img { max-width: 220px; height: auto; display: block; margin: 0 auto 10px auto; }
+      .header-text { font-size: 13px; color: #555555; }
+      .header-text strong { display: block; font-size: 14px; color: #333333; }
+      .divider { border: 0; border-top: 1px solid #e0e0e0; margin: 10px 0 25px 0; }
+      .content p { margin-bottom: 12px; }
+      .content p.saludo { font-weight: bold; font-size: 15px; }
+      .alert-text { color: #d32f2f; font-weight: bold; } /* Nueva clase para resaltar la alerta */
+      .firma { margin-top: 25px; }
+      .firma p { margin-bottom: 4px; }
+      .firma-empresa { font-weight: bold; text-transform: uppercase; font-size: 13px; }
+      .footer { margin-top: 25px; font-size: 11px; color: #777777; text-align: center; }
+      .footer-line { margin-top: 5px; }
+    </style>
+  </head>
+  <body>
+    <div class="page-wrapper">
+      <div class="card">
+        <div class="header">
+          <div class="header-logo">
+            <img src="{{LogoEmpresa}}" alt="Logo de la Empresa" />
+          </div>
+          <div class="header-text">
+            <strong>Control de Inventario {{NombreEmpresa}}</strong>
+            Aviso del Sistema
+          </div>
+        </div>
+
+        <hr class="divider" />
+
+        <div class="content">
+          <p class="saludo">Estimados miembros del equipo,</p>
+
+          <p>
+            Este es un aviso automático generado por el sistema de inventario. Se ha detectado que existen 
+            <span class="alert-text">productos vencidos o próximos a vencer</span> dentro de nuestro catálogo.
+          </p>
+
+          <p>
+            Le solicitamos revisar el documento adjunto o ingresar al sistema (Módulo de Inventario) para 
+            verificar el listado detallado (lotes, fechas de caducidad y cantidades) y tomar las acciones correctivas pertinentes.
+          </p>
+
+          <div class="firma">
+            <p>Atentamente,</p>
+            <p class="firma-empresa">
+              Sistema de Alertas - {{NombreEmpresa}}
+            </p>
+          </div>
+
+          <div class="footer">
+            <div class="footer-line">Este es un mensaje generado automáticamente, por favor no responda a este correo.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

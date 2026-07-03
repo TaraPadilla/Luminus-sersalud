@@ -1,0 +1,19 @@
+@{
+    ViewData["Title"] = "Nueva Categoria";
+}
+
+ @await Html.PartialAsync("_MensajeExito")
+
+<form asp-controller="LaboratorioClinico" asp-action="NuevaCategoria" method="post">
+    @await Html.PartialAsync("_CategoriaForm")
+</form>
+
+@section Scripts{
+    <script type="text/javascript" src="~/js/moment.min.js"></script>
+    <script type="text/javascript" src="~/js/daterangepicker.js"></script>
+    <script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+    }
+
+    @section css {
+         <link href="~/css/daterangepicker.css" rel="stylesheet">
+    }

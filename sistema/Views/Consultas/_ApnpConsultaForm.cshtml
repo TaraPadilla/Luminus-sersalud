@@ -1,0 +1,61 @@
+@model sistema.Models.ConsultasViewModel
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Antecedentes NO patologicos</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-4">
+                <b>G:</b><br />
+                @Html.TextAreaFor(a => a.PacienteApnpGestas, new { @class = "form-control dato-consulta", })
+            </div>
+            <div class="col-md-4">
+                <b>P:</b><br />
+                @Html.TextAreaFor(a => a.PacienteApnpPartos, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-4">
+                <b>AB:</b><br />
+                @Html.TextAreaFor(a => a.PacienteApnpAbortos, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-4">
+                <b>CSTP:</b><br />
+                @Html.TextAreaFor(a => a.PacienteApnpCesareas, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-4">
+                <b>M:</b><br />
+                @Html.TextAreaFor(a => a.PacienteApnpMenarquia, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-4">
+                <b>HV:</b><br />
+                @Html.TextAreaFor(a => a.PacienteApnpHijosVivos, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-4">
+                <b>HM:</b><br />
+                @Html.TextAreaFor(a => a.PacienteApnpHijosMuertos, new { @class = "form-control dato-consulta" })
+            </div>
+            <div class="col-md-4">
+                <b>FUR:</b><br />
+                @Html.TextBoxFor(a => a.PacienteApnpFechaUltimaRegla, new
+                    {
+                        @class = "form-control dato-consulta",
+                        @type = "date"
+                    })
+            </div>
+            <div class="col-md-4">
+                <b>FPP:</b><br />
+                @Html.TextBoxFor(a => a.PacienteApnpFechaProbableParto, new
+                    {
+                        @class = "form-control dato-consulta",
+                        @disabled = "disabled",
+                        @type = "date"
+                    })
+            </div>
+            <div class="col-md-4">
+                <b>OTROS:</b><br />
+                @Html.TextAreaFor(a => a.PacienteApnpOtros, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+    </div>
+</div>

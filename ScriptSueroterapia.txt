@@ -1,0 +1,54 @@
+-- VALORACIÓN INICIAL DE ENFERMERÍA - Sueroterapia
+-- Tabla y columnas en PascalCase para coherencia con .NET/EF Core
+
+CREATE TABLE IF NOT EXISTS "ConsultasSueroterapia" (
+  "Id"                 BIGSERIAL PRIMARY KEY,
+  "PacienteId"         INT NOT NULL,
+  "ConsultaId"         INT NOT NULL,
+
+  -- 1) Datos de valoración inicial
+  "Motivo"             TEXT,         -- motivo de consulta
+  "DiagnosticoMedico"  TEXT,
+  "Labs"               TEXT,
+
+  -- 2) ¿Cómo se enteró del servicio? (checkbox múltiple)
+  "Medio"              TEXT[],
+
+  -- 3) Oxigenación y circulación (checkbox múltiple)
+  "Resp"               TEXT[],       -- sistema respiratorio
+  "Circ"               TEXT[],       -- sistema circulatorio
+
+  -- 4) Necesidad de nutrición
+  "Nutricion"          TEXT[],       -- alteraciones/needs
+  "NutricionObs"       TEXT,
+
+  -- 5) Plan
+  "PlanTerapeutico"    TEXT,
+
+  -- Unicidad 1:1 por consulta
+  CONSTRAINT "UX_Sueroterapia_ConsultaId" UNIQUE ("ConsultaId"),
+
+  -- FKs
+  CONSTRAINT "FK_Sueroterapia_Paciente"
+    FOREIGN KEY ("PacienteId")
+    REFERENCES "Pacientes"("Id")
+    ON UPDATE CASCADE
+    ON DELETE RESTRICT,
+
+  CONSTRAINT "FK_Sueroterapia_Consulta"
+    FOREIGN KEY ("ConsultaId")
+    REFERENCES "Consultas"("Id")
+    ON UPDATE CASCADE
+    ON DELETE CASCADE
+);
+
+-- Índices recomendados
+CREATE INDEX IF NOT EXISTS "idx_suero_paciente" ON "ConsultasSueroterapia"("PacienteId");
+
+-- Fecha del registro para ordenar histórico por PacienteId
+ALTER TABLE IF EXISTS "ConsultasSueroterapia"
+ADD COLUMN IF NOT EXISTS "Fecha" TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
+-- Índice recomendado para consultas por paciente + orden por fecha
+CREATE INDEX IF NOT EXISTS idx_suero_paciente_fecha
+  ON "ConsultasSueroterapia"("PacienteId", "Fecha" DESC);

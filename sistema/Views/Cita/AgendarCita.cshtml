@@ -1,0 +1,30 @@
+@{
+    ViewData["Title"] = "Agendar cita";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body form-row">
+        <div class="text-center col-md-12">
+            <h4><b>Nueva Admisión</b></h4>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_CitaForm")
+
+<div class="main-card mb-3 card">
+    <div class="card-body form-row">
+        <div class="col-md-12">
+            <button class="btn btn-primary" data-bind="click:agendarCita">
+                Agendar cita
+            </button>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts{
+<script src="~/ViewModelKo/CitaVM.js"></script>
+}

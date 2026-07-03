@@ -1,0 +1,218 @@
+@model sistema.Models.ProveedorBaseViewModel
+
+<div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel">
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+
+            <div class="form-row">
+
+                <div class="col-md-6">
+                    <div class="position-relative form-group">
+                        <label class="">Nombre</label>
+                        @Html.TextBoxFor(a => a.Proveedor.Nombre, new {@class="form-control",
+                        @placeholder="Nombre Proveedor"})
+                        @Html.ValidationMessageFor(a => a.Proveedor.Nombre, "", new { @class = "text-danger"})
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="position-relative form-group">
+                        <label class="">Direccion</label>
+                        @Html.TextBoxFor(a => a.Proveedor.Direccion, new{ @class="form-control",
+                        @placeholder="Direccion"})
+                        @Html.ValidationMessageFor(a => a.Proveedor.Direccion, "", new { @class = "text-danger"})
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="position-relative form-group">
+                        <label class="">Correo Electronico</label>
+                        @Html.TextBoxFor(a => a.Proveedor.Correo, new{ @class="form-control",
+                        @placeholder="Correo Electronico"})
+                        @Html.ValidationMessageFor(a => a.Proveedor.Correo,"", new { @class = "text-danger"})
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="position-relative form-group">
+                        <label class="">Rubro / Giro</label>
+                        @Html.TextBoxFor(a => a.Proveedor.Giro, new{ @class="form-control",
+                        @placeholder="Rubro / Giro"})
+                        @Html.ValidationMessageFor(a => a.Proveedor.Giro, "", new { @class = "text-danger"})
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="position-relative form-group">
+                        <label class="">Telefono 1</label>
+                        @Html.TextBoxFor(a => a.Proveedor.Telefono_1, new{ @class="form-control",
+                        @placeholder="Telefono 1"})
+                        @Html.ValidationMessageFor(a => a.Proveedor.Telefono_1, "", new { @class = "text-danger"})
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="position-relative form-group">
+                        <label class="">Telefono 2</label>
+                        @Html.TextBoxFor(a => a.Proveedor.Telefono_2, new{ @class="form-control",
+                        @placeholder="Telefono 2"})
+                        @Html.ValidationMessageFor(a => a.Proveedor.Telefono_2, "", new { @class = "text-danger"})
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="position-relative form-group">
+                        <label class="">Celular 1</label>
+                        @Html.TextBoxFor(a => a.Proveedor.Celular_1, new{ @class="form-control",
+                        @placeholder="Celular 1"})
+                        @Html.ValidationMessageFor(a => a.Proveedor.Celular_1, "", new { @class = "text-danger"})
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="position-relative form-group">
+                        <label class="">Celular 2</label>
+                        @Html.TextBoxFor(a => a.Proveedor.Celular_2, new{ @class="form-control",
+                        @placeholder="Celular 2"})
+                        @Html.ValidationMessageFor(a => a.Proveedor.Celular_2, "", new { @class = "text-danger"})
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="position-relative form-group">
+                        <label class="">Nit</label>
+                        @Html.TextBoxFor(a => a.Proveedor.Nit, new{ @class="form-control",
+                        @placeholder="Nit"})
+                        @Html.ValidationMessageFor(a => a.Proveedor.Nit, "", new { @class = "text-danger"})
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="position-relative form-group">
+                        <label class="">Cuenta Bancaria</label>
+                        @Html.TextBoxFor(a => a.Proveedor.CuentaBancaria, new{ @class="form-control",
+                        @placeholder="Cuenta Bancaria"})
+                        @Html.ValidationMessageFor(a => a.Proveedor.CuentaBancaria, "", new { @class = "text-danger"})
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label>Banco</label>
+                    <select class="form-control select2bs4" style="width: 100%;" asp-for="Proveedor.BancoId"
+                            asp-items="@Model.Listbancos" id="bancosselect">
+                    </select>
+
+                </div>
+                <div class="col-md-6">
+                    <label>Tipo de proveedor</label>
+                    <select class="form-control select2bs4" style="width: 100%;" asp-for="Proveedor.TipoProveedor">
+                        <option value="Regimen simplificado">Regimen simplificado</option>
+                        <option value="Regimen trimestral">Regimen trimestral</option>
+                        <option value="Pequeño contribuyente">Pequeño contribuyente</option>
+
+                    </select>
+
+                </div>
+                <div class="col-md-6">
+                    <label>Frecuencia de entrega</label>
+                    <select class="form-control select2bs4" style="width: 100%;" asp-for="Proveedor.FrecuenciaEntrega">
+                        <option value="Semanal">Semanal</option>
+                        <option value="Diaria">Diaria</option>
+                        <option value="Mensual">Mensual</option>
+
+                    </select>
+
+                </div>
+                <div class="col-md-6">
+                    <label>Dias de entrega</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="exampleRadios" asp-for="Proveedor.DiasEntrega"
+                               value="Lunes">
+                        <label class="form-check-label" for="">
+                            Lunes
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="exampleRadios" asp-for="Proveedor.DiasEntrega"
+                               value="Martes">
+                        <label class="form-check-label" for="">
+                            Martes
+                        </label>
+                    </div>
+                    <div class="form-check disabled">
+                        <input class="form-check-input" type="checkbox" name="exampleRadios" asp-for="Proveedor.DiasEntrega"
+                               value="Miercoles">
+                        <label class="form-check-label" for="">
+                            Miercoles
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="exampleRadios" asp-for="Proveedor.DiasEntrega"
+                               value="Jueves">
+                        <label class="form-check-label" for="">
+                            Jueves
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="exampleRadios" asp-for="Proveedor.DiasEntrega"
+                               value="Viernes">
+                        <label class="form-check-label" for="">
+                            Viernes
+                        </label>
+                    </div>
+                    <div class="form-check disabled">
+                        <input class="form-check-input" type="checkbox" name="exampleRadios" asp-for="Proveedor.DiasEntrega"
+                               value="Sabado">
+                        <label class="form-check-label" for="">
+                            Sabado
+                        </label>
+                    </div>
+                    <div class="form-check disabled">
+                        <input class="form-check-input" type="checkbox" name="exampleRadios" asp-for="Proveedor.DiasEntrega"
+                               value="Domingo">
+                        <label class="form-check-label" for="">
+                            Domingo
+                        </label>
+                    </div>
+
+                </div>
+
+                <div class="col-md-6">
+                    <label>Proveedor credito:</label>
+                    @Html.DropDownList("SelectedTipoCompraId",ViewBag.TipoCompra as SelectList, "Ambas", new { @class = "form-control", @id = "SelectedTipoCompraId" })
+
+                </div>
+
+
+                <div class="col-md-6">
+                    <div class="position-relative form-group">
+                        <label class="">Días de credito</label>
+                        @Html.TextBoxFor(a => a.Proveedor.DiasCredito, new{ @class="form-control", @placeholder="Días de credito", @id = "DiasCredito"})
+                        @Html.ValidationMessageFor(a => a.Proveedor.DiasCredito, "", new { @class = "text-danger"})
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="position-relative form-group">
+                        <label class="">Politicas de devolución</label>
+                        @Html.TextBoxFor(a => a.Proveedor.PoliticasDevolucion, new{ @class="form-control",
+                        @placeholder="Politicas de devolución"})
+                        @Html.ValidationMessageFor(a => a.Proveedor.PoliticasDevolucion, "", new { @class = "text-danger"})
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="form-row">
+                <div class="col-md-12">
+                    <div class="position-relative form-group">
+                        <label class="">Observaciones</label>
+                        @Html.TextAreaFor(a => a.Proveedor.Observaciones,5,500 ,htmlAttributes : new {
+                        @class="form-control ", @placeholder="Observaciones", @style="max-width:100% !important;"})
+                        @Html.ValidationMessageFor(a => a.Proveedor.Observaciones, "", new { @class = "text-danger"})
+                    </div>
+                </div>
+            </div>
+            <div class="form-row">
+            </div>
+            <div class="col-md-12">
+                <div class="position-relative form-group">
+                    <button class="btn btn-primary">Guardar</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+

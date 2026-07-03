@@ -1,0 +1,367 @@
+@using Database.Shared.Paginacion;
+@*@model PaginacionList<Database.Shared.Models.Citas>*@
+@model sistema.Models.CalendarioLinealViewModel
+
+@{ ViewData["Title"] = "Lista Citas"; }
+
+@await Html.PartialAsync("_MensajeExito")
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            @if (User.IsInRole("CirugiaPlastica") || User.IsInRole("SecretariaCirugiaPlastica"))
+            {
+                <h4><b>Expedientes</b></h4>
+            }
+            else
+            {
+                <h4><b>Lista de citas</b></h4>
+            }
+           
+        </div>
+    </div>
+    <div class="col-md-12 form-row">
+
+        <div class="col-md-3">
+            <label>Fecha</label>
+            <input type="date" class="form-control" id="fechacita" value="@ViewData["CurrentFilter"]">
+        </div>
+
+
+
+        <div class="col-md-2">
+            <label>Sucursal</label>
+            <select class="form-control" asp-for="SucursalId" asp-items="Model.SucursalesSelectList">
+                <option>Todas</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label>Medico</label>
+            <select class="form-control" asp-for="EmpleadoId" asp-items="Model.EmpleadosSelectList">
+            @*<select class="form-control">*@
+                <option>Todos</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label>Especialidad</label>
+            <select class="form-control"  asp-for="EspecialidadId" asp-items="Model.EspecialidadSelectListItem">
+                <option>Todos</option>
+            </select>
+        </div>
+    </div>
+    <br />
+</div>
+
+
+<div class="form-row">
+    <div class="col-md-12">
+        <a asp-action="NoAsistidas" asp-controller="Cita" class="btn btn-danger">
+            <i class="fas fa-calendar-check"></i> &nbsp; Pendientes
+        </a>
+        <a asp-action="CitasFinalizadas" asp-controller="Cita" class="btn btn-success">
+            <i class="fas fa-list"></i>  &nbsp; Citas Finalizadas
+        </a>
+        @* @if (!(User.IsInRole("SecretariaCirugiaPlastica") || User.IsInRole("SecretariaAlergologia")))
+        {
+            @if (Model.Citas.Count() > 0)
+            {
+                <a asp-action="CitasListadoNormales" asp-controller="Cita" class="btn btn-danger" asp-route-currentFilter="@ViewData["CurrentFilter"]">
+                    <i class="fas fa-list"></i>  &nbsp; Reporte
+                </a>
+            }
+        } *@
+      
+    </div>
+
+
+
+</div>
+<br>
+
+
+<form asp-action="Lista" method="get">
+    <div class="col-md-12">
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <input type="submit" value="Buscar" class="btn btn-success"></input>
+            </div>
+            <input type="text" name="buscar" value="@ViewData["CurrentFilter"]" class="form-control"
+                   placeholder="Buscar por nombre o por especialidad...">
+        </div>
+    </div>
+</form>
+
+<br />
+
+<div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel">
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="mb-0 table table-hover">
+                    <thead>
+                        <tr class="text-center">
+                            <th>Fecha</th>
+                            <th>Hora</th>
+                            @* <th>Especialidad</th> *@
+                            <th>Sucursal</th>
+                            <th>Médico</th>
+                            <th>Servicios</th>
+                            <th>Paciente</th>
+                            @*<th>Código</th>*@
+                            @* <th>Telefono</th> *@
+                            @* <th>Asistencia</th> *@
+                            @* <th>Observaciones</th> *@
+                            @*<th>Usuario</th> *@
+                            @* <th>Menor de edad</th> *@
+                            @* <th>Nombre encargado</th> *@
+                            @*<th>Modalidad de atención</th>*@
+                            <th>Turno</th>
+                            <th>Confirmada</th>
+                            <th>Reporte de Admisión</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Citas)
+                        {
+
+                            var cliente = item.Paciente == null ? "" : item.Paciente.Nombre;
+                            var telefono = item.Paciente == null ? "" : item.Paciente.Telefono;
+                            var celular = item.Paciente == null ? "" : item.Paciente.Celular;
+                            var sexo = item.Paciente == null ? "" : item.Paciente.sexoText;
+                            @* var persona = item.User == null ? "" : item.PersonText; *@ 
+
+                            @* var empleado = item.Empleado == null ? "" : item.Empleado.NombreYApellidos; *@ 
+                            @* var background = ""; *@
+                                            @* var color = "";
+
+                            @if (item.EspecialidadText == "Medicina general")
+                            {
+                                background = "#2fb9e7";
+                                color = "black";
+                            }
+                            else if (item.EspecialidadText == "Medicina estética")
+                            {
+                                background = "#A02B4E";
+                                color = "white";
+                            }
+                            else if (item.EspecialidadText == "Ginecología y Obstetricia")
+                            {
+                                background = "#e660c3";
+                                color = "white";
+                            }
+                            else if (item.EspecialidadText == "Pediatría")
+                            {
+                                background = "#ffa500";
+                                color = "black";
+                            }
+                            else if (item.EspecialidadText == "Cirugía")
+                            {
+                                background = "#808080";
+                                color = "white";
+                            }
+
+                            else if (item.EspecialidadText == "Traumatología")
+                            {
+                                background = "#000000";
+                                color = "white";
+                            }
+
+                            else if (item.EspecialidadText == "Medicina interna")
+                            {
+                                background = "#8B4513";
+                                color = "white";
+                            }
+
+
+                            else if (item.EspecialidadText == "Laboratorio clínico")
+                            {
+                                background = "#008000";
+                                color = "white";
+                            } *@
+
+
+                                            <tr>
+                                                <td>@(((DateTime)item.FechaInicio).ToString("MM/dd/yyyy"))</td>
+                                                <td>@(((DateTime)item.FechaInicio).ToString("HH:mm")) - @(((DateTime)item.FechaFinal).ToString("HH:mm"))</td>
+                                                <td>@(item.Sucursal==null?"-":item.Sucursal.NombreSucursal)</td>
+                                                @* <td style="background: @background; color: @color"> @item.EspecialidadText</td> *@
+                                                <td style="background-color:@(item.Empleado.ColorHexadecimalFondo??"#ffffff");
+                                color:@(item.Empleado.ColorHexadecimalTexto??"#000000")">
+                                                    @item.EmpleadoText
+                                                </td>
+                                                <td>
+                                                    @if (item.CitasServicios != null && item.CitasServicios.Count() > 0)
+                                                    {
+                                    <ul>
+                                        @foreach (var servicio in item.CitasServicios)
+                                        {
+                    <li>@servicio.Servicio.NombreServicio</li>}
+                                    </ul> }
+                                                    else
+                                                    {
+                                    <span><i>No hay servicios registrados</i></span>}
+                                                </td>
+                                                <td>@cliente</td>
+                                                @* <td>@celular</td> *@
+                                                @* <td>@item.EstadoCita</td> *@
+                                                @* <td>@item.Motivo</td> *@
+                                                @* <td> @item.PersonText </td> *@
+                                                @* <td>@item.EsMenorDeEdadText</td> *@
+                                                @* <td>@item.NombreEncargado</td> *@
+                                                <td style="background: #008000; color: white">@item.NumeroTurno</td>
+                                                <!--<td>-->@*@item.Modalidad*@<!--</td>-->
+                                                <td>Si</td>
+                                                @* <td style="max-width:150px; word-wrap: break-word;" >@item.Motivo</td> *@
+                                                <td>
+                                                    <a class="btn btn-danger" href="@Url.Action("GenerarPDFAdmisionPacientes","CrearPDF", new {id = @item.Id})" >
+                                                        <i class="fas fa-print"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                                            <tr>
+                                                                <td colspan="9">
+                                                                    <a href="@Url.Action("EditarCita","Cita", new {id = @item.Id})"
+                                                                       class="btn btn-warning btn-sm">
+                                                                        Modificar
+                                                                    </a>
+                                                                    <a class="btn btn-danger text-white" onclick="Eliminar(@item.Id, '@item.FechaInicio')">
+                                                                        Eliminar
+                                                                    </a>
+                                                                    <a class="btn btn-success text-white" onclick="Finalizar(@item.Id)">
+                                                                        Finalizar
+                                                                    </a>
+                                                                    <a class="btn btn-danger text-white" href="@Url.Action("CancelarCita","Cita", new {id = @item.Id})">
+                                                                        Cancelar
+                                                                    </a>
+                                                                    <a class="btn btn-secondary text-white" asp-controller="Cita" asp-action="NoAsistioL" asp-route-citaId="@item.Id">
+                                                                        Pendiente
+                                                                    </a>
+                                                                    @if (item.ExamenFisicoId == null)
+                                                                    {
+                                                                    <a class="btn btn-info" asp-controller="Consultas" asp-action="IniciarExamenesFisicosCitasConsulta" asp-route-citaId="@item.Id">
+                                                                        Agregar Examenes
+                                                                    </a>
+                                                                    }
+                                                                    @*else 
+                                                                    { 
+                                                                        <a class="btn btn-warning" asp-controller="Consultas" asp-action="IniciarExamenesFisicosCitasConsulta" asp-route-citaId="@item.Id">
+                                                                        Editar Examenes
+                                                                        </a>
+                                                                    }*@
+                                                                    @*<a class="btn btn-primary" asp-controller="Consultas" asp-action="IniciarConsulta" asp-route-citaId="@item.Id">
+                                                                        Iniciar Consulta
+                                                                    </a>*@
+                                                                    <a class="btn btn-success" asp-controller="Consultas" asp-action="IniciarYPagarConsulta" asp-route-citaId="@item.Id">
+                                                                        Pagar Consulta
+                                                                    </a>
+                                                                    <a class="btn btn-success" asp-controller="Consultas" asp-action="IniciarConsulta" asp-route-citaId="@item.Id">
+                                                                        Iniciar Consulta 
+                                                                    </a>
+                                                                </td>
+                                                            </tr>}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@*@{ var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+                var nextDisabled = !Model.HasNextPage ? "disabled" : ""; }*@
+
+
+
+@*<a asp-action="Lista" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@(Model.PageIndex - 1)"
+   asp-route-currentFilter="@ViewData["CurrentFilter"]" class="btn btn-danger btn-sm @prevDisabled">
+    Anterior
+</a>
+<a asp-action="Lista" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@(Model.PageIndex + 1)"
+   asp-route-currentFilter="@ViewData["CurrentFilter"]" class="btn btn-danger btn-sm @nextDisabled" class="">
+    Siguiente
+</a>*@
+
+
+@section Scripts
+{
+    <script>
+        function Eliminar(id) {
+            var option = confirm("¿Está seguro/a que desea eliminar este registro?");
+
+            if (option) {
+
+                var data = { "id": parseInt(id) }
+
+                $.ajax({
+                    url: "/Cita/EliminarCita/",
+                    data: data,
+                    type: 'POST',
+                    success: function (result) {
+                        window.location.href = '/Cita/Lista';
+                    },
+                    error: function (error) {
+                        alert(error);
+                    }
+                });
+            }
+        }
+
+        function Finalizar(id) {
+            var option = confirm("¿Está seguro/a que desea finalizar esta cita?");
+
+            if (option) {
+
+                var data = { "id": parseInt(id) }
+
+                $.ajax({
+                    url: "/Cita/FinalizarCita/",
+                    data: data,
+                    type: 'POST',
+                    success: function (result) {
+                        window.location.href = '/Cita/Lista';
+                    },
+                    error: function (error) {
+                        alert(error);
+                    }
+                });
+            }
+        }
+        function NotificarWhatsapp(id) {
+
+        }
+
+        $(document).ready(function () {
+            
+            $("#fechacita").on("change", function () {
+                showLoading();
+                window.location.href = "/Cita/Lista?buscar=" +
+                    $("#fechacita").val()
+                    + "&sucursalId=" + $("#SucursalId").val()
+                    + "&empleadoId=" + $("#EmpleadoId").val();
+            });
+            //$("#SucursalId").on("change", function () {
+            //    showLoading();
+            //    window.location.href = "/Cita/CalendarioLineal?buscar=" +
+            //        $("#fechacita").val()
+            //        + "&sucursalId=" + $("#SucursalId").val()
+            //        + "&empleadoId=" + $("#EmpleadoId").val();
+            //});
+            $("#EmpleadoId").on("change", function () {
+                showLoading();
+                window.location.href = "/Cita/Lista?buscar=" +
+                    $("#fechacita").val()
+                    + "&sucursalId=" + $("#SucursalId").val()
+                    + "&empleadoId=" + $("#EmpleadoId").val();
+            });
+            $("#EspecialidadId").on("change", function () {
+                showLoading();
+                window.location.href = "/Cita/Lista?buscar=" +
+                    $("#fechacita").val()
+                    + "&sucursalId=" + $("#SucursalId").val()
+                    + "&empleadoId=" + $("#EmpleadoId").val()
+                    + "&EspecialidadId=" + $("#EspecialidadId").val();
+            });
+        });
+    </script>
+}

@@ -1,0 +1,74 @@
+@model sistema.Models.ConsultasViewModel
+@Html.HiddenFor(a => a.CitaId)
+@Html.HiddenFor(a => a.PacienteId)
+@Html.HiddenFor(a => a.ConsultaId)
+@Html.HiddenFor(a => a.PrimeraConsulta)
+@Html.HiddenFor(a => a.HistoriaId)
+@Html.HiddenFor(a => a.ExamenFisicoId)
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Diagnóstico</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-12 table-responsive">
+                <table class="table table-hover">
+                    <tbody>
+                        <tr>
+                            <td>Diagnóstico integral</td>
+                            <td>
+                                <textarea class="form-control"></textarea>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-md-12 table-responsive">
+                <table class="table table-hover">
+                    <tbody>
+                        <tr>
+                            <td>Diagnóstico algológico</td>
+                            <td>
+                                <select class="form-control">
+                                    <option>Seleccione...</option>
+                                    <option>Dolor neuropático</option>
+                                    <option>Dolor nociceptivo</option>
+                                    <option>Dolor mixto</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-md-12 table-responsive">
+                <table class="table table-hover">
+                    <tbody>
+                        <tr>
+                            <td>Seleccione los diagnósticos que sean aplicables al presente caso</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="form-row">
+                                    <div class="col-md-4">
+                                        <input type="checkbox" /> Neuropatía diabética
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="checkbox" /> Dolor de hombro, brazo y codo
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="checkbox" /> Dolor de miembro fantasma
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="checkbox" /> Neuralgia del trigémino
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

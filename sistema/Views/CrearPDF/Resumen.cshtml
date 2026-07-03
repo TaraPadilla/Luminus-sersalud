@@ -1,0 +1,238 @@
+@* @model sistema.Models.facturaVentaViewModel *@
+@* @model Database.Shared.Models.Examen *@
+@model sistema.Models.RealizarExamenLabClinicoViewModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Laboratorio clínico - Resumen";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    var todayDate = DateTime.Now;
+    var edad = 0;
+
+    if (Model?.Examen?.Paciente?.FechaNacimiento != null)
+    {
+        edad = todayDate.Year - Model.Examen.Paciente.FechaNacimiento.Value.Year;
+
+        if (todayDate.Month < Model.Examen.Paciente.FechaNacimiento.Value.Month
+            || (todayDate.Month == Model.Examen.Paciente.FechaNacimiento.Value.Month
+                && todayDate.Day < Model.Examen.Paciente.FechaNacimiento.Value.Day))
+        {
+            edad--;
+        }
+    }
+}
+
+<style>
+    .logof {
+        padding: 18px;
+    }
+
+    .printDetails > div {
+        display: inline-block;
+    }
+
+    .text-titulo {
+        position: relative;
+        left: 8.2em;
+    }
+
+    .text-titulo2 {
+        position: relative;
+        left: 13.8em;
+    }
+
+    hr.linea {
+        border: none;
+        height: 2px;
+        background-color: #008f4c;
+        width: 700px;
+        position: relative;
+        left: 2.5em;
+    }
+
+    hr.linea2 {
+        border: none;
+        height: 2px;
+        background-color: #008f4c;
+        width: 250px;
+    }
+
+    .info-owner {
+        margin-top: 15px;
+        text-align: center;
+        color: #008f4c;
+        position: absolute;
+        left: 55em;
+        top: 0;
+        width: 200px;
+    }
+
+    .direccion-info {
+        position: absolute;
+        left: 14.5em;
+        text-align: center;
+        color: #008f4c;
+    }
+
+    .tabla-resultados {
+        position: relative;
+        left: 5.5em;
+        margin-top: 1em;
+    }
+
+    .datos-encabezado {
+        margin-top: 1em;
+        margin-bottom: 1em;
+        position: relative;
+        left: 8.5em;
+    }
+
+    .codigo-paciente {
+        position: relative;
+        left: 25em;
+        top: -5.5em;
+    }
+</style>
+
+<div class="container-fluid" style="border: 3px solid #795f48; border-radius: 0.8em; min-height: 1500px;">
+    <div class="encabezado">
+        <div class="row printDetails">
+            <div class="col-xs-2">
+                <div class="logof">
+                    <img src="@ViewData["ImagenLogo"]" alt="Logo" width="280" />
+                </div>
+            </div>
+            <div class="col-xs-10">
+                <div class="text-titulo">
+                    <h1 style="font-weight: 700; color: #008f4c;">Laboratorio Clínico</h1>
+                </div>
+                <div class="text-titulo2">
+                    <h1 style="font-weight: 700; color: #008f4c;">"AVM"</h1>
+                </div>
+                <div>
+                    <hr class="linea" style="border-bottom: 1px solid black;" />
+                </div>
+                <div class="info-owner">
+                    <h6 style="font-weight: 600;">NOMBRE QUÍMICO BIÓLOGO</h6>
+                    <h6 style="font-weight: 600;">QUÍMICA BIÓLOGA</h6>
+                    <h6 style="font-weight: 600;">Col. 0000</h6>
+                </div>
+                <div class="direccion-info">
+                    <h6 style="font-weight: 600; color: #008f4c;"></h6>
+                    <h6 style="font-weight: 600; color: #008f4c;"></h6>
+                </div>
+            </div>
+        </div>
+
+        <div class="infof">
+            @* bloque de info extra, actualmente no usado *@
+        </div>
+    </div>
+
+    <br />
+
+    <h1 class="text-center informe-resultados" style="font-weight: 700; color: #008f4c;">RESUMEN</h1>
+
+    <div class="datos-encabezado">
+        <div>
+            <span style="font-weight: 600; font-size: 1.2em;">PACIENTE: </span>
+            <span style="font-size: 1.2em;">
+                @(Model?.Examen?.Paciente == null ? "" : Model.Examen.Paciente.Nombre)
+            </span>
+        </div>
+        <div>
+            <span style="font-weight: 600; font-size: 1.2em;">NUM. AFIL.: </span>
+            <span style="font-size: 1.2em;">
+                @(string.IsNullOrEmpty(Model?.Examen?.Paciente?.no_IGGS) ? " / sin registro" : Model.Examen.Paciente.no_IGGS)
+            </span>
+        </div>
+        <div>
+            <span style="font-weight: 600; font-size: 1.2em;">EDAD: </span>
+            <span style="font-size: 1.2em;">@edad</span>
+        </div>
+        <div>
+            <span style="font-weight: 600; font-size: 1.2em;">SEXO: </span>
+            <span style="font-size: 1.2em;">
+                @(Model?.Examen?.Paciente?.Sexo == null ? "" : Model.Examen.Paciente.Sexo.DescripcionSexo)
+            </span>
+        </div>
+        <div>
+            <span style="font-weight: 600; font-size: 1.2em;">MÉDICO: </span>
+            <span style="font-size: 1.2em;">
+                @(Model?.Examen?.Medicos == null ? "// sin referencia" : Model.Examen.Medicos.Nombres)
+            </span>
+        </div>
+        <div>
+            <span style="font-weight: 600; font-size: 1.2em;">FECHA CREACIÓN: </span>
+            <span style="font-size: 1.2em;">
+                @(Model?.Examen?.FechaRealizacion.ToString("dd/MM/yyyy HH:mm") ?? "")
+            </span>
+        </div>
+    </div>
+
+    <div class="detalle"
+         style="padding-bottom: 1em; position: relative; margin-bottom: 1.5em; margin-left: 1.5em; margin-right: 1.5em;
+                min-height: 1000px; border-top: 3px solid #456238; border-left: 3px solid #456238;
+                border-bottom: 3px solid #456238; border-right: 3px solid #456238;">
+        <div class="tabla-resultados">
+            @if (Model?.Examen?.DetalleExamenes != null)
+            {
+                foreach (var detalle in Model.Examen.DetalleExamenes)
+                {
+                    <span>
+                        <h4 style="font-size: 1.2em; font-weight: 600;">
+                            Examen: @detalle.ExamenLabClinico?.NombreExamen
+                        </h4>
+                    </span>
+
+                    <table class="table table-borderless" style="width: 800px;">
+                        <thead>
+                            <tr>
+                                <th style="width: 25%; text-align: center;">CAMPOS</th>
+                                <th style="width: 25%; text-align: center;">RESULTADOS</th>
+                                <th style="width: 25%; text-align: center;">NOTAS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (detalle.Resultados != null)
+                            {
+                                foreach (var resultado in detalle.Resultados)
+                                {
+                                    var resultadoTexto = string.IsNullOrEmpty(resultado?.ValorResultado)
+                                        ? ""
+                                        : resultado.ValorResultado;
+
+                                    <tr>
+                                        <td style="text-align: center;">
+                                            @resultado?.DatosExamenesLabClinico?.Campos
+                                        </td>
+                                        <td style="text-align: center;">
+                                            @resultadoTexto
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<div>
+    <h6 style="font-weight: 700; color: #008f4c;">
+        NUESTRO LABORATORIO PARTICIPA EN EL PROGRAMA DE EVALUACIÓN DE LA CALIDAD
+        DE LA ASOCIACIÓN DE QUÍMICOS BIÓLOGOS DE GUATEMALA
+    </h6>
+</div>

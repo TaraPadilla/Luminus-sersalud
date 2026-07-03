@@ -1,0 +1,101 @@
+﻿@using Database.Shared.Models
+@model List<CuentaContable>
+@{
+    ViewData["Title"] = "Categorias";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <center><h4><b>Cuentas</b></h4></center>
+                <hr />
+                <a class="btn btn-danger" asp-action="Nuevo" asp-controller="CuentaContable">
+                    Nueva Cuenta
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="tabla-cuenta">
+                <thead>
+                    <tr>
+                        <th>Nombre de la cuenta</th>
+                        <th>Especificaciones</th>
+                        <th>Banco</th>
+                        <th>Cuenta</th>
+                        <th>Nomenclatura</th>
+                        <th>Categoria</th>
+                        <th>Acciones</th>
+
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Count() > 0)
+                    {
+                        foreach (var cuenta in Model)
+                        {
+                            <tr>
+                                <td>@cuenta.NombreCuenta</td>
+                                <td>@cuenta.Especificaciones</td>
+                                <td>@cuenta.Banco.Nombre</td>
+                                @if(cuenta.Cuenta != null){
+                                    <td>@cuenta.Cuenta.NumeroCuenta</td>
+                                }
+                                else
+                                {
+                                    <td>-</td>
+                                }
+                                @if(cuenta.Nomenclatura.Count > 1)
+                                {
+                                    var nombreNom = "";
+                                    string concat = string.Join(" - ", cuenta.Nomenclatura.Select(x => x.Nomenclatura.Nombre));
+                                    foreach (var item in cuenta.Nomenclatura)
+                                    {
+                                        nombreNom += item.Nomenclatura.Nombre + ". ";
+                                    }
+                                    @* <td>@nombreNom</td> *@
+                                    <td>@concat</td>
+                                }
+                                else
+                                {
+                                    <td>@cuenta.Nomenclatura.FirstOrDefault().Nomenclatura.Nombre</td>
+                                }
+
+                                <td>@cuenta.CategoriaCuenta.Nombre</td>
+                                <td>
+                                    <button class="btn btn-warning" onclick="modificarCuenta(@cuenta.Id)">
+                                        <i class="fa fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-danger" onclick="eliminarCuenta(@cuenta.Id)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td><i>No hay cuentas registrados</i></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/ViewModelKo/CuentaContableListaVM.js"></script>
+}

@@ -1,0 +1,301 @@
+@using Database.Shared.Models
+@using sistema.Models
+@model ConsultasViewModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Prescripción médica";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+}
+
+<style>
+    .report-container {
+        margin-top: 10px;
+        font-size: 11px;
+    }
+
+    .report-title {
+        text-align: center;
+        font-weight: bold;
+        font-size: 16px;
+        color: #0d0e36;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+
+    .report-subtitle {
+        text-align: center;
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+
+    .report-table {
+        width: 100%;
+        margin-top: 10px;
+        border-collapse: collapse;
+    }
+
+    /* Fila de título de sección */
+    .report-table-title-row th {
+        background-color: #f3f4ff;
+        border-left: 3px solid #0d0e36;
+        color: #0d0e36;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: bold;
+        font-size: 12px;
+        text-align: center;
+        padding: 6px 8px;
+    }
+
+    /* Encabezados de columnas si se necesitan */
+    .report-table-header-row th {
+        background-color: #eef2ff;
+        color: #0d0e36;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 11px;
+        text-align: left;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table tbody td {
+        font-size: 12px;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+        vertical-align: top;
+    }
+
+    .report-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .label-cell {
+        width: 30%;
+        font-weight: bold;
+        white-space: nowrap;
+    }
+
+    .checkbox-group span {
+        margin-right: 16px;
+    }
+
+    .text-pre {
+        white-space: pre-wrap;
+    }
+
+    /* Tabla de firmas (disponible si se necesita a futuro) */
+    .signature-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 24px;
+    }
+
+    .signature-table td {
+        border: 0;
+        text-align: center;
+        font-size: 11px;
+        padding-top: 40px;
+    }
+
+    .signature-line {
+        border-top: 1px solid #000;
+        margin-bottom: 6px;
+    }
+</style>
+
+<div class="report-container">
+    <!-- Encabezado -->
+    <div class="report-title">
+        REPORTE - @ViewData["Title"]
+    </div>
+    <div class="report-subtitle">
+        <b>Fecha y hora de emisión:</b> @fecha.ToString("dd/MM/yyyy HH:mm")
+    </div>
+
+    <!-- Datos del paciente y médico -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="4">Datos del paciente</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="label-cell">Nombre</td>
+                <td>@Model.PacienteNombre</td>
+                <td class="label-cell">Fecha</td>
+                <td>@fecha.ToString("dd/MM/yyyy")</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Edad</td>
+                <td>@Model.PacienteEdad</td>
+                <td class="label-cell">Médico que receta</td>
+                <td>@Model.MedicoNombre</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Motivo de consulta -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th>Ginecología - Motivo de consulta</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="text-pre">@Model.GinecologiaConsultaMotivo</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Antecedentes no patológicos -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="4">Ginecología - Antecedentes no patológicos</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="label-cell">Menarquia</td>
+                <td>@Model.GinecologiaAntNoPatologicosMenarquia</td>
+                <td class="label-cell">FUR</td>
+                <td>@Model.GinecologiaAntNoPatologicosFechaUltimaRegla</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Ciclo menstrual</td>
+                <td>@Model.GinecologiaAntNoPatologicosCicloMenstrual</td>
+                <td class="label-cell">Método anticonceptivo / Sustituto hormonal</td>
+                <td>@Model.GinecologiaAntNoPatologicosMetodoAnticonceptivo</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Lactancia materna</td>
+                <td>@Model.GinecologiaAntNoPatologicosLactanciaMaterna</td>
+                <td class="label-cell">G</td>
+                <td>@Model.GinecologiaAntNoPatologicosGestas</td>
+            </tr>
+            <tr>
+                <td class="label-cell">P</td>
+                <td>@Model.GinecologiaAntNoPatologicosPartos</td>
+                <td class="label-cell">AB</td>
+                <td>@Model.GinecologiaAntNoPatologicosAbortos</td>
+            </tr>
+            <tr>
+                <td class="label-cell">CSTP</td>
+                <td>@Model.GinecologiaAntNoPatologicosCesareas</td>
+                <td class="label-cell">HV</td>
+                <td>@Model.GinecologiaAntNoPatologicosHijosVivos</td>
+            </tr>
+            <tr>
+                <td class="label-cell">HM</td>
+                <td>@Model.GinecologiaAntNoPatologicosHijosMuertos</td>
+                <td class="label-cell">Otros</td>
+                <td class="text-pre">@Model.GinecologiaAntNoPatologicosOtros</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Antecedentes patológicos -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="4">Ginecología - Antecedentes patológicos</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="label-cell">Infecciones</td>
+                <td class="text-pre">@Model.GinecologiaAntPatologicosInfecciones</td>
+                <td class="label-cell">ETS</td>
+                <td class="text-pre">@Model.GinecologiaAntPatologicosEts</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Papanicolau</td>
+                <td class="text-pre">@Model.GinecologiaAntPatologicosPapanicolau</td>
+                <td class="label-cell">Otros</td>
+                <td class="text-pre">@Model.GinecologiaAntPatologicosOtros</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Examen físico -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="4">Ginecología - Examen físico</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="label-cell">Mamas</td>
+                <td class="text-pre">@Model.GinecologiaExamenFisicoMamas</td>
+                <td class="label-cell">Especuloscopía</td>
+                <td class="text-pre">@Model.GinecologiaExamenFisicoEspeculoscopia</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Tacto vaginal</td>
+                <td class="text-pre">@Model.GinecologiaExamenFisicoTactoVaginal</td>
+                <td class="label-cell">Tacto rectal</td>
+                <td class="text-pre">@Model.GinecologiaExamenFisicoTactoRectal</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Vulva y vagina</td>
+                <td class="text-pre">@Model.GinecologiaExamenFisicoVulvaVagina</td>
+                <td></td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Ecografía endocavitaria -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="4">Ecografía endocavitaria</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="label-cell">Útero</td>
+                <td class="text-pre">@Model.EcografiaEndocavitariaUtero</td>
+                <td class="label-cell">Longitudinal</td>
+                <td>@Model.EcografiaEndocavitariaLongitudinal</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Transverso</td>
+                <td>@Model.EcografiaEndocavitariaTransverso</td>
+                <td class="label-cell">Endometrio</td>
+                <td class="text-pre">@Model.EcografiaEndocavitariaEndometrio</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Ovario derecho</td>
+                <td class="text-pre">@Model.EcografiaEndocavitariaOvarioDerecho</td>
+                <td class="label-cell">Ovario izquierdo</td>
+                <td class="text-pre">@Model.EcografiaEndocavitariaOvarioIzquierdo</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Fondo de saco</td>
+                <td class="text-pre">@Model.EcografiaEndocavitariaFondoSaco</td>
+                <td class="label-cell">Impresión clínica</td>
+                <td class="text-pre">@Model.EcografiaEndocavitariaImpresionClinica</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Comentario</td>
+                <td class="text-pre" colspan="3">@Model.EcografiaEndocavitariaComentario</td>
+            </tr>
+        </tbody>
+    </table>
+</div>

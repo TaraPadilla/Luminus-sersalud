@@ -1,0 +1,29 @@
+CREATE TABLE IF NOT EXISTS public."DocumentosHospitalizacion" (
+    -- Columnas
+    "Id" SERIAL4,
+    "HospitalizacionId" INT4 NOT NULL,
+    "PacienteId" INT4 NOT NULL,
+    "NombreArchivo" VARCHAR(255) NOT NULL,
+    "RutaArchivo" VARCHAR(500) NOT NULL,
+    "FechaSubida" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "Extension" VARCHAR(10),
+    "Tamano" INT8 NOT NULL,
+    "Eliminado" BOOL NOT NULL DEFAULT false,
+
+    -- Restricción de Clave Primaria
+    CONSTRAINT "DocumentosHospitalizacion_pkey" 
+        PRIMARY KEY ("Id"),
+
+    -- Restricciones de Claves Foráneas (In-line)
+    CONSTRAINT "FK_DocumentosHospitalizacion_Hospitalizacion" 
+        FOREIGN KEY ("HospitalizacionId") 
+        REFERENCES public."Hospitalizaciones" ("Id") 
+        ON DELETE RESTRICT 
+        ON UPDATE NO ACTION,
+
+    CONSTRAINT "FK_DocumentosHospitalizacion_Paciente" 
+        FOREIGN KEY ("PacienteId") 
+        REFERENCES public."Pacientes" ("Id") 
+        ON DELETE RESTRICT 
+        ON UPDATE NO ACTION
+);

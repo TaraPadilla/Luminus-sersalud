@@ -1,0 +1,481 @@
+@model sistema.Models.CuentasPorCobrarPagarViewModel
+@using System.Text.Json
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    string sufijoLayout = Configuration["Cliente"]; 
+    Layout = $"_Layout{sufijoLayout}"; 
+    ViewData["Title"] = "Pagar cuenta";
+}
+
+<script>
+    window.ServerModel = @Html.Raw(JsonSerializer.Serialize(Model));
+    window.IdsExamenes = [@Html.Raw(string.Join(",", Model.Productos?.Where(p => p.EsExamen).Select(p => p.Id) ?? new List<int>()))];
+</script>
+
+@Html.HiddenFor(c => c.CuentaId)
+@Html.HiddenFor(c => c.PacienteId)
+@Html.HiddenFor(c => c.AdmisionId)
+@await Html.PartialAsync("_MensajeExito")
+
+@if (Model.SoloVista)
+{
+    <div class="alert alert-success d-flex align-items-center mb-3" role="alert">
+        <i class="fas fa-check-circle fa-2x mr-3"></i>
+        <div>
+            <strong>Cuenta liquidada.</strong> Esta hospitalización ya fue pagada.
+            Estás en modo de solo visualización — no se pueden realizar cambios.
+        </div>
+    </div>
+}
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12 text-center">
+                <h4><b>Pagar cuenta</b></h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="display: none" id="info-paciente-estado-cuenta">
+    <h5><b>Información del Paciente</b></h5>
+    <div class="datos-paciente">
+        <p><strong>Nombre:</strong> <span data-paciente="nombre">@Model.PacienteNombre</span></p>
+        <p><strong>Teléfono:</strong> <span data-paciente="telefono">@Model.PacienteTelefono</span></p>
+        <p><strong>Celular:</strong> <span data-paciente="celular">@Model.PacienteCelular</span></p>
+        <p><strong>Dirección:</strong> <span data-paciente="direccion">@Model.PacienteDireccion</span></p>
+        <p><strong>NIT:</strong> <span data-paciente="nit">@Model.PacienteNit</span></p>
+        <p><strong>DPI:</strong> <span data-paciente="dpi">@Model.PacienteDpi</span></p>
+        <p><strong>Fecha Nacimiento:</strong> <span data-paciente="fechaNacimiento">@Model.PacienteFechaNacimiento</span></p>
+        <p><strong>Edad:</strong> <span data-paciente="edad">@Model.PacienteEdad</span></p>
+        <p><strong>Sexo:</strong> <span data-paciente="sexo">@Model.PacienteSexo</span></p>
+    </div>
+
+    <h5><b>Información de Hospitalización</b></h5>
+    <div class="datos-hospitalizacion">
+        <p><strong>Fecha de Inicio:</strong> <span data-hospitalizacion="fechaInicio">@Model.FechaInicioHops</span></p>
+        <p><strong>Médico Responsable:</strong> <span data-hospitalizacion="medicoResponsable">@Model.MedicoHops</span></p>
+        <p><strong>Seguro:</strong> <span data-hospitalizacion="nombreSeguro">@Model.NombreDelSeguro</span></p>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <div id="tabs-datos-cuenta">
+                    <ul>
+                        <li><a href="#tab-paciente">General</a></li>
+                        <li><a href="#tab-productos">Detalles</a></li>
+                    </ul>
+    
+                    <div id="tab-paciente">
+                        <div class="form-row">
+                            <div class="col-md-12 mb-3">
+                                <button class="btn btn-primary" id="btnVerInfoPaciente">
+                                    <i class="fas fa-external-link-alt"></i> Ver información del paciente
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <b>Nombre del responsable</b><br />
+                                <input type="text" class="form-control" id="ResponsableNombre" value="@Model.ResponsableNombre" />
+                            </div>
+                            <div class="col-md-3">
+                                <b>Nit/Dpi del responsable</b><br />
+                                <input type="text" class="form-control" id="ResponsableNit" value="@Model.ResponsableNit" />
+                            </div>
+                            <div class="col-md-3">
+                                <b>Dirección del responsable</b><br />
+                                <input type="text" class="form-control" id="ResponsableDireccion" value="@Model.ResponsableDireccion" />
+                            </div>
+                            <div class="col-md-3">
+                                <b>Correo del responsable</b><br />
+                                <input type="text" class="form-control" id="ResponsableCorreo" value="@Model.ResponsableCorreo" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="tab-productos" class="container-fluid p-0">
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0 text-primary font-weight-bold">Datos de la Habitación</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3 mb-2">
+                                        <label class="font-weight-bolder mb-0">Número</label>
+                                        <div class="font-weight-bold" id="lblNumeroHabitacion">@Model.Habitacion?.NombreHabitacion</div>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <label class="font-weight-bolder mb-0">Categoría</label>
+                                        <div class="font-weight-bold" id="lblCategoriaHabitacion">@Model.Habitacion?.NombreCategoriaHabitacion</div>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <label class="font-weight-bolder mb-0">Tarifa</label>
+                                        <div class="font-weight-bold text-success" id="lblTarifaHabitacion">Q @Model.Habitacion?.CostoTotal</div>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <label class="font-weight-bolder mb-0">Seguro</label>
+                                        <div class="font-weight-bold" id="lblSeguroHabitacion">@Model.SeguroNombre</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header bg-white">
+                                <h5 class="mb-0 font-weight-bold">Detalle de Cargos</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-bordered mb-0">
+                                        <thead class="thead-light">
+                                            <tr>
+                                                <th>Rubro</th>
+                                                <th>Item</th>
+                                                <th>Cantidad</th>
+                                                <th>Precio Unitario</th>
+                                                <th>Subtotal</th>
+                                                <th style="min-width:180px">Desc% / Cargo</th>
+                                                <th>Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="ui-productos-body">
+                                            </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <th colspan="4" class="text-right">Total:</th>
+                                                <th colspan="3" id="ui-total-cargos-tabla">Q 0.00</th>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card shadow-sm mb-4 border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="mb-0 font-weight-bold">Exclusiones</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="thead-light">
+                                            <tr>
+                                                <th>Item</th>
+                                                <th>Cantidad</th>
+                                                <th>Precio Seguro</th>
+                                                <th>Subtotal</th>
+                                                <th>Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="ui-exclusiones-body">
+                                            </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0 font-weight-bold">Honorarios Médicos</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-row align-items-end mb-3">
+                                    <div class="col-md-6">
+                                        <label>Médico</label>
+                                        @Html.DropDownList("DoctorId", Model.DoctoresSelectListItem, "-- Seleccione médico --", new { @class = "form-control", id = "selMedico" })
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label>Monto</label>
+                                        <input type="number" class="form-control" id="txtMontoHonorario" placeholder="0.00" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="button" class="btn btn-primary btn-block" id="btnAgregarHonorario">
+                                            <i class="fa fa-plus"></i> Agregar
+                                        </button>
+                                    </div>
+                                </div>
+                                <table class="table table-sm table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Médico</th>
+                                            <th class="text-right">Monto</th>
+                                            <th class="text-center">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ui-honorarios-body">
+                                        </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+
+                        <div class="card shadow-sm mb-4 border-secondary">
+                            <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0 font-weight-bold">
+                                    <i class="fa fa-cogs mr-2"></i>Gastos Administrativos
+                                </h5>
+                                <small class="text-white-50">Se aplica sobre el total bruto de la cuenta</small>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-row align-items-end mb-3">
+                                    <div class="col-md-4">
+                                        <label>Porcentaje (%)</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="txtPctGastoAdmin"
+                                                   placeholder="0.00" min="0" max="100" step="0.01" />
+                                            <div class="input-group-append">
+                                                <span class="input-group-text">%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label>Monto Calculado</label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">Q</span>
+                                            </div>
+                                            <input type="number" class="form-control font-weight-bold text-secondary"
+                                                   id="txtMontoGastoAdmin" placeholder="0.00" readonly />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button type="button" class="btn btn-secondary btn-block" id="btnAgregarGastoAdmin">
+                                            <i class="fa fa-plus"></i> Guardar Gasto Administrativo
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <table class="table table-sm table-striped">
+                                    <thead class="thead-dark">
+                                        <tr>
+                                            <th>Descripción</th>
+                                            <th class="text-right">Porcentaje</th>
+                                            <th class="text-right">Monto (Q)</th>
+                                            <th class="text-center">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ui-gastos-admin-body">
+                                        <tr id="ui-gastos-admin-empty">
+                                            <td colspan="4" class="text-center text-muted">
+                                                <i class="fa fa-info-circle"></i> No hay gastos administrativos registrados.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="bg-light">
+                                            <td colspan="2" class="text-right font-weight-bold">Total Gastos Adm.:</td>
+                                            <td class="text-right font-weight-bold text-secondary">
+                                                Q <span id="uiTotalGastosAdmin">0.00</span>
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Cálculos y Pagos</b></h5>
+                <hr />
+            </div>
+        </div>
+        <br>
+        
+        <div class="form-row">
+            <div class="col-md-3">
+                <label>Total de cuenta (Bruto)</label>
+                <input type="number" class="form-control" id="uiTotalCuenta" readonly>
+            </div>
+            <div class="col-md-3">
+                <label>Total No Elegibles (Exclusiones)</label>
+                <input type="number" class="form-control" id="uiTotalNoElegibles" readonly>
+            </div>
+            <div class="col-md-3">
+                <label>Aseguradora Cubre</label>
+                <input type="number" class="form-control" id="uiAseguradoraCubre" readonly>
+            </div>
+            <div class="col-md-3">
+                <label>Deducibles</label>
+                <input type="number" class="form-control" id="inpDeducible" min="0" step="0.01">
+            </div>
+        </div>
+        <br>
+        <div class="form-row align-items-end">
+            <div class="col-md-3">
+                <label>% Coaseguro</label>
+                <div class="input-group">
+                    <input type="number" class="form-control" id="inpCoaseguroPct" min="0" max="100" step="0.01">
+                    <div class="input-group-append"><span class="input-group-text">%</span></div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label>Monto Coaseguro</label>
+                <input type="number" class="form-control" id="uiMontoCoaseguro" readonly>
+            </div>
+            <div class="col-md-3">
+                <label>Copago Fijo</label>
+                <input type="number" class="form-control" id="inpCopago" min="0" step="0.01">
+            </div>
+            <div class="col-md-3">
+                <label>IVA Ocasional</label>
+                <input type="number" class="form-control" id="inpIva" min="0" step="0.01">
+            </div>
+        </div>
+        <br>
+        <div class="form-row align-items-end bg-light p-3 border rounded">
+            <div class="col-md-3">
+                <label class="text-danger">Descuento Global %</label>
+                <input type="number" class="form-control" id="inpDescuentoPct" min="0" max="100" step="0.01">
+            </div>
+            <div class="col-md-3">
+                <label class="text-danger">Descuento Global Monto</label>
+                <input type="number" class="form-control" id="inpDescuentoMonto" min="0" step="0.01">
+            </div>
+            <div class="col-md-3">
+                <label class="font-weight-bold text-primary">Responsabilidad Seguro</label>
+                <input type="number" class="form-control font-weight-bold" id="uiPagoSeguro" readonly>
+            </div>
+            <div class="col-md-3">
+                <label class="font-weight-bold text-success">Responsabilidad Paciente</label>
+                <input type="number" class="form-control font-weight-bold text-success" id="uiPagoPaciente" readonly>
+            </div>
+        </div>
+        <br>
+        
+        <div class="form-row">
+            <div class="col-md-4">
+                <label>Forma de pago</label>
+                @Html.DropDownList("FormaPagoId", Model.FormaPagoSelectListItems, new { @class = "form-control", id="selFormaPago" })
+            </div>
+            <div class="col-md-4">
+                <label>Moneda</label>
+                @Html.DropDownList("MonedaId", Model.MonedaSelectListItems, new { @class = "form-control", id="selMoneda" })
+            </div>
+            <div class="col-md-3">
+                <label>Monto</label>
+                <input type="number" class="form-control" id="txtMontoPago" step="0.01" />
+            </div>
+            <div class="col-md-1">
+                <br />
+                <button class="btn btn-primary btn-block" id="btnAgregarPago">Agregar</button>
+            </div>
+        </div>
+
+        <div class="form-row mt-3">
+            <div class="col-md-12">
+                <table class="table table-hover table-bordered">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Forma de pago</th>
+                            <th>Moneda</th>
+                            <th>Monto</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ui-pagos-body">
+                        </tbody>
+                    <tfoot>
+                        <tr class="bg-light">
+                            <td colspan="3" class="text-right font-weight-bold">Total Pagado:</td>
+                            <td colspan="2" class="font-weight-bold">Q <span id="uiTotalPagado">0.00</span></td>
+                        </tr>
+                        <tr class="bg-dark text-white">
+                            <td colspan="3" class="text-right font-weight-bold">SALDO RESTANTE:</td>
+                            <td colspan="2" class="font-weight-bold" style="font-size: 1.2rem;">Q <span id="uiSaldoRestante">0.00</span></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12 d-flex justify-content-between">
+                <div>
+                    <button type="button" class="btn btn-danger" onclick="window.history.back();">Cancelar</button>
+                </div>
+                <div>
+                    <button class="btn btn-info mr-2" id="btnReintentarFel" style="display:none;">Reintentar FEL</button>
+                    <button class="btn btn-secondary mr-2" id="btnVerPDF_FEL" style="display:none;">Ver PDF FEL</button>
+                    <button class="btn btn-warning mr-2" id="btnEstadoCuenta"><i class="fa fa-external-link-alt"></i> Generar PDF (Interno)</button>
+                    <button class="btn btn-success font-weight-bold" id="btnPagarFinal">CONFIRMAR Y PAGAR</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<input type="hidden" id="UuidFel" value="@Model.UuidFel" />
+
+@section css {
+    <style>
+        .celda-subtotal { color: #155724; }
+        .is-examen { background-color: #f8f9fa; }
+    </style>
+}
+
+@section Scripts {
+
+
+@if (Model.SoloVista)
+{
+    <style>
+        /* Bloqueo visual y funcional de la tabla de productos por CSS */
+        #ui-productos-body input {
+            background-color: #e9ecef !important;
+            pointer-events: none !important;
+            user-select: none;
+            border: 1px solid #ced4da !important;
+        }
+
+        /* Ocultar la columna de acciones (la última) de forma permanente */
+        #ui-productos-body tr td:last-child, 
+        table thead tr th:last-child {
+            display: none !important;
+        }
+    </style>
+
+    <script>
+    $(document).ready(function () {
+
+        // 1. Deshabilitar inputs de la sección de pago
+        $('#ResponsableNombre, #ResponsableNit, #ResponsableDireccion, #ResponsableCorreo').prop('readonly', true);
+        $('#selFormaPago, #selMoneda, #txtMontoPago').prop('disabled', true);
+        $('#inpDeducible, #inpCoaseguroPct, #inpCopago, #inpIva, #inpDescuentoPct, #inpDescuentoMonto').prop('readonly', true);
+        
+        // 2. Ocultar botones que no deben usarse
+        $('#btnAgregarPago, #btnPagarFinal, #btnAgregarHonorario, #btnAgregarGastoAdmin, #btnAgregarProducto, #btnCargarServicio').hide();
+
+        // 3. Modificar el botón de salida
+        $('button[onclick="window.history.back();"]')
+            .text('← Volver a la hospitalización')
+            .removeClass('btn-danger')
+            .addClass('btn-secondary');
+
+        // 4. Bloquear otras tablas dinámicas (Exclusiones y Pagos realizados)
+        $(document).on('DOMNodeInserted', '#ui-exclusiones-body, #ui-pagos-body', function () {
+            $(this).find('.btn-danger, .btn-primary, .eliminarGasto').hide();
+        });
+    });
+    </script>
+}
+
+    <script src="~/ViewModelKo/PagarEstadoCuentaManager.js"></script>
+}

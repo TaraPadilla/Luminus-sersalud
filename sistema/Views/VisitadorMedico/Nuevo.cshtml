@@ -1,0 +1,28 @@
+@{
+    ViewData["Title"] = "Nuevo Visitador Médico";
+}
+@await Html.PartialAsync("_MensajeExito")
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <h4><b>Nuevo Visitador Médico</b></h4>
+        </div>
+    </div>
+</div>
+@await Html.PartialAsync("_VisitadorMedicoForm")
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <button class="btn btn-danger"
+                data-bind="click: function() { window.location.href = '/VisitadorMedico/Lista'; }">
+                Cancelar
+            </button>
+            <button class="btn btn-success" data-bind="click: registrarVisitadorMedico">
+                Guardar Visitador
+            </button>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script type="text/javascript" src="~/ViewModelKo/VisitadorMedico/VisitadorMedicoAddUpdateVM.js"></script>
+}

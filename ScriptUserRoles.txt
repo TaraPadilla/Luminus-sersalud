@@ -1,0 +1,8 @@
+INSERT INTO "AspNetRoles" ("Id", "Name", "NormalizedName", "ConcurrencyStamp")
+VALUES
+    (uuid_generate_v4()::text, 'Jefe de Area', UPPER('Jefe de Area'), uuid_generate_v4()::text),
+    (uuid_generate_v4()::text, 'Asistente', UPPER('Asistente'), uuid_generate_v4()::text),
+    (uuid_generate_v4()::text, 'Auxiliar de Bodega', UPPER('Auxiliar de Bodega'), uuid_generate_v4()::text),
+    (uuid_generate_v4()::text, 'Encargado de Kardex', UPPER('Encargado de Kardex'), uuid_generate_v4()::text),
+    (uuid_generate_v4()::text, 'Gerente Administrativo Financiero', UPPER('Gerente Administrativo Financiero'), uuid_generate_v4()::text),
+  (uuid_generate_v4()::text, 'Registro de huella medica', UPPER('Registro de huella medica'), uuid_generate_v4()::text);

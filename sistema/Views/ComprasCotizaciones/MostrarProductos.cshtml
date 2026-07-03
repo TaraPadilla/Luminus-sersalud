@@ -1,0 +1,707 @@
+@using Newtonsoft.Json
+@model List<sistema.Models.ProductoTrasladoToCompraViewModel>
+
+@{
+    ViewData["Title"] = "Cotización de Productos Trasladados";
+}
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" />
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+
+<style>
+    .header-cotizacion {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        padding-bottom: 0.5rem;
+    }
+
+    .card-modern {
+        border-radius: 0.75rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        border: none;
+    }
+
+    .section-title {
+        font-weight: 600;
+        color: #343a40;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        font-size: 0.9rem;
+    }
+
+    .section-subtitle {
+        font-weight: 600;
+        color: #495057;
+        font-size: 0.9rem;
+    }
+
+    .badge-proveedor {
+        background-color: #e9ecef;
+        color: #343a40;
+        padding: 5px;
+        border: 1px solid #ced4da11;
+        border-radius: 0.35rem;
+        font-weight: 600;
+        font-size: 0.8rem;
+    }
+
+    .badge-proveedor .remove {
+        color: #dc3545 !important;
+        font-weight: 700;
+        margin-left: 0.35rem;
+        cursor: pointer;
+    }
+
+    .table-cotizacion th {
+        background-color: #4f5b72;
+        color: white;
+        font-weight: 600;
+        vertical-align: middle;
+    }
+
+    .table-cotizacion tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+
+    .dataTables_wrapper .dataTables_filter input,
+    .dataTables_wrapper .dataTables_length select {
+        border-radius: 0.25rem;
+        border-color: #ced4da;
+    }
+
+    .input-group-sm .form-control {
+        font-size: 0.85rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    .input-precio {
+        min-width: 70px;
+    }
+
+    .input-cantidad {
+        min-width: 60px;
+        font-weight: bold;
+    }
+
+    .input-cantidad.is-invalid {
+        border-color: #dc3545;
+        background-color: #fff8f8;
+    }
+
+    .input-cantidad[readonly] {
+        background-color: #e9ecef;
+        cursor: not-allowed;
+        color: #6c757d;
+    }
+
+    .btn-estrella {
+        padding: 0.25rem 0.5rem;
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="header-cotizacion mb-4">
+        <h2 class="text-center font-weight-bold pt-4 mb-3">📦 Gestión de Cotizaciones</h2>
+        <input type="hidden" id="ambienteId" value="@ViewBag.AmbienteId" />
+        <input type="hidden" id="sucursalId" value="@ViewBag.SucursalId" />
+    </div>
+
+    <div id="mensajeCotizacion" class="mt-3"></div>
+
+    <div class="main-card mb-4 card card-modern">
+        <div class="card-body">
+            <h5 class="section-title mb-2">Seleccionar Proveedores y Opciones</h5>
+            <small class="text-muted">Selecciona los proveedores. El sistema cargará automáticamente los
+                precios.</small>
+
+            <div class="mt-3">
+                <label for="proveedorSelect" class="section-subtitle mb-2">Proveedor</label>
+                <div class="input-group">
+                    <select id="proveedorSelect" class="form-control select2bs4">
+                        @if (ViewBag.Proveedores != null && ViewBag.Proveedores.Count > 0)
+                        {
+                            @foreach (var proveedor in ViewBag.Proveedores)
+                            {
+                                <option value="@proveedor">@proveedor</option>
+                            }
+                        }
+                        else
+                        {
+                            <option value="" disabled selected>No hay proveedores disponibles</option>
+                        }
+                    </select>
+                    <div class="input-group-append">
+                        <button id="agregarProveedor" class="btn btn-primary" type="button" title="Agregar proveedor"><i
+                                class="fas fa-user-plus mr-1"></i> Agregar</button>
+                        <button id="limpiarProveedores" class="btn btn-outline-secondary" type="button"><i
+                                class="fas fa-broom mr-1"></i> Limpiar</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <h6 class="section-subtitle mb-2">Acciones de Cotización</h6>
+                <div class="d-flex flex-wrap align-items-center">
+                    <button id="guardarCotizacion" class="btn btn-primary mr-2 mb-2"><i class="fas fa-save mr-1"></i>
+                        Guardar Cotización</button>
+                    <button id="listadoPreCotizaciones" class="btn btn-outline-secondary mr-2 mb-2"><i
+                            class="fas fa-clipboard-list mr-1"></i> Listado de Cotizaciones</button>
+                    <button id="toggleModoDividido" class="btn btn-outline-info mr-2 mb-2"
+                        title="Permite asignar cantidades manuales"><i class="fas fa-random mr-1"></i> <span>Habilitar
+                            Compra Dividida</span></button>
+                    <button id="generarOrdenesCompra" class="btn btn-outline-primary mb-2"><i
+                            class="fas fa-shopping-cart mr-1"></i> Generar órdenes de compra</button>
+                    <button id="listadoOrdenesCompra" class="btn btn-outline-success mr-2 mb-2"><i
+                            class="fas fa-clipboard-list mr-1"></i> Listado Ordenes de Compra</button>
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <h6 class="section-subtitle mb-2">Exportar</h6>
+                <div class="d-flex flex-wrap">
+                    <button id="generarPDF" class="btn btn-outline-danger mr-2 mb-2"><i
+                            class="fas fa-file-pdf mr-1"></i> PDF</button>
+                    <button id="generarExcel" class="btn btn-outline-success mr-2 mb-2"><i
+                            class="fas fa-file-excel mr-1"></i> Excel</button>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <h6 class="section-subtitle mb-2">Proveedores Seleccionados</h6>
+                <div id="listaProveedores" class="d-flex flex-wrap"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-card mb-3 card card-modern">
+        <div class="card-body">
+            <h5 class="section-title mb-3">Detalle de Productos Trasladados</h5>
+            @if (ViewBag.Error != null)
+            {
+                <div class="alert alert-danger" role="alert">@ViewBag.Error</div>
+            }
+            else if (Model == null || Model.Count == 0)
+            {
+
+                <div class="alert alert-warning" role="alert">No hay productos
+                    trasladados para cotizar.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table id="productosTable" class="table table-cotizacion table-hover text-center w-100">
+                        <thead class="thead-light">
+                            <tr>
+                                <th style="display: none;">Id</th>
+                                <th>Código</th>
+                                <th>Producto</th>
+                                <th>Cantidad Trasladada</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var producto in Model)
+                            {
+                                <tr>
+                                    <td style="display: none;">@producto.ProductoId</td>
+                                    <td>@producto.CodigoReferencia</td>
+                                    <td class="text-left">@producto.ProductoNombre</td>
+                                    <td>@producto.CantidadTrasladada</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+    let proveedores = [];
+    let modoCompraDividida = false;
+    let cacheDatos = @Html.Raw(JsonConvert.SerializeObject(ViewBag.PreciosHistoricos ?? new { }));
+
+    function mostrarAlerta(mensaje, tipo) {
+        let icono = tipo === 'success' ? 'check-circle' : (tipo === 'danger' ? 'exclamation-triangle' : 'exclamation-circle');
+        let titulo = tipo === 'success' ? '¡Éxito!' : (tipo === 'danger' ? 'Error' : 'Atención');
+        let html = `
+            <div class="alert alert-${tipo} alert-dismissible fade show shadow-sm" role="alert" style="border-radius: 8px;">
+                <div class="d-flex align-items-start">
+                    <i class="fas fa-${icono} fa-2x mr-3 mt-1"></i>
+                    <div class="w-100"><h5 class="alert-heading font-weight-bold mb-1">${titulo}</h5><div style="font-size: 0.95rem;">${mensaje}</div></div>
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                </div>
+            </div>`;
+        $('#mensajeCotizacion').html(html).fadeIn();
+        $('html, body').animate({ scrollTop: $("#mensajeCotizacion").offset().top - 120 }, 500);
+    }
+
+    $(document).ready(function () {
+        $('#productosTable').DataTable({
+            "paging": true, "searching": true, "info": true, "lengthMenu": [10, 25, 50, 100],
+            "language": { "search": "🔍 Buscar:", "paginate": { "first": "Primero", "last": "Último", "next": "Siguiente", "previous": "Anterior" }, "info": "Mostrando _PAGE_ de _PAGES_", "lengthMenu": "Mostrar _MENU_ productos" }
+        });
+
+        $('#toggleModoDividido').click(function () {
+            modoCompraDividida = !modoCompraDividida;
+            if (modoCompraDividida) {
+                $(this).removeClass('btn-outline-info').addClass('btn-info text-white').find('span').text('Deshabilitar Compra Dividida');
+                $('.input-cantidad').prop('readonly', false);
+                mostrarAlerta('Has habilitado la <b>Compra Dividida</b>.', 'info');
+            } else {
+                $(this).removeClass('btn-info text-white').addClass('btn-outline-info').find('span').text('Habilitar Compra Dividida');
+                $('.input-cantidad').prop('readonly', true);
+                mostrarAlerta('Has vuelto al modo <b>Proveedor Único</b>. Usa la estrella (⭐).', 'info');
+            }
+            actualizarCeldas();
+        });
+
+        $('#agregarProveedor').click(function () {
+            let proveedor = $('#proveedorSelect').val();
+            if (!proveedor) { mostrarAlerta('Seleccione un proveedor.', 'warning'); return; }
+            if (proveedores.includes(proveedor)) { mostrarAlerta('El proveedor ya está agregado.', 'warning'); return; }
+
+            guardarEstadoTabla();
+            proveedores.push(proveedor);
+
+            if (!cacheDatos[proveedor]) {
+                let listaSolicitud = [];
+                let table = $('#productosTable').DataTable();
+                table.rows().nodes().to$().each(function () {
+                    let pid = $(this).find('td:eq(0)').text().trim();
+                    if (pid) listaSolicitud.push({ ProductoId: parseInt(pid) });
+                });
+
+                $.ajax({
+                    url: '/Compra/ObtenerUltimosPreciosPorProveedor?proveedor=' + encodeURIComponent(proveedor),
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(listaSolicitud),
+                    success: function (response) {
+                        if (response.exitoso || response.Exitoso) {
+                            cacheDatos[proveedor] = {};
+                            let precios = response.Precios || response.precios;
+                            for (let pid in precios) {
+                                cacheDatos[proveedor][pid] = { precio: precios[pid], cantidad: 0 };
+                            }
+                            completarAgregado(proveedor);
+                        } else {
+                            cacheDatos[proveedor] = {};
+                            completarAgregado(proveedor);
+                        }
+                    },
+                    error: function () {
+                        cacheDatos[proveedor] = {};
+                        completarAgregado(proveedor);
+                    }
+                });
+            } else {
+                completarAgregado(proveedor);
+            }
+        });
+
+        function completarAgregado(proveedor) {
+            actualizarCabecera();
+            actualizarCeldas();
+            $('#listaProveedores').append(`<div class="badge badge-proveedor d-flex align-items-center mr-2 mb-2 proveedor-item" data-proveedor="${proveedor}"><span class="mr-1">${proveedor}</span><span class="remove" data-proveedor="${proveedor}">✖</span></div>`);
+            $('#mensajeCotizacion').empty();
+        }
+
+        $(document).on('click', '.remove', function () {
+            let p = $(this).data('proveedor');
+            proveedores = proveedores.filter(x => x !== p);
+            actualizarCabecera(); actualizarCeldas();
+            $(this).closest('.proveedor-item').remove();
+        });
+
+        $('#limpiarProveedores').click(function () {
+            proveedores = []; cacheDatos = @Html.Raw(JsonConvert.SerializeObject(ViewBag.PreciosHistoricos ?? new { }));
+            $('#listaProveedores').empty(); $('#mensajeCotizacion').empty();
+            let t = $('#productosTable').DataTable(); t.rows().nodes().to$().each(function () { $(this).find('td:gt(3)').remove(); });
+            actualizarCabecera();
+        });
+
+        function guardarEstadoTabla() {
+            let t = $('#productosTable').DataTable();
+            t.rows().nodes().to$().each(function () {
+                let row = $(this); let pid = row.find('td:eq(0)').text().trim();
+                proveedores.forEach((prov, idx) => {
+                    let cell = row.find(`td:eq(${idx + 4})`);
+                    if (cell.length > 0) {
+                        let pre = parseFloat(cell.find('.input-precio').val()) || 0;
+                        let cant = parseInt(cell.find('.input-cantidad').val()) || 0;
+                        if (!cacheDatos[prov]) cacheDatos[prov] = {};
+                        if (!cacheDatos[prov][pid]) cacheDatos[prov][pid] = {};
+
+                        if (pre > 0) cacheDatos[prov][pid].precio = pre;
+                        cacheDatos[prov][pid].cantidad = cant;
+                    }
+                });
+            });
+        }
+
+        function actualizarCabecera() {
+            let h = `<tr><th style='display:none;'>Id</th><th style='width:15%;'>Código</th><th style='width:25%;'>Producto</th><th style='width:10%;'>Total</th>`;
+            proveedores.forEach(p => h += `<th style='min-width:160px;'>${p}</th>`);
+            h += `</tr>`;
+            $('#productosTable thead').html(h);
+        }
+
+        function actualizarCeldas() {
+            let t = $('#productosTable').DataTable();
+            let ro = !modoCompraDividida ? 'readonly' : '';
+            t.rows().nodes().to$().each(function () {
+                let row = $(this); let pid = row.find('td:eq(0)').text().trim();
+                row.find('td:gt(3)').remove();
+                proveedores.forEach(p => {
+                    let d = (cacheDatos[p] && cacheDatos[p][pid]) ? cacheDatos[p][pid] : { precio: 0, cantidad: 0 };
+                    let hl = d.cantidad > 0 ? 'table-warning' : '';
+                    let valPrecio = d.precio > 0 ? d.precio : '';
+
+                    let c = `<td class="proveedor-item-cell ${hl}"><div class="d-flex flex-column align-items-center">
+                        <div class="input-group input-group-sm mb-1"><div class="input-group-prepend"><span class="input-group-text">$</span></div><input type="number" class="form-control input-precio" min="0" placeholder="Precio" value="${valPrecio}" /></div>
+                        <div class="input-group input-group-sm"><div class="input-group-prepend"><span class="input-group-text">#</span></div><input type="number" class="form-control input-cantidad" min="0" placeholder="Cant." value="${d.cantidad}" ${ro} /><div class="input-group-append"><button class="btn btn-outline-warning btn-estrella marcar-principal" data-proveedor="${p}" title="Asignar todo"><i class="fas fa-star"></i></button></div></div>
+                    </div></td>`;
+                    row.append(c);
+                });
+            });
+        }
+
+        $(document).on('change', '.input-precio', function () {
+            let val = parseFloat($(this).val()) || 0;
+            let row = $(this).closest('tr');
+            let pid = row.find('td:eq(0)').text().trim();
+            let idx = $(this).closest('td').index() - 4;
+            let p = proveedores[idx];
+            if (!cacheDatos[p]) cacheDatos[p] = {};
+            if (!cacheDatos[p][pid]) cacheDatos[p][pid] = {};
+            cacheDatos[p][pid].precio = val;
+        });
+
+        $(document).on('input', '.input-cantidad', function () {
+            let val = parseInt($(this).val()) || 0;
+            let cell = $(this).closest('td');
+            let row = $(this).closest('tr');
+            let pid = row.find('td:eq(0)').text().trim();
+            let idx = cell.index() - 4;
+            let p = proveedores[idx];
+
+            let total = parseInt(row.find('td:eq(3)').text().trim()) || 0;
+
+            // Validación: cantidad individual no puede superar la cantidad trasladada
+            if (val > total) {
+                $(this).val(total);
+                val = total;
+                mostrarAlerta('La cantidad asignada a un proveedor no puede superar la cantidad trasladada (' + total + ').', 'danger');
+            }
+
+            if (!cacheDatos[p]) cacheDatos[p] = {};
+            if (!cacheDatos[p][pid]) cacheDatos[p][pid] = {};
+            cacheDatos[p][pid].cantidad = val;
+            $(this).removeClass('is-invalid');
+            if (val > 0) cell.addClass('table-warning'); else cell.removeClass('table-warning');
+        });
+
+        $(document).on('click', '.marcar-principal', function () {
+            let row = $(this).closest('tr');
+            let pid = row.find('td:eq(0)').text().trim();
+            let total = parseInt(row.find('td:eq(3)').text().trim()) || 0;
+            let cell = $(this).closest('td');
+            let idx = cell.index() - 4;
+            let ganador = proveedores[idx];
+
+            row.find('.input-cantidad').val(0).removeClass('is-invalid');
+            row.find('.proveedor-item-cell').removeClass('table-warning');
+
+            proveedores.forEach(p => {
+                if (cacheDatos[p] && cacheDatos[p][pid]) cacheDatos[p][pid].cantidad = 0;
+            });
+
+            cell.find('.input-cantidad').val(total);
+            cell.addClass('table-warning');
+
+            if (!cacheDatos[ganador]) cacheDatos[ganador] = {};
+            if (!cacheDatos[ganador][pid]) cacheDatos[ganador][pid] = {};
+            cacheDatos[ganador][pid].cantidad = total;
+        });
+
+        // 1. GUARDAR COTIZACIÓN (Insert/Creación)
+        $('#guardarCotizacion').click(function () {
+            guardarEstadoTabla();
+
+            let t = $('#productosTable').DataTable();
+            let tieneError = false;
+
+            // Validación: ninguna cantidad individual > trasladada y suma <= trasladada
+            t.rows().nodes().to$().each(function () {
+                let row = $(this);
+                let total = parseInt(row.find('td:eq(3)').text().trim()) || 0;
+                if (!total) return;
+
+                let suma = 0;
+
+                proveedores.forEach((p, idx) => {
+                    let cell = row.find(`td:eq(${idx + 4})`);
+                    if (cell.length > 0) {
+                        let input = cell.find('.input-cantidad');
+                        let val = parseInt(input.val()) || 0;
+
+                        if (val > total) {
+                            input.addClass('is-invalid');
+                            tieneError = true;
+                        }
+
+                        suma += val;
+                    }
+                });
+
+                if (suma > total) {
+                    proveedores.forEach((p, idx) => {
+                        let cell = row.find(`td:eq(${idx + 4})`);
+                        if (cell.length > 0) {
+                            let input = cell.find('.input-cantidad');
+                            let val = parseInt(input.val()) || 0;
+                            if (val > 0) input.addClass('is-invalid');
+                        }
+                    });
+                    tieneError = true;
+                }
+            });
+
+            if (tieneError) {
+                mostrarAlerta('Hay productos cuya cantidad asignada a proveedores supera la cantidad trasladada. Verifique las cantidades.', 'danger');
+                return;
+            }
+
+            let prods = [];
+
+            // Iterar sobre todas las filas
+            t.rows().nodes().to$().each(function () {
+                let row = $(this);
+                let pid = parseInt(row.find('td:eq(0)').text().trim());
+                let cod = row.find('td:eq(1)').text().trim();
+                let nom = row.find('td:eq(2)').text().trim();
+                let cant = parseInt(row.find('td:eq(3)').text().trim()) || 0;
+
+                let precios = {};
+                let cantidades = {};
+                let principal = "";
+                let maxCant = 0;
+
+                proveedores.forEach(p => {
+                    let d = (cacheDatos[p] && cacheDatos[p][pid]) ? cacheDatos[p][pid] : { precio: 0, cantidad: 0 };
+
+                    precios[p] = d.precio;
+                    cantidades[p] = d.cantidad;
+
+                    if (d.cantidad > maxCant) {
+                        maxCant = d.cantidad;
+                        principal = p;
+                    }
+                });
+
+                prods.push({
+                    ProductoId: pid,
+                    CodigoReferencia: cod,
+                    ProductoNombre: nom,
+                    CantidadTrasladada: cant,
+                    Proveedores: precios,
+                    Cantidades: cantidades,
+                    ProveedorPrincipal: principal
+                });
+            });
+
+            let principalDict = {};
+            prods.forEach(p => { if (p.ProveedorPrincipal) principalDict[p.ProductoId] = p.ProveedorPrincipal; });
+
+            $.ajax({
+                url: '/CotizacionPreOrden/Guardar', type: 'POST', contentType: 'application/json',
+                data: JSON.stringify({ Items: JSON.stringify(prods), ProveedorPrincipalPorItem: principalDict }),
+                success: function () { window.location.href = '/CotizacionPreOrden/Listado'; },
+                error: function () { mostrarAlerta('Error al guardar.', 'danger'); }
+            });
+        });
+
+        // GENERAR ÓRDENES DE COMPRA
+        $('#generarOrdenesCompra').click(function () {
+            console.clear(); $('#mensajeCotizacion').empty();
+            if (proveedores.length === 0) { mostrarAlerta("Agregue al menos un proveedor.", 'warning'); return; }
+
+            let productos = [];
+            let t = $('#productosTable').DataTable();
+            let rows = t.rows({ search: 'applied' }).nodes();
+            let err = false;
+
+            if (rows.length === 0) { mostrarAlerta("Tabla vacía.", 'warning'); return; }
+
+            $(rows).each(function () {
+                let row = $(this);
+                let pid = row.find('td:eq(0)').text().trim();
+                let cod = row.find('td:eq(1)').text().trim();
+                let nom = row.find('td:eq(2)').text().trim();
+                let req = parseInt(row.find('td:eq(3)').text().trim()) || 0;
+                if (!pid) return;
+
+                let sum = 0;
+                let buffer = [];
+
+                proveedores.forEach((p, idx) => {
+                    let cell = row.find(`td:eq(${idx + 4})`);
+                    let pre = parseFloat(cell.find('.input-precio').val()) || 0;
+                    let cant = parseInt(cell.find('.input-cantidad').val()) || 0;
+                    if (cant > 0) { sum += cant; buffer.push({ Proveedor: p, Precio: pre, Cantidad: cant }); }
+                    cell.find('.input-cantidad').removeClass('is-invalid');
+                });
+
+                if (sum > req) {
+                    err = true;
+                    row.find('.input-cantidad').each(function () { if ($(this).val() > 0) $(this).addClass('is-invalid'); });
+                } else if (sum > 0) {
+                    buffer.forEach(b => productos.push({ ProductoId: parseInt(pid), Codigo: cod, Producto: nom, Cantidad: b.Cantidad, PrecioCompra: b.Precio, ProveedorPrincipal: b.Proveedor }));
+                }
+            });
+
+            if (err) { mostrarAlerta("<strong>Error:</strong> Cantidad asignada supera requerida.", 'danger'); return; }
+            if (productos.length === 0) { mostrarAlerta("Sin asignaciones.", 'warning'); return; }
+
+            let amb = parseInt($('#ambienteId').val()) || null;
+            let suc = parseInt($('#sucursalId').val()) || null;
+            if (!amb || !suc) { mostrarAlerta("Error de configuración.", 'danger'); return; }
+
+            let data = { Productos: productos, ProveedorPrincipalPorItem: {}, EncabezadoAmbienteId: amb, EncabezadoSucursalId: suc };
+
+            if (!confirm("¿Generar órdenes?")) return;
+            $('#mensajeCotizacion').html('<div class="alert alert-info"><i class="fas fa-spinner fa-spin mr-2"></i> Procesando...</div>');
+
+            $.ajax({
+                url: '/Compra/GenerarOrdenesDesdeCotizacion', method: 'POST', contentType: 'application/json', data: JSON.stringify(data),
+                success: function (d) {
+                    let ex = d.Exitoso || d.exitoso;
+                    if (ex) {
+                        let h = `<span>${d.Mensaje || d.mensaje}</span><hr class="my-2"><ul class="mb-0 pl-3">`;
+                        let ords = d.OrdenesCreadas || d.ordenesCreadas || [];
+                        ords.forEach(o =>
+                            h += `<li>Prov: <strong>${o.Proveedor || o.proveedor}</strong> | OC: <strong>${o.OrdenCompraId || o.ordenCompraId}</strong> | Total: <strong>${o.Total || o.total}</strong></li>`
+                        );
+                        h += `</ul>`;
+                        mostrarAlerta(h, 'success');
+
+                        // 🔽🔽🔽 NUEVO: imprimir las órdenes generadas 🔽🔽🔽
+                        ords.forEach(function (o) {
+                            var id = o.OrdenCompraId || o.ordenCompraId;
+                            if (id) {
+                                // Acción Reporte del CompraController
+                                window.open('/CrearPDF/OrdenCompraPDF?ordenCompraId=' + id, '_blank');
+                            }
+                        });
+                        // 🔼🔼🔼 FIN NUEVO 🔼🔼🔼
+
+                    } else {
+                        mostrarAlerta(d.Mensaje || d.mensaje, 'danger');
+                    }
+                },
+
+                error: function (x) {
+                    mostrarAlerta("Error de comunicación.", 'danger');
+                }
+            });
+        });
+
+        // Botones PDF/Excel
+        function recolectarParaExportar() {
+            let prods = [];
+            let t = $('#productosTable').DataTable();
+
+            t.rows().nodes().to$().each(function () {
+                let row = $(this);
+
+                let preciosProv = {};
+                let cantsProv = {};
+
+                proveedores.forEach((p, i) => {
+                    let cell = row.find(`td:eq(${4 + i})`);
+                    let precio = parseFloat(cell.find('.input-precio').val()) || 0;
+                    let cantidad = parseInt(cell.find('.input-cantidad').val()) || 0;
+
+                    cantsProv[p] = cantidad;
+                    preciosProv[p] = precio;
+                });
+
+                prods.push({
+                    ProductoId: row.find('td:eq(0)').text().trim(),
+                    CodigoReferencia: row.find('td:eq(1)').text().trim(),
+                    ProductoNombre: row.find('td:eq(2)').text().trim(),
+                    CantidadTrasladada: parseInt(row.find('td:eq(3)').text().trim()) || 0,
+                    CantidadesProveedores: cantsProv,
+                    PreciosProveedores: preciosProv,
+                    ProveedorPrincipal: ""
+                });
+            });
+
+            return prods;
+        }
+
+        $('#generarPDF').click(function () {
+            let productos = recolectarParaExportar();
+
+            let principalDict = {};
+            productos.forEach(p => {
+                let maxCant = 0;
+                let principal = "";
+
+                for (const prov in p.CantidadesProveedores) {
+                    const cant = p.CantidadesProveedores[prov] || 0;
+                    if (cant > maxCant) {
+                        maxCant = cant;
+                        principal = prov;
+                    }
+                }
+
+                if (principal) {
+                    principalDict[p.ProductoId] = principal;
+                }
+            });
+
+            let data = {
+                Productos: productos,
+                Proveedores: [...proveedores],
+                ProveedorPrincipalPorItem: principalDict,
+                TipoReporte: modoCompraDividida ? 'CompraDividida' : 'ProveedorUnico'
+            };
+
+            $.ajax({
+                url: '/CrearPdf/CotizacionPDF',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                xhrFields: { responseType: 'blob' },
+                success: function (res) {
+                    let url = URL.createObjectURL(new Blob([res], { type: 'application/pdf' }));
+                    window.open(url, '_blank');
+                },
+                error: function () {
+                    mostrarAlerta('Error al generar PDF.', 'danger');
+                }
+            });
+        });
+
+        $('#generarExcel').click(function () {
+            let data = { Productos: recolectarParaExportar(), Proveedores: [...proveedores], ProveedorPrincipalPorItem: {} };
+            $.ajax({
+                url: '/CrearExcel/CotizacionExcel', type: 'POST', contentType: 'application/json', data: JSON.stringify(data), xhrFields: { responseType: 'blob' },
+                success: function (res) {
+                    let url = window.URL.createObjectURL(new Blob([res], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+                    let link = document.createElement('a'); link.href = url; link.download = 'Cotizacion.xlsx'; link.click();
+                },
+                error: function () { mostrarAlerta('Error al generar Excel.', 'danger'); }
+            });
+        });
+
+        $('#listadoPreCotizaciones').click(function () { window.location.href = '/CotizacionPreOrden/Listado'; });
+        $('#listadoOrdenesCompra').click(function () { window.location.href = '/Compra/ListaPeticiones?ambienteId=@ViewBag.AmbienteId'; });
+    });
+</script>

@@ -1,0 +1,88 @@
+@model sistema.Models.SeguroViewModel;
+
+@Html.HiddenFor(m => m.Id)
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <h5><b>Información del Seguro</b></h5>
+                        <hr />
+                    </div>
+                    
+                    <div class="col-md-12">
+                        <label>Nombre</label>
+                        @Html.TextBoxFor(a => a.Nombre, new
+                        {
+                            @class = "form-control",
+                            @id = "nombreSeguro"
+                        })
+                    </div>
+                    <div class="col-md-12">
+                        <label>Direccion</label>
+                        @Html.TextBoxFor(a => a.Direccion, new
+                        {
+                            @class = "form-control",
+                        })
+                    </div>
+                    <div class="col-md-12">
+                        <label>Telefono</label>
+                        @Html.TextBoxFor(a => a.Telefono, new
+                        {
+                            @class = "form-control",
+                        })
+                    </div>
+                    <div class="col-md-12">
+                        <label>Web</label>
+                        @Html.TextBoxFor(a => a.Web, new
+                        {
+                            @class = "form-control",
+                        })
+                    </div>
+                    @* <div class="col-md-12">
+                        <label>¿El seguro posee planes?</label>
+                        <input type="radio" id="poseePlanes" name="poseePlanes" onclick="togglePlanInput()" />
+                        <label for="poseePlanes">Sí</label>
+                    </div>
+                    
+                    <div class="col-md-12" id="planSeguroContainer" style="display: none;">
+                        <label>Nombre del Plan del Seguro</label>
+                        <input type="text" id="planSeguro" class="form-control" placeholder="Nombre del Plan del Seguro" />
+                    </div>
+
+                    <div class="col-md-12">
+                        <label>Descripción</label>
+                        @Html.TextAreaFor(a => a.Descripcion, new
+                        {
+                            @class = "form-control",
+                            @placeholder = "Descripción"
+                        })
+                    </div> *@
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* <script>
+    function togglePlanInput() {
+        var planContainer = document.getElementById("planSeguroContainer");
+        var nombreSeguroInput = document.getElementById("nombreSeguro");
+        var planSeguroInput = document.getElementById("planSeguro");
+    
+        if (planContainer.style.display === "none") {
+            planContainer.style.display = "block";
+            planSeguroInput.addEventListener('input', function () {
+                var planValue = planSeguroInput.value ? " - " + planSeguroInput.value : '';
+                nombreSeguroInput.value = nombreSeguroInput.value.split(' - ')[0] + planValue;
+            });
+        } else {
+            planContainer.style.display = "none";
+            planSeguroInput.value = '';
+            nombreSeguroInput.value = nombreSeguroInput.value.split(' - ')[0];
+        }
+    }
+
+</script> *@

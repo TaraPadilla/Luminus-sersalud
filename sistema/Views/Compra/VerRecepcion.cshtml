@@ -1,0 +1,169 @@
+@*EN PROCESO DE SER ELIMINADO*@
+@* @using Database.Shared.Enumeraciones
+@model sistema.Models.CompraBaseViewModel
+
+@{
+    ViewData["Title"] = "Recepcion - Detalles";
+    decimal suma = 0.00m;
+}
+
+<div class="form-row">
+    <div class="col-md-12">
+
+        @await Html.PartialAsync("_MensajeExito")
+
+        <div class="form">
+            <div class="col-md-12">
+
+                @if (Model.Recepcion.EstadoRecepcionId == (int)EstadoRecepcionEnum.NoIngresado)
+                {
+                    <a href="@Url.Action("ValidarProductosInventario","Compra", 
+                    new {id = @Model.Recepcion.Id})" class="btn btn-warning enlace-redirigir">
+                        Validar
+                    </a>
+                }
+                <br /> <br />
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <fieldset disabled>
+                            <div class="form-row">
+                                <div class="col-md-12">
+                                    <div class="position-relative form-group">
+                                        <label class="">
+                                            No.
+                                            Comprobante
+                                        </label>
+                                        @* <input placeholder="Descripción Producto" class="form-control"> 
+                                        @Html.TextBoxFor(a => a.Recepcion.Compra.NoComprobante, new
+                                        {@class="form-control",@id="nocomprobante", @placeholder="No. Comprobante"})
+                                        @Html.ValidationMessageFor(a => a.Recepcion.Compra.NoComprobante, "", new { @class =
+                                        "text-danger"})
+                                    </div>
+                                </div>
+
+                            </div>
+                            <div class="form-row">
+                                <div class="col-md-6">
+                                    <div class="position-relative form-group">
+                                        <label class="">Proveedor</label>
+                                        @* <input placeholder="Descripción Producto" class="form-control"> 
+                                        @Html.TextBoxFor(a => a.Recepcion.Compra.Proveedor.Nombre, new
+                                        {@class="form-control",@id="nombrevendedor",
+                                        @placeholder="Proveedor"})
+                                        @Html.ValidationMessageFor(a => a.Recepcion.Compra.Proveedor.Nombre, "", new { @class =
+                                        "text-danger"})
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="position-relative form-group">
+                                        <label class="">
+                                            Nombre del vendedor
+                                        </label>
+                                        @* <input placeholder="Descripción Producto" class="form-control"> 
+                                        @Html.TextBoxFor(a => a.Recepcion.Compra.Empleado.NombreYApellidos, new
+                                        {@class="form-control",@id="nombrevendedor",
+                                        @placeholder="Nombre Vendedor"})
+                                        @Html.ValidationMessageFor(a => a.Recepcion.Compra.Empleado.NombreYApellidos, "", new { @class =
+                                        "text-danger"})
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="col-md-6">
+                                    <div class="position-relative form-group">
+                                        <label class="">Fecha l&iacute;mite</label>
+                                        @* <input placeholder="Descripción Producto" class="form-control"> 
+                                        @Html.TextBoxFor(a => a.Recepcion.Compra.FechaLimite, new
+                                        {type="text",@class="form-control",@id="fechalimite",
+                                        @placeholder="Nombres"})
+                                        @Html.ValidationMessageFor(a => a.Recepcion.Compra.FechaLimite, ""
+                                        , new { @class =
+                                        "text-danger"})
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="position-relative form-group">
+                                        <label class="">
+                                            Fecha de recepcion
+                                        </label>
+                                        @* <input placeholder="Descripción Producto" class="form-control"> 
+                                        @Html.TextBoxFor(a => a.Recepcion.Compra.FechaRecepcion, new
+                                        {type="text", @class="form-control",@id="fecharecepcion",
+                                        @placeholder="Direccion"})
+                                        @Html.ValidationMessageFor(a => a.Recepcion.Compra.FechaRecepcion, "", new { @class =
+                                        "text-danger"})
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <br />
+
+                            <div class="table-responsive">
+                                <table class='table'>
+                                    <thead>
+                                        <tr>
+                                            <th>Codigo</th>
+                                            <th>Nombre Producto</th>
+                                            <th>Cantidad</th>
+                                            <th>Precio Costo</th>
+                                            <th>Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+
+                                        @foreach (var item in Model.Recepcion.Compra.DetalleCompras)
+                                        {
+                                            <tr>
+                                                <td>@item.Producto.CodigoReferencia</td>
+                                                <td>@item.Producto.NombreProducto</td>
+                                                <td>@item.Cantidad</td>
+                                                <td>@item.Precio.ToString("0")</td>
+                                                <td>@item.PrecioTotal.ToString("0")</td>
+
+                                                @if (item.Compra.Estado == false)
+                                                {
+                                                    <td>
+                                                        <button type="button" class="btn btn-danger btn-sm"
+                                                        onclick="eliminarFilaC(this,@item.Precio)">
+                                                            Quitar
+                                                        </button>
+                                                    </td>
+                                                }
+                                                <td style="display: none;" class="idProd">@item.Id</td>
+                                            </tr>
+                                            suma += item.PrecioTotal;
+                                        }
+
+
+                                    </tbody>
+
+                                </table>
+
+
+                            </div>
+
+                            <br />
+                            <div class="text-right" style="font-size: 25px;">
+                                <span>Total:</span>
+                                Q <span id="precio-total-c">@suma.ToString("0")</span>
+                            </div>
+
+
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+
+
+        <div class="main-card mb-3 card">
+        </div>
+
+
+    </div>
+
+
+</div>
+ *@

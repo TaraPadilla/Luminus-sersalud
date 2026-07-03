@@ -1,0 +1,279 @@
+﻿@using Database.Shared.Paginacion;
+@model PaginacionList<Database.Shared.Models.Venta>
+
+@{
+    ViewData["Title"] = "Lista Ventas Hospital";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <center>
+                            <h4><b>Hospital - Ventas</b></h4>
+                        </center>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <form id="examenForm" asp-action="ListaVentasHospital" method="get">
+
+                    <div class="col-md-12 form-row offset-md-3 mt-4 mb-3">
+                        <div class="col-md-2">
+                            <label>Fecha Inicial:</label>
+                            <input type="date" name="fechaInicial" value="@ViewData["CurrentFilter"]"
+                                class="form-control" id="fechaInicial">
+                        </div>
+
+                        <div class="col-md-2">
+                            <label>Fecha Final:</label>
+                            <input type="date" name="fechaFinal" value="@ViewData["CurrentFilter"]" class="form-control"
+                                id="fechaFinal">
+                        </div>
+
+                        <div class="col-md-2">
+                            <label>N&uacute;mero de venta:</label>
+                            <input type="number" name="numeroVenta" value="@ViewData["CurrentFilter"]"
+                                class="form-control" id="numeroVenta">
+                        </div>
+
+                        <div class="col-md-2">
+                            <label>N&uacute;mero de comprobante:</label>
+                            <input type="text" name="comprobante" value="@ViewData["CurrentFilter"]"
+                                class="form-control" id="comprobante">
+                        </div>
+
+                        <div class="col-md-2">
+                            <label>Forma de pago:</label>
+                            @Html.DropDownList("formaPago", ViewBag.FormasPago as SelectList, "Todas", new
+                            {
+                                @class = "form-control",
+                                @name = "formaPago"
+                            })
+                        </div>
+
+                        <div class="col-md-2">
+                            <label>Facturado:</label>
+                            <select name="" class="form-control" disabled>
+                                <option value="0">Todas</option>
+                                <option value="1">Facturado</option>
+                                <option value="2">Comprobante</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <input type="submit" value="Buscar" class="btn btn-success">
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+            <div class="col-md-12">
+                <a id="reportePDF" class="btn btn-secondary btn-sm" href="#">
+                    Reporte PDF
+                </a>
+                <a class="btn btn-secondary btn-sm" href="#" id="reporteExcel">
+                    Reporte EXCEL
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<br />
+<div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel">
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="mb-0 table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Venta #</th>
+                            <th>Vendedor</th>
+                            <th>NoComprobante</th>
+                            <th>Nombre</th>
+                            <th>Nit</th>
+                            <th>Forma de Pago</th>
+                            <th>Total</th>
+                            <th>Monto Pagado</th>
+                            <th>Vuelto</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            // BUG CORREGIDO: Hospital usaba item.DetalleVenta.Sum(a => a.Total)
+                            // que no considera cargos ni descuentos porcentuales.
+                            // Se unifica el cálculo igual que en Clínica para consistencia.
+                            decimal cargosVenta = item.DetalleVenta.Sum(d => d.Cargo);
+                            decimal descuentosVenta = item.DetalleVenta.Sum(d =>
+                                d.DescuentoPorcentaje > 0
+                                ? Math.Round(d.Total * (d.DescuentoPorcentaje / 100m), 2)
+                                : 0m
+                            );
+                            decimal totalVentaReal = item.DetalleVenta.Sum(d => d.Subtotal) + cargosVenta - descuentosVenta;
+
+                            <tr>
+                                <td>@item.FechaVenta</td>
+                                <td>@item.Id</td>
+                                <td>@(item.Empleado != null ? item.Empleado.Nombre : "Admin")</td>
+                                <td>@item.NoComprobante</td>
+                                <td>@item.Nombres</td>
+                                <td>@item.Nit</td>
+                                <td>
+                                    @if (item.Pagos.Count() > 0)
+                                    {
+                                        foreach (var pago in item.Pagos)
+                                        {
+                                            <span>@pago.FormaPago.NombreFormaPago - Q @pago.Monto</span>
+                                        }
+                                    }
+                                </td>
+                                <td>Q @totalVentaReal</td>
+                                <td>Q @item.MontoPago</td>
+                                <td>Q @item.Vuelto</td>
+                                <td>
+                                    <a href="@Url.Action("Modificar", "Venta", new { id = @item.Id })" class="btn btn-primary">
+                                        Ver detalles
+                                    </a>
+                                    <a href="@Url.Action("ReciboVentaPdf", "CrearPDF", new { id = @item.Id })" target="_blank"
+                                        class="btn btn-danger">
+                                        <i class="fas fa-file-pdf"></i> Recibo
+                                    </a>
+
+                                    <a href="@Url.Action("AnularVenta", "Venta", new { id = @item.Id, returnAction = "ListaVentasHospital" })"
+                                        class="btn btn-danger">
+                                        <i class="fas fa-minus-circle"></i> Anular
+                                    </a>
+
+                                    <button type="button"
+                                        class="btn btn-info btn-estado-cuenta"
+                                        data-venta-id="@item.Id"
+                                        data-cliente="@item.Nombres"
+                                        data-nit="@item.Nit"
+                                        title="Ver Estado de Cuenta">
+                                        <i class="fas fa-file-invoice-dollar"></i> Estado de Cuenta
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+}
+
+<a asp-action="ListaVentasHospital" asp-route-sortOrder="@ViewData["CurrentSort"]"
+    asp-route-pageNumber="@(Model.PageIndex - 1)" asp-route-currentFilter="@ViewData["CurrentFilter"]"
+    class="btn btn-danger btn-sm @prevDisabled">
+    Anterior
+</a>
+<a asp-action="ListaVentasHospital" asp-route-sortOrder="@ViewData["CurrentSort"]"
+    asp-route-pageNumber="@(Model.PageIndex + 1)" asp-route-currentFilter="@ViewData["CurrentFilter"]"
+    class="btn btn-danger btn-sm @nextDisabled">
+    Siguiente
+</a>
+
+
+
+<script>
+    document.getElementById('reportePDF').addEventListener('click', function (event) {
+        event.preventDefault();
+
+        var fechaInicial = document.getElementsByName('fechaInicial')[0].value;
+        var fechaFinal = document.getElementsByName('fechaFinal')[0].value;
+        var numeroVenta = document.getElementsByName('numeroVenta')[0].value;
+        var comprobante = document.getElementsByName('comprobante')[0].value;
+        var formaPago = document.getElementsByName('formaPago')[0].value;
+
+        var url = '@Url.Action("GenerarPdfVentasHospital", "CrearPDF")' +
+            '?fechaInicial=' + encodeURIComponent(fechaInicial) +
+            '&fechaFinal=' + encodeURIComponent(fechaFinal) +
+            '&numeroVenta=' + encodeURIComponent(numeroVenta) +
+            '&comprobante=' + encodeURIComponent(comprobante) +
+            '&formaPago=' + encodeURIComponent(formaPago);
+
+        window.open(url, "_blank");
+    });
+
+    document.getElementById('reporteExcel').addEventListener('click', function (event) {
+        event.preventDefault();
+
+        var fechaInicial = document.getElementsByName('fechaInicial')[0].value;
+        var fechaFinal = document.getElementsByName('fechaFinal')[0].value;
+        var numeroVenta = document.getElementsByName('numeroVenta')[0].value;
+        var comprobante = document.getElementsByName('comprobante')[0].value;
+        var formaPago = document.getElementsByName('formaPago')[0].value;
+
+        var url = '@Url.Action("CrearExcelVentasHospital", "CrearExcel")' +
+            '?fechaInicial=' + encodeURIComponent(fechaInicial) +
+            '&fechaFinal=' + encodeURIComponent(fechaFinal) +
+            '&numeroVenta=' + encodeURIComponent(numeroVenta) +
+            '&comprobante=' + encodeURIComponent(comprobante) +
+            '&formaPago=' + encodeURIComponent(formaPago);
+
+        window.open(url, "_blank");
+    });
+
+    // -----------------------------------------------------------------------
+    // ESTADO DE CUENTA POR VENTA (Hospital)
+    // Sigue el mismo patrón que ProcesarEstadoCuenta usado en CuentasPorCobrar:
+    // hace POST a CrearPDF/ProcesarEstadoCuentaVentaHospital con el id de venta
+    // y abre el blob PDF resultante en una nueva pestaña.
+    // -----------------------------------------------------------------------
+    document.querySelectorAll('.btn-estado-cuenta').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var ventaId  = this.getAttribute('data-venta-id');
+            var cliente  = this.getAttribute('data-cliente');
+            var nit      = this.getAttribute('data-nit');
+
+            var url = '@Url.Action("ProcesarEstadoCuentaVentaHospital", "CrearPDF")' +
+                '?id=' + encodeURIComponent(ventaId);
+
+            // Payload mínimo para que el controlador pueda complementar con
+            // los datos de la venta; se incluyen los datos visibles en pantalla
+            // como referencia en caso de que el controlador los necesite.
+            var payload = {
+                VentaId: parseInt(ventaId),
+                Cliente: cliente,
+                Nit: nit
+            };
+
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(function (res) {
+                if (!res.ok) {
+                    return res.text().then(function (msg) {
+                        throw new Error('Error al generar el estado de cuenta: ' + msg);
+                    });
+                }
+                return res.blob();
+            })
+            .then(function (blob) {
+                var objectUrl = window.URL.createObjectURL(blob);
+                window.open(objectUrl, '_blank');
+            })
+            .catch(function (err) {
+                console.error(err);
+                alert(err.message || 'No se pudo generar el estado de cuenta.');
+            });
+        });
+    });
+</script>

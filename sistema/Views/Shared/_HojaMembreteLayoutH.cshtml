@@ -1,0 +1,222 @@
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Config
+
+@{
+    // Valores por defecto desde configuración (disponibles en todo el archivo)
+    var nombreEmpresaDefault = Config["EstablecimientoNombreEmpresa"];
+    var tituloPestanaDefault = Config["EstablecimientoPestana"];
+
+    var tituloPagina = (ViewData["Title"] as string) ?? tituloPestanaDefault ?? nombreEmpresaDefault ?? "AVM";
+}
+
+<!doctype html>
+<html lang="es">
+
+<head>
+    @* Estilos básicos compartidos para reportes *@
+    @Html.Partial("_ReportStyles")
+
+    <style>
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 4px 0 8px;
+        }
+
+        /* Evitar la línea debajo de la fila principal (override de _ReportStyles) */
+        .header-table td,
+        .header-table th {
+            border-bottom: none;
+        }
+
+        .header-logo {
+            width: 12%; /* Reducido para formato horizontal, ya que hay más ancho disponible */
+            vertical-align: middle;
+            text-align: left;
+            padding-right: 20px;
+        }
+
+        .header-logo img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .header-main {
+            vertical-align: middle;
+            text-align: center;
+            /* Eliminamos el padding restrictivo para que use todo el ancho horizontal */
+        }
+
+        .header-name {
+            font-size: 20px; /* Un poco más grande para aprovechar la hoja horizontal */
+            font-weight: bold;
+            color: #0d0e36;
+            margin-bottom: 4px;
+        }
+
+        .header-line {
+            font-size: 13px; /* Ligeramente más grande para mejor lectura */
+            margin-bottom: 2px;
+        }
+
+        .header-services-container {
+            padding-top: 12px; 
+        }
+
+        .header-services {
+            padding: 10px 15px;
+            border-left: 4px solid #0d0e36; /* Borde un poco más grueso */
+            background-color: #f3f4ff;
+            font-size: 12px;
+            /* En horizontal, esto permite que el título y el texto convivan mejor */
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-services-title {
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            color: #0d0e36;
+            white-space: nowrap; /* Evita que el título se divida en varias líneas */
+        }
+
+        .header-services-text {
+            font-style: italic;
+            line-height: 1.4;
+            text-align: left; /* En horizontal se lee mejor alineado a la izquierda */
+        }
+
+        .header-emergency {
+            text-align: center;
+            font-weight: bold;
+            font-size: 13px;
+            margin-top: 10px;
+            letter-spacing: 1px;
+        }
+
+        .header-separator {
+            border: 0;
+            border-top: 2px solid #0d0e36;
+            margin: 10px 0 15px;
+        }
+    </style>
+
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+
+    <title>@tituloPagina</title>
+</head>
+
+<body>
+@{
+    // Valores por defecto desde configuración
+    var logo = (ViewData["ImagenLogo"] as string) ?? Config["ImagenLogoBase64"];
+    var direccion = (ViewData["Direccion"] as string) ?? Config["EstablecimientoDireccion"];
+    var telefono = (ViewData["Telefono"] as string) ?? Config["EstablecimientoTelefono"];
+    var correo = (ViewData["CorreoElectronico"] as string) ?? Config["EstablecimientoCorreoElectronico"];
+    var nombreEmpresa = (ViewData["NombreEmpresa"] as string) ?? nombreEmpresaDefault;
+
+    // Flags de visibilidad
+    bool mostrarLogo = (ViewData["MostrarLogo"] as bool?) ?? true;
+    bool mostrarNombre = (ViewData["MostrarNombreEmpresa"] as bool?) ?? true;
+    bool mostrarDireccion = (ViewData["MostrarDireccion"] as bool?) ?? true;
+    bool mostrarTelefono = (ViewData["MostrarTelefono"] as bool?) ?? true;
+    bool mostrarCorreo = (ViewData["MostrarCorreoElectronico"] as bool?) ?? true;
+    bool mostrarServicios = (ViewData["MostrarServicios"] as bool?) ?? true;
+    bool mostrarEmergencias = (ViewData["MostrarEmergencias"] as bool?) ?? true;
+
+    bool hayLogo = mostrarLogo && !string.IsNullOrWhiteSpace(logo);
+}
+
+    <table class="header-table">
+        <tr>
+            @if (hayLogo)
+            {
+                <td class="header-logo">
+                    <img src="@logo" alt="Logo" />
+                </td>
+            }
+            <td class="header-main">
+                @if (mostrarNombre && !string.IsNullOrWhiteSpace(nombreEmpresa))
+                {
+                    <div class="header-name">
+                        @nombreEmpresa
+                    </div>
+                }
+
+                @if (mostrarDireccion && !string.IsNullOrWhiteSpace(direccion))
+                {
+                    <div class="header-line">
+                        @direccion
+                    </div>
+                }
+
+                @if (mostrarTelefono && !string.IsNullOrWhiteSpace(telefono))
+                {
+                    <div class="header-line">
+                        Teléfonos: @telefono
+                    </div>
+                }
+
+                @if (mostrarCorreo && !string.IsNullOrWhiteSpace(correo))
+                {
+                    <div class="header-line">
+                        @correo
+                    </div>
+                }
+            </td>
+        </tr>
+
+        @if (mostrarServicios)
+        {
+            <tr>
+                @if (hayLogo)
+                {
+                    <td colspan="2" class="header-services-container">
+                        <div class="header-services">
+                            <div class="header-services-title">
+                                Servicios:
+                            </div>
+                            <div class="header-services-text">
+                                Hospitalización, Ultrasonido, Rayos X, Electrocardiogramas,
+                                Farmacia, Laboratorio, Operaciones de Emergencia y Planificadas
+                            </div>
+                        </div>
+                    </td>
+                }
+                else
+                {
+                    <td class="header-services-container">
+                        <div class="header-services">
+                            <div class="header-services-title">
+                                Servicios:
+                            </div>
+                            <div class="header-services-text">
+                                Hospitalización, Ultrasonido, Rayos X, Electrocardiogramas,
+                                Farmacia, Laboratorio, Operaciones de Emergencia y Planificadas
+                            </div>
+                        </div>
+                    </td>
+                }
+            </tr>
+        }
+    </table>
+
+    @if (mostrarEmergencias)
+    {
+        <div class="header-emergency">
+            EMERGENCIAS LAS 24 HORAS
+        </div>
+    }
+
+    <hr class="header-separator" />
+
+    @RenderBody()
+
+    @RenderSection("Scripts", required: false)
+</body>
+
+</html>

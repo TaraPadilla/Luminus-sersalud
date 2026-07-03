@@ -1,0 +1,62 @@
+@model sistema.Models.ConsultasViewModel
+
+<br />
+
+<div class="border rounded p-3 bg-white shadow-sm mb-3">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+        <h6 class="m-0 font-weight-bold text-primary text-uppercase">
+            <i class="fas fa-notes-medical mr-2"></i> Antecedentes patol&oacute;gicos
+        </h6>
+        <small class="text-muted">
+            <i class="fas fa-clipboard-list mr-1"></i> Historial del paciente
+        </small>
+    </div>
+
+    <div class="form-row">
+
+        <div class="col-md-4 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">M&eacute;dicos</div>
+                @Html.TextAreaFor(a => a.PacienteMedicos, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">Quir&uacute;rgicos</div>
+                @Html.TextAreaFor(a => a.PacienteQuirurgicos, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">Al&eacute;rgicos</div>
+                @Html.TextAreaFor(a => a.PacienteAlergias, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">Traum&aacute;ticos</div>
+                @Html.TextAreaFor(a => a.PacienteTraumaticos, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">Vicios y/o man&iacute;as</div>
+                @Html.TextAreaFor(a => a.PacienteVicios, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold mb-1">Medicamento de uso actual</div>
+                @Html.TextAreaFor(a => a.PacienteMedicamentos, new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+
+    </div>
+</div>

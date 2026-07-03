@@ -1,0 +1,210 @@
+@model sistema.Models.CompraBaseViewModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Orden de compra";
+    // Configuración estándar de membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+    decimal CostoTotal = 0.0m;
+}
+
+<div class="doc" style="font-family: sans-serif; color: #333;">
+
+    <div class="doc-title" style="text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 5px;">REPORTE -
+        @ViewData["Title"]</div>
+    <div class="doc-underline" style="border-bottom: 2px solid #000; margin-bottom: 15px;"></div>
+
+    <table class="table" style="border:0; width: 100%; margin-bottom: 20px;">
+        <tbody>
+            <tr>
+                <td style="text-align:center; font-size: 12px; color: #555; border:0;">
+                    Fecha y hora de emisión: <strong>@fecha.ToString("dd/MM/yyyy hh:mm tt")</strong>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <table class="section-title" style="width: 100%; margin-bottom: 10px; border-collapse: collapse;">
+        <tr>
+            <td
+                style="background-color: #f3f4f6; padding: 8px 10px; border-left: 5px solid #1e3a8a; font-weight: bold; color: #1e3a8a; text-transform: uppercase; font-size: 14px;">
+                Datos de la compra
+            </td>
+        </tr>
+    </table>
+
+    <table class="block" style="width: 100%; margin-bottom: 20px;">
+        <tr>
+            <td style="padding:0;">
+                <table class="table" style="width: 100%; border-collapse: collapse;">
+                    <colgroup>
+                        <col class="label-col" style="width: 30%;" />
+                        <col />
+                    </colgroup>
+                    <thead>
+                        <tr style="background-color: #eef2ff;">
+                            <th
+                                style="padding: 8px; text-align: left; color: #1e3a8a; font-weight: bold; border-bottom: 1px solid #cbd5e1;">
+                                Campo</th>
+                            <th
+                                style="padding: 8px; text-align: left; color: #1e3a8a; font-weight: bold; border-bottom: 1px solid #cbd5e1;">
+                                Detalle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="kv-row">
+                            <td style="padding: 6px; border-bottom: 1px solid #f0f0f0;"><span class="label"
+                                    style="font-weight: bold; color: #4b5563;">Número de comprobante</span></td>
+                            <td style="padding: 6px; border-bottom: 1px solid #f0f0f0;"><span
+                                    class="value">@Model.EncabezadoNoComprobante</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td style="padding: 6px; border-bottom: 1px solid #f0f0f0;"><span class="label"
+                                    style="font-weight: bold; color: #4b5563;">Responsable</span></td>
+                            <td style="padding: 6px; border-bottom: 1px solid #f0f0f0;"><span
+                                    class="value">@(Model.EncabezadoEmpleadoNombre ?? "-")</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td style="padding: 6px; border-bottom: 1px solid #f0f0f0;"><span class="label"
+                                    style="font-weight: bold; color: #4b5563;">Proveedor</span></td>
+                            <td style="padding: 6px; border-bottom: 1px solid #f0f0f0;"><span
+                                    class="value">@Model.EncabezadoProveedor</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td style="padding: 6px; border-bottom: 1px solid #f0f0f0;"><span class="label"
+                                    style="font-weight: bold; color: #4b5563;">Fecha límite</span></td>
+                            <td style="padding: 6px; border-bottom: 1px solid #f0f0f0;"><span
+                                    class="value">@Model.EncabezadoFechaLimite</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td style="padding: 6px; border-bottom: 1px solid #f0f0f0;"><span class="label"
+                                    style="font-weight: bold; color: #4b5563;">Fecha de emisión</span></td>
+                            <td style="padding: 6px; border-bottom: 1px solid #f0f0f0;"><span
+                                    class="value">@fecha.ToString("dd/MM/yyyy hh:mm tt")</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td style="padding: 6px; border-bottom: 1px solid #f0f0f0;"><span class="label"
+                                    style="font-weight: bold; color: #4b5563;">Observaciones</span></td>
+                            <td class="notes" style="padding: 6px; border-bottom: 1px solid #f0f0f0;">
+                                <span class="value">@Model.EncabezadoObservacion</span>
+                            </td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td style="padding: 6px; border-bottom: 1px solid #f0f0f0;"><span class="label"
+                                    style="font-weight: bold; color: #4b5563;">Tipo</span></td>
+                            <td style="padding: 6px; border-bottom: 1px solid #f0f0f0;"><span
+                                    class="value">@Model.EncabezadoTipoCompraNombre</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <table class="section-title" style="width: 100%; margin-bottom: 10px; border-collapse: collapse;">
+        <tr>
+            <td
+                style="background-color: #f3f4f6; padding: 8px 10px; border-left: 5px solid #1e3a8a; font-weight: bold; color: #1e3a8a; text-transform: uppercase; font-size: 14px;">
+                Detalle de productos
+            </td>
+        </tr>
+    </table>
+
+    <table class="block" style="width: 100%; margin-bottom: 20px;">
+        <tr>
+            <td style="padding:0;">
+                <table class="table" style="width: 100%; border-collapse: collapse;">
+                    <colgroup>
+                        <col style="width:18%" />
+                        <col />
+                        <col style="width:15%" />
+                        <col style="width:12%" />
+                        <col style="width:15%" />
+                    </colgroup>
+                    <thead>
+                        <tr style="background-color: #eef2ff;">
+                            <th
+                                style="padding: 8px; text-align: left; color: #1e3a8a; font-weight: bold; border-bottom: 1px solid #cbd5e1;">
+                                Ref.</th>
+                            <th
+                                style="padding: 8px; text-align: left; color: #1e3a8a; font-weight: bold; border-bottom: 1px solid #cbd5e1;">
+                                Nombre</th>
+                            <th
+                                style="padding: 8px; text-align: right; color: #1e3a8a; font-weight: bold; border-bottom: 1px solid #cbd5e1;">
+                                Precio</th>
+                            <th
+                                style="padding: 8px; text-align: center; color: #1e3a8a; font-weight: bold; border-bottom: 1px solid #cbd5e1;">
+                                Cantidad</th>
+                            <th
+                                style="padding: 8px; text-align: right; color: #1e3a8a; font-weight: bold; border-bottom: 1px solid #cbd5e1;">
+                                Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var producto in Model.ProductosComprados)
+                        {
+                            decimal cost = producto.PrecioCompra * producto.Cantidad;
+                            CostoTotal += cost;
+                            <tr class="kv-row">
+                                <td style="padding: 6px; border-bottom: 1px solid #f0f0f0;"><span
+                                        class="value">@producto.ProductoCodigo</span></td>
+                                <td style="padding: 6px; border-bottom: 1px solid #f0f0f0;"><span
+                                        class="value">@producto.NombreProducto</span></td>
+                                <td style="padding: 6px; border-bottom: 1px solid #f0f0f0; text-align: right;"><span
+                                        class="value">@producto.PrecioCompra.ToString("F2")</span></td>
+                                <td style="padding: 6px; border-bottom: 1px solid #f0f0f0; text-align: center;"><span
+                                        class="value">@producto.Cantidad</span></td>
+                                <td style="padding: 6px; border-bottom: 1px solid #f0f0f0; text-align: right;"><span
+                                        class="value">@cost.ToString("F2")</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <table class="section-title" style="width: 100%; margin-bottom: 10px; border-collapse: collapse;">
+        <tr>
+            <td
+                style="background-color: #f3f4f6; padding: 8px 10px; border-left: 5px solid #1e3a8a; font-weight: bold; color: #1e3a8a; text-transform: uppercase; font-size: 14px;">
+                Resumen
+            </td>
+        </tr>
+    </table>
+
+    <table class="block" style="width: 100%;">
+        <tr>
+            <td style="padding:0;">
+                <table class="table twocol" style="width: 100%; border-collapse: collapse;">
+                    <colgroup>
+                        <col class="label-col" style="width: 80%;" />
+                        <col />
+                    </colgroup>
+                    <tbody>
+                        <tr class="kv-row">
+                            <td style="padding: 10px; text-align: right; border-top: 2px solid #1e3a8a;">
+                                <span class="label" style="font-size: 14px; font-weight: bold; color: #4b5563;">Costo
+                                    total</span>
+                            </td>
+                            <td
+                                style="padding: 10px; text-align: right; border-top: 2px solid #1e3a8a; background-color: #f9fafb;">
+                                <span class="value" style="font-size: 16px; font-weight: bold; color: #000;">Q
+                                    @CostoTotal.ToString("0.00")</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+</div>

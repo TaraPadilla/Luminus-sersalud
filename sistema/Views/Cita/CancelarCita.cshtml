@@ -1,0 +1,111 @@
+@model sistema.Models.CitasCancelViewModel
+
+@{
+    ViewData["Title"] = "Cancelar Cita";
+}
+
+ @await Html.PartialAsync("_MensajeExito")
+<div class="form-row">
+    <div class="col-md-12">
+        <a asp-action="Lista" asp-controller="Cita" class="btn btn-danger">
+                <i class="fas fa-list"></i> &nbsp; Formato lista 
+        </a>
+
+        <a asp-action="CalendarioLineal" asp-controller="Cita" class="btn btn-danger" asp-route-buscar="@Model.HoraYFecha.ToString("MM/dd/yyyy")">
+               <i class="fas fa-calendar-alt"></i> &nbsp; Regresar calendario @Model.HoraYFecha.ToString("MM/dd/yyyy") 
+        </a>
+    </div>
+</div>
+<br>
+<form asp-controller="Cita" asp-action="CancelarCita" method="post">
+    @* @Html.HiddenFor(a => a.Cita.FechaInicio) *@
+    @* @Html.HiddenFor(a => a.Cita.FechaFinal) *@
+    @await Html.PartialAsync("_CancelCitaForm")
+</form>
+
+
+@section Scripts{
+    <script type="text/javascript" src="~/js/moment.min.js"></script>
+    <script type="text/javascript" src="~/js/daterangepicker.js"></script>
+    <script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+    <script>
+        $(function(){
+            $('.select2bs4').select2({
+                theme: 'bootstrap4',
+                @* tags: true, *@
+                });
+        });
+
+        $('#fechacita').daterangepicker({
+            timePicker: true,
+            timePickerIncrement: 30,
+            singleDatePicker: true,
+            locale: {
+            format: 'MM/DD/YYYY hh:mm A'
+            }
+        });
+
+        $("#clienteids").on('change', function () {
+
+             var datos = {"id" : $(this).val()}
+            
+            $.ajax({
+                method: "POST",
+                data: datos,
+                @* "dataType": "json", *@
+                @* "contentType": "application/json", *@
+                url: '/Cliente/RetornarPacienteById',
+                traditional: true,
+
+                success: function(data, textStatus) {
+                    if(data.fechaNacimiento != null)
+                    {
+                        var edad = getAge(data.fechaNacimiento);
+                        console.log(data);
+                        $("#Cita_Edad").val(edad);
+                    } 
+                    else {
+                        $("#Cita_Edad").val(null);
+                    }
+                    
+                },
+
+                error: function(data) {
+                    alert(data.error);
+                }
+            });
+
+        });
+
+        @* function _calculateAge(birthday) { 
+            var ageDifMs = Date.now() - birthday.getTime();
+            var ageDate = new Date(ageDifMs); 
+            return Math.abs(ageDate.getUTCFullYear() - 1970);
+        } *@
+
+        function getAge(dateString) {
+            var today = new Date();
+            var birthDate = new Date(dateString);
+            var age = today.getFullYear() - birthDate.getFullYear();
+            var m = today.getMonth() - birthDate.getMonth();
+
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+
+            return age;
+        }
+
+        var windowObjectReference;
+        var windowFeatures = "menubar=yes,location=yes,resizable=yes,scrollbars=yes,status=yes";
+
+        function abrirclientes() {
+            windowObjectReference = window.open("/Cliente/Lista", "Clientes Lista", windowFeatures);
+        }
+
+    </script>
+    }
+
+    @section css {
+         <link href="~/css/daterangepicker.css" rel="stylesheet">
+    }

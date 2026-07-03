@@ -1,0 +1,445 @@
+@using System.Linq
+@model sistema.Models.ConsultasViewModel
+@Html.HiddenFor(a => a.CodigoSeguro)
+
+<div class="card">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            @if (Model.HabilitarEdicion)
+            {
+                <span class="oft-pill">MODO EDICIÓN</span>
+            }
+            else
+            {
+                <span class="oft-pill" style="background:#eaeef6;color:#475569">MODO LECTURA</span>
+            }
+            <div class="text-danger" asp-validation-summary="ModelOnly"></div>
+        </div>
+
+        @if (Model.HabilitarEdicion && !Model.Hospitalizada)
+        {
+            <div class="form-row">
+                <div class="col-md-12">
+                    <h5><b>Examenes (agregar)</b></h5>
+                </div>
+                <div class="col-md-12">
+                    <hr />
+                </div>
+                <div class="col-md-12 form-row">
+                    <div class="col-md-12 form-row">
+                        <div class="col-md-5">
+                            <label>Seleccionar examen:</label>
+                            <select class="form-control select2bs4" style="width:100%" data-bind="options: examenesExistentes,
+                                                           ,optionsText: 'ExamenNombreMostrar',
+                                                           value: examenSeleccionado,
+                                                           event: {change:consultarPreciosExamen}">
+                            </select>
+                        </div>
+                        @if (User.IsInRole("Administrador"))
+                        {
+                            <div class="col-md-1">
+                                <label class="text-white">Ir</label><br />
+                                <a class="btn btn-primary text-white" href="/LaboratorioClinico/ListaExamenes" target="_blank">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            </div>
+                        }
+                        
+                        <div class="col-md-4">
+                            <label>Seleccionar precio:</label>
+                            <select class="form-control" data-bind="options: preciosExamen,
+                                                           optionsText: 'PrecioNombreMostrar',
+                                                           value: precioSeleccionadoExamen">
+                            </select>
+                        </div>
+                        <div class="col-md-1">
+                            <label class="text-white">Agregar</label><br />
+                            <button class="btn btn-primary" data-bind="click: agregarExamen">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <div class="col-md-1">
+                            <label class="text-white">Load</label><br />
+                            <button class="btn btn-primary" data-bind="click: consultarExamenesExistentes">
+                                <i class="fas fa-redo-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <br />
+
+        <div class="form-row">
+            <div class="col-md-10">
+                <h5><b>Examenes agregados</b></h5>
+                <hr />
+            </div>
+            @if (!Model.HabilitarEdicion)
+            {
+                <div class="col-md-2">
+                    <a href="/CrearPDF/ConsultaExamenesPDF?consultaId=@Model.ConsultaId"
+                        class="btn btn-success btn-lg text-white" target="_blank">
+                        Generar PDF ß &nbsp;<i class="fas fa-arrow-down"></i>
+                    </a>
+                </div>
+            }
+            <div class="col-md-12">
+                <hr />
+            </div>
+            <div class="col-md-12 form-row table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Cantidad</th>
+                            <th>Precio</th>
+                            <th>Valor unitario</th>
+                            <th>Subtotal</th>
+                            @if (Model.CitaTipoAtencion == "SEGURO")
+                            {
+                                <th>Valor Cubierto Seguro</th>
+                                <th>Valor Copago</th>
+                            }
+                            <th>Valor total</th>
+                            @if (Model.HabilitarEdicion)
+                            {
+                                <th></th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!--ko foreach: examenesVenta-->
+                        <tr>
+                            <td data-bind="text:ExamenCodigo"></td>
+                            <td data-bind="text:ExamenNombre"></td>
+                            <td>
+                                @if (Model.HabilitarEdicion && !Model.Hospitalizada)
+                                {
+                                    <input class="form-control" data-bind="value:Cantidad,
+                                                                  event:{change:$root.actualizarTotales}" />
+                                }
+                                else
+                                {
+                                    <span data-bind="text:Cantidad"></span>
+                                }
+                            </td>
+                            <td data-bind="text:PrecioNombre"></td>
+                            <td data-bind="text:ValorUnitario"></td>
+                            <td data-bind="text:ValorSubtotal"></td>
+
+                            @if (Model.CitaTipoAtencion == "SEGURO")
+                            {
+                                <td data-bind="text:ValorCubiertoSeguro"></td>
+                                <td data-bind="text:ValorCopago"></td>
+                            }
+                            <td data-bind="text:ValorTotal"></td>
+
+                            @if (Model.HabilitarEdicion && !Model.Hospitalizada)
+                            {
+                                <td>
+                                    <!--ko if:!Pagado-->
+                                    <button class="btn btn-danger" data-bind="click:$root.quitarExamen">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                    <!--/ko-->
+                                </td>
+                            }
+                        </tr>
+                        <!--/ko-->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @* HISTORIAL DE EXÁMENES *@
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Historial de exámenes del paciente</b></h5>
+                <hr />
+            </div>
+            <div class="col-md-12 table-responsive">
+                @{
+                    var examenesHistorial = ViewBag.ExamenesHistorial as IEnumerable<dynamic>
+                    ?? Enumerable.Empty<dynamic>();
+
+                    var examenesAgrupados = examenesHistorial
+                    .GroupBy(e => new
+                    {
+                        ConsultaId = (int)e.ConsultaId, // 0 = Sin consulta
+                        Fecha = (DateTime)e.Fecha
+                    })
+                    .OrderByDescending(g => g.Key.Fecha)
+                    .ToList();
+
+                    var tieneHistorialExamenes = examenesAgrupados.Any();
+                }
+                <table class="table table-hover display dataTable" id="historial-examenes-table"
+                    data-has-rows="@tieneHistorialExamenes.ToString().ToLower()">
+                    <thead>
+                        <tr>
+                            <th>No. Consulta</th>
+                            <th style="width:5%"></th>
+                            <th># Examen</th>
+                            <th>Fecha</th>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Cantidad</th>
+                            <th>Valor total</th>
+                            <th class="text-center">PDF</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (tieneHistorialExamenes)
+                        {
+                            foreach (var grupo in examenesAgrupados)
+                            {
+                                var lista = grupo.ToList();
+                                var multiple = lista.Count > 1;
+
+                                bool filaPagada = lista.Count > 0 && lista[0].Pagado == true;
+                                var consultaIdGrupo = grupo.Key.ConsultaId;
+                                var esSinConsulta = consultaIdGrupo == 0;
+
+                                // NUEVO: color ámbar para "Sin consulta", verde para pagados con consulta
+                                var rowClass = esSinConsulta
+                                ? "table-warning"
+                                : (filaPagada ? "table-success" : "");
+
+                                <tr class="@rowClass">
+                                    @* No. Consulta *@
+                                    <td>
+                                        @{
+                                            var textoConsulta = esSinConsulta
+                                            ? "Sin consulta"
+                                            : consultaIdGrupo.ToString();
+                                        }
+                                        @textoConsulta
+                                    </td>
+
+                                    @* Columna botón Ver / Ver más
+                               (solo tiene sentido cuando hay consulta) *@
+                                    <td>
+                                        @if (multiple && !esSinConsulta)
+                                        {
+                                            <button type="button" class="btn btn-link btn-sm text-primary toggle-examenes"
+                                                data-consulta-id="@grupo.Key.ConsultaId">
+                                                <i class="fa fa-chevron-down"></i> Ver más
+                                            </button>
+                                        }
+                                    </td>
+
+                                    @* # Examen (Id de laboratorio si existe, si no, Id histórico) *@
+                                    <td>
+                                        @for (var i = 0; i < lista.Count; i++)
+                                        {
+                                            var ex = lista[i];
+                                            var visible = i == 0;
+                                            var detalleClass = visible ? "" : "detalle-examen-" + grupo.Key.ConsultaId;
+                                            var style = visible ? "" : "display:none;";
+
+                                            <div class="@detalleClass" style="@style">
+                                                @{
+                                                    var numeroExamen = ex.ExamenLaboratorioId ?? ex.Id;
+                                                }
+                                                @numeroExamen
+                                            </div>
+                                        }
+                                    </td>
+
+                                    @* Fecha *@
+                                    <td>@grupo.Key.Fecha.ToString("dd/MM/yyyy")</td>
+
+                                    @* Código *@
+                                    <td>
+                                        @for (var i = 0; i < lista.Count; i++)
+                                        {
+                                            var ex = lista[i];
+                                            var visible = i == 0;
+                                            var detalleClass = visible ? "" : "detalle-examen-" + grupo.Key.ConsultaId;
+                                            var style = visible ? "" : "display:none;";
+
+                                            <div class="@detalleClass" style="@style">
+                                                @ex.ExamenCodigo
+                                            </div>
+                                        }
+                                    </td>
+
+                                    @* Nombre *@
+                                    <td>
+                                        @for (var i = 0; i < lista.Count; i++)
+                                        {
+                                            var ex = lista[i];
+                                            var visible = i == 0;
+                                            var detalleClass = visible ? "" : "detalle-examen-" + grupo.Key.ConsultaId;
+                                            var style = visible ? "" : "display:none;";
+
+                                            <div class="@detalleClass" style="@style">
+                                                @ex.ExamenNombre
+                                            </div>
+                                        }
+                                    </td>
+
+                                    @* Cantidad *@
+                                    <td>
+                                        @for (var i = 0; i < lista.Count; i++)
+                                        {
+                                            var ex = lista[i];
+                                            var visible = i == 0;
+                                            var detalleClass = visible ? "" : "detalle-examen-" + grupo.Key.ConsultaId;
+                                            var style = visible ? "" : "display:none;";
+
+                                            <div class="@detalleClass" style="@style">
+                                                @ex.Cantidad
+                                            </div>
+                                        }
+                                    </td>
+
+                                    @* Valor total *@
+                                    <td>
+                                        @for (var i = 0; i < lista.Count; i++)
+                                        {
+                                            var ex = lista[i];
+                                            var visible = i == 0;
+                                            var detalleClass = visible ? "" : "detalle-examen-" + grupo.Key.ConsultaId;
+                                            var style = visible ? "" : "display:none;";
+
+                                            <div class="@detalleClass" style="@style">
+                                                @ex.ValorTotal
+                                            </div>
+                                        }
+                                    </td>
+
+                                    @* PDF *@
+                                    <td class="text-center">
+                                        @{
+                                            var primer = lista[0];
+                                            int? examenLabId = primer.ExamenLaboratorioId;
+                                            bool tienePdf = examenLabId.HasValue;
+                                        }
+
+                                        @if (tienePdf)
+                                        {
+                                            <a href="@Url.Action("GenerarResultados", "CrearPDF", new { id = examenLabId.Value })"
+                                                class="btn btn-danger btn-sm text-white" title="Ver PDF" target="_blank">Generar Resultados
+                                                <i class="fas fa-file-pdf me-2 text-danger"></i>
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">N/D</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="9">No hay historial de exámenes disponible.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @if (User.IsInRole("CirugiaPlastica"))
+        {
+            <div class="main-card mb-3 card col-md-12">
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="col-md-12">
+                            <h5><b>Archivos</b></h5>
+                            <hr />
+                        </div>
+                        <div class="col-md-4">
+                            <input placeholder="Nombre de archivo" type="text" class="form-control"
+                                data-bind="value:nombreNuevoArchivo" />
+                        </div>
+                        <div class="col-md-7">
+                            <input type="file" class="form-control" id="nuevo-archivo" />
+                            <input type="hidden" id="base-64-nuevo-archivo" />
+                        </div>
+                        <div class="col-md-1">
+                            <button class="btn btn-primary" data-bind="click:subirArchivoExamen">
+                                Guardar Examen
+                            </button>
+                        </div>
+                        <div class="col-md-12">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Ruta</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!--ko foreach: examenesArchivo-->
+                                    <tr>
+                                        <td data-bind="text: NombreArchivo"></td>
+                                        <td data-bind="text: UrlArchivo"></td>
+                                        <td>
+                                            <a download data-bind="attr: { href: '/' + UrlArchivo }"
+                                                class="btn btn-primary text-light">
+                                                Descargar
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    <!--/ko-->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <script>
+            $(document).ready(function () {
+                if ($.fn.DataTable && $('#historial-examenes-table').length) {
+                    var $tabla = $('#historial-examenes-table');
+                    var hasRows = $tabla.data('has-rows') === true || $tabla.data('has-rows') === 'true';
+
+                    // Solo inicializar DataTable si hay filas de datos (sin colspan)
+                    if (hasRows && !$.fn.DataTable.isDataTable('#historial-examenes-table')) {
+                        $tabla.DataTable({
+                            pageLength: 10,
+                            order: [[0, "desc"]], // ordenar por No. Consulta
+                            columnDefs: [
+                                { orderable: false, targets: [1, 8] } // botón Ver y PDF sin orden
+                            ],
+                            language: {
+                                search: "Buscar:",
+                                lengthMenu: "Mostrar _MENU_ registros por página",
+                                zeroRecords: "No se encontraron resultados",
+                                info: "Mostrando página _PAGE_ de _PAGES_",
+                                infoEmpty: "No hay registros disponibles",
+                                infoFiltered: "(filtrado de _MAX_ registros totales)",
+                                paginate: {
+                                    first: "Primero",
+                                    last: "Último",
+                                    next: "Siguiente",
+                                    previous: "Anterior"
+                                }
+                            }
+                        });
+
+                        // Toggle de detalles (muestra / oculta las líneas extra de cada consulta)
+                        $('#historial-examenes-table').on('click', '.toggle-examenes', function () {
+                            var button = $(this);
+                            var consultaId = button.data('consulta-id');
+
+                            $('.detalle-examen-' + consultaId).toggle();
+
+                            var icon = button.find('i');
+                            icon.toggleClass('fa-chevron-down fa-chevron-up');
+                        });
+                    }
+                }
+            });
+        </script>
+    </div>

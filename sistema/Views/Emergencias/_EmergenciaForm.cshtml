@@ -1,0 +1,675 @@
+@using sistema.Models
+@model EmergenciaViewModel
+@Html.HiddenFor(a=>a.EmergenciaId)
+
+<script src="~/js/voicetotext/voicetotext.js"></script>
+<script>
+    window.voiceToTextFields = ['Observaciones'];
+</script>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <div id="tabs-venta">
+                    <ul>
+                        <li><a href="#tab-encabezado">Encabezado</a></li>
+                        <li><a href="#tab-detalles"><i class="fas fa-file-invoice"></i> Detalles</a></li>
+                        <li><a href="#tab-hospitalizacion"><i class="fas fa-hospital"></i> Hospitalizaci&oacute;n</a></li>
+                        <li><a href="#tab-observaciones"> Observaciones</a></li>
+                    </ul>
+                    <div id="tab-encabezado">
+                        <div class="main-card mb-3 card">
+                            <div class="card-body">
+                                <div class="main-card mb-3 card">
+                                    <div class="card-body">
+                                        <div class="form-row">
+                                            <div class="col-md-4">
+                                                <b>Sucursal</b>
+                                                <select class="form-control select-emergencia" readonly
+                                                        asp-for="SucursalId"
+                                                        asp-items="Model.ListaSucursales">
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <b>C&oacute;digo de empleado</b>
+                                                @Html.TextBoxFor(m => m.CodigoVendedor,
+                                                         new
+                                                         {
+                                                             @class = "form-control dato-emergencia",
+                                                             @placeholder = "Codigo de empleado",
+                                                             @readonly = "readonly"
+                                                         })
+                                            </div>
+
+                                            <div class="col-md-4">
+                                                <b>Responsable</b>
+                                                @Html.TextBoxFor(m => m.Responsable,
+                                                         new { @class = "form-control dato-emergencia", @placeholder = "Responsable" })
+                                            </div>
+                                            <div class="col-md-4">
+                                                <b>Paciente</b>
+                                                <select class="form-control select2bs4 select-emergencia" style="width: 100%;"
+                                                        data-bind="options:pacientesExistentes
+                                                            ,optionsText:'Nombre'
+                                                            ,value:pacienteSeleccionado">
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <b>NIT</b>
+                                                @Html.TextBoxFor(m => m.PacienteNit,
+                                                         new { @class = "form-control dato-emergencia", @placeholder = "NIT" })
+                                            </div>
+                                            <div class="col-md-4">
+                                                <b>Direccion</b>
+                                                @Html.TextBoxFor(m => m.PacienteDireccion,
+                                                         new { @class = "form-control dato-emergencia", @placeholder = "Direccion" })
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="tab-detalles">
+                        <!--Productos-->
+                        @if (Model.HabilitarEdicion)
+                        {
+                            <div class="form-row">
+                                <div class="col-md-12 seccion-header" id="productos-header">
+                                    <b>AGREGAR PRODUCTOS</b>
+                                </div>
+                                <div class="col-md-12 form-row seccion-body" id="productos-body">
+                                    <div class="col-md-12 text-primary" id="texto-cargando-productos-existentes" style="display:none">
+                                        Cargando productos...
+                                    </div>
+                                    <div class="col-md-12 text-danger" id="texto-error-cargando-productos-existentes" style="display:none">
+                                        Error al consultar productos.
+                                        <a href="#" data-bind="click:consultarProductosExistentes">Reintentar</a>
+                                    </div>
+                                    <div class="col-md-12 form-row">
+                                        <div class="col-md-12 form-row">
+                                            <div class="col-md-12">
+                                                <br />
+                                            </div>
+                                            <div class="col-md-1">
+                                                <label class="text-white">Refresh</label>
+                                                <button class="btn btn-primary" data-bind="click: consultarProductosExistentes">
+                                                    <i class="fas fa-redo-alt"></i>
+                                                </button>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label>Seleccionar producto:</label>
+                                                <select class="form-control select2bs4 " data-bind="options:productosExistentes,
+                                                                                                                        optionsText: 'ProductoNombreMostrar',
+                                                                                                            value: productoSeleccionado" style="width: 100%;">
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label>Seleccionar unidad:</label>
+                                                <select class="form-control"
+                                                        data-bind="options: unidadesVentaProducto,
+                                                                                            optionsText: 'UnidadMedidaVentaNombre',
+                                                                                                    value: unidadVentaSeleccionadaProducto"></select>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label>Seleccionar precio:</label>
+                                                <select class="form-control"
+                                                        data-bind="options: preciosProducto,
+                                                                            optionsText: 'Precio',
+                                                                                value: precioSeleccionadoProducto"></select>
+                                            </div>
+                                            <div class="col-md-1">
+                                                <label class="text-white">Agregar</label>
+                                                <button class="btn btn-primary" data-bind="click: agregarProducto">
+                                                    <i class="fas fa-plus"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <hr />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+
+
+ @* @if (Model.HabilitarEdicion)
+{
+    <div class="form-row">
+        <div class="col-md-12 seccion-header" id="insumos-header">
+            <b>AGREGAR INSUMOS</b>
+        </div>
+        <div class="col-md-12 form-row seccion-body" id="insumos-body">
+            <div class="col-md-5">
+                <label>Insumo:</label>
+                <select class="form-control select2bs4" data-bind="options: insumosExistentes, 
+                        optionsText: 'ProductoNombreMostrar', 
+                        value: insumoSeleccionado,
+                        optionsCaption: '-- Seleccione Insumo --'"></select>
+            </div>
+            <div class="col-md-3">
+                <label>Unidad:</label>
+                <select class="form-control" data-bind="options: unidadesVentaInsumo, 
+                        optionsText: 'UnidadMedidaVentaNombre', 
+                        value: unidadVentaSeleccionadaInsumo"></select>
+            </div>
+            <div class="col-md-3">
+                <label>Precio:</label>
+                <select class="form-control" data-bind="options: preciosInsumo, 
+                        optionsText: 'Precio', 
+                        value: precioSeleccionadoInsumo"></select>
+            </div>
+            <div class="col-md-1">
+                <label class="text-white">Add</label>
+                <button class="btn btn-success btn-block" data-bind="click: agregarInsumo">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+} *@
+
+                        <!--Servicios-->
+                        @if (Model.HabilitarEdicion)
+                        {
+                            <div class="form-row">
+                                <div class="col-md-12 seccion-header" id="servicios-header">
+                                    <b>AGREGAR SERVICIOS</b>
+                                </div>
+                                <div class="col-md-12 seccion-body form-row" id="servicios-body">
+                                    <div class="col-md-12 form-row">
+                                        <div class="col-md-12">
+                                            <br />
+                                        </div>
+                                        @* <div class="col-md-3">
+                                    <label>Buscar por codigo:</label>
+                                    <input class="form-control" data-bind="value: codigoServicioBuscar"
+                                    id="codigo-servicio-buscar" />
+                                    </div> *@
+                                        <div class="col-md-5">
+                                            <label>Seleccionar servicio:</label>
+                                            @* <select class="form-control"
+                                        data-bind="options: serviciosExistentes
+                                        ,optionsText: 'ServicioNombreMostrar',
+                                        value: servicioSeleccionado,
+                                        event: {change:consultarPreciosServicio}">
+                                        </select> *@
+                                            <select class="form-control select2bs4 md-8" data-bind="options: serviciosExistentes
+                                                                            ,optionsText: 'ServicioNombreMostrar',
+                                                                    value: servicioSeleccionado,
+                                                                    event: {change:consultarPreciosServicio}">
+                                                <option disabled selected>--- Sin Asignar ---</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3 ml-3">
+                                            <label>Seleccionar precio:</label>
+                                            <select class="form-control"
+                                                    data-bind="options: preciosServicio,
+                                                        optionsText: 'PrecioNombreMostrar',
+                                                                value: precioSeleccionadoServicio"></select>
+                                        </div>
+                                        <div class="col-md-1">
+                                            <label class="text-white">Agregar</label>
+                                            <button class="btn btn-primary" data-bind="click: agregarServicio">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <br />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        <!--Examenes-->
+                        @if (Model.HabilitarEdicion)
+                        {
+                            <div class="form-row">
+                                <div class="col-md-12 seccion-header" id="examenes-header">
+                                    <b>AGREGAR EXAMENES</b>
+                                </div>
+                                <div class="col-md-12 seccion-body form-row" id="examenes-body">
+                                    <div class="col-md-12 form-row">
+                                        <div class="col-md-12">
+                                            <br />
+                                        </div>
+                                        @* <div class="col-md-3">
+                                    <label>Buscar por codigo:</label>
+                                    <input class="form-control" data-bind="value: codigoExamenBuscar"
+                                    id="codigo-examen-buscar" />
+                                    </div> *@
+                                        <div class="col-md-4">
+                                            <label>Seleccionar examen:</label>
+                                            <select class="form-control select2bs4" style="width:100%"
+                                                    data-bind="options: examenesExistentes,
+                                                            ,optionsText: 'ExamenNombreMostrar',
+                                                            value: examenSeleccionado,
+                                                            event: {change:consultarPreciosExamen}">
+                                            </select>
+                                        </div>
+                                        <div class="col-md-1">
+                                            <label class="text-white">Ir</label><br>
+                                            <a class="btn btn-primary text-white" href="/LaboratorioClinico/ListaExamenes"
+                                               target="_blank">
+                                                <i class="fas fa-external-link-alt"></i>
+                                            </a>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label>Seleccionar precio:</label>
+                                            <select class="form-control"
+                                                    data-bind="options: preciosExamen,
+                                optionsText: 'PrecioNombreMostrar',
+                                value: precioSeleccionadoExamen"></select>
+                                        </div>
+                                        <div class="col-md-1">
+                                            <label class="text-white">Agregar</label><br>
+                                            <button class="btn btn-primary" data-bind="click: agregarExamen">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </div>
+                                        <div class="col-md-1">
+                                            <label class="text-white">Load</label><br>
+                                            <button class="btn btn-primary" data-bind="click: consultarExamenesExistentes">
+                                                Recargar
+                                            </button>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <br />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        <!--Elementos-->
+                        <div class="form-row">
+                            <div class="col-md-12 seccion-header">
+                                <b>ELEMENTOS</b>
+                            </div>
+                            <div class="col-md-12 form-row">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th>COD</th>
+                                            <th>Nombre</th>
+                                            <th>Cantidad</th>
+                                            <th>Precio</th>
+                                            <th>Valor unitario</th>
+                                            <th>Subtotal</th>
+                                            <th>Porcentaje de descuento</th>
+                                            <th>Valor descuento</th>
+                                            <th>Valor total</th>
+                                            @* <th>Usuario autoriza</th> *@
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!--ko foreach: serviciosEmergencia-->
+                                        <!--ko if:!Eliminado()-->
+                                        <tr>
+                                            <td><label class="badge badge-warning">Servicio</label></td>
+                                            <td data-bind="text:ServicioCodigo"></td>
+                                            <td data-bind="text:ServicioNombre"></td>
+                                            <td>
+                                                @if (Model.HabilitarEdicion)
+                                                {
+                                                    <input class="form-control" data-bind="value:Cantidad,
+                                                                                            event:{change:$root.actualizarTotales}" />
+                                                }else{
+                                                    <span data-bind="text:Cantidad"></span>
+                                                }
+                                            </td>
+                                            <td data-bind="text:PrecioNombre"></td>
+                                            <td data-bind="text:ValorUnitario"></td>
+                                            <td data-bind="text:ValorSubtotal"></td>
+                                            <td>
+                                                @if (Model.HabilitarEdicion)
+                                                {
+                                                    <input class="form-control" data-bind="value:DescuentoPorcentaje,
+                                                                                            event:{change:$root.actualizarTotales}" />
+                                                }
+                                                else
+                                                {
+                                                    <span data-bind="text:DescuentoPorcentaje"></span>
+                                                }
+                                            </td>
+                                            <td data-bind="text:DescuentoValor"></td>
+                                            <td data-bind="text:ValorTotal"></td>
+                                            @* <td><input class="form-control" data-bind="value:UsuarioAutoriza" /></td> *@
+                                            <td>
+                                                <button class="btn btn-danger"
+                                                        data-bind="click:$root.quitarElemento">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <!--/ko-->
+                                        <!--/ko-->
+                                        <!--ko foreach: productosEmergencia-->
+                                        <!--ko if:!Eliminado()-->
+                                        <tr>
+                                            <td>
+                                                <label class="badge badge-warning">Producto</label> 
+                                                @* <label class="badge" 
+                   data-bind="text: ($data.TipoProductoId == 2) ? 'Insumo' : 'Medicamento', 
+                              css: ($data.TipoProductoId == 2) ? 'badge-warning' : 'badge-warning'"></label> *@
+                                                </td>
+                                            <td data-bind="text:ProductoCodigo"></td>
+                                            <td data-bind="text:ProductoNombre"></td>
+                                            <td>
+                                                @if (Model.HabilitarEdicion)
+                                                {
+                                                    <input class="form-control" data-bind="value:Cantidad,
+                                                                                                event:{change:$root.actualizarTotales}" />
+                                                }
+                                                else
+                                                {
+                                                    <span data-bind="text:Cantidad"></span>
+                                                }
+                                            </td>
+                                            <td data-bind="text:PrecioNombre"></td>
+                                            <td data-bind="text:ValorUnitario"></td>
+                                            <td data-bind="text:ValorSubtotal"></td>
+                                            <td>
+                                                @if (Model.HabilitarEdicion)
+                                                {
+                                                    <input class="form-control" data-bind="value:DescuentoPorcentaje,
+                                                                                                event:{change:$root.actualizarTotales}" />
+                                                }
+                                                else
+                                                {
+                                                    <span data-bind="text:DescuentoPorcentaje"></span>
+                                                }
+                                            </td>
+                                            <td data-bind="text:DescuentoValor"></td>
+                                            <td data-bind="text:ValorTotal"></td>
+                                            @* <td><input class="form-control" data-bind="value:UsuarioAutoriza" /></td> *@
+                                            <td>
+                                                <button class="btn btn-danger"
+                                                        data-bind="click:$root.quitarElemento">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <!--/ko-->
+                                        <!--/ko-->
+                                        <!--ko foreach: examenesEmergencia-->
+                                        <!--ko if: !Eliminado()-->
+                                        <tr>
+                                            <td><label class="badge badge-warning">Examen</label></td>
+                                            <td data-bind="text:ExamenCodigo"></td>
+                                            <td data-bind="text:ExamenNombre"></td>
+                                            <td>
+                                                @if (Model.HabilitarEdicion)
+                                                {
+                                                    <input class="form-control" data-bind="value:Cantidad,
+                                                                                                event:{change:$root.actualizarTotales}" />
+                                                }
+                                                else
+                                                {
+                                                    <span data-bind="text:Cantidad"></span>
+                                                }
+                                            </td>
+                                            <td data-bind="text:PrecioNombre"></td>
+                                            <td data-bind="text:ValorUnitario"></td>
+                                            <td data-bind="text:ValorSubtotal"></td>
+                                            <td>
+                                                @if (Model.HabilitarEdicion)
+                                                {
+                                                    <input class="form-control" data-bind="value:DescuentoPorcentaje,
+                                                                                                event:{change:$root.actualizarTotales}" />
+                                                }
+                                                else
+                                                {
+                                                    <span data-bind="text:DescuentoPorcentaje"></span>
+                                                }
+                                            </td>
+                                            <td data-bind="text:DescuentoValor"></td>
+                                            <td data-bind="text:ValorTotal"></td>
+                                            @* <td><input class="form-control" data-bind="value:UsuarioAutoriza" /></td> *@
+                                            <td>
+                                                <button class="btn btn-danger"
+                                                        data-bind="click:$root.quitarElemento">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <!--/ko-->
+                                        <!--/ko-->
+                                        <tr style="background-color:#f5f5f5">
+                                            <td colspan="12" style="text-align:right">
+                                                <b>Subtotal: Q <span data-bind="text: ventaSubtotal"></span></b><br />
+                                                <b>Descuento: Q <span data-bind="text: ventaDescuento"></span></b><br />
+                                                <b>Total: Q <span data-bind="text: ventaTotal"></span></b>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="tab-hospitalizacion">
+                        @if (Model.EmergenciaIngresada)
+                        {
+                            <b>Habitacion</b><br />
+                            <span>@Model.HabitacionNombre</span><br />
+                            <a class="btn btn-secondary" href="/Hospitalizacion/Detalles?hospitalizacionId=@Model.HospitalizacionId">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        }
+                        else
+                        {
+                            @await Html.PartialAsync("_HabitacionesDisponibles")
+                        }
+                    </div>
+
+                    <div id="tab-observaciones">
+
+                        @if (Model.HabilitarEdicion)
+                        {
+                            <div class="font-weight-bold text-dark mb-1">
+                                 Observaciones
+                            </div>
+                            @Html.TextAreaFor(m => m.Observaciones, new { 
+                                @class = "form-control dato-consulta",
+                                @id = "Observaciones",
+                                @name = "Observaciones"
+                            })
+                        }
+                        else
+                        {
+                            <div class="font-weight-bold text-dark mb-1">
+                                 Observaciones
+                            </div>
+                            <textarea class="form-control" 
+                              id="Observaciones" 
+                              name="Observaciones" 
+                              disabled>@Model.Observaciones</textarea>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div title="Registrar nuevo paciente" style="display:none" id="mdl-nuevo-paciente">
+    <div class="form-row mt-2">
+        <div class="col-md-12 mb-2">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                El paciente ingresado no existe en el sistema. Complete los datos para registrarlo.
+            </div>
+        </div>
+        <div class="col-md-6">
+            <label><b>Nombre completo <span class="text-danger">*</span></b></label>
+            <input type="text" class="form-control" id="nuevo-paciente-nombre" placeholder="Nombre completo" />
+        </div>
+        <div class="col-md-6">
+            <label><b>NIT</b></label>
+            <input type="text" class="form-control" id="nuevo-paciente-nit" placeholder="NIT" />
+        </div>
+        <div class="col-md-6 mt-2">
+            <label><b>Dirección</b></label>
+            <input type="text" class="form-control" id="nuevo-paciente-direccion" placeholder="Dirección" />
+        </div>
+        <div class="col-md-6 mt-2">
+            <label><b>Teléfono</b></label>
+            <input type="text" class="form-control" id="nuevo-paciente-telefono" placeholder="Teléfono" />
+        </div>
+        <div class="col-md-6 mt-2">
+            <label><b>Fecha de nacimiento</b></label>
+            <input type="date" class="form-control" id="nuevo-paciente-fecha-nacimiento" />
+        </div>
+        <div class="col-md-6 mt-2">
+            <label><b>Género</b></label>
+            <select class="form-control" id="nuevo-paciente-genero">
+                <option value="">-- Seleccione --</option>
+                <option value="M">Masculino</option>
+                <option value="F">Femenino</option>
+            </select>
+        </div>
+        <div class="col-md-12 mt-2" id="mdl-nuevo-paciente-error" style="display:none">
+            <div class="alert alert-danger" id="mdl-nuevo-paciente-error-msg"></div>
+        </div>
+    </div>
+</div>
+
+<div title="Confirmar" style="display:none" id="mdl-confirmacion">
+    <div class="col-md-12 form-row">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>COD</th>
+                    <th>Nombre</th>
+                    <th class="d-none">Cantidad</th>
+                    <th class="d-none">Precio</th>
+                    <th class="d-none">Valor unitario</th>
+                    <th class="d-none">Subtotal</th>
+                    <th class="d-none">Porcentaje de descuento</th>
+                    <th class="d-none">Valor descuento</th>
+                    <th class="d-none">Valor total</th>
+                    @* <th class="d-none">Usuario autoriza</th> *@
+                    @*<th></th>*@
+                    <th>Indicacion</th>
+                    <th>Instrucciones</th>
+                    <th>Declaracion</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!--ko foreach: serviciosEmergencia-->
+                <tr>
+                    <td><label class="badge badge-warning">Servicio</label></td>
+                    <td data-bind="text:ServicioCodigo"></td>
+                    <td data-bind="text:ServicioNombre"></td>
+                    <td class="d-none">
+                        <input class="form-control" data-bind="value:Cantidad,
+                                                               event:{change:$root.actualizarTotales}" />
+                    </td>
+                    <td class="d-none" data-bind="text:PrecioNombre"></td>
+                    <td class="d-none" data-bind="text:ValorUnitario"></td>
+                    <td class="d-none" data-bind="text:ValorSubtotal"></td>
+                    <td class="d-none">
+                        <input class="form-control" data-bind="value:DescuentoPorcentaje,
+                                                                                        event:{change:$root.actualizarTotales}" />
+                    </td>
+                    <td class="d-none" data-bind="text:DescuentoValor"></td>
+                    <td class="d-none" data-bind="text:ValorTotal"></td>
+                    @* <td class="d-none"><input class="form-control" data-bind="value:UsuarioAutoriza" /></td> *@
+                    @* <td>
+                    <button class="btn btn-danger d-none">
+                    <i class="fa fa-trash"></i>
+                    </button>
+                    </td> *@
+                    <td></td>
+                    <td></td>
+                    <td></td>
+
+                </tr>
+                <!--/ko-->
+                <!--ko foreach: productosEmergencia-->
+                <tr>
+                    <td>
+                        <label class="badge badge-warning">Producto</label> 
+
+                        @* <label class="badge" 
+                   data-bind="text: ($data.TipoProductoId == 2) ? 'Insumo' : 'Medicamento', 
+                              css: ($data.TipoProductoId == 2) ? 'badge-warning' : 'badge-warning'"></label> *@
+                        </td>
+                    <td data-bind="text:ProductoCodigo"></td>
+                    <td data-bind="text:ProductoNombre"></td>
+                    <td class="d-none">
+                        <input class="form-control" data-bind="value:Cantidad,
+                event:{change:$root.actualizarTotales}" />
+                    </td>
+                    <td class="d-none" data-bind="text:PrecioNombre"></td>
+                    <td class="d-none" data-bind="text:ValorUnitario"></td>
+                    <td class="d-none" data-bind="text:ValorSubtotal"></td>
+                    <td class="d-none">
+                        <input class="form-control" data-bind="value:DescuentoPorcentaje,
+                event:{change:$root.actualizarTotales}" />
+                    </td>
+                    <td class="d-none" data-bind="text:DescuentoValor"></td>
+                    <td class="d-none" data-bind="text:ValorTotal"></td>
+                  
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <!--/ko-->
+                
+                <!--ko foreach: examenesEmergencia-->
+                <tr>
+                    <td><label class="badge badge-warning">Examen</label></td>
+                    <td data-bind="text:ExamenCodigo"></td>
+                    <td data-bind="text:ExamenNombre"></td>
+                    <td class="d-none">
+                        <input class="form-control" data-bind="value:Cantidad,
+                event:{change:$root.actualizarTotales}" />
+                    </td>
+                    <td class="d-none" data-bind="text:PrecioNombre"></td>
+                    <td class="d-none" data-bind="text:ValorUnitario"></td>
+                    <td class="d-none" data-bind="text:ValorSubtotal"></td>
+                    <td class="d-none">
+                        <input class="form-control" data-bind="value:DescuentoPorcentaje,
+                event:{change:$root.actualizarTotales}" />
+                    </td>
+                    <td class="d-none" data-bind="text:DescuentoValor"></td>
+                    <td class="d-none" data-bind="text:ValorTotal"></td>
+                    @* <td class="d-none"><input class="form-control" data-bind="value:UsuarioAutoriza" /></td> *@
+                    <td>
+                        <button class="btn btn-danger"
+                                data-bind="click: function() { generarPdfExamenesLaboratorio(ExamenId,'indicaciones' ); }">
+                            <i class="fa fa-file-pdf"> PDF</i>
+                        </button>
+                    </td>
+                    <td>
+                        <button class="btn btn-danger"
+                                data-bind="click: function() { generarPdfExamenesLaboratorio(ExamenId,'instrucciones' ); }">
+                            <i class="fa fa-file-pdf"> PDF</i>
+                        </button>
+                    </td>
+                    <td>
+                        <button class="btn btn-danger"
+                                data-bind="click: function() { generarPdfExamenesLaboratorio(ExamenId,'declaraciones' ); }">
+                            <i class="fa fa-file-pdf"> PDF</i>
+                        </button>
+                    </td>
+                </tr>
+                <!--/ko-->
+                <tr style="background-color:#f5f5f5">
+                    <td colspan="12" style="text-align:right">
+                        <b>Subtotal: Q <span data-bind="text: ventaSubtotal"></span></b><br />
+                        <b>Descuento: Q <span data-bind="text: ventaDescuento"></span></b><br />
+                        <b>Total: Q <span data-bind="text: ventaTotal"></span></b>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <span data-bind="html:txtModalConfirmacion"></span>
+</div>

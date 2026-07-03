@@ -1,0 +1,966 @@
+@using Newtonsoft.Json
+@using Database.Shared.Models
+@model Hospitalizacion
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Hospitalización - Informe de hospitalización";
+
+    // Configuración estándar del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+    decimal valorHabitacion = Model.ValorHabitacionDecimal;
+    decimal valorServicios = 0;
+    decimal valorMedicamentos = 0;
+    decimal valorExamenes = 0;
+    decimal valorPaquetes = 0;
+    var tipoSangre = Model.Paciente?.TipoDeSangre ?? "-";
+}
+
+<div class="doc">
+    <!-- Título general -->
+    <div class="doc-title">REPORTE - @ViewData["Title"]</div>
+    <div class="doc-underline"></div>
+
+    <!-- Fecha de emisión -->
+    <table class="table" style="border:0;">
+        <tbody>
+            <tr>
+                <td style="text-align:center; font-weight:700; border:0;">
+                    Fecha y hora de emisión: @fecha.ToString("dd/MM/yyyy HH:mm")
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- DATOS DEL PACIENTE -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Datos del paciente</td>
+        </tr>
+    </table>
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table threecol">
+                    <colgroup>
+                        <col />
+                        <col />
+                        <col />
+                    </colgroup>
+                    <tbody>
+                        <tr class="kv-row">
+                            <td>
+                                <span class="label">Nombre</span>
+                                <span class="value">@Model.Paciente.Nombre</span>
+                            </td>
+                            <td>
+                                <span class="label">Edad</span>
+                                <span class="value">@Model.Paciente.Edad</span>
+                            </td>
+                            <td>
+                                <span class="label">Sexo</span>
+                                <span class="value">@Model.Paciente.sexoText</span>
+                            </td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td>
+                                <span class="label">Tipo de sangre</span>
+                                <span class="value">@tipoSangre</span>
+                            </td>
+                            <td>
+                                <span class="label">Teléfono</span>
+                                <span class="value">@Model.Paciente.Telefono</span>
+                            </td>
+                            <td>
+                                <span class="label">Celular</span>
+                                <span class="value">@Model.Paciente.Celular</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- DATOS DE HOSPITALIZACIÓN -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Datos de hospitalización</td>
+        </tr>
+    </table>
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table threecol">
+                    <colgroup>
+                        <col />
+                        <col />
+                        <col />
+                    </colgroup>
+                    <tbody>
+                        <tr class="kv-row">
+                            <td>
+                                <span class="label">Fecha inicial</span>
+                                <span class="value">@Model.FechaInicio</span>
+                            </td>
+                            <td>
+                                <span class="label">Fecha final</span>
+                                <span class="value">@Model.FechaFin</span>
+                            </td>
+                            <td>
+                                <span class="label">Noches</span>
+                                <span class="value">@Model.NochesInt.ToString()</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- DETALLES (CARGOS RESUMEN) -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Detalles</td>
+        </tr>
+    </table>
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <tbody>
+                        <tr class="kv-row">
+                            <td><span class="label">Habitación</span></td>
+                            <td class="value" style="text-align:right;">
+                                @Model.ValorHabitacionDecimal.ToString("N2")
+                            </td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">Medicamentos</span></td>
+                            <td class="value" style="text-align:right;">
+                                @if (Model.HospitalizacionesProductos != null)
+                                {
+                                    valorMedicamentos = Model.HospitalizacionesProductos
+                                        .Sum(a => a.HospitalizacionesProductosAplicaciones
+                                            .Where(x => x.Aplicado && !x.Eliminado)
+                                            .Sum(x => x.Cantidad) * a.PrecioValor);
+                                    <span>@valorMedicamentos.ToString("N2")</span>
+                                }
+                                else
+                                {
+                                    <span>0.00</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">Servicios</span></td>
+                            <td class="value" style="text-align:right;">
+                                @if (Model.HospitalizacionesServicios != null)
+                                {
+                                    valorServicios = Model.HospitalizacionesServicios
+                                        .Sum(a => a.Cantidad * a.Precio);
+                                    <span>@valorServicios.ToString("N2")</span>
+                                }
+                                else
+                                {
+                                    <span>0.00</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">Laboratorios</span></td>
+                            <td class="value" style="text-align:right;">
+                                @if (Model.HospitalizacionesExamenes != null)
+                                {
+                                    valorExamenes = Model.HospitalizacionesExamenes
+                                        .Sum(a => a.Examen.DetalleExamenes.FirstOrDefault().PrecioValor);
+                                    <span>@valorExamenes.ToString("N2")</span>
+                                }
+                                else
+                                {
+                                    <span>0.00</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">Paquetes</span></td>
+                            <td class="value" style="text-align:right;">
+                                @if (Model.HospitalizacionesPaquetesHospitalizacion != null)
+                                {
+                                    valorPaquetes = Model.HospitalizacionesPaquetesHospitalizacion
+                                        .Sum(a => a.PaqueteHospitalizacion.Precio ?? 0m);
+                                    <span>@valorPaquetes.ToString("N2")</span>
+                                }
+                                else
+                                {
+                                    <span>0.00</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td style="background:#f7f9ff;">
+                                <span class="label"><b>TOTAL</b></span>
+                            </td>
+                            <td style="background:#f7f9ff; text-align:right;">
+                                @{
+                                    var valorTotalResumen = valorServicios +
+                                                            valorMedicamentos +
+                                                            valorPaquetes +
+                                                            valorExamenes +
+                                                            valorHabitacion;
+                                }
+                                <span class="value" style="font-weight:700;">
+                                    @valorTotalResumen.ToString("N2")
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- HISTORIA CLÍNICA -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Historia clínica</td>
+        </tr>
+    </table>
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <tbody>
+                        <tr class="kv-row">
+                            <td><span class="label">Motivo de consulta</span></td>
+                            <td><span class="value">@* aquí va el motivo de consulta *@</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">Historia de la enfermedad actual</span></td>
+                            <td><span class="value">@* aquí va la historia de la enfermedad actual *@</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- SOLO PARA MUJERES -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Solo para mujeres</td>
+        </tr>
+    </table>
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <tbody>
+                        <tr class="kv-row">
+                            <td><span class="label">¿Está usted embarazada?</span></td>
+                            <td><span class="value">@* Model.Consulta.EstaEmbarazada *@</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">Número de semanas</span></td>
+                            <td><span class="value">@* Model.Consulta.NumeroSemanasEmbarazo *@</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">¿Está usted amamantando?</span></td>
+                            <td><span class="value">@* Model.Consulta.EstaAmamantando *@</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- ANTECEDENTES PATOLÓGICOS -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Antecedentes patológicos</td>
+        </tr>
+    </table>
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <tbody>
+                        <tr class="kv-row">
+                            <td><span class="label">Médicos</span></td>
+                            <td><span class="value">@* antecedentes médicos *@</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">Quirúrgicos</span></td>
+                            <td><span class="value">@* antecedentes quirúrgicos *@</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">Alérgicos</span></td>
+                            <td><span class="value">@* antecedentes alérgicos *@</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">Traumáticos</span></td>
+                            <td><span class="value">@* antecedentes traumáticos *@</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">Vicios y/o manías</span></td>
+                            <td><span class="value">@* antecedentes vicios *@</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">Medicamento de uso actual</span></td>
+                            <td><span class="value">@* antecedentes medicamentos *@</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- EXAMEN FÍSICO -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Examen físico</td>
+        </tr>
+    </table>
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <tbody>
+                        <tr class="kv-row">
+                            <td><span class="label">Estado general</span></td>
+                            <td><span class="value">@* estado general *@</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">Peso (kg)</span></td>
+                            <td><span class="value">@* peso *@</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">Talla (m)</span></td>
+                            <td><span class="value">@* talla *@</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">FC</span></td>
+                            <td><span class="value">@* frecuencia cardiaca *@</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">FR</span></td>
+                            <td><span class="value">@* frecuencia respiratoria *@</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">P/A</span></td>
+                            <td><span class="value">@* presión arterial *@</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">TEMP</span></td>
+                            <td><span class="value">@* temperatura *@</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">SpO2</span></td>
+                            <td><span class="value">@* saturación de oxígeno *@</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">GLASGOW</span></td>
+                            <td><span class="value">@* glasgow *@</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- REVISIÓN POR SISTEMAS -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Revisión por sistemas</td>
+        </tr>
+    </table>
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <tbody>
+                        <tr class="kv-row">
+                            <td><span class="label">Apariencia general y neurológico</span></td>
+                            <td><span class="value">@* AparienciaGeneral *@</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">Cabeza</span></td>
+                            <td><span class="value">@* Cabeza *@</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">Oídos y boca</span></td>
+                            <td><span class="value">@* OidosBoca *@</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">Cuello</span></td>
+                            <td><span class="value">@* Cuello *@</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">Tórax</span></td>
+                            <td><span class="value">@* Torax *@</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">Abdomen</span></td>
+                            <td><span class="value">@* Abdomen *@</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">Dorso y extremidades</span></td>
+                            <td><span class="value">@* DorsoYExtremidades *@</span></td>
+                        </tr>
+                        <tr class="kv-row">
+                            <td><span class="label">Genitales</span></td>
+                            <td><span class="value">@* Genitales *@</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- COMENTARIO -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Comentario</td>
+        </tr>
+    </table>
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <tbody>
+                        <tr class="kv-row">
+                            <td><span class="label">Comentario</span></td>
+                            <td><span class="value">@* Model.Consulta.Historia.Comentario *@</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- SIGNOS VITALES -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Signos vitales</td>
+        </tr>
+    </table>
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Fecha y hora</th>
+                            <th>Profesional</th>
+                            <th>Valores</th>
+                            <th>Observaciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!--ko foreach: examenesFisicosHospitalizacion-->
+                        <tr>
+                            <td data-bind="text:FechaHora"></td>
+                            <td data-bind="text:Persona"></td>
+                            <td data-bind="html:Datos"></td>
+                            <td data-bind="text:Observaciones"></td>
+                        </tr>
+                        <!--/ko-->
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- CONTROL DE GLUCOMETRÍA -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Control de glucometría</td>
+        </tr>
+    </table>
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Fecha de registro</th>
+                            <th>GMT</th>
+                            <th>Insulina</th>
+                            <th>Unidades</th>
+                            <th>Firma</th>
+                            <th>Aplicado</th>
+                            <th>Aplicado el</th>
+                            <th>Aplicado por</th>
+                            <th>Creado por</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!--ko foreach: controlesGlucometria-->
+                        <tr>
+                            <td data-bind="text:FechaHora"></td>
+                            <td data-bind="text:GMT"></td>
+                            <td data-bind="text:InsulinaNombre"></td>
+                            <td data-bind="text:Unidades"></td>
+                            <td data-bind="text:Firma"></td>
+                            <td>
+                                <label data-bind="if:Aplicado">SI</label>
+                                <label data-bind="ifnot:Aplicado">NO</label>
+                            </td>
+                            <td data-bind="text:FechaHoraAplicacion"></td>
+                            <td data-bind="text:NombrePersonaAplica"></td>
+                            <td data-bind="text:NombreProfesional"></td>
+                        </tr>
+                        <!--/ko-->
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- INGESTA / EXCRETA -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Ingesta / excreta</td>
+        </tr>
+    </table>
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Fecha de registro</th>
+                            <th>Ingesta IV</th>
+                            <th>Ingesta PO</th>
+                            <th>Total Ingesta</th>
+                            <th>Excreta</th>
+                            <th>Heces</th>
+                            <th>Cuántas horas</th>
+                            <th>Enfermería</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- ko foreach: IngestasExcretas -->
+                        <tr>
+                            <td data-bind="text: FechaRegistro"></td>
+                            <td data-bind="text: IngestaIV"></td>
+                            <td data-bind="text: IngestaPO"></td>
+                            <td data-bind="text: TotalIngesta"></td>
+                            <td data-bind="text: Excreta"></td>
+                            <td data-bind="text: Heces"></td>
+                            <td data-bind="text: CuantasHoras"></td>
+                            <td data-bind="text: Enfermeria"></td>
+                        </tr>
+                        <!-- /ko -->
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- NOTAS DE EVOLUCIÓN -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Notas de evolución</td>
+        </tr>
+    </table>
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Fecha de registro</th>
+                            <th>Profesional</th>
+                            <th>Descripción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!--ko foreach: notasEvolucion-->
+                        <tr>
+                            <td data-bind="text:FechaRegistro"></td>
+                            <td data-bind="text:Profesional"></td>
+                            <td data-bind="text:Diagnostico"></td>
+                        </tr>
+                        <!--/ko-->
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- APLICACIÓN DE MEDICAMENTOS Y SERVICIOS -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Aplicación de medicamentos y servicios</td>
+        </tr>
+    </table>
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Tipo de elemento</th>
+                            <th>Nombre</th>
+                            <th>Indicaciones</th>
+                            <th>Cantidad</th>
+                            <th>Unidad de venta</th>
+                            <th>Orden médica</th>
+                            <th>Asignado por</th>
+                            <th>Aplicado</th>
+                            <th>Fecha y hora de aplicación</th>
+                            <th>Aplicado por</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- ko foreach: productosAplicacionHospitalizacion -->
+                        <tr>
+                            <td>Medicamento</td>
+                            <td data-bind="text: Nombre"></td>
+                            <td data-bind="text: Indicaciones"></td>
+                            <td data-bind="text: Cantidad"></td>
+                            <td data-bind="text: UnidadMedidaVentaNombre"></td>
+                            <td data-bind="text: OrdenMedicaNumero"></td>
+                            <td data-bind="text: PersonaCrea"></td>
+                            <td>
+                                <label data-bind="if: Aplicado">SI</label>
+                                <label data-bind="ifnot: Aplicado">NO</label>
+                            </td>
+                            <td data-bind="text: FechaHoraAplicacion"></td>
+                            <td data-bind="text: PersonaAplica"></td>
+                        </tr>
+                        <!-- /ko -->
+
+                        <!-- ko foreach: serviciosHospitalizacion -->
+                        <tr>
+                            <td>Servicio</td>
+                            <td data-bind="text: Nombre"></td>
+                            <td></td>
+                            <td data-bind="text: Cantidad"></td>
+                            <td></td>
+                            <td>-</td>
+                            <td data-bind="text: PersonaCrea"></td>
+                            <td>
+                                <label data-bind="if: Aplicado">SI</label>
+                                <label data-bind="ifnot: Aplicado">NO</label>
+                            </td>
+                            <td data-bind="text: FechaHoraAplicacion"></td>
+                            <td data-bind="text: PersonaAplica"></td>
+                        </tr>
+                        <!-- /ko -->
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- NOTA DE ENFERMERÍA -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Nota de enfermería</td>
+        </tr>
+    </table>
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Fecha de registro</th>
+                            <th>Profesional</th>
+                            <th>Descripción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- ko foreach: notasEnfermerias -->
+                        <tr>
+                            <td data-bind="text: FechaRegistro"></td>
+                            <td data-bind="text: Profesional"></td>
+                            <td data-bind="text: Diagnostico"></td>
+                        </tr>
+                        <!-- /ko -->
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- LABORATORIOS -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Laboratorios</td>
+        </tr>
+    </table>
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table" id="tabla-producto">
+                    <thead>
+                        <tr>
+                            <th>Fecha y hora</th>
+                            <th>Nombre del examen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- ko foreach: examenesHospitalizacion -->
+                        <tr>
+                            <td data-bind="text: FechaHora"></td>
+                            <td data-bind="text: Nombre"></td>
+                        </tr>
+                        <!-- /ko -->
+
+                        <!-- ko if: examenesHospitalizacion().length == 0 -->
+                        <tr>
+                            <td colspan="2"><i>No hay examenes agregados</i></td>
+                        </tr>
+                        <!-- /ko -->
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- MEDICAMENTOS (LISTADO) -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Medicamentos</td>
+        </tr>
+    </table>
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Cantidad aplicada</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.HospitalizacionesProductos != null && Model.HospitalizacionesProductos.Any())
+                        {
+                            foreach (var medicamento in Model.HospitalizacionesProductos)
+                            {
+                                var cantidadAplicada = medicamento.HospitalizacionesProductosAplicaciones
+                                    .Where(a => a.Aplicado && !a.Eliminado)
+                                    .Sum(a => a.Cantidad);
+                                var valorTotalMedicamento = medicamento.PrecioValor * cantidadAplicada;
+                                valorMedicamentos += valorTotalMedicamento;
+                                <tr class="kv-row">
+                                    <td>@medicamento.Producto.NombreProducto</td>
+                                    <td>@cantidadAplicada</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr class="kv-row">
+                                <td colspan="2">No hay medicamentos registrados</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- SERVICIOS (LISTADO) -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Servicios</td>
+        </tr>
+    </table>
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.HospitalizacionesServicios != null && Model.HospitalizacionesServicios.Any())
+                        {
+                            foreach (var servicio in Model.HospitalizacionesServicios)
+                            {
+                                var valorTotalServicio = servicio.Precio * servicio.Cantidad;
+                                valorServicios += valorTotalServicio;
+                                <tr class="kv-row">
+                                    <td>@servicio.Servicio.NombreServicio</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr class="kv-row">
+                                <td>No hay servicios registrados</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- EXÁMENES (LISTADO) -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Exámenes</td>
+        </tr>
+    </table>
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.HospitalizacionesExamenes != null && Model.HospitalizacionesExamenes.Any())
+                        {
+                            foreach (var examen in Model.HospitalizacionesExamenes)
+                            {
+                                var det = examen.Examen.DetalleExamenes.FirstOrDefault();
+                                if (det != null)
+                                {
+                                    valorExamenes += det.PrecioValor;
+                                    <tr class="kv-row">
+                                        <td>@det.ExamenLabClinico.NombreExamen</td>
+                                        <td>@det.PrecioValor.ToString("N2")</td>
+                                    </tr>
+                                }
+                            }
+                        }
+                        else
+                        {
+                            <tr class="kv-row">
+                                <td colspan="2">No hay examenes registrados</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- PAQUETES (LISTADO) -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Paquetes</td>
+        </tr>
+    </table>
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.HospitalizacionesPaquetesHospitalizacion != null &&
+                             Model.HospitalizacionesPaquetesHospitalizacion.Any())
+                        {
+                            foreach (var paquete in Model.HospitalizacionesPaquetesHospitalizacion)
+                            {
+                                var precio = paquete.PaqueteHospitalizacion.Precio ?? 0m;
+                                valorPaquetes += precio;
+                                <tr class="kv-row">
+                                    <td>@paquete.PaqueteHospitalizacion.NombrePaquete</td>
+                                    <td>@precio.ToString("N2")</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr class="kv-row">
+                                <td colspan="2">No hay paquetes registrados</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- ARCHIVOS DEL PACIENTE -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Paciente - archivos</td>
+        </tr>
+    </table>
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Fecha de carga</th>
+                            <th>Nombre</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (ViewBag.ArchivosPaciente != null)
+                        {
+                            foreach (var archivo in ViewBag.ArchivosPaciente)
+                            {
+                                <tr class="kv-row">
+                                    <td>@archivo.ArchivoFecha</td>
+                                    <td>@archivo.ArchivoNombre</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr class="kv-row">
+                                <td colspan="2">No se han subido archivos para este paciente.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- (Opcional) scripts de Knockout si se usan en la vista normal -->
+    @* 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.5.1/knockout.js"></script>
+    <script src="~/ViewModelKo/HospitalizacionDetallesVM.js"></script>
+    *@
+</div>

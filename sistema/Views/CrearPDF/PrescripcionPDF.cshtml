@@ -1,0 +1,205 @@
+@using Database.Shared.Models
+@using System.Globalization
+@using sistema.Models
+@model PrescripcionPdfViewModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Prescripción médica";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+    CultureInfo culture = new CultureInfo("es-GT");
+    var fechaTexto = fecha.ToString("dd/MM/yyyy HH:mm", culture);
+
+    // ✅ La firma viene en FirmaEmpleado (ruta/url/base64)
+    var firmaSrc = Model.FirmaEmpleado;
+
+    // Normalización del src para <img> en PDF:
+    // - data-uri => OK
+    // - http/https => OK
+    // - /ruta => convertir a URL absoluta (wkhtmltopdf no resuelve rutas relativas)
+    // - cualquier otro string => base64 puro => envolver en data-uri
+    if (!string.IsNullOrWhiteSpace(firmaSrc))
+    {
+        var t = firmaSrc.Trim();
+
+        if (t.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase))
+        {
+            firmaSrc = t;
+        }
+        else if (t.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+        t.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            firmaSrc = t;
+        }
+        else if (t.StartsWith("/", StringComparison.OrdinalIgnoreCase))
+        {
+            // ✅ Convertir ruta web relativa a URL absoluta usando el Request actual
+            var request = Context.Request;
+            firmaSrc = $"{request.Scheme}://{request.Host}{t}";
+        }
+        else
+        {
+            // Si tu firma NO es PNG, este mime debe ajustarse al real.
+            firmaSrc = "data:image/png;base64," + t;
+        }
+    }
+}
+
+<style>
+    #contenido {
+        height: 90%;
+    }
+
+    footer {
+        position: fixed;
+        top: 1100px;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 10%;
+        padding: 15px;
+    }
+
+    td {
+        border: 1px solid lightgray;
+    }
+
+    .firma-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .firma-line {
+        width: 150px;
+        border-top: 1px solid black;
+    }
+</style>
+
+<div id="contenido">
+    <b>NOMBRE: </b>@Model.PacienteNombre<br>
+    <b>EDAD: </b>@Model.PacienteEdad<br>
+    <b>PESO: </b>@(string.IsNullOrEmpty(Model.PacientePeso) || Model.PacientePeso == "-"
+        ? "No registra."
+        : Model.PacientePeso + " kg")<br>
+    <b>MÉDICO QUE RECETA: </b>@Model.MedicoNombre<br><br>
+
+    <b>FECHA: </b>@fechaTexto<br>
+    <b>FECHA PRÓXIMA CONSULTA: </b>
+    @(Model.FechaProximaConsulta?.ToString("dd/MM/yyyy hh:mm tt", culture) ?? "No registra")
+    <br><br>
+
+    <div class="form-row">
+        <table class="table" style="width: 100%;">
+            <thead style="background-color: #638ADD; color: white; padding: 5px;">
+                <tr>
+                    <th colspan="5"><b>MEDICAMENTOS</b></th>
+                </tr>
+                <tr>
+                    <th><b>Item</b></th>
+                    <th><b>Medicamento</b></th>
+                    <th><b>Unidad</b></th>
+                    <th><b>Cantidad</b></th>
+                    <th><b>Indicaciones</b></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.DetallesPrescripcion != null && Model.DetallesPrescripcion.Any())
+                {
+                    foreach (var medicamento in Model.DetallesPrescripcion)
+                    {
+                        var esColorNegro = string.Equals(medicamento.Color, "#000000", StringComparison.OrdinalIgnoreCase);
+                        <tr
+                            style="background-color: @medicamento.Color; color:@(esColorNegro ? "white" : "black"); font-weight: bold;">
+                            <td>@medicamento.Item</td>
+                            <td>@medicamento.Medicamento</td>
+                            <td>@medicamento.UnidadMedidaVentaNombre</td>
+                            <td>@medicamento.Cantidad.ToString("0.0")</td>
+                            <td>@medicamento.Observaciones</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5" style="border: 2px solid black;">No hay medicamentos registrados</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="form-row">
+        <table class="table" style="width: 100%;">
+            <thead style="background-color: #638ADD; color: white; padding: 5px;">
+                <tr>
+                    <th colspan="5"><b>MEDICAMENTOS OTROS</b></th>
+                </tr>
+                <tr>
+                    <th><b>Item</b></th>
+                    <th><b>Medicamento</b></th>
+                    <th><b>Unidad</b></th>
+                    <th><b>Cantidad</b></th>
+                    <th><b>Indicaciones</b></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.MedicamentosOtros != null && Model.MedicamentosOtros.Any())
+                {
+                    int itemIndex = 1;
+                    foreach (var medicamentoOtro in Model.MedicamentosOtros)
+                    {
+                        <tr>
+                            <td>@itemIndex</td>
+                            <td>@medicamentoOtro.Nombre</td>
+                            <td>-</td> <td>@medicamentoOtro.Cantidad.ToString("0.0")</td>
+                            <td>@medicamentoOtro.Indicaciones</td>
+                        </tr>
+                        itemIndex++;
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5" style="border: 2px solid black; text-align: center;">No hay medicamentos adicionales registrados</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@* ❌ Eliminado: no imprimir el src en el PDF (rompe el layout y no aporta) *@
+@* <h1>@firmaSrc</h1> *@
+<img width="180" src="@firmaSrc" style="margin-top: -80px;" />
+<footer>
+    <center>
+        <div class="firma-container">
+            @if (!string.IsNullOrWhiteSpace(firmaSrc))
+            {
+                <img width="180" src="@firmaSrc" style="margin-top: -80px;" />
+            }
+
+            <div class="firma-line"></div>
+            <b>Firma</b>
+        </div>
+    </center>
+
+    <div class="footer center text-blue" style="width: 100%; font-size:18px">
+        <hr>
+        <b>Dirección: </b>@ViewData["Direccion"]<br>
+        <b>Teléfonos: </b>@ViewData["Telefono"]<br>
+        <b>Correo: </b>@ViewData["CorreoElectronico"]
+    </div>
+</footer>

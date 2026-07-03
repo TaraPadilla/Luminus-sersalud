@@ -1,0 +1,104 @@
+@using Database.Shared.Paginacion;
+@model List<Database.Shared.Models.PaqueteHospitalizacion>
+
+@{
+    ViewData["Title"] = "Lista paquetes";
+    var usuarioAdministrador = User.IsInRole("Administrador");
+
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <center><h4><b>Paquetes de hospitalizacion</b></h4></center>
+                <hr />
+                <a href="/HospitalizacionPaquetes/Nuevo" class="btn btn-primary"><i class="fa fa-plus"></i>&nbsp;Nuevo</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="tabla-paquetes">
+                <thead>
+                    <tr>
+                        <th>Codigo</th>
+                        <th>Nombre del paquete</th>
+                        <th>Descripcion</th>
+                        @if (usuarioAdministrador) 
+                        {
+                        <th>Precio costo</th>
+                        }
+                        <th>Precio venta</th>
+                        @if (usuarioAdministrador) 
+                        {
+                        <th>Ganancia</th>
+                        }
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var paquete in Model)
+                    {
+                        <tr>
+                            <td>@paquete.CodigoInterno</td>
+                            <td>@paquete.NombrePaquete</td>
+                            <td>@paquete.Descripcion</td>
+                            @if (usuarioAdministrador)
+                            {
+                            <td>@paquete.PrecioCosto</td>
+                            }
+                            <td>@(paquete.Precio ?? 0)</td>
+                            @if (usuarioAdministrador) 
+                            {
+                            <td>@((paquete.Precio ?? 0) - paquete.PrecioCosto)</td>
+                            }
+                            <td>
+                                <button class="btn btn-danger"
+                                        onclick="imprimirPaquete(@paquete.Id)">
+                                    <i class="fa fa-print"></i>
+                                </button>
+                                <a href="@Url.Action("Detalles","HospitalizacionPaquetes",
+                                new {paqueteId = @paquete.Id})" class="btn btn-primary">
+                                    <i class="fa fa-eye"></i>
+                                </a>
+                                <a href="@Url.Action("Modificar","HospitalizacionPaquetes", new {paqueteId = @paquete.Id})" class="btn btn-warning">
+                                    <i class="fa fa-edit"></i>
+                                </a>
+                                <button class="btn btn-danger"
+                                        onclick="eliminarPaquete(@paquete.Id)">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<div style="display:none" id="mdl-imprimir-paquete" title="Imprimir cotizacion de paquete">
+    <div class="form-row">
+        <div class="col-md-12">
+            <h5><b>Imprimir cotizacion de paquete</b></h5>
+            <hr />
+        </div>
+        <div class="col-md-12">
+            Paciente:<br />
+            <select id="select-paciente-cotizacion" style="width:100%"></select>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/ViewModelKo/HospitalizacionPaquetesListaVM.js"></script>
+}

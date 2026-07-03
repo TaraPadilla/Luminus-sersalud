@@ -1,0 +1,55 @@
+@{
+    ViewData["Title"] = "Precios";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <center><h4><b>Precios</b></h4></center>
+                <hr />
+                <a class="btn btn-danger btn-sm" asp-action="Nuevo" asp-controller="Precios">
+                   <i class="fa fa-plus"></i> Nuevo precio
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="tabla-precios">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!--ko foreach: precios-->
+                    <tr>
+                        <td data-bind="text: NombrePrecio"></td>
+                        <td>
+                            <button class="btn btn-warning" data-bind="click: $root.editarPrecio">
+                                <i class="fa fa-edit"></i>
+                            </button>
+                            <button class="btn btn-danger" data-bind="click: $root.eliminarPrecio">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <!--/ko-->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+<script type="text/javascript" src="~/ViewModelKo/PreciosListaVM.js"></script>
+}

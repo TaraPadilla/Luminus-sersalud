@@ -1,0 +1,95 @@
+@using Database.Shared.Paginacion;
+@model PaginacionList<Database.Shared.Models.Especialidad>
+
+@{
+    ViewData["Title"] = "Especialidades";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <center>
+            <h4><b>Especialidades</b></h4>
+        </center>
+    </div>
+</div>
+<form asp-action="Lista" method="get">
+
+    <br />
+    <div class="col-md-12">
+        <div class="input-group">
+
+            <div class="input-group-prepend">
+                <input type="submit" value="Buscar" class="btn btn-success" />
+            </div>
+            <input type="text" name="buscar" value="@ViewData["CurrentFilter"]" class="form-control"
+                   placeholder="Buscar Especialidad...">
+        </div>
+    </div>
+</form>
+
+<div class="col-md-12">
+    <a href="@Url.Action("Nuevo","Especialidad")" class="btn btn-primary">
+        Nueva Especialidad
+    </a>
+    @* <a href="@Url.Action("EspecialidadesPdf","CrearPDF")" class="btn btn-warning">
+        Reporte Especialidades
+    </a> *@
+</div>
+
+<div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel">
+    <div class="main-card mb-3 card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="mb-0 table table-hover ">
+                    <thead>
+                        <tr>
+                            <th>Id</th>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th>Codigo</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.Id</td>
+                                <td>@item.NombreEspecialidad</td>
+                                <td>@item.Descripcion</td>
+                                <td>@item.Codigo</td>
+                                <td>
+                                    <a href="@Url.Action("Modificar","Especialidad", new {id = @item.Id})"
+                                   class="btn btn-warning">
+                                        Modificar
+                                    </a>
+                                    <a href="@Url.Action("Eliminar","Especialidad", new {id = @item.Id})"
+                                   class="btn btn-danger">
+                                        Eliminar
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@{
+    var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+}
+
+<a asp-action="Lista" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@(Model.PageIndex - 1)"
+   asp-route-currentFilter="@ViewData["CurrentFilter"]" class="btn btn-danger btn-sm @prevDisabled">
+    Anterior
+</a>
+<a asp-action="Lista" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@(Model.PageIndex + 1)"
+   asp-route-currentFilter="@ViewData["CurrentFilter"]" class="btn btn-danger btn-sm @nextDisabled">
+    Siguiente
+</a>

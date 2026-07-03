@@ -1,0 +1,840 @@
+@model farmamest.Models.ConsentimientoHospiVM
+@{
+    ViewData["Title"] = "Formulario De Consentimiento";
+}
+
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    @* <!-- Incluye la librería de Knockout.js -->
+    <script src="https://cdn.knockoutjs.com/latest/knockout.js"></script> *@
+</head>
+
+<body>
+    <div class="container" style="width: 90%; max-width: 90%; margin: auto;">
+        <h2>Datos del Paciente</h2>
+        <form>
+            <div class="container" style="width: 100%; max-width: 100%; margin: auto;">
+                <!-- Fila 1 -->
+                <div class="row mb-2">
+                    <div class="col-md-3">
+                        <label for="horaIngreso">Hora de Ingreso</label>
+                        <input type="text" id="horaIngreso" class="form-control" data-bind="value: horaIngreso"
+                            readonly />
+                    </div>
+                    <div class="col-md-3">
+                        <label for="numeroPaciente"># Paciente</label>
+                        <input type="text" id="numeroPaciente" class="form-control" data-bind="value: numeroPaciente"
+                            placeholder="Ingrese el número de paciente" />
+                    </div>
+                    <div class="col-md-3">
+                        <label for="numeroHabitacion"># Habitación</label>
+                        <input type="text" id="numeroHabitacion" class="form-control"
+                            data-bind="value: numeroHabitacion" placeholder="Ingrese el número de habitación" />
+                    </div>
+                    <div class="col-md-3">
+                        <label for="nombreCompleto">Nombre Completo</label>
+                        <input type="text" id="nombreCompleto" class="form-control" data-bind="value: nombreCompleto"
+                            placeholder="Ingrese el nombre completo" />
+                    </div>
+                </div>
+
+                <!-- Fila 2 -->
+                <div class="row mb-2">
+                    <div class="col-md-3">
+                        <label for="estadoCivil">Estado Civil</label>
+                        <input type="text" id="estadoCivil" class="form-control" data-bind="value: estadoCivil"
+                            placeholder="Ingrese el estado civil" />
+                    </div>
+                    <div class="col-md-3">
+                        <label for="dpi">DPI o Pasaporte</label>
+                        <input type="text" id="dpi" class="form-control" data-bind="value: dpi"
+                            placeholder="Ingrese DPI o Pasaporte" />
+                    </div>
+                    <div class="col-md-3">
+                        <label for="fechaNacimiento">Fecha de Nacimiento</label>
+                        <input type="date" id="fechaNacimiento" class="form-control"
+                            data-bind="value: fechaNacimiento" />
+                    </div>
+                    <div class="col-md-3">
+                        <label for="edad">Edad - Años</label>
+                        <input type="text" id="edad" class="form-control" data-bind="value: edad" readonly />
+                    </div>
+                </div>
+
+                <!-- Fila 3 -->
+                <div class="row mb-2">
+                    <div class="col-md-3">
+                        <label for="nacionalidad">Nacionalidad</label>
+                        <input type="text" id="nacionalidad" class="form-control" data-bind="value: nacionalidad"
+                            placeholder="Ingrese la nacionalidad" />
+                    </div>
+                    <div class="col-md-3">
+                        <label for="direccion">Dirección</label>
+                        <input type="text" id="direccion" class="form-control" data-bind="value: direccion"
+                            placeholder="Ingrese la dirección" />
+                    </div>
+                    <div class="col-md-3">
+                        <label for="celular">Celular</label>
+                        <input type="text" id="celular" class="form-control" data-bind="value: celular"
+                            placeholder="Ingrese el número celular" />
+                    </div>
+                    <div class="col-md-3">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" class="form-control" data-bind="value: email"
+                            placeholder="Ingrese el correo electrónico" />
+                    </div>
+                </div>
+
+                <!-- Fila 4 -->
+                <div class="row mb-2">
+                    <div class="col-md-3">
+                        <label for="tipoSangre">Tipo de Sangre</label>
+                        <input type="text" id="tipoSangre" class="form-control" data-bind="value: tipoSangre"
+                            placeholder="Ingrese el tipo de sangre" />
+                        @* <select id="tipoSangre" class="form-control" data-bind="value: tipoSangre">
+                            <option>A+</option>
+                            <option>B+</option>
+                            <option>AB+</option>
+                            <option>O+</option>
+                            <option>A-</option>
+                            <option>B-</option>
+                            <option>AB-</option>
+                            <option>O-</option>
+                        </select> *@
+                    </div>
+                    <div class="col-md-3">
+                        <label for="genero">Género</label>
+                        <input type="text" id="genero" class="form-control" data-bind="value: genero"
+                            placeholder="Ingrese el genero/sexo" />
+                        @* <select id="genero" class="form-control" data-bind="value: genero">
+                            <option>Masculino</option>
+                            <option>Femenino</option>
+                            <option>Otro</option>
+                        </select> *@
+                    </div>
+                    <div class="col-md-3">
+                        <label for="religion">Religión</label>
+                        <input type="text" id="religion" class="form-control" data-bind="value: religion"
+                            placeholder="Ingrese la religión" />
+                    </div>
+                    <div class="col-md-3">
+                        <label for="ocupacion">Ocupación</label>
+                        <input type="text" id="ocupacion" class="form-control" data-bind="value: ocupacion"
+                            placeholder="Ingrese la ocupación" />
+                    </div>
+                </div>
+
+                <!-- Fila 5 -->
+                <div class="row mb-2">
+                    <div class="col-md-3">
+                        <label for="poseeSeguroMedico">¿Posee Seguro Médico?</label>
+                        <select id="poseeSeguroMedico" class="form-control" data-bind="value: poseeSeguroMedico">
+                            <option value="false">No</option>
+                            <option value="true">Sí</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="aseguradora">Aseguradora</label>
+                        <input type="text" id="aseguradora" class="form-control"
+                            data-bind="value: aseguradora, disable: aseguradoraDisabled()"
+                            placeholder="Ingrese la aseguradora" />
+                    </div>
+                    <div class="col-md-3">
+                        <label for="tipoPoliza">Tipo de Póliza</label>
+                        <select id="tipoPoliza" class="form-control"
+                            data-bind="value: tipoPoliza, disable: tipoPolizaDisabled()">
+                            <option>Individual</option>
+                            <option>Empresarial</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="nombreEmpresa">Nombre de la Empresa</label>
+                        <input type="text" id="nombreEmpresa" class="form-control"
+                            data-bind="value: nombreEmpresa, disable: nombreEmpresaDisabled()"
+                            placeholder="Ingrese el nombre de la empresa" />
+                    </div>
+                </div>
+
+                <!-- Fila 6 -->
+                <div class="row mb-2">
+                    <div class="col-md-3">
+                        <label for="formularioPreAutorizacion">Formulario de Pre-autorización</label>
+                        <select id="formularioPreAutorizacion" class="form-control"
+                            data-bind="value: formularioPreAutorizacion, disable: formularioPreAutorizacionDisabled()">
+                            <option value="false">No</option>
+                            <option value="true">Sí</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="tratamientoMedico">Tratamiento Médico</label>
+                        <input type="text" id="tratamientoMedico" class="form-control"
+                            data-bind="value: tratamientoMedico"
+                            placeholder="Ingrese el nombre del tratamiento médico"></input>
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="form-group mt-3">
+                    <button type="reset" class="btn btn-warning">Restablecer</button>
+                </div>
+            </div>
+        </form>
+
+        <h2>Datos del Responsable de la Cuenta</h2>
+        <form>
+            <div class="container" style="width: 100%; max-width: 100%; margin: auto;">
+                <!-- Fila 1 -->
+                <div class="row mb-2">
+                    <div class="col-md-3">
+                        <label for="nombreResponsable">Nombre Completo</label>
+                        <input type="text" id="nombreResponsable" class="form-control"
+                            data-bind="value: nombreResponsable" placeholder="Ingrese el nombre completo" />
+                    </div>
+                    <div class="col-md-3">
+                        <label for="dpiResponsable">DPI o Pasaporte</label>
+                        <input type="text" id="dpiResponsable" class="form-control" data-bind="value: dpiResponsable"
+                            placeholder="Ingrese el DPI o pasaporte" />
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="fechaNacimientoResponsable">Fecha de Nacimiento</label>
+                        <input type="date" id="fechaNacimientoResponsable" class="form-control"
+                            data-bind="value: fechaNacimientoResponsable" />
+                    </div>
+                    <div class="col-md-3">
+                        <label for="edadResponsable">Edad - Años</label>
+                        <input type="text" id="edadResponsable" class="form-control" data-bind="value: edadResponsable"
+                            readonly />
+                    </div>
+                </div>
+
+                <!-- Fila 2 -->
+                <div class="row mb-2">
+                    <div class="col-md-3">
+                        <label for="direccionResponsable">Dirección</label>
+                        <input type="text" id="direccionResponsable" class="form-control"
+                            data-bind="value: direccionResponsable" placeholder="Ingrese la dirección" />
+                    </div>
+                    <div class="col-md-3">
+                        <label for="celularResponsable">Celular</label>
+                        <input type="text" id="celularResponsable" class="form-control"
+                            data-bind="value: celularResponsable" placeholder="Ingrese el número de celular" />
+                    </div>
+                    <div class="col-md-3">
+                        <label for="emailResponsable">Email</label>
+                        <input type="email" id="emailResponsable" class="form-control"
+                            data-bind="value: emailResponsable" placeholder="Ingrese el correo electrónico" />
+                    </div>
+                    <div class="col-md-3">
+                        <label for="nitResponsable">NIT</label>
+                        <input type="text" id="nitResponsable" class="form-control" data-bind="value: nitResponsable"
+                            placeholder="Ingrese el NIT" />
+                    </div>
+                </div>
+
+                <!-- Fila 3 -->
+                <div class="row mb-2">
+                    <div class="col-md-3">
+                        <label for="nacionalidadResponsable">Nacionalidad</label>
+                        <input type="text" id="nacionalidadResponsable" class="form-control"
+                            data-bind="value: nacionalidadResponsable" placeholder="Ingrese la nacionalidad" />
+                    </div>
+                    <div class="col-md-3">
+                        <label for="ocupacionResponsable">Ocupacion</label>
+                        <input type="text" id="ocupacionResponsable" class="form-control"
+                            data-bind="value: ocupacionResponsable" placeholder="Ingrese el profesion u ocupacion" />
+                    </div>
+                    <div class="col-md-3">
+                        <label for="nombreFacturacion">Nombre para Facturación</label>
+                        <input type="text" id="nombreFacturacion" class="form-control"
+                            data-bind="value: nombreFacturacion" placeholder="Ingrese el nombre para facturación" />
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="form-group mt-3">
+                    <button type="reset" class="btn btn-warning">Restablecer</button>
+                </div>
+            </div>
+        </form>
+
+        <h2>Contacto de Emergencia</h2>
+        <form>
+            <div class="container" style="width: 100%; max-width: 100%; margin: auto;">
+                <!-- Fila 1 -->
+                <div class="row mb-2">
+                    <div class="col-md-4">
+                        <label for="nombreContactoEmergencia">Nombre de la persona a notificar</label>
+                        <input type="text" id="nombreContactoEmergencia" class="form-control"
+                            data-bind="value: nombreContactoEmergencia"
+                            placeholder="Ingrese el nombre de la persona a notificar" />
+                    </div>
+                    <div class="col-md-4">
+                        <label for="celularContactoEmergencia">Celular</label>
+                        <input type="text" id="celularContactoEmergencia" class="form-control"
+                            data-bind="value: celularContactoEmergencia" placeholder="Ingrese el número de celular" />
+                    </div>
+                    <div class="col-md-4">
+                        <label for="parentescoContactoEmergencia">Parentesco</label>
+                        <input type="text" id="parentescoContactoEmergencia" class="form-control"
+                            data-bind="value: parentescoContactoEmergencia" placeholder="Ingrese el parentesco" />
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="form-group mt-3">
+                    <button type="reset" class="btn btn-warning">Restablecer</button>
+                </div>
+            </div>
+        </form>
+
+        <h2 style="display: none;">Información Adicional</h2> @* Esta codigo no se esta imprimiendo en la vista *@
+        <form style="display: none;">
+            <div class="container" style="width: 100%; max-width: 100%; margin: auto;">
+                <!-- Fila 1 -->
+                <div class="row mb-2">
+                    <div class="col-md-3">
+                        <label for="hospitalProporcionoMedico">¿El hospital proporcionó médico tratante?</label>
+                        <select id="hospitalProporcionoMedico" class="form-control"
+                            data-bind="value: hospitalProporcionoMedico">
+                            <option value="false">No</option>
+                            <option value="true">Sí</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="medicoAfiliado">¿Cuenta con médico tratante afiliado al hospital?</label>
+                        <select id="medicoAfiliado" class="form-control" data-bind="value: medicoAfiliado">
+                            <option value="false">No</option>
+                            <option value="true">Sí</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="nombreMedico">Nombre del médico tratante</label>
+                        <input type="text" id="nombreMedico" class="form-control" data-bind="value: nombreMedico"
+                            placeholder="Ingrese el nombre del médico tratante" />
+                    </div>
+                    <div class="col-md-3">
+                        <label for="recetaMedica">¿Tiene receta médica por ingresos programados?</label>
+                        <select id="recetaMedica" class="form-control" data-bind="value: recetaMedica">
+                            <option value="false">No</option>
+                            <option value="true">Sí</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="form-group mt-3">
+                    <button type="reset" class="btn btn-warning">Restablecer</button>
+                </div>
+            </div>
+        </form> @* Esta codigo no se esta imprimiendo en la vista *El codigo dentro de "form" *@
+
+        <h2>Firmas y Nombres</h2>
+        <form>
+            <div class="container" style="width: 100%; max-width: 100%; margin: auto;">
+                <!-- Fila 1 -->
+                <div class="form-row mb-2">
+                    <div class="col-md-3 mb-2">
+                        <h4 for="nombreCompleto">Nombre del paciente</h4>
+                        <input type="text" id="nombreCompleto" class="form-control" data-bind="value: nombreCompleto"
+                            placeholder="Ingrese el nombre completo" readonly />
+                    </div>
+                    <div class="col-md-12">
+                        <h5><b>Firma</b></h5>
+                        <hr>
+                    </div>
+                    <div data-bind="if: urlFirmaPaciente() == null || urlFirmaPaciente().trim() == ''"
+                        style="width: 100%;" class="d-flex justify-content-between align-items-center">
+                        <div class="col-md-11">
+                            No hay firma del paciente
+                        </div>
+                        <div class="col-md-1">
+                            <button class="btn btn-primary" type="button"
+                                data-bind="click:abrirModalAgregarFirmaPaciente">Agregar firma</button>
+                        </div>
+                    </div>
+                    <div data-bind="if: urlFirmaPaciente() != null || urlFirmaPaciente().trim() != ''">
+                        <div class="col-md-12 text-center">
+                            <img data-bind="attr: { src: urlFirmaPaciente }, visible: urlFirmaPaciente" 
+                                 class="img-fluid img-thumbnail" 
+                                 style="max-width: 300px; height: auto; border-radius: 8px;" 
+                                 alt="Previsualización firma paciente" />
+                        </div>
+                        <div class="col-md-12">
+                            <button id="btn-eliminar-firma-paciente" class="btn btn-danger" type="button"
+                                onclick="eliminarFirma('firma-paciente', 'btn-eliminar-firma-paciente')">Borrar
+                                firma</button>
+                        </div>
+                    </div>
+                    @* @if (Model.URLFirmaPaciente == null || Model.URLFirmaPaciente.Trim() == "")
+                    {
+                        <div class="col-md-11">
+                            No hay firma de registro
+                        </div>
+                        <div class="col-md-1">
+                            <button class="btn btn-primary" data-bind="click:abrirModalAgregarFirmaRegistro">Agregar firma</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="col-md-12">
+                            <img src="@Model.URLFirmaPaciente" width="300" />
+                        </div>
+                    } *@
+                </div>
+
+                <hr>
+                <hr>
+
+                <!-- Fila 2 -->
+                <div class="form-row mb-2">
+                    <div class="col-md-3 mb-2">
+                        <h4 for="nombreResponsable">Nombre del responsable de la cuenta</h4>
+                        <input type="text" id="nombreResponsable" class="form-control"
+                            data-bind="value: nombreResponsable" placeholder="Ingrese el nombre completo" readonly />
+                    </div>
+                    <div class="col-md-12">
+                        <h5><b>Firma</b></h5>
+                        <hr>
+                    </div>
+                    <div data-bind="if: urlFirmaResponsable() == null || urlFirmaResponsable().trim() == ''"
+                        style="width: 100%;" class="d-flex justify-content-between align-items-center">
+                        <div class="col-md-11">
+                            No hay firma del responsable
+                        </div>
+                        <div class="col-md-1">
+                            <button class="btn btn-primary" type="button"
+                                data-bind="click: abrirModalAgregarFirmaResponsable">Agregar firma</button>
+                        </div>
+                    </div>
+                    <div data-bind="if: urlFirmaResponsable() != null && urlFirmaResponsable().trim() !== ''">
+                        <div class="col-md-12 text-center">
+                            <img data-bind="attr: { src: urlFirmaResponsable }" 
+                                 class="img-fluid img-thumbnail" 
+                                 style="max-width: 300px; height: auto;" 
+                                 alt="Previsualización firma responsable" />
+                        </div>
+                        <div class="col-md-12">
+                            <button id="btn-eliminar-firma-responsable" class="btn btn-danger" type="button"
+                                onclick="eliminarFirma('firma-responsable', 'btn-eliminar-firma-responsable')">Borrar
+                                firma</button>
+                            @* <button class="btn btn-danger" type="button" onclick="eliminarFirma('firma-responsable')">Borrar firma</button> *@
+                        </div>
+                    </div>
+                </div>
+
+                <hr>
+                <hr>
+
+                <!-- Fila 3 -->
+                <div class="form-row mb-2">
+                    <div class="col-md-3 mb-2">
+                        <h4 for="nombreNotaria">Nombre de la notaria</h4>
+                        <input type="text" id="nombreNotaria" class="form-control" data-bind="value: nombreNotaria"
+                            placeholder="Ingrese el nombre completo" />
+                    </div>
+                    <div class="col-md-12">
+                        <h5><b>Firma</b></h5>
+                        <hr>
+                    </div>
+                    <div data-bind="if: urlFirmaNotaria() == null || urlFirmaNotaria().trim() == ''"
+                        style="width: 100%;" class="d-flex justify-content-between align-items-center">
+                        <div class="col-md-11">
+                            No hay firma de la notaria
+                        </div>
+                        <div class="col-md-1">
+                            <button class="btn btn-primary" type="button"
+                                data-bind="click: abrirModalAgregarFirmaNotaria">Agregar firma</button>
+                        </div>
+                    </div>
+                    <div data-bind="if: urlFirmaNotaria() != null && urlFirmaNotaria().trim() !== ''">
+                       <div class="col-md-12 text-center">
+                            <img data-bind="attr: { src: urlFirmaNotaria }, visible: urlFirmaNotaria" 
+                                 class="img-fluid img-thumbnail" 
+                                 style="max-width: 300px; height: auto; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);" 
+                                 alt="Previsualización firma notaria" />
+                        </div>
+                        <div class="col-md-12">
+                            <button id="btn-eliminar-firma-notaria" class="btn btn-danger" type="button"
+                                onclick="eliminarFirma('firma-notaria', 'btn-eliminar-firma-notaria')">Borrar
+                                firma</button>
+                            @* <button class="btn btn-danger" type="button" onclick="eliminarFirma('firma-notaria')">Borrar firma</button> *@
+                        </div>
+                    </div>
+                </div>
+
+                <hr>
+                <hr>
+
+                <!-- Fila 4 -->
+                <div class="form-row mb-2">
+                    <div class="col-md-3 mb-2">
+                        <h4 for="nombreRepresentanteNarajo">Nombre del representante del hospital</h4>
+                        <input type="text" id="nombreRepresentanteNarajo" class="form-control"
+                            data-bind="value: nombreRepresentanteNarajo" placeholder="Ingrese el nombre completo" />
+                    </div>
+                    <div class="col-md-12">
+                        <h5><b>Firma</b></h5>
+                        <hr>
+                    </div>
+                    <div data-bind="if: urlFirmaRepresentanteNaranjo() == null || urlFirmaRepresentanteNaranjo().trim() == ''"
+                        style="width: 100%;" class="d-flex justify-content-between align-items-center">
+                        <div class="col-md-11">
+                            No hay firma del representante del hospital
+                        </div>
+                        <div class="col-md-1">
+                            <button class="btn btn-primary" type="button"
+                                data-bind="click: abrirModalAgregarFirmaRepresentanteNaranjo">Agregar firma</button>
+                        </div>
+                    </div>
+                    <div
+                        data-bind="if: urlFirmaRepresentanteNaranjo() != null && urlFirmaRepresentanteNaranjo().trim() !== ''">
+                        <div class="col-md-12 text-center">
+                            <img data-bind="attr: { src: urlFirmaRepresentanteNaranjo }, visible: urlFirmaRepresentanteNaranjo" 
+                                 class="img-fluid img-thumbnail" 
+                                 style="max-width: 300px; height: auto; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);" 
+                                 alt="Previsualización firma representante" />
+                        </div>
+                        <div class="col-md-12">
+                            <button id="btn-eliminar-firma-representante" class="btn btn-danger" type="button"
+                                onclick="eliminarFirma('firma-representante', 'btn-eliminar-firma-representante')">Borrar
+                                firma</button>
+                            @* <button class="btn btn-danger" type="button" onclick="eliminarFirma('firma-representante')">Borrar firma</button> *@
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                @* <div class="form-group mt-3">
+                    <button type="reset" class="btn btn-warning">Restablecer</button>
+                </div> *@
+            </div>
+        </form>
+
+        <!-- Botones -->
+        <div class="row mt-5">
+            <div class="col-md-12 button-container">
+                <button type="button" data-bind="click: guardarFormConsentimientoHospi"
+                    class="btn btn-primary custom-button">Guardar</button>
+                <button type="button" data-bind="click: guardarFormConsentimientoConDefaults"
+                    class="btn btn-danger custom-button custom-button-red">Terceros Lesionados</button>
+            </div>
+        </div>
+    </div>
+
+    @* Modales *@
+    @* <div id="mdl-firma-paciente" title="Firma del paciente" style="display:none">
+        <div class="main-card mb-3 card col-md-12">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12 mb-2"
+                        style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <!-- Titulo al inicio -->
+                        <div>
+                            <h5><b>Firma del paciente</b></h5>
+                        </div>
+
+                        <!-- Botones al final -->
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-danger" type="button"
+                                onclick="limpiarCanvas('firma-paciente')">Borrar firma</button>
+                            <button class="btn btn-success" type="button" data-bind="click:subirFirmaPaciente">Guardar
+                                firma</button>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <canvas id="firma-paciente"
+                            style="width: 900px;height: 300px;background-color: #ffffff;border: 1px solid black;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> *@
+
+
+<div class="modal fade" id="mdl-firma-paciente" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered modal-xl" style="max-width: 800px; width: 95%;"> 
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Firma del Paciente</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body" style="background-color: #f8f9fa;">
+                <div class="canvas-holder"><canvas id="canvas-paciente"></canvas></div>
+                <p class="text-muted mt-2 mb-0"><small>Firme dentro del recuadro.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-danger" onclick="limpiarFirma('canvas-paciente')">Limpiar</button>
+                <button type="button" class="btn btn-primary" data-bind="click:subirFirmaPaciente">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+    @* <div id="mdl-firma-responsable" title="Firma del responsable" style="display:none">
+        <div class="main-card mb-3 card col-md-12">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12 mb-2"
+                        style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <!-- Titulo al inicio -->
+                        <div>
+                            <h5><b>Firma del responsable</b></h5>
+                        </div>
+
+                        <!-- Botones al final -->
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-danger" type="button"
+                                onclick="limpiarCanvas('firma-responsable')">Borrar firma</button>
+                            <button class="btn btn-success" type="button"
+                                data-bind="click:subirFirmaResponsable">Guardar firma</button>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <canvas id="firma-responsable"
+                            style="width: 900px;height: 300px;background-color: #ffffff;border: 1px solid black;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> *@
+
+    <div class="modal fade" id="mdl-firma-responsable" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered modal-xl" style="max-width: 800px; width: 95%;"> 
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Firma del Responsable</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body" style="background-color: #f8f9fa;">
+                <div class="canvas-holder"><canvas id="canvas-responsable"></canvas></div>
+                <p class="text-muted mt-2 mb-0"><small>Firme dentro del recuadro.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-danger" onclick="limpiarFirma('canvas-responsable')">Limpiar</button>
+                <button type="button" class="btn btn-primary" data-bind="click:subirFirmaResponsable">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    @* <div id="mdl-firma-notaria" title="Firma de la notaria" style="display:none">
+        <div class="main-card mb-3 card col-md-12">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12 mb-2"
+                        style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <!-- Titulo al inicio -->
+                        <div>
+                            <h5><b>Firma de la notaria</b></h5>
+                        </div>
+
+                        <!-- Botones al final -->
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-danger" type="button" onclick="limpiarCanvas('firma-notaria')">Borrar
+                                firma</button>
+                            <button class="btn btn-success" type="button" data-bind="click:subirFirmaNotaria">Guardar
+                                firma</button>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <canvas id="firma-notaria"
+                            style="width: 900px;height: 300px;background-color: #ffffff;border: 1px solid black;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> *@
+
+
+<div class="modal fade" id="mdl-firma-notaria" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered modal-xl" style="max-width: 800px; width: 95%;"> 
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Firma de la Notaria</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body" style="background-color: #f8f9fa;">
+                <div class="canvas-holder"><canvas id="canvas-notaria"></canvas></div>
+                <p class="text-muted mt-2 mb-0"><small>Firme dentro del recuadro.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-danger" onclick="limpiarFirma('canvas-notaria')">Limpiar</button>
+                <button type="button" class="btn btn-primary" data-bind="click:subirFirmaNotaria">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    @* <div id="mdl-firma-representante" title="Firma del representante" style="display:none">
+        <div class="main-card mb-3 card col-md-12">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12 mb-2"
+                        style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <!-- Titulo al inicio -->
+                        <div>
+                            <h5><b>Firma del representante</b></h5>
+                        </div>
+
+                        <!-- Botones al final -->
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-danger" type="button"
+                                onclick="limpiarCanvas('firma-representante')">Borrar firma</button>
+                            <button class="btn btn-success" type="button"
+                                data-bind="click:subirFirmaRepresentante">Guardar firma</button>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <canvas id="firma-representante"
+                            style="width: 900px;height: 300px;background-color: #ffffff;border: 1px solid black;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> *@
+
+        <div class="modal fade" id="mdl-firma-representante" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered modal-xl" style="max-width: 800px; width: 95%;"> 
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Firma del Representante</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body" style="background-color: #f8f9fa;">
+                <div class="canvas-holder"><canvas id="canvas-representante"></canvas></div>
+                <p class="text-muted mt-2 mb-0"><small>Firme dentro del recuadro.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-danger" onclick="limpiarFirma('canvas-representante')">Limpiar</button>
+                <button type="button" class="btn btn-primary" data-bind="click:subirFirmaRepresentante">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+    @* Modales *@
+
+    <script type="application/json" id="viewModelData">
+        @Html.Raw(Json.Serialize(Model))
+    </script>
+
+    <style>
+        .custom-button-red {
+            background-color: #dc3545 !important;
+            /* Color rojo llamativo de Bootstrap */
+            border-color: #dc3545 !important;
+            color: #fff !important;
+        }
+
+        .custom-button {
+            font-size: 1.5rem;
+            /* Tamaño de fuente */
+            font-weight: 500;
+            /* Negrita de fuente */
+            padding: 15px 30px;
+            /* Espaciado interno */
+            border-radius: 10px;
+            /* Bordes redondeados */
+            background-color: #28a745;
+            /* Color de fondo verdoso */
+            border: none;
+            /* Sin borde */
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
+            /* Sombra */
+            transition: all 0.3s ease;
+            /* Animación al pasar el mouse */
+        }
+
+        .custom-button:hover {
+            background-color: #218838;
+            /* Color de fondo verdoso al pasar el mouse */
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+            /* Sombra más fuerte */
+        }
+
+        /* Alinear el botón a la derecha */
+        .button-container {
+            text-align: right;
+            /* Alineación derecha */
+        }
+
+
+
+        body.modal-open {
+            overflow: hidden !important;
+            padding-right: 0 !important;
+        }
+
+        #mdl-firma-paciente, #mdl-firma-responsable, 
+        #mdl-firma-notaria, #mdl-firma-representante {
+            z-index: 1050 !important;
+            background: rgba(0,0,0,0.4); 
+            overflow-y: auto !important;
+                box-shadow: none !important;
+
+        }
+
+        .modal-content {
+            background: #fff !important;
+            max-height: 90vh; 
+            display: flex;
+            flex-direction: column;
+            border-radius: 12px !important;
+            border: none !important;
+               box-shadow: none !important;
+
+        }
+
+        .modal-body {
+            overflow-y: auto;
+            flex: 1 1 auto;
+        }
+
+        .canvas-holder {
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            background: #fff;
+            border: 1px solid #dee2e6;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        canvas {
+            width: 100% !important;
+            height: 250px !important; 
+            display: block;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+
+        .img-thumbnail {
+            background-color: #f1f4f6 !important;
+            border: 1px solid #dee2e6 !important;
+            padding: 10px !important;
+            transition: transform .2s; 
+        }
+
+        .modal-backdrop {
+            display: none !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+        }
+
+        .modal-dialog {
+            box-shadow: none !important
+        }
+    </style>
+    @section Scripts
+    {
+        <!-- Enlazado con Knockout.js -->
+        <script type="text/javascript" src="~/ViewModelKo/FormConsentimientoVM.js"></script>
+    }
+
+</body>
+
+</html>

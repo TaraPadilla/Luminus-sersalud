@@ -1,0 +1,97 @@
+@using Database.Shared.Paginacion;
+@model PaginacionList<Database.Shared.Models.Producto>
+
+@{
+    ViewData["Title"] = "Lista Productos";
+}
+<div class="app-page-title">
+    <div class="page-title-wrapper">
+
+        <div class="page-title-heading">
+            <div class="page-title-icon">
+                <i class="pe-7s-graph text-success">
+                </i>
+            </div>
+            <div>
+                <div class="page-title-subheading">Listado de Medicamentos
+                    etc.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@await Html.PartialAsync("_MensajeExito")
+
+<br />
+<form asp-action="ListaCuadricula" method="get">
+    <div class="col-md-12">
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <input type="submit" value="Buscar" class="btn btn-success"></input>
+            </div>
+            <input type="text" name="buscar" value="@ViewData["CurrentFilter"]" class="form-control"
+                placeholder="Buscar Producto...">
+        </div>
+    </div>
+</form>
+<br />
+
+<div class="main-card mb-6 card">
+    <div class="container-fluid">
+        <div class="list">
+
+            @foreach (var item in Model)
+            {
+                <article class="list--item"
+                    onclick="location.href = '@Url.Action("Modificar","Productos", new {@item.Id})'">
+                    <figure>
+
+                        @if(item.Imagen==null)
+                        {
+                             <img src="/Images/imagenotavailable.png"
+                            alt="@item.Descripcion" width="100" >
+
+                        }
+                        else
+                        {
+                          <img src="@item.Imagen"
+                            alt="@item.Descripcion">  
+                        }
+                       
+                        <header>
+                            <div class="floater">
+                                @item.Stock
+                            </div>
+                            <h2>@item.NombreProducto | @item.CodigoReferencia</h2>
+                        </header>
+                        <figcaption>
+                            Precio público <h2>@item.Precio</h2>
+                            Precio Mayorista <h2>@item.Precio_2</h2>
+                        </figcaption>
+                         <figcaption>
+                            Stock <h2>@item.Stock</h2>
+                            
+                        </figcaption>
+                    </figure>
+                </article>
+            }
+
+
+        </div>
+    </div>
+</div>
+
+@{
+    var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+}
+
+<br />
+<a asp-action="ListaCuadricula" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@(Model.PageIndex - 1)"
+    asp-route-currentFilter="@ViewData["CurrentFilter"]" class="btn btn-danger btn-sm @prevDisabled">
+    Anterior
+</a>
+<a asp-action="ListaCuadricula" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@(Model.PageIndex + 1)"
+    asp-route-currentFilter="@ViewData["CurrentFilter"]" class="btn btn-danger btn-sm @nextDisabled" class="">
+    Siguiente
+</a>

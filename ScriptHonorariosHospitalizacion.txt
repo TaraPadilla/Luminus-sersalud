@@ -1,0 +1,28 @@
+-- Creación de la tabla de honorarios médicos para hospitalización
+CREATE TABLE public."HospitalizacionHonorarios" (
+    "Id" SERIAL PRIMARY KEY,
+    "HospitalizacionId" INTEGER NOT NULL,
+    "EmpleadoId" INTEGER NOT NULL,
+    "Monto" NUMERIC(18,2) NOT NULL DEFAULT 0.00,
+    
+    -- Restricción: Un médico no debería tener honorarios duplicados exactos 
+    -- en la misma hospitalización a menos que sea necesario (opcional)
+    
+    -- Llave foránea hacia Hospitalizaciones
+    CONSTRAINT "FK_Honorarios_Hospitalizacion" FOREIGN KEY ("HospitalizacionId")
+        REFERENCES public."Hospitalizaciones" ("Id") 
+        ON DELETE CASCADE,
+        
+    -- Llave foránea hacia Empleados (Médicos)
+    CONSTRAINT "FK_Honorarios_Empleado" FOREIGN KEY ("EmpleadoId")
+        REFERENCES public."Empleados" ("Id")
+        ON DELETE RESTRICT
+);
+
+-- Índices para optimizar consultas de reportes por médico u hospitalización
+CREATE INDEX "IX_HospitalizacionHonorarios_HospitalizacionId" ON public."HospitalizacionHonorarios" ("HospitalizacionId");
+CREATE INDEX "IX_HospitalizacionHonorarios_EmpleadoId" ON public."HospitalizacionHonorarios" ("EmpleadoId");
+
+-- Comentarios de tabla
+COMMENT ON TABLE public."HospitalizacionHonorarios" IS 'Almacena el detalle de honorarios médicos asignados a una hospitalización específica durante el proceso de cobro.';
+COMMENT ON COLUMN public."HospitalizacionHonorarios"."Monto" IS 'Monto neto del honorario profesional en moneda local.';

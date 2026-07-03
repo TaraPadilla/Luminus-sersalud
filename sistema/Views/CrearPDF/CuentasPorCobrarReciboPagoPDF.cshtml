@@ -1,0 +1,75 @@
+@model Database.Shared.Models.Venta
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Recibo de pago de cuenta";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+}
+
+<style>
+    .report-container {
+        margin-top: 10px;
+        font-size: 12px;
+    }
+
+    .report-title {
+        text-align: center;
+        font-weight: bold;
+        font-size: 16px;
+        color: #0d0e36;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+
+    .report-subtitle {
+        text-align: center;
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+
+    .report-meta {
+        text-align: center;
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .report-meta b {
+        font-weight: bold;
+    }
+</style>
+
+<div class="report-container">
+    <!-- Título principal estándar -->
+    <div class="report-title">
+        REPORTE - @ViewData["Title"]
+    </div>
+
+    <!-- Fecha y hora de emisión -->
+    <div class="report-subtitle">
+        <b>Fecha y hora de emisión:</b> @fecha.ToString("dd/MM/yyyy HH:mm")
+    </div>
+
+    <!-- Subtítulo / encabezado del recibo (si quieres mantener el texto original) -->
+    <div class="report-meta">
+        <b>Recibo de pago de cuenta</b>
+    </div>
+
+    @* Aquí puedes agregar el detalle de la venta si el reporte debe mostrarlo,
+       por ejemplo:
+       - Número de documento
+       - Cliente
+       - Monto pagado
+       - Saldo
+       etc.
+       No lo invento porque no estaba en el código original. *@
+</div>

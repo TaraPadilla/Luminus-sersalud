@@ -1,0 +1,785 @@
+@using Database.Shared.Enumeraciones
+@model sistema.Models.CompraBaseViewModel
+
+@Html.HiddenFor(m => m.ConfigProrrateoHabilitado)
+@Html.HiddenFor(m => m.CompraId)
+@Html.HiddenFor(m => m.CompraAmbienteId)
+@* @Html.HiddenFor(m => m.OrdenCompraId) *@
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div id="tabs">
+            <ul>
+                <li><a href="#tab-datos-compra">Datos de la compra</a></li>
+                <li><a href="#tab-detalle-compra">Detalle de la compra</a></li>
+                @if (Model.ConfigProrrateoHabilitado)
+                {
+                    <li><a href="#tab-prorrateo-compra">Prorrateo</a></li>
+                }
+            </ul>
+            <div id="tab-datos-compra">
+                <div class="form-row">
+                    <div class="col-md-4">
+                        <div class="position-relative form-group">
+                            <label class="">Tipo de documento</label>&nbsp;&nbsp;
+                            <i class="fas fa-info-circle" data-toggle="tooltip" data-placement="top"
+                                title="Campo obligatorio"></i>
+                            <select class="form-control" asp-items="Model.ListaTipoDocumento"
+                                asp-for="EncabezadoTipoDocumentoId" disabled>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="position-relative form-group">
+                            <label class="">
+                                No.
+                                Comprobante
+                            </label>
+                            @if (Model.EstadoCompra)
+                            {
+                                @Html.TextBoxFor(a => a.EncabezadoNoComprobante, new
+                                {
+                                    @class = "form-control"
+                                                        ,
+                                                        @placeholder = "No. Comprobante",
+                                                        @readonly = true
+                                                        })
+                                                        }
+                            else
+                            {
+                                @Html.TextBoxFor(a => a.EncabezadoNoComprobante, new
+                                {
+                                    @class = "form-control"
+                                                        ,
+                                                        @placeholder = "No. Comprobante"
+                                                        })
+                                                        }
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="position-relative form-group">
+                            <label class="">Codigo de empleado</label>
+                            @Html.TextBoxFor(a => a.EncabezadoEmpleadoId, new
+                            {
+                                @class = "form-control",
+                                                        @placeholder = "Código de empleado"
+                                                        ,
+                                                        @disabled = "disabled"
+                                                        })
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="position-relative form-group">
+                            <label class="">Sucursal</label>
+                            @if (Model.CompraId != null)
+                            {
+                                <select class="form-control" asp-items="Model.ListaSucursales"
+                                    asp-for="EncabezadoSucursalId" disabled="disabled">
+                                </select>
+                            }
+                            else
+                            {
+                                <select class="form-control" asp-items="Model.ListaSucursales"
+                                    asp-for="EncabezadoSucursalId">
+                                </select>
+                            }
+
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+    <div class="position-relative form-group">
+        <label class="">Ambiente</label>
+        <select class="form-control" asp-for="EncabezadoAmbienteId"
+                asp-items="Html.GetEnumSelectList<Database.Shared.Enumeraciones.AmbienteEnum>()">
+        </select>
+    </div>
+</div>
+                    <div class="col-md-4">
+                        <label>Proveedor</label>
+                        @if (Model.EstadoCompra)
+                        {
+                            <select disabled class="form-control select2bs4" style="width: 100%;"
+                                asp-for="EncabezadoProveedor" asp-items="ViewBag.Proveedor">
+                            </select>
+                        }
+                        else
+                        {
+                            <select class="form-control select2bs4" style="width: 100%;" asp-for="EncabezadoProveedor"
+                                asp-items="ViewBag.Proveedor">
+                            </select>
+                        }
+                    </div>
+
+
+                    <div class="col-md-4">
+                        <label>Tipo</label>
+                        <select id="EncabezadoTipoCompraId" class="form-control select2bs4" style="width: 100%;"
+                            asp-for="EncabezadoTipoCompraId" asp-items="@Model.ListaTipoCompra"
+                            onchange="habilitarDeshabilitarInput(this.value)">
+                            @* <option>Seleccione...</option> *@
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="position-relative form-group">
+                            <label class="">Días de crédito</label>
+                            @Html.TextBoxFor(a => a.DiasCredito, new
+                            {
+                                @class = "form-control DiasCredito",
+                                                        @type = "number",
+                                                        @placeholder = "Días de crédito",
+                                                        @id = "DiasCredito"
+                                                        })
+                        </div>
+                    </div>
+
+
+                    <div class="col-md-4">
+                        <div class="position-relative form-group">
+                            <label class="">Fecha Limite</label>
+                            @Html.TextBoxFor(a => a.EncabezadoFechaLimite,
+                                                        new { @type = "date", @class = "form-control", })
+
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="position-relative form-group">
+                            <label class="">Fecha de recepcion de factura</label>&nbsp;&nbsp;
+                            <i class="fas fa-info-circle" data-toggle="tooltip" data-placement="top"
+                                title="Para ordenes de compra"></i>
+                            @Html.TextBoxFor(a => a.EncabezadoFechaRecepcion,
+                                                        new { @type = "date", @class = "form-control", })
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <div class="position-relative form-group">
+                            <label class="">Observación</label>
+                            @if (Model.EstadoCompra)
+                            {
+                                @Html.TextAreaFor(a => a.EncabezadoObservacion, 5, 500, htmlAttributes: new
+                                {
+                                    @class = "form-control ",
+                                                        @placeholder = "Observación",
+                                                        @style = "max-width:100% !important;",
+                                                        @readonly = true
+                                                        })
+                                                        }
+                            else
+                            {
+                                @Html.TextAreaFor(a => a.EncabezadoObservacion, 5, 500, htmlAttributes: new
+                                {
+                                    @class = "form-control ",
+                                                        @placeholder = "Observación",
+                                                        @style = "max-width:100% !important;"
+                                                        })
+                                                        }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @*Aqui inicia el detalle de compra*@
+            <div id="tab-detalle-compra">
+                <div class="table-responsive">
+                    <table class='table table-hover' id="tablecompra">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Codigo - Producto</th>
+                                <th>Unidad de compra</th>
+                                <th>Cantidad</th>
+                                <th>Precio de compra</th>
+                                <th>Total</th>
+                                @if (Model.CompraId == null)
+                                {
+                                    <th>Acciones</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!--ko foreach: productosComprados-->
+                            <tr>
+                                <td>
+                                    @* Boton que despliega opciones *@
+                                    <button class="btn btn-primary" data-bind="click:$root.verConfiguracionInventario">
+                                        <i class="fas fa-caret-down"></i>
+                                    </button>
+                                </td>
+                                <td>
+                                    <span data-bind="text:ProductoCodigo"></span> -
+                                    <span data-bind="text:NombreProducto"></span><br />
+                                    <b>Fecha de vencimiento:</b>
+                                    <input type="date" class="form-control" data-bind="value:FechaVencimiento" />
+                                </td>
+
+                                <td>
+                                    <select class="form-control unidad-compra-item-" data-bind="attr:{id:'unidad-compra-item-'+Item},
+                                                   event:{change: $root.consultarUnidadesVenta}">
+                                        <option>Seleccione una unidad...</option>
+                                    </select><br />
+                                    <b>Lote:</b><br />
+                                    <input class="form-control" placeholder="Lote" data-bind="value:Lote" />
+                                </td>
+
+                                <td>
+                                    <input type="text" class="form-control"
+                                        data-bind="value:Cantidad,event:{change:$root.calcularPrecios}" />
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control"
+                                        data-bind="value:PrecioCompra,event:{change:$root.calcularPrecios}" />
+
+                                </td>
+                                <td data-bind="text:Total"></td>
+                                @if (Model.CompraId == null)
+                                {
+                                    <td>
+                                        <!--ko if:Nuevo-->
+                                        <button class="btn btn-danger" data-bind="click:$root.quitarProductoCompra">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                        <!--/ko-->
+                                    </td>
+                                }
+                            </tr>
+                            @{
+                                var claseDisabled = "";
+                                if (Model.OrdenCompraRecibida)
+                                {
+                                    claseDisabled = " disabled ";
+                                }
+                            }
+                            <tr data-bind="attr:{id:'configuracion-inventario-item-'+Item}" style="display:none"
+                                class="@claseDisabled">
+                                <td colspan="7" style="background-color:lightgray;border-bottom:1px solid black">
+                                    <div class="form-row">
+                                        <div class="col-md-12 table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th><b>POLITICA DE DEVOLUCION (PRODUCTO DEFECTUOSO)</b></th>
+                                                        <th>PROVEEDOR: <span
+                                                                data-bind="text:$root.infoProveedor().ProveedorPoliticasDevolucion"></span>
+                                                            dias</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>
+                                                            <input
+                                                                data-bind="attr:{name:'radio-politica-devolucion-item-'+Item,
+                                                                id:'radio-politica-proveedor-item-'+Item},checked: PoliticaDevolucionProducto"
+                                                                type="radio" value="radio-politica-proveedor" />
+                                                            <label
+                                                                data-bind="attr:{for:'radio-politica-proveedor-item-'+Item}">
+                                                                Manejar la misma politica de devolucion del proveedor
+                                                            </label>
+                                                        </td>
+                                                        <td>
+                                                            <input
+                                                                data-bind="attr:{name:'radio-politica-devolucion-item-'+Item,
+                                                                id:'radio-politica-personalizada-item-'+Item},checked: PoliticaDevolucionProducto"
+                                                                type="radio" value="radio-politica-personalizada" />
+                                                            <label
+                                                                data-bind="attr:{for:'radio-politica-personalizada-item-'+Item}">
+                                                                Manejar politica diferente: <input
+                                                                    placeholder="No. dias"
+                                                                    data-bind="value:PoliticaDevolucionPersonalizadaDias" />
+                                                                dias
+                                                            </label>
+                                                        </td>
+                                                        <td>
+                                                            <input
+                                                                data-bind="attr:{name:'radio-politica-devolucion-item-'+Item,
+                                                                id:'radio-politica-no-maneja-item-'+Item},checked: PoliticaDevolucionProducto"
+                                                                type="radio" value="radio-politica-no-maneja" />
+                                                            <label
+                                                                data-bind="attr:{for:'radio-politica-no-maneja-item-'+Item}">
+                                                                No manejar politica de devolucion
+                                                            </label>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="col-md-12 table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th><b>POLITICA DE DEVOLUCION (VENCIMIENTO)</b></th>
+                                                        <th>PROVEEDOR: <span
+                                                                data-bind="text:$root.infoProveedor().ProveedorPoliticasDevolucion"></span>
+                                                            dias</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>
+                                                            <input
+                                                                data-bind="attr:{name:'radio-politica-devolucion-vencimiento-item-'+Item,
+                                                                id:'radio-politica-vencimiento-proveedor-item-'+Item},checked: PoliticaDevolucionVencimientoProducto"
+                                                                type="radio"
+                                                                value="radio-politica-vencimiento-proveedor" />
+                                                            <label
+                                                                data-bind="attr:{for:'radio-politica-vencimiento-proveedor-item-'+Item}">
+                                                                Manejar la misma politica de devolucion por
+                                                                <b>vencimiento</b> del proveedor
+                                                            </label>
+                                                        </td>
+                                                        <td>
+                                                            <input
+                                                                data-bind="attr:{name:'radio-politica-devolucion-vencimiento-item-'+Item,
+                                                                id:'radio-politica-vencimiento-personalizada-item-'+Item},checked: PoliticaDevolucionVencimientoProducto"
+                                                                type="radio"
+                                                                value="radio-politica-vencimiento-personalizada" />
+                                                            <label
+                                                                data-bind="attr:{for:'radio-politica-vencimiento-personalizada-item-'+Item}">
+                                                                Manejar politica diferente: <input
+                                                                    placeholder="No. dias"
+                                                                    data-bind="value:PoliticaDevolucionVencimientoPersonalizadaDias" />
+                                                                dias
+                                                            </label>
+                                                        </td>
+                                                        <td>
+                                                            <input
+                                                                data-bind="attr:{name:'radio-politica-devolucion-vencimiento-item-'+Item,
+                                                                id:'radio-politica-vencimiento-no-maneja-item-'+Item},checked: PoliticaDevolucionVencimientoProducto"
+                                                                type="radio"
+                                                                value="radio-politica-vencimiento-no-maneja" />
+                                                            <label
+                                                                data-bind="attr:{for:'radio-politica-vencimiento-no-maneja-item-'+Item}">
+                                                                No manejar politica de devolucion por <b>vencimiento</b>
+                                                            </label>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="col-md-12 table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th><b>CREDITO</b></th>
+                                                        <th>PROVEEDOR: <span
+                                                                data-bind="text:$root.infoProveedor().ProveedorDiasCredito"></span>
+                                                            dias</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>
+                                                            <input
+                                                                data-bind="attr:{name:'radio-credito-item-'+Item,
+                                                                id:'radio-credito-proveedor-item-'+Item},checked: CreditoProducto"
+                                                                type="radio" value="radio-credito-proveedor" />
+                                                            <label
+                                                                data-bind="attr:{for:'radio-credito-proveedor-item-'+Item}">
+                                                                Manejar los mismos dias de credito del proveedor
+                                                            </label>
+                                                        </td>
+                                                        <td>
+                                                            <input
+                                                                data-bind="attr:{name:'radio-credito-item-'+Item,
+                                                                id:'radio-credito-personalizado-item-'+Item},checked: CreditoProducto"
+                                                                type="radio" value="radio-credito-personalizado" />
+                                                            <label
+                                                                data-bind="attr:{for:'radio-credito-personalizado-item-'+Item}">
+                                                                Manejar credito diferente: <input placeholder="No. dias"
+                                                                    data-bind="value:CreditoPersonalizadoDias" /> dias
+                                                            </label>
+                                                        </td>
+                                                        <td>
+                                                            <input
+                                                                data-bind="attr:{name:'radio-credito-item-'+Item,
+                                                                id:'radio-credito-no-maneja-item-'+Item},checked: CreditoProducto"
+                                                                type="radio" value="radio-credito-no-maneja" />
+                                                            <label
+                                                                data-bind="attr:{for:'radio-credito-no-maneja-item-'+Item}">
+                                                                No maneja credito
+                                                            </label>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="col-md-12 table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th><b>LOTES EXISTENTES</b></th>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>F. vencimiento</th>
+                                                        <th>Bodega</th>
+                                                        <th>Stock</th>
+                                                        <th>Proveedor</th>
+                                                        <th>Lote</th>
+                                                        <th>Fecha de<br />recepcion</th>
+                                                        <th>Precio de compra</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <!--ko foreach:$root.lotesExistentes-->
+                                                    <!--ko if:Item==$parent.Item-->
+                                                    <tr>
+                                                        <td data-bind="text:FechaVencimiento"></td>
+                                                        <td data-bind="text:BodegaNombre"></td>
+                                                        <td data-bind="text:Stock"></td>
+                                                        <td data-bind="text:ProveedorNombre"></td>
+                                                        <td data-bind="text:Lote"></td>
+                                                        <td data-bind="text:FechaRecepcionLote"></td>
+                                                        <td>
+                                                            Q <span data-bind="text:PrecioCompra"></span>
+                                                        </td>
+                                                    </tr>
+                                                    <!--/ko-->
+                                                    <!--/ko-->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="col-md-12 table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th><b>PROVEEDORES SUGERIDOS</b></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>
+                                                            <label class="badge badge-primary">
+                                                                Por precio:
+                                                                <span data-bind="text:ProveedorSugeridoPrecio"></span>
+                                                            </label>
+                                                        </td>
+                                                        <td>
+                                                            <label class="badge badge-primary">
+                                                                Por crédito:
+                                                                <span data-bind="text:ProveedorSugeridoCredito"></span>
+                                                            </label>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="col-md-12 table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th><b>PRECIOS DE VENTA</b></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <!--ko foreach: $root.unidadesVenta-->
+                                                    <!--ko if:Item==$parent.Item-->
+                                                    <tr>
+                                                        <td>
+                                                            <span data-bind="text:NombreUnidad"></span> (<span
+                                                                data-bind="text:Equivalencia"></span>)
+                                                        </td>
+                                                        <td>
+                                                            <div class="form-row">
+                                                                <!--ko foreach: $root.preciosVenta-->
+                                                                <!--ko if:UnidadMedidaVentaId==$parent.Id && Item==$parent.Item-->
+                                                                <div class="col-md-2">
+                                                                    <label> <b
+                                                                            data-bind="text:PrecioNombre"></b></label>
+                                                                    <input data-bind="value:PrecioValor"
+                                                                        class="form-control" />
+                                                                </div>
+                                                                <!--/ko-->
+                                                                <!--/ko-->
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    <!--/ko-->
+                                                    <!--/ko-->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="col-md-12 table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th><b>UBICACIONES</b></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <!--ko foreach:$root.unidadesVenta-->
+                                                    <!--ko if:Item==$parent.Item-->
+                                                    <tr>
+                                                        <td>
+                                                            <label class="badge badge-primary">
+                                                                <span data-bind="text:NombreUnidad"></span>
+                                                                (Total = <span
+                                                                    data-bind="text:CantidadCalculada"></span>)
+                                                            </label><br />
+                                                            <label class="badge badge-danger">
+                                                                (Precio Unitario Compra = <span
+                                                                    data-bind="text:precioUnidadCompra"></span>)
+                                                            </label><br />
+                                                            <label class="badge badge-danger">
+                                                                Precio sugerido = <span
+                                                                    data-bind="text:parseFloat($parent.PrecioCompra()) + parseFloat($parent.PrecioCompra() * 0.6)"></span>
+                                                            </label>
+                                                        </td>
+                                                        <td>
+                                                            <div class="form-row">
+                                                                <!--ko foreach:$root.ubicaciones-->
+                                                                <!--ko if:Item==$parent.Item && UnidadMedidaVentaId ==$parent.Id-->
+                                                                <div class="col-md-4">
+                                                                    <label data-bind="text:NombreUbicacion"></label>
+                                                                    <input data-bind="value:Cantidad"
+                                                                        class="form-control" />
+                                                                </div>
+                                                                <!--/ko-->
+                                                                <!--/ko-->
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    <!--/ko-->
+                                                    <!--/ko-->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <!--/ko-->
+                        </tbody>
+
+                    </table>
+                    <!--ko foreach: productosComprados-->
+                    <input type="hidden" data-bind="value:ProductoId,attr:{id:'producto-id-item-'+Item}" />
+                    <!--/ko-->
+                </div>
+                @if (Model.EstadoCompra == false)
+                {
+                    <div class="form-row">
+                        <div class="col-md-12">
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <input type="submit" value="Agregar" class="btn btn-success"
+                                        data-bind="click:agregarProductoCompra">
+                                </div>
+                                <select class="form-control select2bs4" style="width:80%"
+                                    data-bind="options:productosRegistrados,
+                                                                                                        value: productoRegistradoSeleccionado,
+                                                                                                        optionsText:'NombreTipoProductoTipoBodega'">
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <br />
+
+                <div class="text-right" style="font-size: 25px;">
+                    <span>Total:</span>
+                    Q <span data-bind="text:totalCompra"></span>
+                </div>
+                <div style="display:flex; align-items:center;">
+                    <!-- Lista desplegable para Tipo de Compra -->
+                    @Html.DropDownList("TipoCompraId", (SelectList)Model.ListaTipoCompra, "Seleccione un tipo de compra", new { @class = "form-control m-3", @style = "width: 300px", @id = "TipoCompraId", data_bind
+                                        = "value: tipoCompraId, event: { change: actualizarTabla }" })
+                    <!-- Lista desplegable para Proveedor -->
+                    @Html.DropDownList("ProveedorId", (SelectList)Model.ListaProveedores, "Seleccione un proveedor", new
+                                        { @class = "form-control m-3", @style = "width: 300px", @id = "ProveedorId", data_bind = "value: proveedorId, event: { change: actualizarTabla }" })
+                </div>
+
+
+                <div class="table-responsive">
+
+                    <table class='table table-hover' id="tabla-sugerido-compra">
+
+                        <thead>
+                            <tr>
+                                <th>Código - Producto</th>
+                                <th>Unidad de compra</th>
+                                <th>Precio de compra</th>
+                                <th>Unidad de venta</th>
+                                <th>Precio Unitario</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!--ko foreach: productosStockBajo-->
+                            <tr>
+                                <td data-bind="text: CodigoReferencia + ' ' + NombreProducto"></td>
+                                <td
+                                    data-bind="foreach: (ProductoEquivalencias && ProductoEquivalencias.$values) ? ProductoEquivalencias.$values : []">
+                                    <span data-bind="text:UnidadMedidaCompraNombre"></span><br />
+                                </td>
+                                <td data-bind="text:Precio"></td>
+
+                                <td
+                                    data-bind="foreach: (ProductoEquivalencias && ProductoEquivalencias.$values) ? ProductoEquivalencias.$values : []">
+                                    <span data-bind="text:UnidadMedidaVentaNombre"></span><br />
+                                </td>
+                                <td data-bind="text: $root.calcularYConcatenar($data)"></td>
+                                <td>
+                                    <button class="btn btn-primary btn-sm m-3"
+                                        data-bind="click: function() { $root.agregarProductoCompra(ProductoId); }">Agregar</button>
+
+                                </td>
+                            </tr>
+                            <!--/ko-->
+
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+            @if (Model.ConfigProrrateoHabilitado)
+            {
+                <div id="tab-prorrateo-compra">
+                    <div class="form-row">
+                        <div class="col-md-12">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr style="background-color:lightgray">
+                                        <th>
+                                            CAMBIO DE MONEDA
+                                        </th>
+                                        <th>
+                                            <b class="text-danger">1 USD = </b>
+                                            <b class="text-danger" data-bind="text:cambioMonedaNacional"></b>
+                                            <b class="text-danger"> GTQ</b>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            Moneda nacional por USD
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control"
+                                                data-bind="value:cambioMonedaNacional" />
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="col-md-12">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr style="background-color:lightgray">
+                                        <th>
+                                            GASTOS DE IMPORTACION
+                                        </th>
+                                        <th colspan="4">
+                                            <b class="text-danger">GTQ </b>
+                                            <b class="text-danger" data-bind="text:totalGastosImportacion"></b><br>
+                                            <b class="text-danger">USD </b>
+                                            <b class="text-danger" data-bind="text:totalGastosImportacion"></b>
+                                        </th>
+                                    </tr>
+                                    <tr>
+                                        <th>Descripci&oacute;n</th>
+                                        <th>Valor</th>
+                                        <th>USD</th>
+                                        <th>$ GTQ</th>
+                                        <th>$ USD</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!--ko foreach: gastosProrrateo-->
+                                    <tr>
+                                        <td>
+                                            <input type="text" class="form-control"
+                                                data-bind="value:Descripcion,
+                                                                                                                attr:{id:'descripcion-gasto-prorrateo-item-'+Item}" />
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control"
+                                                data-bind="value:Valor,
+                                                                                                            event:{change:$root.actualizarTotalesProrrateo}" />
+                                        </td>
+                                        <td>
+                                            <input type="checkbox" class="form-control"
+                                                data-bind="checked:EsDolar,
+                                                                                                            event:{change:$root.actualizarTotalesProrrateo}" />
+                                        </td>
+                                        <td>
+                                            <span data-bind="text:ValorMonedaLocal"></span>
+                                        </td>
+                                        <td>
+                                            <span data-bind="text:ValorDolares"></span>
+                                        </td>
+                                    </tr>
+                                    <!--/ko-->
+                                    <tr>
+                                        <td>
+                                            <input placeholder="Agregar gasto..." class="form-control"
+                                                data-bind="click:agregarGastoProrrateo" />
+                                        </td>
+                                        <td>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function habilitarDeshabilitarInput(valorSeleccionado) {
+        //var input = document.getElementById('DiasCredito');
+        var input = document.getElementsByClassName('DiasCredito');
+        // Aquí, implementa la lógica para determinar si el input debe ser habilitado o deshabilitado.
+        // Por ejemplo, si el valor seleccionado es "3", deshabilita el input.
+        if (valorSeleccionado == "2") {
+            input.disabled = false;
+        } else {
+            input.disabled = true;
+        }
+    }
+</script>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        // Función para actualizar sucursal según el ambiente
+        function actualizarSucursalPorAmbiente() {
+            var ambienteId = parseInt($("#EncabezadoAmbienteId").val());
+            var globalId = @((int)Database.Shared.Enumeraciones.AmbienteEnum.Global);
+            var $sucursalSelect = $("#EncabezadoSucursalId");
+
+            if (ambienteId === globalId) {
+                // Buscar la opción que tenga texto "Central" (insensible a mayúsculas)
+                var optionCentral = $sucursalSelect.find('option').filter(function () {
+                    return $(this).text().trim().toLowerCase() === "central";
+                });
+
+                if (optionCentral.length) {
+                    $sucursalSelect.val(optionCentral.val()).trigger('change');
+                } else {
+                    console.warn("No se encontró una sucursal llamada 'Central'");
+                }
+                // Opcional: deshabilitar el combo de sucursal para forzar Central
+                $sucursalSelect.prop('disabled', true);
+            } else {
+                // Habilitar el combo de sucursal para otros ambientes
+                $sucursalSelect.prop('disabled', false);
+            }
+        }
+
+        // Escuchar cambios en el ambiente
+        $("#EncabezadoAmbienteId").on('change', actualizarSucursalPorAmbiente);
+
+        // Ejecutar al cargar la página por si ya venía con Global seleccionado
+        actualizarSucursalPorAmbiente();
+    });
+</script>

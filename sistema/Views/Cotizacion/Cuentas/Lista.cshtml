@@ -1,0 +1,76 @@
+﻿@using Database.Shared.Models
+@model List<Cuentas>
+@{
+    ViewData["Title"] = "Categorias";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <center><h4><b>Cuentas</b></h4></center>
+                <hr />
+                <a class="btn btn-danger" asp-action="Nuevo" asp-controller="Cuentas">
+                    Nueva Cuenta
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="tabla-cuenta">
+                <thead>
+                    <tr>
+                        <th>Nombre de la cuenta</th>
+                        <th>Banco</th>
+                        <th>Tipo de cuenta</th>
+                        <th>Numero de la cuenta</th>
+                        <th>Acciones</th>
+
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Count() > 0)
+                    {
+                        foreach (var cuenta in Model)
+                        {
+                            <tr>
+                                <td>@cuenta.NombreCuenta</td>
+                                <td>@cuenta.Banco.Nombre</td>
+                                <td>@cuenta.TipoCuenta.Nombre</td>
+                                <td>@cuenta.NumeroCuenta</td>
+                                <td>
+                                    <button class="btn btn-warning" onclick="modificarCuenta(@cuenta.Id)">
+                                        <i class="fa fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-danger" onclick="eliminarCuenta(@cuenta.Id)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td><i>No hay cuentas registrados</i></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/ViewModelKo/CuentasListaVM.js"></script>
+}

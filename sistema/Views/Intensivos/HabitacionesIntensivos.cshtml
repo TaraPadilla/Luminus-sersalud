@@ -1,0 +1,161 @@
+@using Database.Shared.Enumeraciones
+@using sistema.Models
+@model List<HospitalizacionHabitacionViewModel>
+
+@{
+    ViewData["Title"] = "Intensivos - Habitaciones";
+    var usuarioAdministrador = User.IsInRole("Administrador");
+    var usuarioDesarrollador = User.IsInRole("Desarrollador");
+    var usuarioMedicoGeneral = User.IsInRole("Medico General");
+    var usuarioMedicoInterno = User.IsInRole("Medico Interno");
+    var usuarioRecepcionDiurno = User.IsInRole("Recepcion Diurno");
+    var usuarioRecepcionNocturno = User.IsInRole("Recepcion Nocturno");
+    var usuarioRecepcion = User.IsInRole("Recepcion");
+    var usuarioAdmisiones = User.IsInRole("Admisiones");
+}
+
+@if (TempData["Message"] != null)
+{
+    var messageType = TempData["MessageType"] as string;
+    var alertClass = messageType == "error" ? "alert-danger" : "alert-success";
+
+    <div class="alert @alertClass alert-dismissible fade show" role="alert">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+        @TempData["Message"]
+    </div>
+}
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="col-md-12 text-center">
+            <h5><b>Intensivos - Habitaciones</b></h5>
+        </div>
+    </div>
+</div>
+
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div id="">
+            <div class="form-row">
+                <div class="col-md-12">
+                    <div class="main-card mb-3 card">
+                        <div class="card-body">
+                            <table id="tabla-habitaciones-hospitalizacion">
+                                <thead>
+                                    <tr>
+                                        <th>Numero o nombre de habitacion</th>
+                                        <th>Categoría</th>
+                                        <th>Estado</th>
+                                        <th>Ocupada por</th>
+                                        <th>Capacidad de personas</th>
+                                        <th>Número de camas</th>
+                                        @if (usuarioAdministrador || usuarioDesarrollador
+                                        || usuarioMedicoGeneral || usuarioMedicoInterno
+                                        || usuarioRecepcionDiurno || usuarioRecepcionNocturno)
+                                        {
+                                            <th>Ocupar</th>
+                                        }
+                                        <th><center>Detalles de hospitalizacion</center></th>
+                                        @if (usuarioAdministrador || usuarioAdmisiones || usuarioRecepcion)
+                                        {
+                                            <th>Finalizar</th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model != null && Model.Count() > 0)
+                                    {
+                                        foreach (var habitacion in Model)
+                                        {
+                                            @if (habitacion.HabitacionCategoria == "Intensivo")
+                                            {
+                                                <tr>
+                                                    <td>@habitacion.HabitacionNombre</td>
+                                                    <td>@habitacion.HabitacionCategoria</td>
+
+                                                    <td>
+                                                        @{
+                                                            var estadoId = habitacion.HabitacionEstadoId;
+                                                        }
+                                                        @if (estadoId == (int)EstadoHabitacionEnum.Disponible)
+                                                        {
+                                                            <label class="badge badge-success">@habitacion.HabitacionEstado</label>
+                                                        }
+                                                        else if (estadoId == (int)EstadoHabitacionEnum.Ocupada)
+                                                        {
+                                                            <label class="badge badge-danger">@habitacion.HabitacionEstado</label>
+                                                        }
+                                                        else
+                                                        {
+                                                            <label class="badge badge-warning">@habitacion.HabitacionEstado</label>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        <label>@habitacion.HabitacionOcupante</label>
+                                                    </td>
+                                                    <td>
+                                                        <label>@habitacion.HabitacionCapacidadPersonas</label>
+                                                    </td>
+                                                    <td>
+                                                        <label>@habitacion.HabitacionNumeroCamas</label>
+                                                    </td>
+                                                    @if (usuarioAdministrador || usuarioDesarrollador
+                                                || usuarioMedicoGeneral || usuarioMedicoInterno
+                                                    ||usuarioRecepcionDiurno || usuarioRecepcionNocturno)
+                                                    {
+                                                        <td>
+                                                            @if (estadoId == (int)EstadoHabitacionEnum.Disponible)
+                                                            {
+                                                                <button class="btn btn-primary" onclick="registrarHospitalizacion(@habitacion.HabitacionId)">
+                                                                    <i class="metismenu-icon fa fa-bed"></i>
+                                                                </button>
+                                                            }
+                                                        </td>
+                                                    }
+                                                    <td>
+                                                        @if (estadoId == (int)EstadoHabitacionEnum.Ocupada)
+                                                        {
+                                                            <center>
+                                                                <button class="btn btn-primary" onclick="detallesHospitalizacion(@habitacion.HospitalizacionId)">
+                                                                    <i class="fas fa-eye"></i>
+                                                                </button>
+                                                            </center>
+                                                        }
+                                                    </td>
+
+                                                   @if (usuarioAdministrador || usuarioDesarrollador
+                                                || usuarioMedicoInterno
+                                                || usuarioRecepcionDiurno || usuarioRecepcionNocturno || usuarioAdmisiones || usuarioRecepcion)
+                                                    {
+                                                        <td>
+                                                            @if (estadoId == (int)EstadoHabitacionEnum.Ocupada)
+                                                            {
+                                                                <center>
+                                                                    <button class="btn btn-danger" onclick="finalizarHospitalizacion(@habitacion.HospitalizacionId)">
+                                                                        <i class="fas fa-sign-out-alt"></i>
+                                                                    </button>
+                                                                </center>
+                                                            }
+                                                        </td>
+                                                    }
+                                                </tr>
+                                            }
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/ViewModelKo/HospitalizacionHabitacionesVM.js"></script>
+}

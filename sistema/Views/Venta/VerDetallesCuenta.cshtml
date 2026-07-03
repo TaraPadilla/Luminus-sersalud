@@ -1,0 +1,177 @@
+@await Html.PartialAsync("_MensajeExito")
+
+@model sistema.Models.VentaBaseViewModel
+
+@{
+    decimal subtotal = 0.00m;
+    decimal descuento = 0.00m;
+    decimal total = 0.00m;
+}
+
+<div class="form-row">
+    <div class="col-md-12">
+
+        
+
+        <div class="form">
+            <div class="col-md-12">
+                    <br/>
+                <div class="main-card mb-3 card">
+                    <div class="card-body">
+                        <div class="text-right" style="font-size: 17px;">
+                            <span>Fecha y hora de venta:</span>
+                        <span >@Model.Venta.FechaVenta</span>
+                        </div>
+                        <fieldset disabled>
+                            <div class="form-row">
+                                    <div class="col-md-12">
+                                        <div class="position-relative form-group"><label class="">No.
+                                                Comprobante</label>
+                                            @* <input placeholder="Descripción Producto" class="form-control"> *@
+                                            @Html.TextBoxFor(a => a.Venta.NoComprobante, new
+                                                                           {@class="form-control",@id="nocomprobante", @placeholder="No. Comprobante" })
+                                            @Html.ValidationMessageFor(a => a.Venta.NoComprobante, "", new { @class =
+                                                                               "text-danger"})
+                                        </div>
+                                    </div>
+
+                                </div>
+                                <div class="form-row">
+                                        <div class="col-md-6">
+                                        <label>Cliente</label>
+                                        <select class="form-control select2bs4" style="width: 100%;"
+                                            asp-for="Venta.ClientesId" asp-items="@Model.ListaClientes" id="clienteselect-m">
+                                        </select>
+                                    </div>                  
+                                    <div class="col-md-6">
+                                        <div class="position-relative form-group"><label class="">Nit</label>
+                                            @* <input placeholder="Descripción Producto" class="form-control"> *@
+                                            @Html.TextBoxFor(a => a.Venta.Nit, new {@class="form-control",@id="Nit",
+                                                                               @placeholder="Nit"})
+                                            @Html.ValidationMessageFor(a => a.Venta.Nit, "", new { @class =
+                                                                               "text-danger"})
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    
+                                    <div class="col-md-12">
+                                        <div class="position-relative form-group"><label class="">Direccion</label>
+                                            @* <input placeholder="Descripción Producto" class="form-control"> *@
+                                            @Html.TextBoxFor(a => a.Venta.Direccion, new
+                                                                           {@class="form-control",@id="direccion", @placeholder="Direccion"})
+                                            @Html.ValidationMessageFor(a => a.Venta.Direccion, "", new { @class =
+                                                                               "text-danger"})
+                                        </div>
+                                    </div>
+                                </div>
+
+                       
+                        <br/>
+
+                        <div class="table-responsive">
+                             <table class='table table-hover' id="tableventa">
+                                <thead>
+                                    <tr>
+                                        <th>Codigo</th>
+                                        <th>Nombre Producto</th>
+                                        <th>Cantidad</th>
+                                        <th>Precio</th>
+                                        <th>Descuento</th>
+                                        <th>Subtotal</th>
+                                         <th>Total</th>
+                                        @* <th>Acciones</th> *@
+                                    </tr>
+                                </thead>
+                                <tbody id="contentdetalle">
+
+                                    @if(Model.Venta != null)
+                                    {
+                                        // arreglar esto
+                                            
+                                            foreach (var item in Model.Venta.DetalleVenta)
+                                            {
+                                            <tr>
+                                            <td>
+                                                @if(item.Producto != null)
+                                                {
+                                                    @item.Producto.CodigoReferencia
+                                                }
+                                                else 
+                                                {
+                                                    @item.ServicioId
+                                                }
+                                            </td>
+                                            <td>
+                                                @if(item.Producto != null)
+                                                {
+                                                    @item.Producto.NombreProducto
+                                                }
+                                                else 
+                                                {
+                                                    @item.Servicio.NombreServicio
+                                                }
+                                            </td>
+                                            <td>@item.Cantidad</td>
+                                            <td>@item.Precio</td>
+                                            <td>@item.Descuento</td>
+                                            <td>@item.Subtotal</td>
+                                            <td>@item.Total</td>
+                                            @* <td><button  type="button"  class="btn btn-danger btn-sm" onclick="eliminarFila(this,@item.Precio)">Quitar</button></td> *@
+                                            <td style="display: none;" class="idProd">@item.Id</td>
+                                        </tr>
+                                          subtotal += @item.Subtotal;
+                                          descuento += @item.Descuento;
+                                          total += @item.Total;
+
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <br />
+                        <div class="text-right" style="font-size: 17px;">
+                            <span>Subtotal:</span>
+                            Q <span >@subtotal</span>
+                        </div>
+                        <div class="text-right" style="font-size: 17px;">
+                            <span>Descuento:</span>
+                            Q <span>@descuento</span>
+                        </div>
+                        <div class="text-right" style="font-size: 17px;">
+                            <span>Total:</span>
+                            Q <span >@total</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+
+
+
+
+
+
+
+        <div class="main-card mb-3 card">
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+@section Scripts
+{
+<script src="~/js/FuncionesVenta.js"></script>
+}
+
+

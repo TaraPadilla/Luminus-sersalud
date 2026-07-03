@@ -1,0 +1,190 @@
+@using Database.Shared.Paginacion;
+@model sistema.Models.ExamenesLabClinicoViewModel
+
+@{
+    ViewData["Title"] = "Lista Examenes";
+    var todayDate = DateTime.Now;
+    //Roles de usuario
+    var usuarioAdministrador = User.IsInRole("Administrador");
+    var usuarioDesarrollador = User.IsInRole("Desarrollador");
+    var usuarioTecnicoLaboratorio = User.IsInRole("Tecnico laboratorio");
+    var usuarioSupervisorLaboratorio = User.IsInRole("Supervisor Laboratorio");
+}
+
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-8">
+                <center><h4><b>Laboratorio - Examenes disponibles</b></h4></center>
+            </div>
+            <div class="col-md-2">
+                <a class="btn btn-danger btn-sm" asp-action="CrearExamen"
+                   asp-controller="LaboratorioClinico">
+                    <i class="fa fa-plus"></i>&nbsp;
+                    Nuevo examen
+                </a>
+            </div>
+            <div class="col-md-2">
+                <a class="btn btn-success btn-sm" asp-action="ImportarDesdeLaboratorioClinico"
+                   asp-controller="Productos">
+                    <i class="fa fa-file-lines"></i>&nbsp;
+                    Importar Examenes
+                </a>
+            </div>
+            <div class="col-md-12">
+                <hr />
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="col-md-12">
+                <label><b>Ver categoria:</b></label><br />
+                <select class="form-control select2bs4" style="width: 100%;" asp-for="catexamenId"
+                        asp-items="@Model.CategoriasExamenesSelectList">
+                    <option selected="selected" value="0">--- TODOS ---</option>
+                </select>
+                <hr />
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="mb-0 table table-hover" id="tabla-examenes">
+                <thead>
+                    <tr>
+                        <th>No.</th>
+                        <th>Código</th>
+                        <th>Nombre Examen</th>
+                        <th>Categoria</th>
+                        <th>Tipo de examen</th>
+                        <th>Insumo</th>
+                        <th>Precios</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.nombreExamenes)
+                    {
+                        <tr class="registro-examen registro-categoria-@item.CategoriaLabClinico.Id">
+                            <td>@item.Id</td>
+                            <td>@item.CodigoInterno</td>
+                            <td>@item.NombreExamen</td>
+                            <td>@item.CategoriaLabClinico.Nombre</td>
+                            <td>@item.TipoDeExamen</td>
+                            <td>
+                                @if (item.ExamenLabClinicoInsumo != null
+                               && item.ExamenLabClinicoInsumo.Count() > 0)
+                                {
+                                    @foreach (var insumo in item.ExamenLabClinicoInsumo)
+                                    {
+                                        <b>@insumo.Producto.NombreProducto: </b>
+                                        <br />
+                                        <span>Precio: Q.</span>
+                                        @insumo.PrecioCosto
+                                        <br />
+                                        <span>Cantidad: </span>
+                                        @insumo.CantidadUtilizada
+
+                                        <br />
+                                    }
+                                }
+                                else
+                                {
+                                    <span><i>No hay insumos registrados</i></span>
+                                }
+                            </td>
+                            <td>
+                                @if (item.ExamenLabClinicosPrecios != null && item.ExamenLabClinicosPrecios.Count() > 0)
+                                {
+                                    // Opcional: Aquí podrías buscar si hay un precio “principal” o simplemente eliges el primero.
+                                    var precioPrincipal = item.ExamenLabClinicosPrecios
+                                        .FirstOrDefault(); // o alguna condición para principal
+
+                                    // Mostramos el <select>
+                                    <select id="select-precios-@item.Id"
+                                            class="form-control select-precios"
+                                            style="width: 150px;">
+                                        @foreach (var precio in item.ExamenLabClinicosPrecios)
+                                        {
+                                            var textoOpcion = $"{precio.Precio.NombrePrecio} - {precio.PrecioValor}";
+                                            // Si quisieras marcar uno como seleccionado:
+                                            bool isSelected = (precioPrincipal != null && precioPrincipal.PrecioId == precio.PrecioId);
+                                            
+                                            <option value="@precio.PrecioId" selected="@(isSelected ? "selected" : null)">
+                                                @textoOpcion
+                                            </option>
+                                        }
+                                    </select>
+
+                                    <!-- Span donde se mostrará el texto del precio seleccionado -->
+                                    <span id="price-display-@item.Id"
+                                        style="margin-left: 8px; font-weight: bold;">
+                                        @(
+                                            precioPrincipal != null
+                                            ? $"{precioPrincipal.Precio.NombrePrecio} - {precioPrincipal.PrecioValor}"
+                                            : "Seleccione un precio"
+                                        )
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span><i>No hay precios registrados</i></span>
+                                }
+                            </td>
+                            <td>
+                                <a href="@Url.Action("ModificarExamenLab","LaboratorioClinico", new {id = @item.Id})"
+                                   class="btn btn-warning btn-sm">
+                                    <i class="fa fa-edit"></i>
+                                </a>
+                                @if (usuarioAdministrador || usuarioDesarrollador)
+                                {
+                                    <a asp-action="EliminarExamen" asp-route-id="@item.Id"
+                                       class="btn btn-danger btn-sm"
+                                       onclick="return confirm('¿Está seguro/a que desea eliminar este registro?');">
+                                        <i class="fa fa-trash"></i>
+                                    </a>
+                                }
+                            </td>
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Ejemplo de uso de jQuery para inicializar Select2 -->
+    <script src="~/lib/select2/js/select2.full.min.js"></script>
+    <link rel="stylesheet" href="~/lib/select2/css/select2.min.css" />
+
+    <!-- Tu ViewModel o script principal -->
+    <script src="~/ViewModelKo/LaboratorioClinicoListaExamenesVM.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // 1) Inicializamos select2 en todos los select con la clase .select-precios
+            $('.select-precios').select2({
+                placeholder: 'Selecciona un precio',
+                allowClear: true,
+                width: '150px'
+            });
+
+            // 2) Al cambiar la opción seleccionada en cualquier .select-precios
+            $('.select-precios').on('change', function () {
+                // a) Tomar el texto de la opción seleccionada
+                const selectedText = $(this).find('option:selected').text();
+                
+                // b) Obtener el id del <select>, por ejemplo "select-precios-10"
+                const selectId = $(this).attr('id');
+
+                // c) Construir el id del <span> => "price-display-10"
+                const displayId = selectId.replace('select-precios-', 'price-display-');
+
+                // d) Actualizar el contenido del span
+                $('#' + displayId).text(selectedText);
+            });
+        });
+    </script>
+}

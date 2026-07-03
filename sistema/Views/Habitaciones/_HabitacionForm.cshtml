@@ -1,0 +1,46 @@
+@model sistema.Models.HabitacionViewModel
+
+@Html.HiddenFor(m=>m.HabitacionId)
+@Html.HiddenFor(m=>m.CategoriaId)
+@Html.HiddenFor(m=>m.EstadoId)
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-4">
+                <div class="position-relative form-group">
+                    <label>Número o nombre de habitación</label>
+                    @Html.TextBoxFor(m=>m.NumeroNombre,new{@class="form-control",@placeholder="Numero o nombre de habitacion"})
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Categoría</label>
+                <select class="form-control" data-bind="options:categorias,
+                                                        ,value:categoriaSeleccionadaId
+                                                        ,optionsText:'NombreCategoria'
+                                                        ,optionsValue:'Id'">
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label>Estado</label>
+                <select class="form-control" data-bind="options:estados,
+                                                         ,value:estadoSeleccionadoId
+                                                        ,optionsText:'NombreEstado'
+                                                         ,optionsValue:'Id'">
+                </select>
+            </div>
+            <div class="col-md-4">
+                <div class="position-relative form-group">
+                    <label class="">Capacidad (personas)</label>
+                    @Html.TextBoxFor(m=>m.CapacidadPersonas,new{@class="form-control",@type="number"})
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="position-relative form-group">
+                    <label class="">N&uacute;mero de Camas</label>
+                    @Html.TextBoxFor(m=>m.NumeroCamas,new{@class="form-control",@type="number"})
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

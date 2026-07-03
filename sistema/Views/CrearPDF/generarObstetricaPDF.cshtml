@@ -1,0 +1,527 @@
+@using Database.Shared.Models
+@using System.Globalization
+@using sistema.Models
+@model ConsultasViewModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Prescripcion medica";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    var fecha = DateTime.Now;
+    CultureInfo culture = new CultureInfo("es-GT");
+}
+
+<style>
+    .report-container {
+        margin-top: 10px;
+        font-size: 12px;
+    }
+
+    .report-title {
+        text-align: center;
+        font-weight: bold;
+        font-size: 16px;
+        color: #0d0e36;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+
+    .report-subtitle {
+        text-align: center;
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    .report-table-title-row th {
+        background-color: #f3f4ff;
+        border-left: 3px solid #0d0e36;
+        color: #0d0e36;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: bold;
+        font-size: 12px;
+        text-align: left;
+        padding: 6px 8px;
+    }
+
+    .report-table-header-row th {
+        background-color: #eef2ff;
+        color: #0d0e36;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 11px;
+        text-align: left;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table td {
+        font-size: 12px;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+        vertical-align: top;
+    }
+
+    .report-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .keep-with-next {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        -webkit-column-break-inside: avoid;
+        -webkit-region-break-inside: avoid;
+    }
+</style>
+
+<div class="report-container">
+    <!-- Encabezado -->
+    <div class="report-title">
+        REPORTE - @ViewData["Title"]
+    </div>
+    <div class="report-subtitle">
+        <b>Fecha y hora de emisión:</b> @fecha.ToString("dd/MM/yyyy HH:mm", culture)
+    </div>
+
+    <!-- Datos del paciente / médico -->
+    <div class="keep-with-next">
+        <b>NOMBRE: </b>@Model.PacienteNombre<br />
+        <b>FECHA: </b>@fecha.ToString("dd/MM/yyyy HH:mm", culture)<br />
+        <b>EDAD: </b>@Model.PacienteEdad<br />
+        <b>MÉDICO QUE RECETA: </b>@Model.MedicoNombre<br />
+    </div>
+
+    <!-- OBSTETRICIA - ANTECEDENTES -->
+    <table class="report-table keep-with-next">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="4">OBSTETRICIA - ANTECEDENTES</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><b>G</b><br />@Model.ObstetriciaAntNoPatologicosGestas</td>
+                <td><b>P</b><br />@Model.ObstetriciaAntNoPatologicosPartos</td>
+                <td><b>AB</b><br />@Model.ObstetriciaAntNoPatologicosAbortos</td>
+                <td><b>CSTP</b><br />@Model.ObstetriciaAntNoPatologicosCesareas</td>
+            </tr>
+            <tr>
+                <td><b>HV</b><br />@Model.ObstetriciaAntNoPatologicosHijosVivos</td>
+                <td><b>HM</b><br />@Model.ObstetriciaAntNoPatologicosHijosMuertos</td>
+                <td><b>FUR</b><br />@Model.ObstetriciaAntNoPatologicosFechaUltimaRegla</td>
+                <td><b>FPP</b><br />@Model.ObstetriciaAntNoPatologicosFechaProbableParto</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- OBSTETRICIA - ECOGRAFIA OBSTETRICA -->
+    <table class="report-table keep-with-next">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="3">OBSTETRICIA - ECOGRAFIA OBSTETRICA</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <b>Feto</b><br />
+                    @Model.EcografiaObstetricaFeto
+                </td>
+                <td>
+                    <b>Estado</b><br />
+                    @Model.EcografiaObstetricaEstado
+                </td>
+                <td>
+                    <b>Situación</b><br />
+                    @Model.EcografiaObstetricaSituacion
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <b>Presentaci&oacute;n</b><br />
+                    @Model.EcografiaObstetricaFeto
+                </td>
+                <td>
+                    <b>Posici&oacute;n</b><br />
+                    @Model.EcografiaObstetricaEstado
+                </td>
+                <td>
+                    <b>Dorso</b><br />
+                    @Model.EcografiaObstetricaSituacion
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    @*@for (int i = 1; i <= Model.NumeroBebes; i++)
+    {
+        <div class="form-row">
+            <div class="col-md-12 seccion-expediente">
+                <center><span><b>OBSTETRICIA - BIOMETRIA #@i</b></span>
+                </center>
+            </div>
+            <div style="width:100%">
+                <table style="width:100%">
+                    <tr>
+                        <td>
+                            <b>RLC</b><br />
+                            @if (i == 1)
+                            {
+                                @Model.ObsteBiometriaRlc
+                            }
+                            else
+                            {
+                                @Model.GetType().GetProperty($"ObsteBiometriaRlc{i}")?.GetValue(Model)
+                            }
+                        </td>
+                        <td>
+                            <b>SG</b><br />
+                            @if (i == 1)
+                            {
+                                @Model.ObsteBiometriaSg
+                            }
+                            else
+                            {
+                                @Model.GetType().GetProperty($"ObsteBiometriaSg{i}")?.GetValue(Model)
+                            }
+                        </td>
+                        <td>
+                            <b>DBP</b><br />
+                            @if (i == 1)
+                            {
+                                @Model.ObsteBiometriaDbp
+                            }
+                            else
+                            {
+                                @Model.GetType().GetProperty($"ObsteBiometriaDbp{i}")?.GetValue(Model)
+                            }
+                        </td>
+                        <td>
+                            <b>LF</b><br />
+                            @if (i == 1)
+                            {
+                                @Model.ObsteBiometriaLf
+                            }
+                            else
+                            {
+                                @Model.GetType().GetProperty($"ObsteBiometriaLf{i}")?.GetValue(Model)
+                            }
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <b>AC</b><br />
+                            @if (i == 1)
+                            {
+                                @Model.ObsteBiometriaAc
+                            }
+                            else
+                            {
+                                @Model.GetType().GetProperty($"ObsteBiometriaAc{i}")?.GetValue(Model)
+                            }
+                        </td>
+                        <td>
+                            <b>HC</b><br />
+                            @if (i == 1)
+                            {
+                                @Model.ObsteBiometriaHc
+                            }
+                            else
+                            {
+                                @Model.GetType().GetProperty($"ObsteBiometriaHc{i}")?.GetValue(Model)
+                            }
+                        </td>
+                        <td>
+                            <b>FCF</b><br />
+                            @if (i == 1)
+                            {
+                                @Model.ObsteBiometriaFcf
+                            }
+                            else
+                            {
+                                @Model.GetType().GetProperty($"ObsteBiometriaFcf{i}")?.GetValue(Model)
+                            }
+                        </td>
+                        <td>
+                            <b>ILA</b><br />
+                            @if (i == 1)
+                            {
+                                @Model.ObsteBiometriaIla
+                            }
+                            else
+                            {
+                                @Model.GetType().GetProperty($"ObsteBiometriaIla{i}")?.GetValue(Model)
+                            }
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <b>Placenta</b><br />
+                            @if (i == 1)
+                            {
+                                @Model.ObsteBiometriaPlacenta
+                            }
+                            else
+                            {
+                                @Model.GetType().GetProperty($"ObsteBiometriaPlacenta{i}")?.GetValue(Model)
+                            }
+                        </td>
+                        <td>
+                            <b>Grado</b><br />
+                            @if (i == 1)
+                            {
+                                @Model.ObsteBiometriaGrado
+                            }
+                            else
+                            {
+                                @Model.GetType().GetProperty($"ObsteBiometriaGrado{i}")?.GetValue(Model)
+                            }
+                        </td>
+                        <td>
+                            <b>Malformaciones</b><br />
+                            @if (i == 1)
+                            {
+                                @Model.ObsteBiometriaMalformaciones
+                            }
+                            else
+                            {
+                                @Model.GetType().GetProperty($"ObsteBiometriaMalformaciones{i}")?.GetValue(Model)
+                            }
+                        </td>
+                        <td>
+                            <b>Peso</b><br />
+                            @if (i == 1)
+                            {
+                                @Model.ObsteBiometriaPeso
+                            }
+                            else
+                            {
+                                @Model.GetType().GetProperty($"ObsteBiometriaPeso{i}")?.GetValue(Model)
+                            }
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <b>EG</b><br />
+                            @if (i == 1)
+                            {
+                                @Model.ObsteBiometriaEg
+                            }
+                            else
+                            {
+                                @Model.GetType().GetProperty($"ObsteBiometriaEg{i}")?.GetValue(Model)
+                            }
+                        </td>
+                        <td>
+                            <b>FPP</b><br />
+                            @if (i == 1)
+                            {
+                                @Model.ObsteBiometriaFechaParto
+                            }
+                            else
+                            {
+                                @Model.GetType().GetProperty($"ObsteBiometriaFechaParto{i}")?.GetValue(Model)
+                            }
+                        </td>
+                        <td>
+                            <b>Sexo</b><br />
+                            @if (i == 1)
+                            {
+                                @Model.ObsteBiometriaSexo
+                            }
+                            else
+                            {
+                                @Model.GetType().GetProperty($"ObsteBiometriaSexo{i}")?.GetValue(Model)
+                            }
+                        </td>
+                        <td>
+                            <b>Comentario</b><br />
+                            @if (i == 1)
+                            {
+                                @Model.ObsteBiometriaComentario
+                            }
+                            else
+                            {
+                                @Model.GetType().GetProperty($"ObsteBiometriaComentario{i}")?.GetValue(Model)
+                            }
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    }*@
+
+    <!-- OBSTETRICIA - ECOGRAFIA ENDOCAVITARIA -->
+    <table class="report-table keep-with-next">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="3">OBSTETRICIA - ECOGRAFIA ENDOCAVITARIA</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <b>Útero</b><br />
+                    @Model.EcografiaEndocavitariaUtero
+                </td>
+                <td>
+                    <b>Longitudinal</b><br />
+                    @Model.EcografiaEndocavitariaLongitudinal
+                </td>
+                <td>
+                    <b>Transverso</b><br />
+                    @Model.EcografiaEndocavitariaTransverso
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <b>Endometrio</b><br />
+                    @Model.EcografiaEndocavitariaEndometrio
+                </td>
+                <td>
+                    <b>Ovario derecho</b><br />
+                    @Model.EcografiaEndocavitariaOvarioDerecho
+                </td>
+                <td>
+                    <b>Ovario izquierdo</b><br />
+                    @Model.EcografiaEndocavitariaOvarioIzquierdo
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <b>Fondo saco</b><br />
+                    @Model.EcografiaEndocavitariaFondoSaco
+                </td>
+                <td>
+                    <b>Impresión clínica</b><br />
+                    @Model.EcografiaEndocavitariaImpresionClinica
+                </td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- COMENTARIO - ECOGRAFIA ENDOCAVITARIA -->
+    <table class="report-table keep-with-next">
+        <thead>
+            <tr class="report-table-title-row">
+                <th>COMENTARIO - ECOGRAFIA ENDOCAVITARIA</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <b>Comentario</b><br />
+                    @Model.EcografiaEndocavitariaComentario
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- EVALUACION OBSTETRICA -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="4">EVALUACION OBSTETRICA</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <b>Útero gravio</b><br />
+                    @Model.EvaluacionObstetricaUteroGravio
+                </td>
+                <td>
+                    <b>FCF</b><br />
+                    @Model.EvaluacionObstetricaFcf
+                </td>
+                <td>
+                    <b>AU</b><br />
+                    @Model.EvaluacionObstetricaAu
+                </td>
+                <td>
+                    <b>Presentación por Leopold</b><br />
+                    @Model.EvaluacionObstetricaPresentacionLeopold
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <b>Actividad uterina</b><br />
+                    @Model.EvaluacionObstetricaActividadUterina
+                </td>
+                <td>
+                    <b>Movimiento fetal</b><br />
+                    @Model.EvaluacionObstetricaMovimientoFetalPercetible
+                </td>
+                <td>
+                    <b>Tacto vaginal</b><br />
+                    @Model.EvaluacionObstetricaTactoVaginal
+                </td>
+                <td>
+                    <b>D</b><br />
+                    @Model.EvaluacionObstetricaD
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <b>Consistencia</b><br />
+                    @Model.EvaluacionObstetricaConsistencia
+                </td>
+                <td>
+                    <b>B%</b><br />
+                    @Model.EvaluacionObstetricaBPorciento
+                </td>
+                <td>
+                    <b>Altitud</b><br />
+                    @Model.EvaluacionObstetricaAltitud
+                </td>
+                <td>
+                    <b>Posición cérvix</b><br />
+                    @Model.EvaluacionObstetricaPosicionCervix
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <b>Bishop</b><br />
+                    @Model.EvaluacionObstetricaBishop
+                </td>
+                <td>
+                    <b>Membranas ovulares</b><br />
+                    @Model.EvaluacionObstetricaMembranasOvulares
+                </td>
+                <td>
+                    <b>Líquido amniótico</b><br />
+                    @Model.EvaluacionObstetricaLiquidoAmniotico
+                </td>
+                <td>
+                    <b>Especifique</b><br />
+                    @Model.EvaluacionObstetricaLiquidoAmnioticoEspecifique
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <b>Pelvis</b><br />
+                    @Model.EvaluacionObstetricaPelvis
+                </td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+</div>

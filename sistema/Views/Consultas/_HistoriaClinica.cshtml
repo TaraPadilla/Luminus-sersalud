@@ -1,0 +1,124 @@
+@model sistema.Models.ConsultasViewModel
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script src="~/js/voicetotext/voicetotext.js"></script>
+<script>
+    window.voiceToTextFields =
+        ['ConsultaMotivo', 'HistoriaEnfermedadActual', 'HistoriaClinicaImpresionClinica', 'HistoriaClinicaComentario', 'GinecologiaConsultaMotivo'];
+</script>
+
+<br />
+
+<div class="border rounded p-3 bg-white shadow-sm">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+        <h6 class="m-0 font-weight-bold text-primary text-uppercase">
+            <i class="fas fa-notes-medical mr-2"></i> Historia cl&iacute;nica
+        </h6>
+        <small class="text-muted">
+            <i class="fas fa-microphone-alt mr-1"></i> Dictado habilitado en campos configurados
+        </small>
+    </div>
+
+    <div class="form-row mb-3">
+        @*MANANTIALES NO utiliza este campo*@
+        @* <div class="col-md-4">
+            Historia del problema<br />
+            @Html.TextAreaFor(m => m.HistoriaProblema, new { @class = "form-control" })
+        </div> *@
+
+        <div class="col-sm-12 col-md-6 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold text-dark mb-1">
+                    <i class="fas fa-comment-medical text-primary mr-1"></i> Motivo de consulta
+                </div>
+                @Html.TextArea("ConsultaMotivo",
+                string.IsNullOrEmpty(Model.ConsultaMotivo) ? "-" : Model.ConsultaMotivo,
+                                new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+
+        <div class="col-sm-12 col-md-6 mb-3">
+            <div class="border rounded p-2">
+                <div class="font-weight-bold text-dark mb-1">
+                    <i class="fas fa-file-medical-alt text-primary mr-1"></i> Historia de la enfermedad actual
+                </div>
+                @Html.TextArea("HistoriaEnfermedadActual",
+                                string.IsNullOrEmpty(Model.HistoriaEnfermedadActual) ? "-" : Model.HistoriaEnfermedadActual,
+                                new { @class = "form-control dato-consulta" })
+            </div>
+        </div>
+
+        @* <div class="col-md-4">
+            <b>Diagnostico</b><br />
+            @Html.TextAreaFor(m => m.Diagnostico, new { @class = "form-control dato-consulta" })
+        </div> *@
+    </div>
+
+    <div class="mt-2">
+        <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
+            <h6 class="m-0 font-weight-bold text-primary text-uppercase">
+                <i class="fas fa-history mr-2"></i> Historia cl&iacute;nica (historial)
+            </h6>
+        </div>
+
+        <div class="form-row">
+            <div class="col-md-12 text-primary texto-cargando-historial mb-2" style="display:none">
+                <i class="fas fa-spinner fa-spin mr-1"></i> Cargando historial...
+            </div>
+
+            <div class="col-md-12 text-danger texto-error-cargando-historial mb-2" style="display:none">
+                <i class="fas fa-exclamation-triangle mr-1"></i>
+                Error de servidor y/o conexion.
+                <a href="#" data-bind="click:consultarHistorialConsultas">Reintentar</a>
+            </div>
+
+            <!--ko foreach:historialConsultas-->
+            <div class="col-md-12 mb-3">
+                <div class="border rounded p-3 bg-white">
+
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="font-weight-bold text-dark">
+                            <i class="fas fa-calendar-alt text-primary mr-1"></i>
+                            Fecha: <span data-bind="text:Fecha"></span>
+                        </div>
+                        <span class="badge badge-light border">
+                            <i class="fas fa-clipboard-check text-primary mr-1"></i> Registro
+                        </span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-2">
+                            <div class="font-weight-bold text-dark">
+                                Motivo de consulta
+                            </div>
+                            <span class="text-body" data-bind="text:ConsultaMotivo"></span>
+                        </div>
+
+                        <div class="col-md-4 mb-2">
+                            <div class="font-weight-bold text-dark">
+                                Historia de la enfermedad actual
+                            </div>
+                            <span class="text-body" data-bind="text:HistoriaEnfermedadActual"></span>
+                        </div>
+
+                        @* <div class="col-md-4">
+                            <b>Diagnostico</b><br />
+                            <span data-bind="text:Diagnostico"></span>
+                        </div> *@
+                    </div>
+
+                </div>
+            </div>
+            <!--/ko-->
+
+            <!--ko if:historialConsultas().length==0-->
+            <div class="col-md-12 text-muted">
+                <i class="fas fa-info-circle mr-1"></i> No hay registro de consultas anteriores
+            </div>
+            <!--/ko-->
+        </div>
+    </div>
+
+</div>

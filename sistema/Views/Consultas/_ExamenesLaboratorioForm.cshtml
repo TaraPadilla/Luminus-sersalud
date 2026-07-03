@@ -1,0 +1,348 @@
+@model sistema.Models.ConsultasViewModel
+@Html.HiddenFor(a => a.CitaId)
+@Html.HiddenFor(a => a.PacienteId)
+@Html.HiddenFor(a => a.ConsultaId)
+@Html.HiddenFor(a => a.PrimeraConsulta)
+@Html.HiddenFor(a => a.HistoriaId)
+@Html.HiddenFor(a => a.ExamenFisicoId)
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <label>Datos de laboratorio y gabinete previos</label>
+                <textarea class="form-control"></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*Form ingreso de arvhivos Gabinetes*@
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-11">
+                <h5><b>Exámenes de laboratorio</b></h5>
+                <hr>
+            </div>
+
+        </div>
+
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label for="rutal4">Nombre</label>
+                <input type="text" class="form-control" placeholder="First name" id="rutal4">
+            </div>
+            <div class="form-group col-md-6">
+                <label for="inputGroupFile04">Ruta</label>
+                <div class="input-group">
+                    <div class="custom-file">
+
+                        <input type="file" class="custom-file-input" id="inputGroupFile04">
+                        <label class="custom-file-label" for="inputGroupFile04">Choose file</label>
+                    </div>
+                    <div class="input-group-append">
+
+                        <button class="btn btn-outline-secondary" id="" type="button">Button</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-row">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Nombre</th>
+                        <th scope="col">Ruta</th>
+                        <th scope="col">Accion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th scope="row">1</th>
+                        <td>Examen Laboratorio Orina</td>
+                        <td>/photo/?fbid=10159250700997167&set=g.282026602327177</td>
+                        <td><button class="btn btn-outline-secondary" id="" type="button">Descargar</button></td>
+                    </tr>
+                    <tr>
+                        <th scope="row">2</th>
+                        <td>Examen  Factor RH</td>
+                        <td>/photo/?fbid=10159250700997167&set=g.282026602327177</td>
+                        <td><button class="btn btn-outline-secondary" id="" type="button">Descargar</button></td>
+                    </tr>
+                    <tr>
+                        <th scope="row">3</th>
+                        <td>Examen de Laboratorio</td>
+                        <td>/photo/?fbid=10159250700997167&set=g.282026602327177</td>
+                        <td><button class="btn btn-outline-secondary" id="" type="button">Descargar</button></td>
+                    </tr>
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+</div>
+
+
+
+@*Fin form ingreso de archivos de laboratorio*@
+
+@*Form ingreso de arvhivos laboratorio*@
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-11">
+                <h5><b>Gabinetes</b></h5>
+                <hr>
+            </div>
+
+        </div>
+
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label for="rutal4">Nombre</label>
+                <input type="text" class="form-control" placeholder="First name" id="rutal4">
+            </div>
+            <div class="form-group col-md-6">
+                <label for="inputGroupFile04">Ruta</label>
+                <div class="input-group">
+                    <div class="custom-file">
+
+                        <input type="file" class="custom-file-input" id="inputGroupFile04">
+                        <label class="custom-file-label" for="inputGroupFile04">Choose file</label>
+                    </div>
+                    <div class="input-group-append">
+
+                        <button class="btn btn-outline-secondary" id="" type="button">Button</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-row">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Nombre</th>
+                        <th scope="col">Ruta</th>
+                        <th scope="col">Accion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th scope="row">1</th>
+                        <td>Examen Laboratorio Orina</td>
+                        <td>/photo/?fbid=10159250700997167&set=g.282026602327177</td>
+                        <td><button class="btn btn-outline-secondary" id="" type="button">Descargar</button></td>
+                    </tr>
+                    <tr>
+                        <th scope="row">2</th>
+                        <td>Examen  Factor RH</td>
+                        <td>/photo/?fbid=10159250700997167&set=g.282026602327177</td>
+                        <td><button class="btn btn-outline-secondary" id="" type="button">Descargar</button></td>
+                    </tr>
+                   
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+</div>
+
+
+
+@*Fin form ingreso de archivos de laboratorio*@
+
+@*Form ingreso de arvhivos laboratorio*@
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-11">
+                <h5><b>Subir Archivos</b></h5>
+                <hr>
+            </div>
+
+        </div>
+
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label for="rutal4">Nombre</label>
+                <input type="text" class="form-control" placeholder="First name" id="rutal4">
+            </div>
+            <div class="form-group col-md-6">
+                <label for="inputGroupFile04">Ruta</label>
+                <div class="input-group">
+                    <div class="custom-file">
+
+                        <input type="file" class="custom-file-input" id="inputGroupFile04">
+                        <label class="custom-file-label" for="inputGroupFile04">Choose file</label>
+                    </div>
+                    <div class="input-group-append">
+
+                        <button class="btn btn-outline-secondary" id="" type="button">Button</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-row">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Nombre</th>
+                        <th scope="col">Ruta</th>
+                        <th scope="col">Accion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th scope="row">1</th>
+                        <td>Examen Laboratorio Orina</td>
+                        <td>/photo/?fbid=10159250700997167&set=g.282026602327177</td>
+                        <td><button class="btn btn-outline-secondary" id="" type="button">Descargar</button></td>
+                    </tr>
+                   
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+</div>
+
+
+
+@*Fin form ingreso de archivos de laboratorio*@
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-11">
+                <h5><b>Resultados de exámenes de laboratorio</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-1">
+                <button class="btn btn-primary" data-bind="click: agregarExamenesLaboratorio">Agregar</button>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="table-responsive">
+                <table class="mb-0 table table-hover">
+                    <tbody>
+                        <!--ko foreach: examenesLaboratorio-->
+                        <tr>
+                            <td class="form-row col-md-12">
+                                <div class="col-md-2">
+                                    <label>Fecha</label>
+                                    <input type="date" class="form-control"
+                                           data-bind="value: Fecha" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label>Plaquetas</label>
+                                    <input type="text" class="form-control" data-bind="value:Plaquetas" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label>TP/INR</label>
+                                    <input type="text" class="form-control" data-bind="value:Tpinr" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label>TTP</label>
+                                    <input type="text" class="form-control" data-bind="value:Ttp" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label>BUN</label>
+                                    <input type="text" class="form-control" data-bind="value:Bun" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label>Electrolitos</label>
+                                    <input type="text" class="form-control" data-bind="value:Electrolitos" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label>Bilirrubina</label>
+                                    <input type="text" class="form-control" data-bind="value:Bilirrubina" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label>Albumina</label>
+                                    <input type="text" class="form-control" data-bind="value:Albumina" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label>Glucosa Pre</label>
+                                    <input type="text" class="form-control" data-bind="value:GlucosaPre" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label>Glucosa Post</label>
+                                    <input type="text" class="form-control" data-bind="value:GlucosaPos" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label>Hemoglobina glicosilada</label>
+                                    <input type="text" class="form-control" data-bind="value:HemoglobinaGlicosilada" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label>Hemoglobina</label>
+                                    <input type="text" class="form-control" data-bind="value:Hemoglobina" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label>Curva de glucosa</label>
+                                    <input type="text" class="form-control" data-bind="value:CurvaGlucosa" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label>Colesterol total</label>
+                                    <input type="text" class="form-control" data-bind="value:ColesterolTotal" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label>Triglicéridos</label>
+                                    <input type="text" class="form-control" data-bind="value:Trigliceridos" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label>Perfil lipídico</label>
+                                    <input type="text" class="form-control" data-bind="value:PerfilLipidico" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label>Creatinina</label>
+                                    <input type="text" class="form-control" data-bind="value:Creatinina" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label>Ácido úrico</label>
+                                    <input type="text" class="form-control" data-bind="value:AcidoUrico" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label>Hemoglobina</label>
+                                    <input type="text" class="form-control" data-bind="value:Hemoglobina" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label>T3</label>
+                                    <input type="text" class="form-control" data-bind="value:T3" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label>T4</label>
+                                    <input type="text" class="form-control" data-bind="value:T4" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label>Examen de heces</label>
+                                    <input type="text" class="form-control" data-bind="value:ExamenHeces" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label>Examen de orina</label>
+                                    <input type="text" class="form-control" data-bind="value:ExamenOrina" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label>Otros</label>
+                                    <input type="text" class="form-control" data-bind="value:Otros" />
+                                </div>
+                                <div class="col-md-12" style="text-align:right">
+                                    <br /><br />
+                                    <button class="btn btn-danger" data-bind="click:$root.quitarExamenLaboratorio">Quitar</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <!--/ko-->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

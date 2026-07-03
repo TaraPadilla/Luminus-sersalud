@@ -1,0 +1,66 @@
+@model farmamest.Models.ConsentimientoHospiVM
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Config
+
+@{
+    Layout = "_HojaMembreteLayout"; // Usamos un layout específico para documentos PDF con membrete
+    var imagenLogoBase64 = Config["ImagenLogoBase64"];
+    ViewData["Direccion"]          = Config["EstablecimientoDireccion"];
+    ViewData["Telefono"]           = Config["EstablecimientoTelefono"];
+    ViewData["CorreoElectronico"]  = Config["EstablecimientoCorreoElectronico"];
+    ViewData["ImagenFirma"]        = Config["EstablecimientoImagenFirma"];
+    DateTime fecha = DateTime.Now;
+}
+
+<div style="text-align: center; margin-bottom: 20px;">
+    <h3><strong>ACEPTACIÓN DEL CONSENTIMIENTO DEL PACIENTE Y DOCTOR QUE AUTORIZA EL PROCEDIMIENTO</strong></h3>
+</div>
+
+<p style="text-align: justify;">
+    Yo, Edgar _______ Abril _______ (el "Paciente") doy mi consentimiento para que me sea realizado un procedimiento
+    consistente en: Artroscopía de Rodilla más Reparación Meniscal, procedimiento autorizado por el Médico Renato López,
+    número de Colegiado _______.
+</p>
+
+<p style="text-align: justify;">
+    Yo, el Paciente declaro haber comprendido el significado del procedimiento a efectuarse y los riesgos inherentes al
+    mismo, y declaro estar debidamente informado(a) según lo establecido en el artículo seis (6), del Código de Salud de
+    Guatemala, Decreto noventa guion noventa y siete (90-97) del Congreso de la República, y el artículo treinta (30)
+    del Código Médico Deontológico, que reglamenta los derechos y obligaciones en materia de información y documentación
+    clínica. Declaro que tuve la oportunidad de aclarar mis dudas en entrevista con el Dr. Renato López. Así mismo
+    declaro que he recibido respuesta a todas mis preguntas, habiendo tomado la decisión de manera libre y voluntaria,
+    consiento, ratifico y firmo.
+</p>
+
+<p style="margin-top: 20px; margin-bottom: 40px;">
+    Guatemala, @fecha.ToString("dd") de @fecha.ToString("MM") del año @fecha.ToString("yyyy").
+</p>
+
+<table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+    <tr>
+        <td style="width: 50%; padding-bottom: 50px; vertical-align: top;">
+            Por el Paciente<br><br><br><br>
+            f.___________________________________<br><br>
+            DPI:_________________________________
+        </td>
+        <td style="width: 50%; padding-bottom: 50px; vertical-align: top;">
+            Por el Acompañante<br>
+            (En caso el Paciente es menor de edad)<br><br><br>
+            f.___________________________________<br><br>
+            DPI:_________________________________
+        </td>
+    </tr>
+    <tr>
+        <td style="width: 50%; vertical-align: top;">
+            Por el Doctor que autoriza<br><br><br><br>
+            f.___________________________________<br><br>
+            No. de Colegiado:_____________________
+        </td>
+        <td style="width: 50%; vertical-align: top;">
+            Por Sersalud<br><br><br><br>
+            f.___________________________________<br><br>
+            Erwin A. Aragón M.<br>
+            Administrador Único
+        </td>
+    </tr>
+</table>

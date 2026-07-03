@@ -1,0 +1,60 @@
+@using sistema.Models
+@model EmergenciaViewModel
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    // Leer el valor del appsettings.json. 
+    string sufijoLayout = Configuration["Cliente"]; 
+    
+    // Concatenar para formar el nombre del Layout (ejemplo: "_Layout" + "SS")
+    // Si la clave trae el nombre completo (ej. "_LayoutSS"), simplemente asignalo directo.
+    Layout = $"_Layout{sufijoLayout}"; 
+    
+    ViewData["Title"] = "Emergencia - Nueva";
+}
+@Html.HiddenFor(a => a.HabilitarEdicion)
+@Html.HiddenFor(a => a.PacienteId)
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <center>
+            <h4>
+                <b>
+                    <span>Emergencia - Nueva emergencia</span>
+                </b>
+            </h4>
+        </center>
+    </div>
+</div>
+
+@await Html.PartialAsync("_EmergenciaForm")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <button class="btn btn-success" data-bind="click:registrarEmergencia">
+                    Guardar emergencia
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/ViewModelKo/EmergenciaVM.js"></script>
+}
+
+@section css {
+    <style>
+        .seccion-header {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-bottom: 2px solid darkgray;
+        }
+
+            .seccion-header:hover {
+                background-color: darkgray;
+                cursor: pointer;
+            }
+    </style>
+}

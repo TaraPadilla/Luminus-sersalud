@@ -1,0 +1,32 @@
+@{
+    ViewData["Title"] = "Nuevo servicio";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="text-center">
+            <h4><b>Nuevo servicio</b></h4>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_ServicioForm")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div>
+            <button class="btn btn-danger" data-bind="click: cancelarRegistroServicio">
+                Cancelar
+            </button>
+            <button class="btn btn-primary" data-bind="click: registrarServicio">
+                Guardar servicio
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+<script type="text/javascript" src="~/ViewModelKo/ServicioVM.js"></script>
+}

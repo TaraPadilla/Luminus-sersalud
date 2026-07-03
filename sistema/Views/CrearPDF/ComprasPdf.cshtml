@@ -1,0 +1,154 @@
+@using System
+@model IEnumerable<Database.Shared.Models.Compra>
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Compras";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+    decimal totalGasto = 0m;
+}
+
+<style>
+    .report-container {
+        margin-top: 10px;
+        font-size: 12px;
+    }
+
+    .report-title {
+        text-align: center;
+        font-weight: bold;
+        font-size: 16px;
+        color: #0d0e36;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+
+    .report-subtitle {
+        text-align: center;
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    /* Fila de título de sección */
+    .report-table-title-row th {
+        background-color: #f3f4ff;
+        border-left: 3px solid #0d0e36;
+        color: #0d0e36;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: bold;
+        font-size: 12px;
+        text-align: left;
+        padding: 6px 8px;
+    }
+
+    /* Encabezados de columnas */
+    .report-table-header-row th {
+        background-color: #eef2ff;
+        color: #0d0e36;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 11px;
+        text-align: left;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table tbody td {
+        font-size: 12px;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .report-table tfoot td {
+        font-weight: bold;
+        padding: 6px 8px;
+        border-top: 1px solid #e1e4ea;
+        background-color: #f9fafb;
+    }
+</style>
+
+<div class="report-container">
+    <!-- Encabezado -->
+    <div class="report-title">
+        REPORTE - @ViewData["Title"]
+    </div>
+    <div class="report-subtitle">
+        <b>Fecha y hora de emisión:</b> @fecha.ToString("dd/MM/yyyy HH:mm")
+    </div>
+
+    <!-- LISTADO DE COMPRAS -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="8">Listado de compras</th>
+            </tr>
+            <tr class="report-table-header-row">
+                <th>Compra #</th>
+                <th>Fecha compra</th>
+                <th>Proveedor</th>
+                <th>No. comprobante</th>
+                <th>Nombre vendedor</th>
+                <th>Fecha recepción</th>
+                <th>Fecha límite</th>
+                <th>Gasto</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var item in Model)
+                {
+                    var gasto = item.DetalleCompras.Sum(a => a.PrecioTotal);
+                    totalGasto += gasto;
+
+                    <tr>
+                        <td>@item.Id</td>
+                        <td>@item.FechaCompra</td>
+                        <td>@item.Proveedor?.Nombre</td>
+                        <td>@item.NoComprobante</td>
+                        <td>@(item.Empleado != null ? item.Empleado.Nombre : "Admin")</td>
+                        <td>@item.FechaRecepcion</td>
+                        <td>@item.FechaLimite</td>
+                        <td>Q @gasto</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="8">No hay compras registradas.</td>
+                </tr>
+            }
+        </tbody>
+        @if (Model != null && Model.Any())
+        {
+            <tfoot>
+                <tr>
+                    <td colspan="7" style="text-align:right;">TOTAL:</td>
+                    <td>Q @totalGasto</td>
+                </tr>
+            </tfoot>
+        }
+    </table>
+</div>

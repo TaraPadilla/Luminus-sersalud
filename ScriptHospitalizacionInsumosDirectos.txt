@@ -1,0 +1,53 @@
+-- ============================================================
+-- MIGRACIÓN SQL (POSTGRESQL) CON IDENTIFICADORES DELIMITADOS
+-- ============================================================
+
+-- Tabla maestra de insumos directos
+CREATE TABLE "HospitalizacionInsumosDirectos" (
+    "Id"                        SERIAL PRIMARY KEY,
+    "HospitalizacionId"         INT NOT NULL,
+    "ProductoId"                INT NOT NULL,
+    "UnidadMedidaVentaId"       INT NOT NULL DEFAULT 1,
+    "PrecioId"                  INT NULL,
+    "PrecioValor"               DECIMAL(18,2) NOT NULL DEFAULT 0,
+    "Cantidad"                  INT NOT NULL DEFAULT 1,
+    "Indicaciones"              VARCHAR(500) NULL,
+    "ViaAdministracion"         VARCHAR(200) NULL,
+    "FrecuenciaAdministracion"  VARCHAR(100) NULL,
+    "FechaHoraAplicacionManual" VARCHAR(50)  NULL,
+    "UsuarioCreaId"             VARCHAR(450) NULL,
+    "FechaCreacion"             TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "Eliminado"                 BOOLEAN NOT NULL DEFAULT FALSE,
+
+    CONSTRAINT "FK_InsumosDirectos_Hospitalizacion"
+        FOREIGN KEY ("HospitalizacionId") REFERENCES "Hospitalizaciones"("Id"),
+    CONSTRAINT "FK_InsumosDirectos_Producto"
+        FOREIGN KEY ("ProductoId") REFERENCES "Productos"("Id")
+);
+
+-- Tabla de aplicaciones de insumos directos
+CREATE TABLE "HospitalizacionInsumosDirectosAplicaciones" (
+    "Id"                             SERIAL PRIMARY KEY,
+    "HospitalizacionInsumoDirectoId" INT NOT NULL,
+    "Cantidad"                       INT NOT NULL DEFAULT 1,
+    "Aplicado"                       BOOLEAN NOT NULL DEFAULT FALSE,
+    "FechaHoraAplicacion"            TIMESTAMP NULL,
+    "UsuarioCreaId"                  VARCHAR(450) NULL,
+    "UsuarioAplica"                  VARCHAR(450) NULL,
+
+    CONSTRAINT "FK_InsumosDirectosAplicaciones_Insumo"
+        FOREIGN KEY ("HospitalizacionInsumoDirectoId") 
+        REFERENCES "HospitalizacionInsumosDirectos"("Id")
+);
+
+-- Índices para consultas frecuentes
+CREATE INDEX "IX_InsumosDirectos_HospitalizacionId" 
+    ON "HospitalizacionInsumosDirectos"("HospitalizacionId");
+
+CREATE INDEX "IX_InsumosDirectosAplicaciones_InsumoId" 
+    ON "HospitalizacionInsumosDirectosAplicaciones"("HospitalizacionInsumoDirectoId");
+
+
+
+ALTER TABLE "HospitalizacionInsumosDirectosAplicaciones" 
+ADD COLUMN "MotivoDevolucion" varchar(300);

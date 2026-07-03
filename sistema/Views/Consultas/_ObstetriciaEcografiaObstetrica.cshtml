@@ -1,0 +1,105 @@
+@model sistema.Models.ConsultasViewModel
+
+<br />
+<div class="card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Ecografia obstetrica</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Feto</b>
+                    <select asp-for="EcografiaObstetricaFeto" class="form-control dato-consulta">
+                        <option value="UNICO">UNICO</option>
+                        <option value="DOBLE">DOBLE</option>
+                        <option value="MULTIPLE">MULTIPLE</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Estado</b>
+                    <select asp-for="EcografiaObstetricaEstado" class="form-control dato-consulta">
+                        <option value="VIVO">VIVO</option>
+                        <option value="MUERTO">MUERTO</option>
+                        <option value="UNO VIVO">UNO VIVO</option>
+                        <option value="UNO MUERTO">UNO MUERTO</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Situacion</b>
+                    <select asp-for="EcografiaObstetricaSituacion" class="form-control dato-consulta">
+                        <option value="Longitudinal">Longitudinal</option>
+                        <option value="Transverso">Transverso</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Presentacion</b>
+                    <select asp-for="EcografiaObstetricaPresentacion" class="form-control dato-consulta">
+                        <option value="Cefálico">Cefálico</option>
+                        <option value="Podalico">Podalico</option>
+                        <option value="Transverso">Transverso</option>
+                        <option value="Variable">Variable</option>
+                    </select>
+                </div>
+            </div>
+
+
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Posicion</b>
+                    <select asp-for="EcografiaObstetricaPosicion" class="form-control dato-consulta">
+                        <option value="Izquierda">Izquierda</option>
+                        <option value="Derecha">Derecha</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="col-md-2">
+                <div class="position-relative form-group">
+                    <b class="">Dorso</b>
+                    <select asp-for="EcografiaObstetricaDorso" class="form-control dato-consulta">
+                        <option value="Lateral">Lateral</option>
+                        <option value="Anterior">Anterior</option>
+                        <option value="Posterior">Posterior</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="col-md-12">
+                <h5><b>Ecografia obstetrica (historial)</b></h5>
+                <hr>
+            </div>
+            <div class="col-md-12 text-primary texto-cargando-historial" style="display:none">
+                Cargando historial...
+            </div>
+            <div class="col-md-12 text-danger texto-error-cargando-historial" style="display:none">
+                Error de servidor y/o conexion. <a href="#" data-bind="click:consultarHistorialConsultas">Reintentar</a>
+            </div>
+            <!--ko foreach:historialConsultas-->
+            <div class="col-md-12" style="background-color:lightgray"><b>Fecha: </b><span data-bind="text:Fecha"></span>
+            </div>
+            <div class="col-md-2"><b>Feto:</b><br /><span data-bind="text:EcografiaObstetricaFeto"></span></div>
+            <div class="col-md-2"><b>Estado:</b><br /><span data-bind="text:EcografiaObstetricaEstado"></span></div>
+            <div class="col-md-2"><b>Situacion:</b><br /><span data-bind="text:EcografiaObstetricaSituacion"></span>
+            </div>
+            <div class="col-md-2"><b>Presentacion:</b><br /><span
+                    data-bind="text:EcografiaObstetricaPresentacion"></span></div>
+            <div class="col-md-2"><b>Posicion:</b><br /><span data-bind="text:EcografiaObstetricaPosicion"></span></div>
+            <div class="col-md-2"><b>Dorso:</b><br /><span data-bind="text:EcografiaObstetricaDorso"></span></div>
+            <!--/ko-->
+            <!--ko if:historialConsultas().length==0-->
+            <div class="col-md-12">
+                No hay registro de consultas anteriores
+            </div>
+            <!--/ko-->
+        </div>
+    </div>
+</div>

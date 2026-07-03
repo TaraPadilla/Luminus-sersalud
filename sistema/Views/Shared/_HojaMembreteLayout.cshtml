@@ -1,0 +1,253 @@
+@using Microsoft.Extensions.Configuration
+@using Microsoft.AspNetCore.Hosting
+@inject IConfiguration Config
+@inject IWebHostEnvironment HostingEnv
+
+@{
+    // Valores por defecto desde configuración (disponibles en todo el archivo)
+    var nombreEmpresaDefault = Config["EstablecimientoNombreEmpresa"];
+    var tituloPestanaDefault = Config["EstablecimientoPestana"];
+    var Cliente = Config["Cliente"];
+
+    var tituloPagina = (ViewData["Title"] as string) ?? tituloPestanaDefault ?? nombreEmpresaDefault ?? "AVM";
+}
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    @* Estilos básicos compartidos para reportes *@
+    @Html.Partial("_ReportStyles")
+
+    <style>
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 4px 0 8px;
+        }
+
+        /* Evitar la línea debajo de la fila principal (override de _ReportStyles) */
+        .header-table td,
+        .header-table th {
+            border-bottom: none;
+        }
+
+        .header-logo {
+            width: 20%;
+            vertical-align: top;
+            text-align: left;
+        }
+
+        .header-logo img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .header-main {
+            vertical-align: top;
+            text-align: center;
+            padding-right: 200px;
+        }
+
+        .header-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #0d0e36;
+            margin-bottom: 4px;
+        }
+
+        .header-line {
+            font-size: 12px;
+        }
+
+        .header-services {
+            padding: 6px 8px;
+            border-left: 3px solid #0d0e36;
+            background-color: #f3f4ff;
+            font-size: 11px;
+        }
+
+        .header-services-title {
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+            color: #0d0e36;
+            text-align: center;
+        }
+
+        .header-services-text {
+            font-style: italic;
+            line-height: 1.3;
+            text-align: center;
+        }
+
+        .header-emergency {
+            text-align: center;
+            font-weight: bold;
+            font-size: 11px;
+            margin-top: 8px;
+        }
+
+        .header-separator {
+            border: 0;
+            border-top: 2px solid #0d0e36;
+            margin: 8px 0 10px;
+        }
+    </style>
+
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+
+    <title>@tituloPagina</title>
+</head>
+
+<body>
+@{
+    var logoRelativo = (ViewData["ImagenLogo"] as string) ?? Config["ImagenLogoBase64"];
+    var rutaFisicaLogo = System.IO.Path.Combine(HostingEnv.WebRootPath, logoRelativo?.TrimStart('/') ?? "");
+    
+    string base64Logo = "";
+    bool hayLogo = false;
+    string extension = "png"; // Valor por defecto solucionando el Error CS0103
+
+    if (!string.IsNullOrWhiteSpace(logoRelativo) && System.IO.File.Exists(rutaFisicaLogo))
+    {
+        try
+        {
+            // Extraer la extensión dinámicamente del archivo
+            extension = System.IO.Path.GetExtension(rutaFisicaLogo).TrimStart('.').ToLower();
+            if (extension == "jpg") extension = "jpeg"; // Formato MIME correcto para jpg
+
+            byte[] imageBytes = System.IO.File.ReadAllBytes(rutaFisicaLogo);
+            base64Logo = Convert.ToBase64String(imageBytes);
+            hayLogo = true;
+        }
+        catch (Exception) { hayLogo = false; }
+    }
+
+    // Valores por defecto desde configuración
+    var direccion = (ViewData["Direccion"] as string) ?? Config["EstablecimientoDireccion"];
+    var telefono = (ViewData["Telefono"] as string) ?? Config["EstablecimientoTelefono"];
+    var correo = (ViewData["CorreoElectronico"] as string) ?? Config["EstablecimientoCorreoElectronico"];
+    var nombreEmpresa = (ViewData["NombreEmpresa"] as string) ?? nombreEmpresaDefault;
+
+    // Flags de visibilidad (por defecto: todo visible)
+    bool mostrarLogo = (ViewData["MostrarLogo"] as bool?) ?? true;
+    bool mostrarNombre = (ViewData["MostrarNombreEmpresa"] as bool?) ?? true;
+    bool mostrarDireccion = (ViewData["MostrarDireccion"] as bool?) ?? true;
+    bool mostrarTelefono = (ViewData["MostrarTelefono"] as bool?) ?? true;
+    bool mostrarCorreo = (ViewData["MostrarCorreoElectronico"] as bool?) ?? true;
+    bool mostrarServicios = (ViewData["MostrarServicios"] as bool?) ?? true;
+    bool mostrarEmergencias = (ViewData["MostrarEmergencias"] as bool?) ?? true;
+
+    // Solución al Error CS0128: Evaluamos usando la variable existente
+    hayLogo = hayLogo && mostrarLogo;
+}
+    <table class="header-table">
+        <tr>
+            @* Logo a la izquierda *@
+            @if (hayLogo)
+            {
+                <td class="header-logo">
+                    <img src="data:image/@extension;base64,@base64Logo" alt="Logo" />
+                </td>
+            }
+            else
+            {
+                <td class="header-logo"></td>
+            }
+            
+            <td class="header-main">
+                @* Nombre de la empresa *@
+                @if (mostrarNombre && !string.IsNullOrWhiteSpace(nombreEmpresa))
+                {
+                    <div class="header-name">
+                        @nombreEmpresa
+                    </div>
+                }
+
+                @* Dirección *@
+                @if (mostrarDireccion && !string.IsNullOrWhiteSpace(direccion))
+                {
+                    <div class="header-line">
+                        @direccion
+                    </div>
+                }
+
+                @* Teléfono *@
+                @if (mostrarTelefono && !string.IsNullOrWhiteSpace(telefono))
+                {
+                    <div class="header-line">
+                        Teléfonos: @telefono
+                    </div>
+                }
+
+                @* Correo electrónico *@
+                @if (mostrarCorreo && !string.IsNullOrWhiteSpace(correo))
+                {
+                    <div class="header-line">
+                        @correo
+                    </div>
+                }
+            </td>
+        </tr>
+
+    @if(Cliente != "SerSalud")
+    {
+        @* Fila de SERVICIOS, debe ocupar todo el ancho *@
+        @if (mostrarServicios)
+        {
+            <tr>
+                @if (hayLogo)
+                {
+                    <td colspan="2">
+                        <div class="header-services">
+                            <div class="header-services-title">
+                                Servicios
+                            </div>
+                            <div class="header-services-text">
+                                Hospitalización, Ultrasonido, Rayos X, Electrocardiogramas,
+                                Farmacia, Laboratorio, Operaciones de Emergencia y Planificadas
+                            </div>
+                        </div>
+                    </td>
+                }
+                else
+                {
+                    <td colspan="2">
+                        <div class="header-services">
+                            <div class="header-services-title">
+                                Servicios
+                            </div>
+                            <div class="header-services-text">
+                                Hospitalización, Ultrasonido, Rayos X, Electrocardiogramas,
+                                Farmacia, Laboratorio, Operaciones de Emergencia y Planificadas
+                            </div>
+                        </div>
+                    </td>
+                }
+            </tr>
+        }
+   }
+    </table>
+
+@if(Cliente != "SerSalud")
+{
+    @* Emergencias 24 horas debajo del bloque completo *@
+    @if (mostrarEmergencias)
+    {
+        <div class="header-emergency">
+            EMERGENCIAS LAS 24 HORAS
+        </div>
+    }
+}
+    <hr class="header-separator" />
+
+    @RenderBody()
+
+    @RenderSection("Scripts", required: false)
+</body>
+
+</html>

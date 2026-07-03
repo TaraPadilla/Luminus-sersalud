@@ -1,0 +1,148 @@
+@using farmamest.Models
+@model NotasEnfermeriaAllPdfViewModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Reporte de Notas de Enfermería";
+
+    // Configuración estándar del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+}
+
+<style>
+    .notes p { margin: 0 0 4px 0; }
+    .notes strong { font-weight: bold; }
+    .notes em { font-style: italic; }
+    .notes u { text-decoration: underline; }
+    .notes s { text-decoration: line-through; }
+    .notes ol { margin: 4px 0; padding-left: 20px; list-style-type: decimal; }
+    .notes ul { margin: 4px 0; padding-left: 20px; list-style-type: disc; }
+    .notes li { margin-bottom: 2px; }
+    .notes h1 { font-size: 1.4em; font-weight: bold; margin: 6px 0; }
+    .notes h2 { font-size: 1.2em; font-weight: bold; margin: 5px 0; }
+    .notes h3 { font-size: 1.1em; font-weight: bold; margin: 4px 0; }
+    .notes blockquote { border-left: 3px solid #ccc; margin: 4px 0 4px 10px; padding-left: 8px; color: #555; }
+</style>
+
+<div class="doc">
+
+    <!-- Título principal -->
+    <div class="doc-title">REPORTE - @ViewData["Title"]</div>
+    <div class="doc-underline"></div>
+
+    <!-- Fecha de emisión -->
+    <table class="table" style="border:0;">
+        <tbody>
+            <tr>
+                <td style="text-align:center; font-weight:700; border:0;">
+                    Fecha y hora de emisión: @fecha.ToString("dd/MM/yyyy hh:mm tt")
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- DATOS DEL PACIENTE -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Datos del paciente</td>
+        </tr>
+    </table>
+
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table threecol">
+                    <colgroup>
+                        <col />
+                        <col />
+                        <col />
+                    </colgroup>
+                    <tbody>
+                        <tr class="kv-row">
+                            <td>
+                                <span class="label">Nombre</span>
+                                <span class="value">@Model.PacienteNombre</span>
+                            </td>
+                            <td>
+                                <span class="label">Hospitalización N°</span>
+                                <span class="value">@Model.HospitalizacionId</span>
+                            </td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- NOTAS DE ENFERMERÍA -->
+    @if (Model.Notas != null && Model.Notas.Any())
+    {
+        foreach (var nota in Model.Notas)
+        {
+            <table class="section-title" style="margin-top:14px;">
+                <tr>
+                    <td class="bar"></td>
+                    <td>Nota #@nota.Id</td>
+                </tr>
+            </table>
+
+            <table class="block">
+                <tr>
+                    <td style="padding:0;">
+                        <table class="table">
+                            <tbody>
+                                <tr class="kv-row">
+                                    <td style="width:25%;"><span class="label">Fecha y hora</span></td>
+                                    <td><span class="value">@nota.FechaRegistro</span></td>
+                                </tr>
+                                <tr class="kv-row">
+                                    <td><span class="label">Profesional</span></td>
+                                    <td><span class="value">@nota.Profesional</span></td>
+                                </tr>
+                                <tr class="kv-row">
+                                    <td><span class="label">Estado</span></td>
+                                    <td><span class="value">@(nota.Firmado ? "Firmado" : "Pendiente")</span></td>
+                                </tr>
+                                <tr class="kv-row">
+                                    <td><span class="label">Registro de enfermería</span></td>
+                                    <td class="notes">
+                                        @Html.Raw(nota.Diagnostico?.Replace("\n", "<br />"))
+                                    </td>
+                                </tr>
+                                @if (nota.Firmado && !string.IsNullOrEmpty(nota.FirmaBase64))
+                                {
+                                    <tr class="kv-row">
+                                        <td><span class="label">Firma</span></td>
+                                        <td>
+                                            <img src="@nota.FirmaBase64" style="max-height:70px; max-width:250px; border:1px solid #ccc; padding:4px;" />
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        }
+    }
+    else
+    {
+        <div class="alert alert-info" style="text-align:center; padding:20px;">No hay notas de enfermería registradas.</div>
+    }
+
+    <!-- Pie de página con total de notas -->
+    <div style="margin-top:30px; font-size:10px; text-align:center; color:#777; border-top:1px solid #eee; padding-top:10px;">
+        Total de notas: @(Model.Notas?.Count ?? 0) - Documento generado electrónicamente
+    </div>
+
+</div>

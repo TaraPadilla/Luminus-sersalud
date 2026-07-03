@@ -1,0 +1,196 @@
+@using Database.Shared.Models
+@using System.Globalization
+@using sistema.Models
+@model ConsultasViewModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Prescripcion medica";
+
+    // Flags de visibilidad del membrete
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    var fecha = DateTime.Now;
+    CultureInfo culture = new CultureInfo("es-GT");
+}
+
+<style>
+    .report-container {
+        margin-top: 10px;
+        font-size: 12px;
+    }
+
+    .report-title {
+        text-align: center;
+        font-weight: bold;
+        font-size: 16px;
+        color: #0d0e36;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+
+    .report-subtitle {
+        text-align: center;
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    .report-table-title-row th {
+        background-color: #f3f4ff;
+        border-left: 3px solid #0d0e36;
+        color: #0d0e36;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: bold;
+        font-size: 12px;
+        text-align: left;
+        padding: 6px 8px;
+    }
+
+    .report-table-header-row th {
+        background-color: #eef2ff;
+        color: #0d0e36;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 11px;
+        text-align: left;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+    }
+
+    .report-table td {
+        font-size: 12px;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e1e4ea;
+        vertical-align: top;
+    }
+
+    .report-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .keep-with-next {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        -webkit-column-break-inside: avoid;
+        -webkit-region-break-inside: avoid;
+    }
+</style>
+
+<div class="report-container">
+    <!-- Encabezado -->
+    <div class="report-title">
+        REPORTE - @ViewData["Title"]
+    </div>
+    <div class="report-subtitle">
+        <b>Fecha y hora de emisión:</b> @fecha.ToString("dd/MM/yyyy HH:mm", culture)
+    </div>
+
+    <!-- Datos del paciente / médico -->
+    <div class="keep-with-next">
+        <b>NOMBRE: </b>@Model.PacienteNombre<br />
+        <b>FECHA: </b>@fecha.ToString("dd/MM/yyyy HH:mm", culture)<br />
+        <b>EDAD: </b>@Model.PacienteEdad<br />
+        <b>MÉDICO QUE RECETA: </b>@Model.MedicoNombre<br />
+    </div>
+
+    <!-- Ecografía obstétrica -->
+    <table class="report-table keep-with-next">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="3">ECOGRAFIA OBSTETRICA</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <b>Feto</b><br />
+                    @Model.EcografiaObstetricaFeto
+                </td>
+                <td>
+                    <b>Estado</b><br />
+                    @Model.EcografiaObstetricaEstado
+                </td>
+                <td>
+                    <b>Situación</b><br />
+                    @Model.EcografiaObstetricaSituacion
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <b>Presentaci&oacute;n</b><br />
+                    @Model.EcografiaObstetricaFeto
+                </td>
+                <td>
+                    <b>Posici&oacute;n</b><br />
+                    @Model.EcografiaObstetricaEstado
+                </td>
+                <td>
+                    <b>Dorso</b><br />
+                    @Model.EcografiaObstetricaSituacion
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Biometría (ronda 2) -->
+    <table class="report-table keep-with-next">
+        <thead>
+            <tr class="report-table-title-row">
+                <th colspan="4">BIOMETRIA</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><b>LCC</b><br />@Model.ObsteBiometriaRlc2</td>
+                <td><b>SG</b><br />@Model.ObsteBiometriaSg2</td>
+                <td><b>DBP</b><br />@Model.ObsteBiometriaDbp2</td>
+                <td><b>LF</b><br />@Model.ObsteBiometriaLf2</td>
+            </tr>
+            <tr>
+                <td><b>AC</b><br />@Model.ObsteBiometriaAc2</td>
+                <td><b>HC</b><br />@Model.ObsteBiometriaHc2</td>
+                <td><b>FCF</b><br />@Model.ObsteBiometriaFcf2</td>
+                <td><b>ILA</b><br />@Model.ObsteBiometriaIla2</td>
+            </tr>
+            <tr>
+                <td><b>Placenta</b><br />@Model.ObsteBiometriaPlacenta2</td>
+                <td><b>Grado</b><br />@Model.ObsteBiometriaGrado2</td>
+                <td><b>Malformaciones</b><br />@Model.ObsteBiometriaMalformaciones2</td>
+                <td><b>Peso</b><br />@Model.ObsteBiometriaPeso2</td>
+            </tr>
+            <tr>
+                <td><b>EG</b><br />@Model.ObsteBiometriaEg2</td>
+                <td><b>FPP</b><br />@Model.ObsteBiometriaFechaParto2</td>
+                <td><b>Sexo</b><br />@Model.ObsteBiometriaSexo2</td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Comentario -->
+    <table class="report-table">
+        <thead>
+            <tr class="report-table-title-row">
+                <th>COMENTARIO</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>@Model.ObsteBiometriaComentario</td>
+            </tr>
+        </tbody>
+    </table>
+</div>

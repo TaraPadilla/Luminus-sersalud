@@ -1,0 +1,12 @@
+ALTER TABLE "Citass" 
+  ADD COLUMN "Anestesista" text,
+  ADD COLUMN "PrimerAyudante" text,
+  ADD COLUMN "SegundoAyudante" text,
+  ADD COLUMN "Instrumentista" text,
+  ADD COLUMN "Circulante" text,
+  ADD COLUMN "Procedimiento" text,
+  ADD COLUMN "AnestesistaId" integer,
+  ADD COLUMN "PrimerAyudanteId" integer,
+  ADD COLUMN "SegundoAyudanteId" integer,
+  ADD COLUMN "InstrumentistaId" integer,
+  ADD COLUMN "CirculanteId" integer; -- Se corrigió 'interger' y se quitó la coma final

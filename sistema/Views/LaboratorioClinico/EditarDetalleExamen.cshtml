@@ -1,0 +1,220 @@
+@{
+    ViewData["Title"] = "Modificar Examen";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<form asp-controller="LaboratorioClinico" asp-action="EditarDetalleExamen" method="post">
+    @await Html.PartialAsync("_RealizarExamenClinico")
+</form>
+
+@section Scripts {
+    <script type="text/javascript" src="~/js/moment.min.js"></script>
+    <script type="text/javascript" src="~/js/daterangepicker.js"></script>
+    <script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"
+            integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+            crossorigin="anonymous"></script>
+    
+    <!-- Definir la función en ámbito global -->
+    <script>
+        window.uploadBtnClicked = function() {
+            console.log("Botón de subir archivo PDF presionado.");
+            var hospitalizacionId = $("#HospitalizacionId").val();
+            var examenId = $("#ExamenId").val();
+            // Llamada AJAX para obtener los registros por hospitalización y examen
+            $.ajax({
+                url: '/HospitalizacionExamenPdf/GetByHospitalizacionAndExamen',
+                type: 'GET',
+                data: { hospitalizacionId: hospitalizacionId, examenId: examenId },
+                success: function (response) {
+                    var existsPrincipal = false;
+                    // Recorrer cada registro y verificar si existe uno principal
+                    $.each(response, function (index, item) {
+                        if (item.isPrincipalPdf) {
+                            existsPrincipal = true;
+                        }
+                    });
+                    if (existsPrincipal) {
+                        alert("Ya existe un PDF principal en la base de datos para este examen.");
+                    } else {
+                        // Abrir el diálogo para que el usuario seleccione el archivo
+                        $("#fileInput").click();
+                    }
+                },
+                error: function () {
+                    alert("Error al verificar la existencia del PDF principal.");
+                }
+            });
+        };
+    </script>
+    
+    <script>
+        // Función para refrescar la tabla de PDFs
+        function refreshPdfTable() {
+            var hospitalizacionId = $("#HospitalizacionId").val();
+            var examenId = $("#ExamenId").val();
+            $.ajax({
+                url: '/HospitalizacionExamenPdf/GetByHospitalizacionAndExamen',
+                type: 'GET',
+                data: { hospitalizacionId: hospitalizacionId, examenId: examenId },
+                success: function (response) {
+                    var tbody = $("#pdfTableBody");
+                    tbody.empty();
+                    $.each(response, function (index, item) {
+                        var row = "<tr>" +
+                            "<td>" + item.id + "</td>" +
+                            "<td>" + item.nombreExamen + "</td>" +
+                            "<td><a href='" + item.pdfUrl + "' target='_blank'>" + item.pdfUrl + "</a></td>" +
+                            "<td>" + (item.eliminado ? "Eliminado" : "Activo") + "</td>" +
+                            "<td>" + item.fechaCreacionFormatted + "</td>" +
+                            "<td>" + item.userId + "</td>" +
+                            "<td>" + item.hospitalizacionId + "</td>" +
+                            "<td>" + item.examenId + "</td>" +
+                            "<td>" + (item.isPrincipalPdf ? "Sí" : "No") + "</td>" +
+                            // Nuevo <td> con botón para eliminar el registro
+                            "<td><button type='button' class='btn btn-danger btn-sm' onclick=\"deletePdfRecord('" + item.pdfUrl + "', " + item.id + ")\">Eliminar</button></td>" +
+                            "</tr>";
+                        tbody.append(row);
+                    });
+                },
+                error: function () {
+                    alert("Error al cargar los archivos PDF.");
+                }
+            });
+        }
+
+        function deletePdfRecord(pdfUrl, id) {
+            if (!confirm("¿Está seguro de eliminar este registro?")) {
+                return;
+            }
+            var formData = new FormData();
+            formData.append("pdfUrl", pdfUrl);
+            formData.append("id", id);
+
+            $.ajax({
+                url: '/HospitalizacionExamenPdf/DeletePdf',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.exitoso) {
+                        alert(response.mensaje);
+                        refreshPdfTable(); // refrescar la tabla
+                    } else {
+                        alert(response.mensaje);
+                    }
+                },
+                error: function() {
+                    alert("Error al eliminar el registro.");
+                }
+            });
+        }
+        
+        // Inicialmente, refrescar la tabla para mostrar los PDFs existentes
+        $(document).ready(function () {
+            refreshPdfTable();
+        });
+
+        // Al cambiar el input file (archivo seleccionado)
+        $(document).on('change', '#fileInput', function () {
+            var file = this.files[0];
+            if (file) {
+                if (file.type !== "application/pdf") {
+                    alert("Solo se permiten archivos PDF.");
+                    return;
+                }
+                var formData = new FormData();
+                formData.append("file", file);
+                formData.append("hospitalizacionId", $("#HospitalizacionId").val());
+                formData.append("examenId", $("#ExamenId").val());
+
+                $.ajax({
+                    url: '/HospitalizacionExamenPdf/UploadPdf',
+                    type: 'POST',
+                    data: (function() {
+                        var fd = formData;
+                        fd.append("isPrincipalPdf", "true");
+                        return fd;
+                    })(),
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        if (response.exitoso) {
+                            alert(response.mensaje);
+                            // Refrescar la tabla de PDFs después de subir el archivo
+                            refreshPdfTable();
+                        } else {
+                            alert(response.mensaje);
+                        }
+                    },
+                    error: function () {
+                        alert("Error al subir el archivo.");
+                    }
+                });
+            }
+        });
+    </script>
+
+    <script>
+        // Función global para iniciar la subida de un PDF NO principal.
+        function uploadNoPrincipalPdf(nombreExamen) {
+            console.log("Se ha presionado el botón para subir PDF NO principal con nombre: " + nombreExamen);
+            // Almacenar el nombre del examen en una variable global
+            window.uploadNoPrincipalNombreExamen = nombreExamen;
+            // Abrir el diálogo del input file asociado
+            $("#fileInputNoPrincipal").click();
+        }
+        
+        // Manejo del evento 'change' para el input file de PDF NO principal.
+        $(document).on('change', '#fileInputNoPrincipal', function () {
+            var file = this.files[0];
+            if (!file) {
+                return;
+            }
+            // Validar que el archivo sea PDF
+            if (file.type !== "application/pdf") {
+                alert("Solo se permiten archivos PDF.");
+                return;
+            }
+            // Construir el objeto FormData
+            var formData = new FormData();
+            formData.append("file", file);
+            formData.append("hospitalizacionId", $("#HospitalizacionId").val());
+            formData.append("examenId", $("#ExamenId").val());
+            // Agregar el nombre del examen desde la variable global; si no está definido, se usa un valor por defecto
+            formData.append("nombreExamen", window.uploadNoPrincipalNombreExamen || "PDF No Principal");
+            // Indicar que no es un PDF principal
+            formData.append("isPrincipalPdf", "false");
+
+            // Realizar la llamada AJAX al endpoint para subir el PDF NO principal
+            $.ajax({
+                url: '/HospitalizacionExamenPdf/UploadPdf',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    if (response.exitoso) {
+                        alert(response.mensaje);
+                        // Refrescar la tabla de PDFs después de subir el archivo (si existe dicha función)
+                        if(typeof refreshPdfTable === "function"){
+                            refreshPdfTable();
+                        }
+                    } else {
+                        alert(response.mensaje);
+                    }
+                },
+                error: function () {
+                    alert("Error al subir el archivo NO principal.");
+                }
+            });
+        });
+    </script>
+}
+
+@section css {
+    <link href="~/css/daterangepicker.css" rel="stylesheet">
+}

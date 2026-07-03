@@ -1,0 +1,101 @@
+@model sistema.Models.ConsultasViewModel
+
+<br />
+
+<div class="border rounded p-3 bg-white shadow-sm">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
+        <h6 class="mb-0 font-weight-bold text-primary text-uppercase">
+            <i class="fas fa-notes-medical mr-2"></i>
+            Ginecología - Antecedentes patológicos
+        </h6>
+    </div>
+
+    <!-- Form -->
+    <div class="form-row">
+
+        <div class="col-sm-6 col-md-3 mb-3">
+            <label class="font-weight-bold small text-muted">Infecciones</label>
+            @Html.TextBoxFor(a => a.GinecologiaAntPatologicosInfecciones,
+                new { @class = "form-control dato-consulta" })
+        </div>
+
+        <div class="col-sm-6 col-md-3 mb-3">
+            <label class="font-weight-bold small text-muted">ETS</label>
+            @Html.TextBoxFor(a => a.GinecologiaAntPatologicosEts,
+                new { @class = "form-control dato-consulta" })
+        </div>
+
+        <div class="col-sm-6 col-md-3 mb-3">
+            <label class="font-weight-bold small text-muted">Papanicolau</label>
+            @Html.TextBoxFor(a => a.GinecologiaAntPatologicosPapanicolau,
+                new { @class = "form-control dato-consulta" })
+        </div>
+
+        <div class="col-sm-6 col-md-3 mb-3">
+            <label class="font-weight-bold small text-muted">Otros</label>
+            @Html.TextBoxFor(a => a.GinecologiaAntPatologicosOtros,
+                new { @class = "form-control dato-consulta" })
+        </div>
+
+    </div>
+
+    <!-- Historial -->
+    <div class="mt-4">
+        <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
+            <h6 class="mb-0 font-weight-bold text-primary text-uppercase">
+                <i class="fas fa-history mr-2"></i>
+                Historial antecedentes patológicos
+            </h6>
+        </div>
+
+        <div class="text-primary texto-cargando-historial mb-2" style="display:none">
+            <i class="fas fa-spinner fa-spin mr-1"></i> Cargando historial...
+        </div>
+
+        <div class="text-danger texto-error-cargando-historial mb-2" style="display:none">
+            <i class="fas fa-exclamation-triangle mr-1"></i>
+            Error de servidor y/o conexión.
+            <a href="#" data-bind="click:consultarHistorialConsultas">Reintentar</a>
+        </div>
+
+        <!--ko foreach:historialConsultas-->
+        <div class="border rounded p-3 mb-3 bg-white">
+
+            <div class="font-weight-bold text-dark mb-2">
+                <i class="fas fa-calendar-alt text-primary mr-1"></i>
+                Fecha: <span data-bind="text:Fecha"></span>
+            </div>
+
+            <div class="row small">
+                <div class="col-md-3">
+                    <b>Infecciones:</b>
+                    <span data-bind="text:GinecologiaAntPatologicosInfecciones"></span>
+                </div>
+                <div class="col-md-3">
+                    <b>ETS:</b>
+                    <span data-bind="text:GinecologiaAntPatologicosEts"></span>
+                </div>
+                <div class="col-md-3">
+                    <b>Papanicolau:</b>
+                    <span data-bind="text:GinecologiaAntPatologicosPapanicolau"></span>
+                </div>
+                <div class="col-md-3">
+                    <b>Otros:</b>
+                    <span data-bind="text:GinecologiaAntPatologicosOtros"></span>
+                </div>
+            </div>
+
+        </div>
+        <!--/ko-->
+
+        <!--ko if:historialConsultas().length==0-->
+        <div class="text-muted">
+            <i class="fas fa-info-circle mr-1"></i>
+            No hay registro de consultas anteriores
+        </div>
+        <!--/ko-->
+    </div>
+
+</div>

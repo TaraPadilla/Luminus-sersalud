@@ -1,0 +1,117 @@
+@model sistema.Models.ConsultasViewModel
+
+<br />
+
+<div class="border rounded p-3 bg-white shadow-sm">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+        <h6 class="mb-0 font-weight-bold text-primary text-uppercase">
+            <i class="fas fa-procedures mr-2"></i> Ecografía Endocavitaria
+        </h6>
+
+        @if (!Model.HabilitarEdicion)
+        {
+            <button type="submit" class="btn btn-success btn-sm text-white"
+                    id="generarEndocavitarioPdf" onclick="generarEndocavitarioPdf(@Model.ConsultaId)">
+                <i class="fas fa-arrow-down mr-1"></i> Endo PDF
+            </button>
+        }
+    </div>
+
+    <!-- Form -->
+    <div class="form-row">
+
+        <div class="col-sm-6 col-md-2 mb-3">
+            <label class="font-weight-bold small text-muted">Útero</label>
+            @Html.TextBoxFor(a => a.EcografiaEndocavitariaUtero, new { @class = "form-control dato-consulta", @placeholder = " " })
+        </div>
+
+        <div class="col-sm-6 col-md-2 mb-3">
+            <label class="font-weight-bold small text-muted">Longitudinal</label>
+            @Html.TextBoxFor(a => a.EcografiaEndocavitariaLongitudinal, new { @class = "form-control dato-consulta", @placeholder = " " })
+        </div>
+
+        <div class="col-sm-6 col-md-2 mb-3">
+            <label class="font-weight-bold small text-muted">Transverso</label>
+            @Html.TextBoxFor(a => a.EcografiaEndocavitariaTransverso, new { @class = "form-control dato-consulta", @placeholder = " " })
+        </div>
+
+        <div class="col-sm-6 col-md-2 mb-3">
+            <label class="font-weight-bold small text-muted">Endometrio</label>
+            @Html.TextBoxFor(a => a.EcografiaEndocavitariaEndometrio, new { @class = "form-control dato-consulta", @placeholder = " " })
+        </div>
+
+        <div class="col-sm-6 col-md-2 mb-3">
+            <label class="font-weight-bold small text-muted">Ovario derecho</label>
+            @Html.TextBoxFor(a => a.EcografiaEndocavitariaOvarioDerecho, new { @class = "form-control dato-consulta", @placeholder = " " })
+        </div>
+
+        <div class="col-sm-6 col-md-2 mb-3">
+            <label class="font-weight-bold small text-muted">Ovario izquierdo</label>
+            @Html.TextBoxFor(a => a.EcografiaEndocavitariaOvarioIzquierdo, new { @class = "form-control dato-consulta", @placeholder = " " })
+        </div>
+
+        <div class="col-sm-6 col-md-2 mb-3">
+            <label class="font-weight-bold small text-muted">Fondo saco</label>
+            @Html.TextBoxFor(a => a.EcografiaEndocavitariaFondoSaco, new { @class = "form-control dato-consulta", @placeholder = " " })
+        </div>
+
+        <div class="col-sm-6 col-md-2 mb-3">
+            <label class="font-weight-bold small text-muted">Impresión clínica</label>
+            @Html.TextBoxFor(a => a.EcografiaEndocavitariaImpresionClinica, new { @class = "form-control dato-consulta", @placeholder = " " })
+        </div>
+
+        <div class="col-sm-12 col-md-2 mb-3">
+            <label class="font-weight-bold small text-muted">Comentario</label>
+            @Html.TextBoxFor(a => a.EcografiaEndocavitariaComentario, new { @class = "form-control dato-consulta", @placeholder = " " })
+        </div>
+
+    </div>
+
+    <!-- Historial -->
+    <div class="mt-4">
+        <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
+            <h6 class="mb-0 font-weight-bold text-primary text-uppercase">
+                <i class="fas fa-history mr-2"></i> Ecografía Endocavitaria (historial)
+            </h6>
+        </div>
+
+        <div class="text-primary texto-cargando-historial mb-2" style="display:none">
+            <i class="fas fa-spinner fa-spin mr-1"></i> Cargando historial...
+        </div>
+
+        <div class="text-danger texto-error-cargando-historial mb-2" style="display:none">
+            <i class="fas fa-exclamation-triangle mr-1"></i>
+            Error de servidor y/o conexion. <a href="#" data-bind="click:consultarHistorialConsultas">Reintentar</a>
+        </div>
+
+        <!--ko foreach:historialConsultas-->
+        <div class="border rounded p-3 mb-3 bg-white">
+            <div class="font-weight-bold text-dark mb-2">
+                <i class="fas fa-calendar-alt text-primary mr-1"></i>
+                Fecha: <span data-bind="text:Fecha"></span>
+            </div>
+
+            <div class="row small">
+                <div class="col-md-2"><b>Utero::</b><br /><span data-bind="text:EcografiaEndocavitariaUtero"></span></div>
+                <div class="col-md-2"><b>Longitudinal:</b><br /><span data-bind="text:EcografiaEndocavitariaLongitudinal"></span></div>
+                <div class="col-md-2"><b>Transverso:</b><br /><span data-bind="text:EcografiaEndocavitariaTransverso"></span></div>
+                <div class="col-md-2"><b>Endometrio:</b><br /><span data-bind="text:EcografiaEndocavitariaEndometrio"></span></div>
+                <div class="col-md-2"><b>Ovario derecho:</b><br /><span data-bind="text:EcografiaEndocavitariaOvarioDerecho"></span></div>
+                <div class="col-md-2"><b>Ovario izquierdo:</b><br /><span data-bind="text:EcografiaEndocavitariaOvarioIzquierdo"></span></div>
+                <div class="col-md-2"><b>Fondo saco:</b><br /><span data-bind="text:EcografiaEndocavitariaFondoSaco"></span></div>
+                <div class="col-md-2"><b>Impresion clinica:</b><br /><span data-bind="text:EcografiaEndocavitariaImpresionClinica"></span></div>
+                <div class="col-md-2"><b>Comentario:</b><br /><span data-bind="text:EcografiaEndocavitariaComentario"></span></div>
+            </div>
+        </div>
+        <!--/ko-->
+
+        <!--ko if:historialConsultas().length==0-->
+        <div class="text-muted">
+            <i class="fas fa-info-circle mr-1"></i> No hay registro de consultas anteriores
+        </div>
+        <!--/ko-->
+    </div>
+
+</div>

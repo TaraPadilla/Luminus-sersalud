@@ -1,0 +1,335 @@
+
+@model sistema.Models.ReportesIneViewModel
+
+@section css {
+    <link href="~/css/daterangepicker.css" rel="stylesheet" />
+    <style>
+        /* --- Bloque con borde verde tipo Excel --- */
+        .ine-block, .card-filter {
+            border: 2px solid #006400;
+            background-color: #f3f9f3;
+            border-radius: .5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .card-filter .card-title {
+            font-weight: 600;
+            color: #004d00;
+            margin-bottom: .75rem;
+        }
+        /* 1) Asegúrate de que la página no “herede” scroll horizontal */
+:root {
+    --primary-color: #006400; /* Verde oscuro */
+    --light-primary-bg: #f3f9f3;
+    --header-bg: #d7e8d1;
+    --border-color: #a0cda0;
+}
+
+.table-responsive-container {
+    max-height: 80vh;
+    overflow: auto;
+    border: 1px solid var(--border-color);
+    border-radius: .5rem;
+    background-color: white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Tabla con diseño limpio y moderno */
+.excel-table {
+    width: 100%;
+    min-width: 1200px;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    background-color: white;
+}
+
+/* Encabezado fijo con sombra */
+.excel-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background-color: #f0f4f8;
+    color: #333;
+    text-align: center;
+    font-weight: 600;
+    border-bottom: 2px solid #c0d3dc;
+    padding: 0.75rem;
+}
+
+/* Celdas */
+.excel-table th,
+.excel-table td {
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #e0e0e0;
+    text-align: left;
+    vertical-align: middle;
+    white-space: normal;
+}
+
+/* Alternancia de filas */
+.excel-table tbody tr:nth-child(even) {
+    background-color: #f9fbfc;
+}
+
+/* Hover en filas */
+.excel-table tbody tr:hover {
+    background-color: #eef6ff;
+}
+
+/* Centrado o derecha en celdas específicas */
+.excel-table .text-center {
+    text-align: center;
+}
+.excel-table .text-right {
+    text-align: right;
+}
+
+/* Mensaje de "sin datos" más estético */
+.excel-table td[colspan="17"] {
+    font-style: italic;
+    color: #666;
+    background-color: #fafafa;
+}
+
+        .btn-filter {
+            background: linear-gradient(45deg,#228B22,#32CD32);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: .5rem 1rem;
+            border-radius: .25rem;
+        }
+        .toolbar {
+            margin-bottom: 1.5rem;
+        }
+        /* --- Selects y labels pequeños --- */
+        .ine-select-sm {
+            font-size: .85rem;
+            height: calc(1.5em + .5rem);
+        }
+        .ine-block label,
+        .card-filter label {
+            font-size: .85rem;
+            margin-bottom: .25rem;
+        }
+        /* --- “Celdas” de código y valores --- */
+        .ine-code-sm {
+            display: inline-block;
+            min-width: 3.5rem;
+            min-height: calc(1.5em + 0.5rem);
+            padding: 0.4rem 0.6rem;
+            font-size: 0.85rem;
+            line-height: 1.2;
+            text-align: center;
+            background-color: #e8f5e9;
+            border: 1px solid #006400;
+            border-radius: 0;
+            vertical-align: middle;
+        }
+       
+        
+    </style>
+}
+
+<div class="container-sm px-2 my-4">
+    <!-- Header -->
+    <div class="row align-items-center mb-4">
+        <div class="col-2">
+            <img src="~/images/ine-logo.png" alt="INE" class="img-fluid" style="max-height:60px;" />
+        </div>
+        <div class="col-8 text-start">
+            <h1 style="font-size:1.2rem; margin:0;">Reporte INE</h1>
+        </div>
+        <div class="col-2"></div>
+    </div>
+
+    <!-- 1) FILTRO DE FECHAS + DESCARGA -->
+    <div class="row toolbar mb-3">
+        <div class="col-7 col-md-4 col-lg-4">
+            <div class="card-filter">
+                <h5 class="card-title">Filtrar por fecha</h5>
+                <form asp-action="Ine" method="get" class="row gx-2 gy-2 align-items-end">
+                    <div class="col-md-8 mb-2">
+                        <label for="rangoFechasPicker" class="form-label">Rango de fechas</label>
+                        <input type="text"
+                               id="rangoFechasPicker"
+                               name="rangoFechas"
+                               class="form-control form-control-sm"
+                               value="@Model.RangoFechas"
+                               autocomplete="off" />
+                    </div>
+                    <div class="col-md-4 text-start">
+                        <button type="submit" class="btn-filter btn-sm w-100" style="cursor: pointer;">Filtrar</button>
+                    </div>
+                </form>
+                @if (!string.IsNullOrEmpty(Model.RangoFechas)){
+                <a asp-action="DescargarIneExcel"
+                   asp-route-rangoFechas="@Model.RangoFechas"
+                   asp-route-departamentoId="@Model.SelectedDepartamentoId"
+                   asp-route-municipioId="@Model.SelectedMunicipioId"
+                   class="btn-filter btn-sm mt-4 w-100">
+                    <i class="fas fa-file-excel me-1"></i> Descargar Reporte
+                </a>
+                }
+            </div>
+        </div>
+    </div>
+@if (!string.IsNullOrEmpty(Model.RangoFechas))
+{ <!-- 2) UBICACIÓN (SEPARADA) -->
+    <div class="row mb-4">
+        <div class="col-auto">
+            <div class="card-filter">
+                <h5 class="card-title">Ubicación</h5>
+                <div class="row gx-2 gy-2">
+                    <div class="col-md-6">
+                        <label for="DepartamentoSelect" class="form-label">Departamento</label>
+                        <select id="DepartamentoSelect"
+                                asp-for="SelectedDepartamentoId"
+                                class="form-control form-control-sm">
+                            <option value="">-- Seleccione --</option>
+                            @foreach(var d in Model.Departamentos) {
+                                <option value="@d.Value">@d.Text</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label>Código</label>
+                        <input asp-for="SelectedDepartamentoCodigo" class="ine-code-sm" readonly />
+                    </div>
+                    <div class="col-md-6">
+                        <label for="MunicipioSelect" class="form-label">Municipio</label>
+                        <select id="MunicipioSelect"
+                                asp-for="SelectedMunicipioId"
+                                asp-items="Model.Municipios"
+                                class="form-control form-control-sm">
+                            <option value="">-- Seleccione --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label>Código</label>
+                        <input asp-for="SelectedMunicipioCodigo" class="ine-code-sm" readonly />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    }
+   
+
+@if (!string.IsNullOrEmpty(Model.RangoFechas))
+{
+    <div class="row justify-content-start">
+    <div class="col-12">
+        <div class="table-responsive-container">
+            <table class="excel-table">
+                <thead>
+                    <tr>
+                        <th rowspan="2">NO. ORDEN</th>
+                        <th rowspan="2">1/ Paciente tiene derecho a IGSS</th>
+                        <th rowspan="2">DÍA DE CONSULTA</th>
+                        <th rowspan="2">NO. HISTORIA CLÍNICA<br />(o código de paciente)</th>
+                        <th rowspan="2">2/ SEXO</th>
+                        <th rowspan="2">3/ PUEBLO DE PERTENENCIA</th>
+                        <th colspan="3">4/ EDAD</th>
+                        <th colspan="3">LUGAR DE RESIDENCIA HABITUAL</th>
+                        <th rowspan="2">5/ CONSULTA</th>
+                        <th rowspan="2">6/ CONTROL MATERNO-INFANTIL</th>
+                        <th colspan="2">DIAGNÓSTICO</th>
+                        <th rowspan="2">7/ TRATAMIENTO RECIBIDO EN</th>
+                    </tr>
+                    <tr>
+                        <th>Días</th>
+                        <th>Meses</th>
+                        <th>Años</th>
+                        <th>Dirección exacta</th>
+                        <th>Municipio/ Departamento</th>
+                        <th>CÓDIGO (Cartográfico) PARA USO EXCLUSIVO DEL INE</th>
+                        <th>Descripción</th>
+                        <th>CÓDIGO (CIE-10) PARA USO EXCLUSIVO DEL INE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Registros.Any())
+                    {
+                        foreach (var r in Model.Registros)
+                        {
+                            <tr>
+                                <td class="text-center">@r.NoOrden</td>
+                                <td class="text-center">@r.TieneIgss</td>
+                                <td class="text-center">@r.FechaConsulta.ToString("dd/MM/yyyy")</td>
+                                <td class="text-center">@r.HistoriaClinica</td>
+                                <td>@r.Sexo</td>
+                                <td>@r.Etnia</td>
+                                <td class="text-right">@r.DiasEdad</td>
+                                <td class="text-right">@r.MesesEdad</td>
+                                <td class="text-right">@r.AniosEdad</td>
+                                <td>@r.Direccion</td>
+                                <td>@r.Ubicacion</td>
+                                <td class="text-center">@r.CodigoCartografico</td>
+                                <td>@r.TipoConsulta</td>
+                                <td class="text-center">@r.ControlMaternoInfantil</td>
+                                 <td>@r.ImpresionClinica</td>
+                                <td class="text-center">@r.cie</td>
+                                <td>@r.TratamientoRecibidoEn</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="17" class="text-center" style="padding: 2rem;">
+                                No hay datos para mostrar con los filtros seleccionados.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+}
+  </div> 
+
+
+    <script type="text/javascript" src="~/js/moment.min.js"></script>
+    <script type="text/javascript" src="~/js/daterangepicker.js"></script>
+    <script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+
+    <script>
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('btnDesc');
+  const fecha = document.getElementById('rangoFechasPicker');
+  const depto = document.getElementById('DepartamentoSelect');
+  const muni  = document.getElementById('MunicipioSelect');
+
+  function actualizarHref() {
+    if (!fecha.value) {
+      btn.removeAttribute('href');
+      return;
+    }
+    btn.href = `/Reportes/DescargarIneExcel`
+             + `?rangoFechas=${encodeURIComponent(fecha.value)}`
+             + `&departamentoId=${depto.value}`
+             + `&municipioId=${muni.value}`;
+  }
+
+  // cada vez que cambien estos campos, actualiza el href
+  [fecha, depto, muni].forEach(el =>
+    el.addEventListener('change', actualizarHref)
+  );
+
+  // init
+  actualizarHref();
+
+  // opcional: si quieres prevenir click sin rango
+  btn.addEventListener('click', e => {
+    if (!btn.href) {
+      alert('Selecciona primero un rango de fechas.');
+      e.preventDefault();
+    }
+  });
+});
+</script>
+
+
+

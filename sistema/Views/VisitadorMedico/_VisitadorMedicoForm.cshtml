@@ -1,0 +1,44 @@
+@model Database.Shared.Models.VisitadorMedico
+
+<div class="container">
+    <div class="card mb-3">
+        <div class="card-header">
+            <h4>Datos Del Visitador Médico</h4>
+        </div>
+        <div class="card-body">
+            <form method="post" action="@Url.Action("Create", "VisitadorMedico")">
+                <div class="form-group">
+                    <label>Nombre del Visitador</label>
+                    @Html.TextBoxFor(m => m.NombreVisitador, new { @class = "form-control", placeholder = "Nombre completo" })
+                    @Html.ValidationMessageFor(m => m.NombreVisitador, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    <label>Contacto del Visitador</label>
+                    @Html.TextBoxFor(m => m.ContactoVisitador, new { @class = "form-control", placeholder = "Teléfono o correo electrónico" })
+                </div>
+
+                <div class="form-group">
+                    <label>Nombre de Farmacéutica</label>
+                    @Html.TextBoxFor(m => m.NombreFarmaceutica, new { @class = "form-control", placeholder = "Nombre de la farmacéutica" })
+                    @Html.ValidationMessageFor(m => m.NombreFarmaceutica, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    <label>Contacto Farmacéutica</label>
+                    @Html.TextBoxFor(m => m.ContactoFarmaceutica, new { @class = "form-control", placeholder = "Teléfono o correo de la farmacéutica" })
+                </div>
+
+                <div class="form-group">
+                    <label>Observaciones</label>
+                    @Html.TextAreaFor(m => m.Observaciones, new { @class = "form-control", placeholder = "Observaciones adicionales" })
+                </div>
+
+                <div class="form-group">
+                    <label>URL de Catálogo</label>
+                    @Html.TextBoxFor(m => m.UrlCatalogo, new { @class = "form-control", placeholder = "Enlace al catálogo de productos" })
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

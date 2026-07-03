@@ -1,0 +1,27 @@
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Config
+@{
+    DateTime fecha = DateTime.Now;
+}
+<div class="header center textoTipo" style="width: 100%;padding: 5px; font-size: 16PX;">
+    <b>Fecha y hora de emisión:</b> @fecha.ToString("dd/MM/yyyy HH:mm") |
+    <b style="color:#1D50BD">Solicita: </b>@(Model.UsuarioSolicita ?? "-") |
+    <b style="color:#1D50BD">Tec. laboratorio: </b>@(Model.UsuarioIngresa ?? "-")
+    <hr style="border-color: black;" />
+</div>
+<div class="form-row textoTipo" style="font-size: 16PX;">
+    <table class="col-md-12" style="width: 100%;">
+        <tr>
+ @{
+
+    ViewData["ImagenLogo"]       = Config["ImagenLogoBase64"];  
+    ViewData["Direccion"]        = Config["EstablecimientoDireccion"];
+    ViewData["Telefono"]         = Config["EstablecimientoTelefono"];
+    ViewData["CorreoElectronico"]= Config["EstablecimientoCorreoElectronico"];
+    ViewData["ImagenFirma"]      = Config["EstablecimientoImagenFirma"];
+}
+                <b>Horario de atención: 24 horas</b><br>
+            </td>
+        </tr>
+    </table>
+</div>

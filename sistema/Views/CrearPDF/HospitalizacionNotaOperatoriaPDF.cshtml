@@ -1,0 +1,170 @@
+@using farmamest.Models
+@model NotaMedica2ViewModel
+
+@{
+    Layout = "_HojaMembreteLayout";
+    ViewData["Title"] = "Hospitalización - Nota Operatoria";
+
+    ViewData["MostrarLogo"] = true;
+    ViewData["MostrarNombreEmpresa"] = true;
+    ViewData["MostrarDireccion"] = true;
+    ViewData["MostrarTelefono"] = true;
+    ViewData["MostrarCorreoElectronico"] = true;
+    ViewData["MostrarServicios"] = true;
+    ViewData["MostrarEmergencias"] = true;
+
+    DateTime fecha = DateTime.Now;
+}
+
+<div class="doc">
+
+    <!-- Título principal -->
+    <div class="doc-title">REPORTE - @ViewData["Title"]</div>
+    <div class="doc-underline"></div>
+
+    <!-- Fecha de emisión -->
+    <table class="table" style="border:0;">
+        <tbody>
+            <tr>
+                <td style="text-align:center; font-weight:700; border:0;">
+                    Fecha y hora de emisión: @fecha.ToString("dd/MM/yyyy hh:mm tt")
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- DATOS DEL PACIENTE -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Datos del paciente</td>
+        </tr>
+    </table>
+
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table threecol">
+                    <colgroup>
+                        <col />
+                        <col />
+                        <col />
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Sexo</th>
+                            <th>Edad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="kv-row">
+                            <td><span class="value">@Model.PacienteNombre</span></td>
+                            <td><span class="value">@Model.PacienteSexoText</span></td>
+                            <td><span class="value">@Model.PacienteEdad</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- MÉDICO ASIGNADO -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Médico asignado</td>
+        </tr>
+    </table>
+
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table threecol">
+                    <colgroup>
+                        <col />
+                        <col />
+                        <col />
+                    </colgroup>
+                    <tbody>
+                        <tr class="kv-row">
+                            <td>
+                                <span class="label">Nombre</span>
+                                <span class="value">@Model.EmpleadoText</span>
+                            </td>
+                            <td>
+                                <span class="label">Colegiatura</span>
+                                <span class="value">@Model.ColegioEmpleado</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- DIAGNÓSTICO PREOPERATORIO -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Diagnóstico Preoperatorio</td>
+        </tr>
+    </table>
+
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <tbody>
+                        <tr class="kv-row">
+                            <td class="notes">
+                                <span class="value" style="white-space:pre-wrap;">@Model.Diagnostico</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- PROCEDIMIENTO REALIZADO -->
+    <table class="section-title">
+        <tr>
+            <td class="bar"></td>
+            <td>Procedimiento Realizado</td>
+        </tr>
+    </table>
+
+    <table class="block">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <tbody>
+                        <tr class="kv-row">
+                            <td class="notes">
+                                <span class="value" style="white-space:pre-wrap;">@Model.Evolucion</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Fecha de registro -->
+    <table class="block" style="margin-top:20px;">
+        <tr>
+            <td style="padding:0;">
+                <table class="table">
+                    <tbody>
+                        <tr class="kv-row">
+                            <td style="width:25%;"><span class="label">Fecha de registro</span></td>
+                            <td><span class="value">@Model.FechaRegistro</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+</div>

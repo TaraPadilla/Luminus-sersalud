@@ -1,0 +1,1113 @@
+@model sistema.Models.HospitalizacionDetallesViewModel
+@{
+    var usuarioAdmisiones = User.IsInRole("Admisiones");
+}            
+<div class="tab-pane tabs-animation fade show active" id="tab-content-0" role="tabpanel">
+    <div class="main-card mb-3 card">
+        <div class="form-row p-4">
+            <div class="col-md-12">
+
+                <!-- Sección: Hospitalización -->
+                <div class="mb-3 border rounded p-3" style="background-color: #f8f9fa;">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <h6 class="mb-0 font-weight-bold">Hospitalizaci&oacute;n</h6>
+                    </div>
+
+                    <!--ko if: ko.utils.unwrapObservable(registrosHospitalizacion).length > 0 -->
+                    <div class="table-responsive mt-3">
+                        <table class="table table-hover table-sm table-bordered" id="tabla-producto" style="background-color: #ffffff;">
+                            <thead>
+                                <tr class="table-light">
+                                    <th scope="col">Fecha inicial</th>
+                                    <th scope="col">Fecha actual</th>
+                                    <th scope="col">N&uacute;mero de noches</th>
+                                    <th scope="col">Habitacion</th>
+                                    <th scope="col">Categoria</th>
+                                    <th scope="col">Tarifa</th>
+                                    @if (!User.IsInRole("Enfermeria") && !User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
+                                    {
+                                        <th scope="col">Valor noche</th>
+                                    }
+                                    <th scope="col">N&uacute;mero de camas</th>
+                                    <th scope="col">Observaciones</th>
+                                    @if (!User.IsInRole("Enfermeria") && !User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
+                                    {
+                                        <th scope="col">Total</th>
+                                    }
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                <!--ko foreach: registrosHospitalizacion-->
+                                <tr>
+                                    <td data-bind="text:FechaInicio"></td>
+                                    <td data-bind="text:FechaFin"></td>
+                                    <td data-bind="text:NumeroNoches"></td>
+                                    <td data-bind="text:HabitacionNumeroNombre"></td>
+                                    <td data-bind="text:HabitacionCategoria"></td>
+                                    <td data-bind="text:HabitacionTarifa"></td>
+                                    @if (!User.IsInRole("Enfermeria") && !User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
+                                    {
+                                        <td data-bind="text:HabitacionValorNoche"></td>
+                                    }
+                                    <td data-bind="text:HabitacionNumeroCamas"></td>
+                                    <td data-bind="text:Observaciones"></td>
+                                    @if (!User.IsInRole("Enfermeria") && !User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
+                                    {
+                                        <td data-bind="text:Precio"></td>
+                                    }
+                                    <td class="text-nowrap">
+    <button class="btn btn-xs btn-warning"
+            title="Editar tarifa de la estancia"
+            data-bind="click: $root.abrirModalEditarTarifaEstancia">
+        <i class="fa fa-tag"></i> Editar tarifa
+    </button>
+</td>
+                                </tr>
+                                <!--/ko-->
+                            </tbody>
+                            <tfoot>
+                                @if (!User.IsInRole("Enfermeria") && !User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
+                                {
+                                    <tr class="fila-total bg-dark">
+                                        <td colspan="9" class="table-dark"><b>TOTAL</b></td>
+                                        <td class="table-dark"><b>Q <span data-bind="text:valorTotalRegistrosHospitalizacion"></span></b></td>
+                                    </tr>
+                                }
+                            </tfoot>
+                        </table>
+                    </div>
+                    <!--/ko-->
+
+                    <!--ko ifnot: ko.utils.unwrapObservable(registrosHospitalizacion).length > 0 -->
+                    <div class="alert alert-info mt-3 mb-0" role="alert">
+                        Este paciente a&uacute;n no tiene hospitalizaci&oacute;n cargada.
+                    </div>
+                    <!--/ko-->
+                </div>
+
+                <!-- Sección: Historial de Cambios de Habitación -->
+                <div class="mb-3 border rounded p-3" style="background-color: #f8f9fa;">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <h6 class="mb-0 font-weight-bold">Historial de Cambios de Habitaci&oacute;n</h6>
+                    </div>
+
+                    <!-- ko if: ko.utils.unwrapObservable(historialCambiosHabitacion).length > 0 -->
+                    <div class="table-responsive mt-3">
+                        <table class="table table-hover table-sm table-bordered" id="tabla-producto-historico" style="background-color: #ffffff;">
+                            <thead>
+                                <tr class="table-light">
+                                    <th scope="col">Fecha de Cambio</th>
+                                    <th scope="col">N&uacute;mero de noches</th>
+                                    <th scope="col">Habitaci&oacute;n</th>
+                                    <th scope="col">Categoria</th>
+                                    <th scope="col">Tarifa</th>
+                                    <th scope="col">Valor noche</th>
+                                    <th scope="col">Total</th>
+                                    <th scope="col">Acciones</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                <!-- ko foreach: historialCambiosHabitacion -->
+                                <tr>
+                                    <!-- Fecha formateada desde KO (propiedad calculada en el VM) -->
+                                    <td data-bind="text: FechaCambioTexto"></td>
+                                    <td data-bind="text: Dias"></td>
+                                    <td data-bind="text: Habitacion"></td>
+                                    <td data-bind="text: Categoria"></td>
+                                    <td data-bind="text: Tarifa"></td>
+                                    <td data-bind="text: ValorTarifa"></td>
+                                    <td data-bind="text: ValorTotal"></td>
+                                    <td class="text-nowrap">
+                                        <button class="btn btn-xs btn-warning mr-1"
+                                                title="Modificar tarifa / días"
+                                                data-bind="click: $root.abrirModalEditarCambioHabitacion">
+                                            <i class="fa fa-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-xs btn-danger"
+                                                title="Eliminar registro"
+                                                data-bind="click: $root.eliminarCambioHabitacion">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <!-- /ko -->
+                            </tbody>
+                            <tfoot>
+                                <tr class="fila-total bg-dark">
+                                    <td colspan="7" class="table-dark"><b>TOTAL</b></td>
+                                    <td class="table-dark">
+                                        <b>Q <span data-bind="text: valorTotalRegistrosHospitalizacionHistorial"></span></b>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <!-- /ko -->
+
+                    <!-- ko ifnot: ko.utils.unwrapObservable(historialCambiosHabitacion).length > 0 -->
+                    <div class="alert alert-info mt-3 mb-0" role="alert">
+                        Este paciente no ha tenido cambios de habitaci&oacute;n.
+                    </div>
+                    <!-- /ko -->
+                </div>
+                <hr />
+                <!-- Sección: Servicios -->
+                <div class="mb-3 border rounded p-3" style="background-color: #f8f9fa;">
+
+                <div class="d-flex align-items-center justify-content-center">
+                <h6 class="mb-0 font-weight-bold">Servicios</h6>
+                </div>
+
+                @if (!usuarioAdmisiones)
+                {
+                @if (!Model.HospitalizacionFinalizada &&
+                        !User.IsInRole("Medico General") &&
+                        !User.IsInRole("Coordinador Laboratorio") &&
+                        !User.IsInRole("Tecnico laboratorio"))
+                {
+                    <div class="mt-3 p-3 bg-white border rounded">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-sm-12 col-md-6 col-lg-3">
+                                <label class="font-weight-bold">Servicio</label>
+                                <select class="select2bs4 form-control"
+                                        data-bind="options: serviciosExistentes,
+                                                    value: servicioAgregarSeleccionado,
+                                                    optionsText: 'Nombre'">
+                                </select>
+                            </div>
+
+                            <div class="col-sm-12 col-md-6 col-lg-3">
+                                <label class="font-weight-bold">Precio</label>
+                                <select class="select2bs4 form-control"
+                                        data-bind="options: valoresServicioAgregar,
+                                                    value: valorServicioSeleccionado,
+                                                    optionsText: 'PrecioMostrar'">
+                                </select>
+                            </div>
+
+                            <div class="col-sm-12 col-md-6 col-lg-3">
+                                <label class="font-weight-bold">Cantidad</label>
+                                <input class="form-control"
+                                        type="number"
+                                        min="1"
+                                        data-bind="value: cantidadServicioAgregar" />
+                            </div>
+
+                            <div class="col-sm-12 col-md-6 col-lg-3">
+                                <button class="btn btn-primary w-100"
+                                        data-bind="click: agregarServicio">
+                                    Agregar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+                }
+
+                <!--ko if: ko.utils.unwrapObservable(serviciosHospitalizacion).length > 0 -->
+                <div class="table-responsive mt-3">
+                <table class="table table-hover table-sm table-bordered" id="tabla-servicios" style="background-color: #ffffff;">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">Fecha y Hora</th>
+                            <th scope="col">Nombre</th>
+                            <th scope="col">Cantidad</th>
+                            @if (!User.IsInRole("Medico General") &&
+                                    !User.IsInRole("Coordinador Laboratorio") &&
+                                    !User.IsInRole("Tecnico laboratorio"))
+                            {
+                                <th scope="col">Precio</th>
+                                <th scope="col">Subtotal</th>
+                            }
+                            @if (!usuarioAdmisiones)
+                            {
+                                <th></th>
+                            }
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <!--ko foreach: serviciosHospitalizacion-->
+                        <tr>
+                            <td data-bind="text: FechaHoraAplicacion"></td>
+                            <td data-bind="text: Nombre"></td>
+                            <td data-bind="text: Cantidad"></td>
+                            @if (!User.IsInRole("Medico General") &&
+                                    !User.IsInRole("Coordinador Laboratorio") &&
+                                    !User.IsInRole("Tecnico laboratorio"))
+                            {
+                                <td data-bind="text: Precio"></td>
+                                <td data-bind="text: Subtotal"></td>
+                            }
+                            @if (!usuarioAdmisiones &&
+                                    !User.IsInRole("Medico General") &&
+                                    !User.IsInRole("Coordinador Laboratorio") &&
+                                    !User.IsInRole("Tecnico laboratorio"))
+                            {
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-danger"
+                                            data-bind="click: $root.eliminarServicio"
+                                            title="Eliminar servicio">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </td>
+                            }
+                        </tr>
+                        <!--/ko-->
+                    </tbody>
+
+                    @if (!User.IsInRole("Enfermeria") &&
+                            !User.IsInRole("Medico General") &&
+                            !User.IsInRole("Coordinador Laboratorio") &&
+                            !User.IsInRole("Tecnico laboratorio"))
+                    {
+                        <tfoot>
+                            <tr class="bg-dark">
+                                <td colspan="3" class="table-dark"><b>TOTAL</b></td>
+                                <td colspan="2" class="table-dark">
+                                    <b>Q <span data-bind="text: valorTotalServicios"></span></b>
+                                </td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    }
+                </table>
+                </div>
+                <!--/ko-->
+
+                <!--ko ifnot: ko.utils.unwrapObservable(serviciosHospitalizacion).length > 0 -->
+                <div class="alert alert-info mt-3 mb-0" role="alert">
+                No hay servicios agregados a esta hospitalización.
+                </div>
+                <!--/ko-->
+
+                </div>
+                <hr />
+                <!-- Sección: Dietas -->
+                <div class="mb-3 border rounded p-3" style="background-color: #f8f9fa;">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <h6 class="mb-0 font-weight-bold">Dietas</h6>
+                    </div>
+
+                    @if (!usuarioAdmisiones)
+                    {
+                        @if (!Model.HospitalizacionFinalizada &&
+                            !User.IsInRole("Medico General") &&
+                            !User.IsInRole("Coordinador Laboratorio") &&
+                            !User.IsInRole("Tecnico laboratorio"))
+                        {
+                            <div class="mt-3 p-3 bg-white border rounded">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <label class="font-weight-bold mb-1">Agregar dieta</label>
+                                    </div>
+
+                                    <div class="col-md-12">
+                                        <div class="alert alert-info py-2 mb-2" id="texto-cargando-dietas" style="display:none">
+                                            Cargando dietas...
+                                        </div>
+
+                                        <div class="alert alert-danger py-2 mb-2" id="texto-error-consultar-dietas" style="display:none">
+                                            Error de conexion.
+                                            <a href="#" data-bind="click: consultarRecetasExistentes">Reintentar</a>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="mb-1">Seleccione la dieta</label>
+                                        <select class="select2bs4 form-control"
+                                                data-bind="options: recetasExistentes,
+                                                        optionsText: 'NombreReceta',
+                                                        optionsValue: 'Id',
+                                                        value: recetaIdAgregar">
+                                        </select>
+                                    </div>
+
+
+                                    <div class="col-md-4">
+                                        <label class="mb-1">Ingredientes</label>
+                                        <input class="form-control"
+                                            type="text"
+                                            data-bind="value: ingredientesRecetaAgregar"
+                                            readonly />
+                                    </div>
+
+                                    <div class="col-md-2">
+                                        <label class="mb-1">Cantidad</label>
+                                        <input class="form-control"
+                                            type="text"
+                                            data-bind="value: cantidadRecetaAgregar" />
+                                    </div>
+
+                                    <div class="col-md-2">
+                                        <label class="mb-1">Indicaciones</label>
+                                        <input class="form-control"
+                                            type="text"
+                                            data-bind="value: indicacionesRecetaAgregar" />
+                                    </div>
+
+                                    <div class="col-md-12 text-right mt-2">
+                                        <button class="btn btn-primary" data-bind="click: agregarReceta">Agregar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+
+                    <div class="mt-3">
+                        <div class="alert alert-info py-2 mb-2" id="texto-cargando-dietas-formuladas" style="display:none">
+                            Cargando dietas formuladas...
+                        </div>
+
+                        <div class="alert alert-danger py-2 mb-2" id="texto-error-consultar-dietas-formuladas" style="display:none">
+                            Error de conexion.
+                            <a href="#" data-bind="click: consultarReceta">Reintentar</a>
+                        </div>
+
+                        <!--ko if: ko.utils.unwrapObservable(listaRecetas).length > 0 -->
+                        <div class="table-responsive mt-3">
+                            <table class="table table-hover table-sm table-bordered"
+                            id="tabla-producto-dietas"
+                            style="background-color: #ffffff;">
+                            <thead>
+                                <tr class="table-light">
+                                    <th scope="col">Nombre</th>
+                                    <th scope="col">Categoría</th>
+                                    <th scope="col">
+                                        Menú
+                                        <div class="small mt-1">
+                                            <a href="javascript:void(0)" id="dietas-menu-expand-all">Abrir todos</a>
+                                            <span class="mx-1">|</span>
+                                            <a href="javascript:void(0)" id="dietas-menu-collapse-all">Cerrar todos</a>
+                                        </div>
+                                    </th>
+                                    <th scope="col">Ingredientes</th>
+                                    <th scope="col">Indicaciones</th>
+                                    <th scope="col">Cantidad agregada</th>
+
+                                    @if (!User.IsInRole("Enfermeria") &&
+                                        !User.IsInRole("Medico General") &&
+                                        !User.IsInRole("Coordinador Laboratorio") &&
+                                        !User.IsInRole("Tecnico laboratorio"))
+                                    {
+                                        <th scope="col">Valor Unitario</th>
+                                    }
+                                    @if (!usuarioAdmisiones)
+                                    {
+                                        <th scope="col"></th>
+                                    }
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                <!--ko foreach: listaRecetas-->
+                                <tr>
+                                    <td data-bind="text: NombreReceta"></td>
+
+                                    <!-- Categoría -->
+                                    <td data-bind="text: CategoriaNombre"></td>
+
+                                    <!-- Menú (lista de menús + collapse para ingredientes del menú) -->
+                                    <td>
+                                        <!--ko if: Menus && Menus.length > 0 -->
+                                        <div data-bind="foreach: Menus">
+                                            <div class="mb-1">
+                                                <a data-toggle="collapse"
+                                                role="button"
+                                                aria-expanded="false"
+                                                data-bind="text: Nombre,
+                                                            attr: {
+                                                                href: '#collapse-menu-' + $parent.Id + '-' + Id,
+                                                                'aria-controls': 'collapse-menu-' + $parent.Id + '-' + Id
+                                                            }"
+                                                style="cursor:pointer;">
+                                                </a>
+
+                                                <div class="collapse collapse-menu-dietas mt-1"
+                                                    data-bind="attr: { id: 'collapse-menu-' + $parent.Id + '-' + Id }">
+                                                    <div class="border rounded p-2">
+                                                        <div><b>Ingredientes:</b></div>
+                                                        <div data-bind="text: Ingredientes"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!--/ko-->
+
+                                        <!--ko ifnot: Menus && Menus.length > 0 -->
+                                        <span>-</span>
+                                        <!--/ko-->
+                                    </td>
+
+                                    <!-- Ingredientes de la receta -->
+                                    <td data-bind="text: Ingredientes"></td>
+
+                                    <td data-bind="text: Indicaciones"></td>
+                                    <td data-bind="text: Cantidad"></td>
+
+                                    @if (!User.IsInRole("Enfermeria") &&
+                                        !User.IsInRole("Medico General") &&
+                                        !User.IsInRole("Coordinador Laboratorio") &&
+                                        !User.IsInRole("Tecnico laboratorio"))
+                                    {
+                                        <td data-bind="text: PrecioVenta"></td>
+                                    }
+
+                                    @if (!usuarioAdmisiones)
+                                    {
+                                        <td class="text-center">
+                                            <button class="btn btn-sm btn-danger"
+                                                    data-bind="click: $root.eliminarReceta"
+                                                    title="Eliminar dieta">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    }
+                                </tr>
+                                <!--/ko-->
+                            </tbody>
+
+                            <tfoot>
+                                @if (!User.IsInRole("Enfermeria") &&
+                                    !User.IsInRole("Medico General") &&
+                                    !User.IsInRole("Coordinador Laboratorio") &&
+                                    !User.IsInRole("Tecnico laboratorio"))
+                                {
+                                    <tr class="fila-total bg-dark">
+                                        <td colspan="6" class="table-dark"><b>TOTAL DIETAS APLICADAS</b></td>
+                                        <td colspan="2" class="table-dark"><b>Q <span data-bind="text: valorTotalDietas"></span></b></td>
+                                    </tr>
+                                }
+                            </tfoot>
+                        </table>
+
+                        
+
+                        </div>
+                        <!--/ko-->
+
+                        <!--ko ifnot: ko.utils.unwrapObservable(listaRecetas).length > 0 -->
+                        <div class="alert alert-info mt-3 mb-0" role="alert">
+                            No hay dietas agregadas.
+                        </div>
+                        <!--/ko-->
+                    </div>
+
+                </div>
+                <hr />
+                <!-- Sección: Solictud de medicamentos -->
+                <div class="mb-3 border rounded p-3" style="background-color: #f8f9fa;">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <h6 class="mb-0 font-weight-bold">Medicamentos / Insumos Médicos</h6>
+                    </div>
+
+                    <!-- Solicitudes de Medicamentos -->
+                    <div class="mt-3 bg-white border rounded">
+                        <div class="d-flex align-items-center justify-content-between p-3"
+                            style="cursor: pointer;"
+                            onclick="toggleSolicitudes()">
+                            <h6 class="mb-0 font-weight-bold">Solicitudes de Medicamentos</h6>
+                            <button id="toggleButton" class="btn btn-link p-0" type="button" style="font-size: 1.5rem;">⬇️</button>
+                        </div>
+
+                        <div id="solicitudesMedicamentos" class="d-none p-3 pt-0">
+                            @if (!User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
+                            {
+                                <button class="btn btn-primary mb-3" data-bind="click: registrarSolicitudesDespachadas">
+                                    ✅ Registrar Medicamentos Recibidos
+                                </button>
+                            }
+
+                            <div class="table-responsive mt-3">
+                                <table class="table table-hover table-sm table-bordered text-center"
+                                    id="tabla-solicitudes"
+                                    style="background-color: #ffffff;">
+                                    <thead>
+                                        <tr class="table-light">
+                                            <th scope="col">ID</th>
+                                            <th scope="col">Producto</th>
+                                            <th scope="col">Cantidad</th>
+                                            <th scope="col">Precio</th>
+                                            <th scope="col">Indicaciones</th>
+                                            <th scope="col">Administración</th>
+                                            <th scope="col">Frecuencia</th>
+                                            <th scope="col">Estado</th>
+                                            <th scope="col">Solicitud</th>
+                                            <th scope="col">Despacho</th>
+                                            @if (!User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
+                                            {
+                                                <th scope="col">Acciones</th>
+                                            }
+                                        </tr>
+                                    </thead>
+
+                                    <tbody data-bind="foreach: solicitudesDeMedicamentos">
+                                        <tr>
+                                            <td data-bind="text: id"></td>
+                                            <td data-bind="text: nombreProducto"></td>
+                                            <td data-bind="text: cantidad"></td>
+                                            <td data-bind="text: precio"></td>
+                                            <td data-bind="text: indicaciones"></td>
+                                            <td data-bind="text: viaAdministracion"></td>
+                                            <td data-bind="text: frecuenciaAdministracion"></td>
+                                            <td>
+                                                <span class="badge"
+                                                    data-bind="text: estado(),
+                                                                css: { 'badge-warning': estado() === 'En espera',
+                                                                        'badge-success': estado() === 'Despachado',
+                                                                        'badge-danger': estado() === 'Rechazado' }"></span>
+                                            </td>
+                                            <td data-bind="text: fechaSolicitudFormatted"></td>
+                                            <td data-bind="text: fechaDespachoFormatted"></td>
+
+                                            @if (!User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
+                                            {
+                                                <td>
+                                                    <button class="btn btn-sm btn-danger"
+                                                            data-bind="click: function() { $parent.eliminarSolicitudDeMedicamento($data.id) },
+                                                                    disable: estado() !== 'En espera'">
+                                                        Eliminar
+                                                    </button>
+                                                </td>
+                                            }
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Controles de paginación (IDs adaptados) -->
+                            <div id="pagination-controls-solicitudes" class="text-center mt-2">
+                                <button class="btn btn-secondary btn-sm prev">Anterior</button>
+                                <span id="page-info-solicitudes" class="mx-2"></span>
+                                <button class="btn btn-secondary btn-sm next">Siguiente</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script>
+                        // Alterna visibilidad de solicitudes y carga datos al mostrar.
+                        function toggleSolicitudes() {
+                            toggleSection("solicitudesMedicamentos", "toggleButton", function () {
+                                detallesVm.obtenerSolicitudesPorHospitalizacion();
+                            });
+                        }
+
+                        document.addEventListener("DOMContentLoaded", function () {
+                            setupTablePagination("tabla-solicitudes", "pagination-controls-solicitudes", "page-info-solicitudes", 4);
+                        });
+                    </script>
+
+                    <!-- Medicamentos Agregados -->
+                    <div class="mt-3">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <h6 class="mb-0 font-weight-bold">Medicamentos Agregados</h6>
+                        </div>
+
+                        <div class="table-responsive mt-3">
+                            <table class="table table-hover table-sm table-bordered tabla-producto-medicamentos-agregados"
+                                id="tabla-producto-medicamentos-agregados"
+                                style="background-color: #ffffff;">
+                                <thead>
+                                    <tr class="table-light">
+                                        <th scope="col">Nombre</th>
+                                        <th scope="col">Indicaciones</th>
+                                        <th scope="col">Vía de administración</th>
+                                        <th scope="col">Frecuencia de administración</th>
+                                        <th scope="col">Cantidad formulada</th>
+                                        <th scope="col">Cantidad aplicada</th>
+                                        @if (!User.IsInRole("Enfermeria") && !User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
+                                        {
+                                            <th scope="col">Precio</th>
+                                            <th scope="col">Subtotal aplicados</th>
+                                        }
+                                        @if (!usuarioAdmisiones)
+                                        {
+                                            <th scope="col"></th>
+                                        }
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    <!--ko foreach: medicamentosHospitalizacion-->
+                                    <!--ko if: TipoProductoId === 1-->
+                                    <tr>
+                                        <td data-bind="text: Nombre"></td>
+                                        <td data-bind="text: Indicaciones"></td>
+                                        <td data-bind="text: ViaAdministracion"></td>
+                                        <td data-bind="text: FrecuenciaAdministracion"></td>
+                                        <td data-bind="text: Cantidad"></td>
+                                        <td data-bind="text: CantidadAplicada"></td>
+
+                                        @if (!User.IsInRole("Enfermeria") && !User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
+                                        {
+                                            <td data-bind="text: Precio"></td>
+                                            <td data-bind="text: Subtotal"></td>
+                                        }
+
+                                        @if (!usuarioAdmisiones && !User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
+                                        {
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-danger" data-bind="click: $root.eliminarMedicamento" title="Eliminar medicamento">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        }
+                                    </tr>
+                                    <!--/ko-->
+                                    <!--/ko-->
+
+                                    <!--ko if: medicamentosHospitalizacion().length == 0-->
+                                    <tr>
+                                        <td colspan="9"><i>No hay medicamentos agregados</i></td>
+                                    </tr>
+                                    <!--/ko-->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Controles de paginación (clases existentes + IDs adaptados) -->
+                        <div class="pagination-controls-producto-medicamentos-agregados text-center mt-2" id="pagination-controls-producto-medicamentos-agregados">
+                            <button class="btn btn-secondary btn-sm prev">Anterior</button>
+                            <span class="page-info-producto-medicamentos-agregados mx-2" id="page-info-producto-medicamentos-agregados"></span>
+                            <button class="btn btn-secondary btn-sm next">Siguiente</button>
+                        </div>
+
+                        <script>
+                            document.addEventListener("DOMContentLoaded", function () {
+                                // true => usa clases (tabla-producto-medicamentos-agregados / pagination-controls... / page-info...)
+                                setupTablePagination("tabla-producto-medicamentos-agregados", "pagination-controls-producto-medicamentos-agregados", "page-info-producto-medicamentos-agregados", 4, true);
+                            });
+                        </script>
+                    </div>
+
+                    <!-- Equipos Médicos Agregados (oculto, pero IDs adaptados igualmente) -->
+                    <div class="mt-3" style="display: none;">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <h6 class="mb-0 font-weight-bold">Equipos Médicos Agregados</h6>
+                        </div>
+
+                        <div class="table-responsive mt-3">
+                            <table class="table table-hover table-sm table-bordered"
+                                id="tabla-producto-equipos-medicos"
+                                style="background-color: #ffffff;">
+                                <thead>
+                                    <tr class="table-light">
+                                        <th scope="col">Nombre</th>
+                                        <th scope="col">Indicaciones</th>
+                                        <th scope="col">Cantidad de equipos usados</th>
+                                        <th scope="col">Cantidad de equipos liberados</th>
+                                        @if (!User.IsInRole("Enfermeria") && !User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
+                                        {
+                                            <th scope="col">Precio</th>
+                                            <th scope="col">Subtotal usados</th>
+                                        }
+                                        @if (!usuarioAdmisiones)
+                                        {
+                                            <th scope="col"></th>
+                                        }
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    <!--ko foreach: medicamentosHospitalizacion-->
+                                    <!--ko if: TipoProductoId === 3-->
+                                    <tr>
+                                        <td data-bind="text: Nombre"></td>
+                                        <td data-bind="text: Indicaciones"></td>
+                                        <td data-bind="text: Cantidad"></td>
+                                        <td data-bind="text: CantidadAplicada"></td>
+                                        @if (!User.IsInRole("Enfermeria") && !User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
+                                        {
+                                            <td data-bind="text: Precio"></td>
+                                            <td data-bind="text: Subtotal"></td>
+                                        }
+                                        @if (!usuarioAdmisiones && !User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
+                                        {
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-danger" data-bind="click: $root.eliminarMedicamento">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        }
+                                    </tr>
+                                    <!--/ko-->
+                                    <!--/ko-->
+
+                                    <!--ko if: medicamentosHospitalizacion().length == 0-->
+                                    <tr>
+                                        <td colspan="7"><i>No hay equipos médicos agregados</i></td>
+                                    </tr>
+                                    <!--/ko-->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Insumos Médicos Agregados -->
+                    <div class="mt-3">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <h6 class="mb-0 font-weight-bold">Insumos Médicos Agregados</h6>
+                        </div>
+
+                        <div class="table-responsive mt-3">
+                            <table class="table table-hover table-sm table-bordered tabla-producto-insumos-medicos"
+                                id="tabla-producto-insumos-medicos"
+                                style="background-color: #ffffff;">
+                                <thead>
+                                    <tr class="table-light">
+                                        <th scope="col">Nombre</th>
+                                        <th scope="col">Indicaciones</th>
+                                        <th scope="col">Cantidad de equipos usados</th>
+                                        <th scope="col">Cantidad de equipos liberados</th>
+                                        @if (!User.IsInRole("Enfermeria") && !User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
+                                        {
+                                            <th scope="col">Precio</th>
+                                            <th scope="col">Subtotal usados</th>
+                                        }
+                                        @if (!usuarioAdmisiones)
+                                        {
+                                            <th scope="col"></th>
+                                        }
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    <!--ko foreach: medicamentosHospitalizacion-->
+                                    <!--ko if: TipoProductoId === 2-->
+                                    <tr>
+                                        <td data-bind="text: Nombre"></td>
+                                        <td data-bind="text: Indicaciones"></td>
+                                        <td data-bind="text: Cantidad"></td>
+                                        <td data-bind="text: CantidadAplicada"></td>
+                                        @if (!User.IsInRole("Enfermeria") && !User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
+                                        {
+                                            <td data-bind="text: Precio"></td>
+                                            <td data-bind="text: Subtotal"></td>
+                                        }
+                                        @if (!usuarioAdmisiones && !User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
+                                        {
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-danger" data-bind="click: $root.eliminarMedicamento">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        }
+                                    </tr>
+                                    <!--/ko-->
+                                    <!--/ko-->
+
+                                    <!--ko if: medicamentosHospitalizacion().length == 0-->
+                                    <tr>
+                                        <td colspan="9"><i>No hay insumos médicos agregados</i></td>
+                                    </tr>
+                                    <!--/ko-->
+                                </tbody>
+
+                                <tfoot>
+                                    @if (!User.IsInRole("Enfermeria") && !User.IsInRole("Medico General") && !User.IsInRole("Coordinador Laboratorio") && !User.IsInRole("Tecnico laboratorio"))
+                                    {
+                                        <tr class="fila-total bg-dark">
+                                            <td colspan="5" class="table-dark"><b>TOTAL MEDICAMENTOS / INSUMOS MÉDICOS</b></td>
+                                            <td colspan="2" class="table-dark"><b>Q <span data-bind="text: valorTotalMedicamentos"></span></b></td>
+                                        </tr>
+                                    }
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <!-- Controles de paginación (clases existentes + IDs adaptados) -->
+                        <div class="pagination-controls-producto-insumos-medicos text-center mt-2" id="pagination-controls-producto-insumos-medicos">
+                            <button class="btn btn-secondary btn-sm prev">Anterior</button>
+                            <span class="page-info-producto-insumos-medicos mx-2" id="page-info-producto-insumos-medicos"></span>
+                            <button class="btn btn-secondary btn-sm next">Siguiente</button>
+                        </div>
+
+                        <script>
+                            document.addEventListener("DOMContentLoaded", function () {
+                                setupTablePagination("tabla-producto-insumos-medicos", "pagination-controls-producto-insumos-medicos", "page-info-producto-insumos-medicos", 4, true);
+                            });
+                        </script>
+                    </div>
+
+                </div>
+                <hr />
+                
+               <!-- Sección: Paquetes de hospitalización (MEJORADA) -->
+<div class="mb-3 border rounded p-3" style="background-color: #f8f9fa;">
+    <div class="d-flex align-items-center justify-content-between flex-wrap mb-3">
+        <h6 class="mb-0 font-weight-bold">Paquetes de hospitalización</h6>
+        <span class="badge badge-secondary" data-bind="text: paquetesHospitalizacion().length + ' paquete(s)'"></span>
+    </div>
+
+    @if (!Model.HospitalizacionFinalizada)
+    {
+        <div class="mt-3 p-3 bg-white border rounded shadow-sm">
+            <div class="row">
+                <div class="col-md-12">
+                    <label class="font-weight-bold mb-1">Agregar paquete</label>
+                </div>
+                <div class="col-md-12">
+                    <div class="alert alert-danger py-2 mb-2" id="texto-error-consultar-paquetes-disponibles" style="display:none">
+                        Error de conexión al consultar paquetes disponibles.
+                        <a href="#" data-bind="click: consultarPaquetesExistentes">Reintentar</a>
+                    </div>
+                    <div class="alert alert-info py-2 mb-2" id="texto-cargando-paquetes-disponibles" style="display:none">
+                        Cargando paquetes disponibles...
+                    </div>
+                </div>
+                <div class="col-md-10">
+                    <label class="mb-1">Seleccione el paquete</label>
+                    <select class="select2bs4 form-control"
+                            data-bind="options: paquetesExistentes,
+                                        value: paqueteAgregarSeleccionado,
+                                        optionsText: 'Nombre'">
+                    </select>
+                </div>
+                <div class="col-md-2 text-right">
+                    <label class="mb-1 d-block">&nbsp;</label>
+                    <button class="btn btn-primary btn-block" data-bind="click: agregarPaquete">
+                        Agregar
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Listado de paquetes agregados -->
+    <div class="mt-3">
+        <div class="alert alert-info py-2 mb-2" id="texto-cargando-paquetes-hospitalizacion" style="display:none">
+            Cargando paquetes agregados...
+        </div>
+        <div class="alert alert-danger py-2 mb-2" id="texto-error-carga-paquetes-hospitalizacion" style="display:none">
+            Error de conexión al consultar los paquetes agregados.
+            <a href="#" data-bind="click: consultarPaquetesHospitalizacion">Reintentar</a>
+        </div>
+
+        <!--ko if: ko.utils.unwrapObservable(paquetesHospitalizacion).length > 0 -->
+        <div class="table-responsive">
+            <table class="table table-hover table-sm table-bordered bg-white rounded">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Fecha y hora</th>
+                        <th>Código</th>
+                        <th>Nombre</th>
+                        <th>Valor</th>
+                        <th class="text-center"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!--ko foreach: paquetesHospitalizacion-->
+                    <tr>
+                        <td data-bind="text: FechaHora"></td>
+                        <td data-bind="text: Codigo"></td>
+                        <td data-bind="text: Nombre"></td>
+                        <td data-bind="text: Precio"></td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-danger" data-bind="click: $root.eliminarPaquete" title="Eliminar paquete">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <!--/ko-->
+                </tbody>
+                <tfoot>
+                    <tr class="bg-dark text-white">
+                        <td colspan="3" class="font-weight-bold">TOTAL</td>
+                        <td colspan="2" class="font-weight-bold">Q <span data-bind="text: valorTotalPaquetes"></span></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <!--/ko-->
+
+        <!--ko ifnot: ko.utils.unwrapObservable(paquetesHospitalizacion).length > 0 -->
+        <div class="alert alert-info mt-2 mb-0" role="alert">
+            <i class="fas fa-info-circle"></i> No hay paquetes agregados a esta hospitalización.
+        </div>
+        <!--/ko-->
+    </div>
+
+    <!-- Detalle de paquetes: Pestañas mejoradas -->
+    <div class="mt-4">
+        <!-- Nav tabs -->
+        <ul class="nav nav-tabs card-header-tabs" id="paqueteDetalleTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link" data-toggle="tab" href="#tabProductos" role="tab" aria-controls="tabProductos"
+                   data-bind="click: function(){ mostrarTabProductos(true); mostrarTabServicios(false); mostrarTabLaboratorios(false); }">
+                    <i class="fas fa-capsules"></i> Productos
+                    <span class="badge badge-primary ml-1" data-bind="text: totalProductosEnPaquetes()"></span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-toggle="tab" href="#tabServicios" role="tab" aria-controls="tabServicios"
+                   data-bind="click: function(){ mostrarTabServicios(true); mostrarTabProductos(false); mostrarTabLaboratorios(false); }">
+                    <i class="fas fa-stethoscope"></i> Servicios
+                    <span class="badge badge-primary ml-1" data-bind="text: totalServiciosEnPaquetes()"></span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-toggle="tab" href="#tabLaboratorios" role="tab" aria-controls="tabLaboratorios"
+                   data-bind="click: function(){ mostrarTabLaboratorios(true); mostrarTabProductos(false); mostrarTabServicios(false); }">
+                    <i class="fas fa-flask"></i> Laboratorios
+                    <span class="badge badge-primary ml-1" data-bind="text: totalLaboratoriosEnPaquetes()"></span>
+                </a>
+            </li>
+        </ul>
+
+        <!-- Tab panes -->
+        <div class="tab-content p-3 bg-white border rounded-bottom">
+            <!-- Productos -->
+            <div class="tab-pane" data-bind="css: { active: mostrarTabProductos() }" id="tabProductos" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover table-sm mb-0">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Cantidad</th>
+                                <th>Precio</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!--ko foreach: paquetesHospitalizacion-->
+                            <!--ko foreach: $data.Productos-->
+                            <tr>
+                                <td data-bind="text: Codigo"></td>
+                                <td data-bind="text: Nombre"></td>
+                                <td data-bind="text: Cantidad"></td>
+                                <td data-bind="text: Precio"></td>
+                            </tr>
+                            <!--/ko-->
+                            <!--/ko-->
+                            <!--ko if: totalProductosEnPaquetes() === 0-->
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-3">
+                                    <i class="fas fa-box-open"></i> No hay productos en los paquetes agregados.
+                                </td>
+                            </tr>
+                            <!--/ko-->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Servicios -->
+            <div class="tab-pane" data-bind="css: { active: mostrarTabServicios() }" id="tabServicios" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover table-sm mb-0">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Cantidad</th>
+                                <th>Precio</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!--ko foreach: paquetesHospitalizacion-->
+                            <!--ko foreach: $data.Servicios-->
+                            <tr>
+                                <td data-bind="text: Codigo"></td>
+                                <td data-bind="text: Nombre"></td>
+                                <td data-bind="text: Cantidad"></td>
+                                <td data-bind="text: Precio"></td>
+                            </tr>
+                            <!--/ko-->
+                            <!--/ko-->
+                            <!--ko if: totalServiciosEnPaquetes() === 0-->
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-3">
+                                    <i class="fas fa-hand-holding-heart"></i> No hay servicios en los paquetes agregados.
+                                </td>
+                            </tr>
+                            <!--/ko-->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Laboratorios -->
+            <div class="tab-pane" data-bind="css: { active: mostrarTabLaboratorios() }" id="tabLaboratorios" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover table-sm mb-0">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Cantidad</th>
+                                <th>Precio</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!--ko foreach: paquetesHospitalizacion-->
+                            <!--ko foreach: $data.Laboratorios-->
+                            <tr>
+                                <td data-bind="text: Codigo"></td>
+                                <td data-bind="text: Nombre"></td>
+                                <td data-bind="text: Cantidad"></td>
+                                <td data-bind="text: Precio"></td>
+                            </tr>
+                            <!--/ko-->
+                            <!--/ko-->
+                            <!--ko if: totalLaboratoriosEnPaquetes() === 0-->
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-3">
+                                    <i class="fas fa-microscope"></i> No hay laboratorios en los paquetes agregados.
+                                </td>
+                            </tr>
+                            <!--/ko-->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="mdl-editar-cambio-habitacion" style="display:none;" title="Modificar tarifa / días">
+    <div class="form-group mt-2">
+        <label>Número de noches</label>
+        <input type="number" class="form-control" min="1"
+               data-bind="value: editDiasCambio" />
+    </div>
+    
+    <div class="form-group mt-2">
+        <label>Tarifa por noche</label>
+        <select class="form-control" data-bind="
+            options: tarifasDisponibles,
+            optionsText: 'textoMostrar',
+            optionsValue: 'valor',
+            value: editTarifaCambio,
+            optionsCaption: '-- Seleccione una tarifa --'">
+        </select>
+        <small class="form-text text-muted">Se cargan automáticamente las tarifas registradas para esta habitación.</small>
+    </div>
+
+    <div class="alert alert-info mt-3 p-2 small">
+        <strong>Total calculado:</strong>
+        Q <span data-bind="text: (parseFloat(editTarifaCambio()) * parseInt(editDiasCambio()) || 0).toFixed(2)"></span>
+    </div>
+</div>
+
+<div id="mdl-editar-tarifa-estancia" style="display:none;" title="Cambiar tarifa de hospitalización">
+    <div class="form-group">
+        <label>Seleccione nueva tarifa por noche</label>
+        <select class="form-control" data-bind="
+            options: tarifasEstancia,
+            optionsText: 'textoMostrar',
+            optionsValue: 'id',
+            value: nuevaTarifaEstanciaId,
+            optionsCaption: '-- Seleccione una tarifa --'">
+        </select>
+    </div>
+    <div class="alert alert-warning">
+        <strong>Efecto:</strong> Se recalculará automáticamente el total de la estancia actual y se ajustará la cuenta por cobrar.
+    </div>
+</div>

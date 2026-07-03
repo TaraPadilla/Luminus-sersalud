@@ -1,0 +1,54 @@
+@model sistema.Models.HospitalizacionDetallesViewModel
+@{
+    var usuarioAdmisiones = User.IsInRole("Admisiones");
+}
+<div class="tab-pane tabs-animation fade show " id="tab-content-historial-consultas" role="tabpanel">
+    <div class="main-card mb-3 card" style="border-radius: 10px">
+        <div class="card-body">
+            <div class="form-row">
+                <div class="col-md-12">
+                    <h5><b>Historial de consultas</b></h5>
+                </div>
+                <div class="col-md-12 text-primary" style="display:none" id="texto-cargando-consultas">
+                    Cargando archivos...
+                </div>
+                <div class="col-md-12 text-danger" style="display:none" id="texto-error-consultar-consultas">
+                    Error de conexion.
+                    <a href="#" data-bind="click: consultarHistorialConsultasPaciente">Reintentar</a>
+                </div>
+                <div class="col-md-12 table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Cita - Motivo</th>
+                                <th>Servicios</th>
+                                <th>Ver</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!--ko foreach: historialConsultasPaciente-->
+                            <tr>
+                                <td data-bind="text:Fecha"></td>
+                                <td data-bind="text:CitaMotivo"></td>
+                                <td>
+                                    <!--ko foreach:ServiciosConsulta-->
+                                    <span class="badge badge-primary" data-bind="text:NombreServicio"></span><br />
+                                    <!--/ko-->
+                                </td>
+                                <td>
+                                    <a class="btn btn-primary"
+                                           data-bind="attr:{href:'/Consultas/Informacion?id='+ConsultaId}" href="#"
+                                           target="_blank">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            <!--/ko-->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

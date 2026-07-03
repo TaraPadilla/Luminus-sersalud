@@ -1,0 +1,64 @@
+@model sistema.Models.VentaBaseViewModel
+
+
+<div class="form">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <form asp-controller="Reportes" asp-action="Utilidad" method="post">
+                   <div class="form-row">
+                    <div class="col-md-6">
+                       <label>Seleccione fecha desde y hasta para reportar: </label>
+                        <div class="input-group">
+                            <input type="text" class="form-control float-right" id="reservationtime" name="fecha">
+                        </div>
+                    </div>
+                </div>
+                <br/>
+                <button type="submit" class="btn btn-primary">Ver Excel</button>
+
+                @* <a href="@Url.Action("VentasPdf","CrearPDF", new {fecha = })" class="btn btn-primary">
+                                    Ver Pdf
+                                </a> *@
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+
+<script type="text/javascript" src="~/js/moment.min.js"></script>
+<script type="text/javascript" src="~/js/daterangepicker.js"></script>
+<script type="text/javascript" src="~/js/tempusdominus-bootstrap-4.min.js"></script>
+
+<script>
+    $(function(){
+        $('.select2').select2({
+            tags: true
+        });
+        
+    $('.select2bs4').select2({
+      theme: 'bootstrap4',
+      tags: true,
+    });
+
+          $('#reservationtime').daterangepicker({
+                    timePicker: true,
+                    locale: {
+                        format: 'MM/DD/YYYY'
+                    }
+                });
+    });
+
+
+    
+</script>
+}
+
+@section css
+{
+    <link href="~/css/daterangepicker.css" rel="stylesheet">
+}

@@ -1,0 +1,122 @@
+@using Database.Shared.Paginacion;
+@using System;
+
+@model PaginacionList<Database.Shared.Models.ProductoInventario>
+
+@{
+    ViewData["Title"] = "Lista";
+}
+@await Html.PartialAsync("_MensajeExito")
+
+<br />
+<form asp-action="ProximosAVencerClinica" method="get">
+    <div class="col-md-12">
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <input type="submit" value="Buscar" class="btn btn-success"></input>
+            </div>
+            <input type="text" name="buscar" value="@ViewData["CurrentFilter"]" class="form-control"
+                   placeholder="Buscar Producto...">
+        </div>
+    </div>
+</form>
+<br />
+
+@* <div class="col-md-12">
+    <div class="position-relative form-group">
+        <a asp-controller="Productos" asp-action="" asp-route-currentFilter="@ViewData["CurrentFilter"]" class="btn btn-danger">
+            Reportes &nbsp; <i class="fas fa-file-pdf"></i>
+        </a>
+    </div>
+</div> *@
+
+
+<div class="form-row">
+    <div class="col-md-12">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="mb-0 table table-hover ">
+                        <thead>
+                            <tr>
+                                <th>Nombre Producto</th>
+                                <th>Codigo Referencia</th>
+                                <th>Fecha Vencimiento</th>
+                                <th>Vence en</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+
+                                var diferencia = (item.FechaVencimientoArticuloCompra.Value - DateTime.Now).Days;
+                                @* days >= 0 && days <= 10
+                            var abs = Math.Abs(diferencia);
+
+                            @* if(diferencia > 0 && abs >= 0 && abs <= 10)
+                            { *@
+
+                                <tr>
+                                    <td>@item.Producto.NombreProducto</td>
+                                    <td>@item.Producto.CodigoReferencia</td>
+                                    <td>@item.Producto.FechaVencimiento</td>
+                                    <td>@Math.Abs(diferencia) días</td>
+                                    <td>
+                                        @if (item.Producto.TipoProductoId == 2)
+                                        {
+                                            <a href="@Url.Action("ModificarMedicamentosVencidos","Productos", new {id = @item.Id})"
+                                               class="btn btn-warning">
+                                                Modificar
+                                            </a>
+                                            <a href="@Url.Action("EliminarMedicamentosVencidos","Productos", new {id = @item.Id,bodegaId = @item.BodegaId})"
+                                               class="btn btn-danger">
+                                                Eliminar
+                                            </a>
+                                        }
+                                        else if (item.Producto.TipoProductoId == 11)
+                                        {
+
+                                            <a href="@Url.Action("ModificarInsumosFarmacia","Productos", new {id = @item.Id})"
+                                               class="btn btn-warning">
+                                                Modificar
+                                            </a>
+                                        }
+                                    </td>
+                                </tr>
+                                @* } *@
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@{
+    var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+}
+
+
+
+<br />
+<a asp-action="ProximosAVencerClinica" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@(Model.PageIndex - 1)"
+   asp-route-currentFilter="@ViewData["CurrentFilter"]" class="btn btn-danger btn-sm @prevDisabled">
+    Anterior
+</a>
+<a asp-action="ProximosAVencerClinica" asp-route-sortOrder="@ViewData["CurrentSort"]" asp-route-pageNumber="@(Model.PageIndex + 1)"
+   asp-route-currentFilter="@ViewData["CurrentFilter"]" class="btn btn-danger btn-sm @nextDisabled" class="">
+    Siguiente
+</a>
+
+@section Scripts {
+    <script>
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip()
+        });
+    </script>
+}

@@ -1,0 +1,136 @@
+@model sistema.Models.VisitadorMedicoViewModel 
+@{
+    ViewData["Title"] = "Lista/Registro Visitadores Médicos";
+}
+
+@await Html.PartialAsync("_MensajeExito")
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="form-row">
+            <div class="col-md-12">
+                <center>
+                    <h4><b>Lista/Registro Visitadores Médicos</b></h4>
+                </center>
+                <hr />
+            </div>
+            <div>
+                <a class="btn btn-primary" asp-action="Nuevo" asp-controller="VisitadorMedico">
+                    <b>Nuevo Registro</b> de Visitador Medico
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table id="tabla-registro-visitadores-medicos">
+                    <thead>
+                        <tr>
+                            <th>
+                                Código
+                            </th>
+                            <th>
+                                Fecha de Registro
+                            </th>
+                            <th>
+                                Nombre del Visitador
+                            </th>
+                            <th>
+                                Contacto del Visitador
+                            </th>
+                            <th>
+                                Nombre de la Farmaceútica
+                            </th>
+                            <th>
+                                Contacto de la Farmaceútica
+                            </th>
+                            <th>
+                                Observaciones
+                            </th>
+                            <th>
+                                URL del Catalogo
+                            </th>
+                            <th>
+                                Acciones
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.VisitadorMedico)
+                        {
+                            <tr data-id="@item.Id">
+                                <td>
+                                    @item.Id
+                                </td>
+                                <td>
+                                    @item.FechaRegistroFormateada
+                                </td>
+                                <td>
+                                    @item.NombreVisitador
+                                </td>
+                                <td>
+                                    @item.ContactoVisitador
+                                </td>
+                                <td>
+                                    @item.NombreFarmaceutica
+                                </td>
+                                <td>
+                                    @item.ContactoFarmaceutica
+                                </td>
+                                <td>
+                                    @item.Observaciones
+                                </td>
+                                <td>
+                                    <a class="btn btn-info" href="@item.UrlCatalogo" target="_blank">
+                                        Ver Catálogo
+                                    </a>
+                                </td>
+                                <td>
+                                    @* <a class="btn btn-primary" href="@Url.Action("Detalles","VisitadorMedico",
+                                                new {VisitadorMedicoId = @item.Id})">
+                                        Ver detalle
+                                    </a> *@
+                                    <a class="btn btn-warning"
+                                        href="@Url.Action("Modificar","VisitadorMedico", new {VisitadorMedicoId = item.Id})">
+                                        <i class="fa fa-edit"></i>
+                                    </a>
+                                    <button class="btn btn-danger" onclick="eliminarVisitadorMedico(@item.Id)">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/ViewModelKo/VisitadorMedico/VisitadorMedicoListaVM.js"></script>
+    <script>
+        function eliminarVisitadorMedico(id) {
+            if (confirm("¿Estás seguro de que deseas eliminar este visitador médico? Esta acción no se puede deshacer.")) {
+                showLoading(); // Muestra una animación de carga, si está implementada
+                $.ajax({
+                    method: "POST",
+                    url: '/VisitadorMedico/Eliminar', // Endpoint para eliminar
+                    data: { id: id }, // Pasa el ID como parámetro
+                    success: function (response) {
+                        let data = JSON.parse(response);
+                        if (data.Exitoso) {
+                            alert("El registro del Visitador Médico ha sido eliminado con éxito.");
+                            window.location.reload(); // Recarga la página para actualizar la lista
+                        } else {
+                            hideLoading(); // Oculta la animación de carga
+                            alert(data.Mensaje);
+                        }
+                    },
+                    error: function (error) {
+                        hideLoading(); // Oculta la animación de carga
+                        console.error("Error al eliminar el visitador médico:", error);
+                        alert("Ocurrió un error al intentar eliminar el visitador médico. Por favor, inténtalo de nuevo.");
+                    }
+                });
+            }
+        }
+    </script>
+}

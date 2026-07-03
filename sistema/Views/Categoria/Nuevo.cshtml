@@ -1,0 +1,8 @@
+@{
+    ViewData["Title"] = "Nuevo";
+}
+
+ @await Html.PartialAsync("_MensajeExito")
+<form asp-controller="Categoria" asp-action="Nuevo" method="post">
+    @await Html.PartialAsync("_CategoriaViAdmin")
+</form>

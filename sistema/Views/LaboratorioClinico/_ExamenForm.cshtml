@@ -1,0 +1,345 @@
+@model sistema.Models.ExamenLabClinicoViewModel
+
+@Html.HiddenFor(m => m.IdExamen)
+
+<div class="main-card mb-3 card">
+    <div class="card-body">
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <h5><b>Informaci&oacute;n general</b></h5>
+                        <hr />
+                    </div>
+                    <div class="col-md-3">
+                        <label>C&oacute;digo</label>
+                        @Html.TextBoxFor(a => a.CodigoInterno, new
+                            {
+                                @class = "form-control",
+                                @placeholder = "Codigo del examen"
+                            })
+                    </div>
+                    <div class="col-md-3">
+                        <label>Nombre del examen</label>
+                        @Html.TextBoxFor(a => a.NombreExamen, new
+                            {
+                                @class = "form-control",
+                                @placeholder = "Nombre del examen"
+                            })
+                    </div>
+                    <div class="col-md-3">
+                        <label>Tipo de examen</label>
+                        @Html.TextBoxFor(a => a.TipoExamen, new
+                            {
+                                @class = "form-control",
+                                @placeholder = "Tipo de examen"
+                            })
+                    </div>
+                    <div class="col-md-3">
+                        <label>Categoría</label>
+                        <select class="form-control select2bs4"
+                                asp-for="CategoriaLabClinicoId"
+                                asp-items="Model.ListCategorias"></select>
+                    </div>
+                    <div class="col-md-12 table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Indicaciones</td>
+                                    <td>
+                                        @Html.TextAreaFor(a => a.Indicaciones, 5, 500, htmlAttributes: new
+                                            {
+                                                @class = "form-control ",
+                                                @placeholder = "Indicaciones",
+                                                @style = "max-width:100% !important;height:80px"
+                                            })
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Instrucciones</td>
+                                    <td>
+                                        @Html.TextAreaFor(a => a.Instrucciones, 5, 500, htmlAttributes: new
+                                            {
+                                                @class = "form-control ",
+                                                @placeholder = "Instrucciones",
+                                                @style = "max-width:100% !important;height:80px"
+                                            })
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Advertencia</td>
+                                    <td>
+                                        @Html.TextAreaFor(a => a.Advertencias, 5, 500, htmlAttributes: new
+                                            {
+                                                @class = "form-control ",
+                                                @placeholder = "Advertencia",
+                                                @style = "max-width:100% !important;height:80px"
+                                            })
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Declaracion de consentimiento</td>
+                                    <td>
+                                        @Html.TextAreaFor(a => a.DeclaracionConsentimiento, 5, 500, htmlAttributes: new
+                                            {
+                                                @class = "form-control ",
+                                                @placeholder = "Declaracion de Consentimiento",
+                                                @style = "max-width:100% !important;height:80px"
+                                            })
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @*<div class="main-card mb-3 card">
+        <div class="card-body">
+        <div class="form-row">
+        <div class="col-md-12">
+        <h5><b>Insumos utilizados</b></h5>
+        <hr />
+        </div>
+        <div class="col-md-3">
+        <label>Insumo</label>
+        <select class="form-control" data-bind="options:insumos,
+        optionsText:'ProductoNombre',
+        value:insumoSeleccionado"></select>
+        </div>
+        <div class="col-md-3">
+        <label>Unidad de venta</label>
+        <select class="form-control" data-bind="options:unidadesVentaInsumo,
+        optionsText:'nombre',
+        value:unidadVentaSeleccionada"></select>
+        </div>
+        <div class="col-md-3">
+        <label>Cantidad utilizada</label>
+        <input class="form-control" data-bind="value:cantidadUtilizadaInsumo" />
+        </div>
+        <div class="col-md-3">
+        <br />
+        <input type="button" class="btn btn-primary" data-bind="click: agregarInsumo" value="Agregar">
+        </div>
+        </div>
+        <div class="col-md-12">
+        <br />
+        <table class="table-hover table">
+        <thead>
+        <tr>
+        <th><b>Nombre del insumo</b></th>
+        <th><b>Unidad de venta</b></th>
+        <th><b>Cantidad utilizada</b></th>
+        <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        <!--ko foreach: insumosUtilizados-->
+        <tr>
+        <td data-bind="text: ProductoNombre"></td>
+        <td data-bind="text: UnidadMedidaVentaNombre"></td>
+        <td data-bind="text: CantidadUtilizada"></td>
+        <td><button class="btn btn-danger" data-bind="click:$root.quitarInsumoUtilizado">Quitar</button></td>
+        </tr>
+        <!--/ko-->
+        </tbody>
+        </table>
+        </div>
+        </div>
+        </div>*@
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <h5><b>Preguntas</b></h5>
+                        <hr />
+                    </div>
+                    <div class="col-md-11">
+                        <label><b>Agregar pregunta</b></label>
+                        <input class="form-control" data-bind="value: pregunta" />
+                    </div>
+                    <div class="col-md-1">
+                        <label class="text-white">Agregar</label>
+                        <button class="btn btn-primary" data-bind="click: agregarPregunta">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <div class="col-md-12">
+                        <hr />
+                    </div>
+                    <div class="col-md-12">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Pregunta</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!--ko foreach:examenesPreguntas-->
+                                <!--ko if:!Eliminada()-->
+                                <tr>
+                                    <td>
+                                        <input class="form-control" data-bind="value:Pregunta" />
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-danger"
+                                                data-bind="click:$root.quitarPregunta">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <!--/ko-->
+                                <!--/ko-->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <h5><b>Precios</b></h5>
+                        <hr />
+                    </div>
+                    <div class="col-md-12">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Activar</th>
+                                    <th>Nombre</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!--ko foreach:precios-->
+                                <tr>
+                                    <td><input type="checkbox" class="form-control" data-bind="checked:Activar" /></td>
+                                    <td data-bind="text:PrecioNombre"></td>
+                                    <td><input class="form-control" data-bind="value:PrecioValor" /></td>
+                                </tr>
+                                <!--/ko-->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <h5><b>Duraci&oacute;n</b></h5>
+                        <hr />
+                    </div>
+                    <div class="col-md-6">
+                        <label>Duracion Horas</label>
+                        @Html.TextBoxFor(a => a.DuracionHoras, new { @class = "form-control", @type = "number", @step = "1" })
+                    </div>
+                    <div class="col-md-6">
+                        <label>Minutos</label>
+                        <select class="form-control" asp-for="DuracionMinutos">
+                            <option value="0">0</option>
+                            <option value="15">15</option>
+                            <option value="30">30</option>
+                            <option value="45">45</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="main-card mb-3 card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <h5><b>Insumos utilizados</b></h5>
+                        <hr />
+                    </div>
+                    <div class="col-md-12 text-primary" style="display:none" id="texto-cargando-insumos-existentes">
+                        Consultando insumos...
+                    </div>
+                    <div class="col-md-12 text-danger" style="display:none" id="texto-error-consultar-insumos-existentes">
+                        Error de conexion. 
+                        <a href="#" data-bind="click:consultarInsumosExistentes">Reintentar</a>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Insumo</label>
+                        <select class="form-control" data-bind="options:insumos,
+                                    optionsText:'ProductoNombre',
+                                    value:insumoSeleccionado"></select>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Unidad de venta</label>
+                        <select class="form-control" data-bind="options:unidadesVentaInsumo,
+                                    optionsText:'UnidadMedidaVentaNombre',
+                                    value:unidadVentaSeleccionada"></select>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Precio de venta</label>
+                        <select class="form-control" data-bind="options:preciosInsumo,
+                                    optionsText:'Precio',
+                                    value:precioInsumoSeleccionado"></select>
+                    </div>
+                    <div class="col-md-1">
+                        <label>Precio Costo</label>
+                        <input class="form-control" data-bind="value:precioCostoInsumo" readonly />
+                    </div>
+                    <div class="col-md-1">
+                        <label>Cantidad </label>
+                        <input class="form-control" data-bind="value:cantidadUtilizadaInsumo,event:{keyup:actualizarTotales}" />
+                    </div>
+                    <div class="col-md-1">
+                        <label>Total</label>
+                        <input class="form-control" data-bind="value:totalCostoInsumo" readonly />
+                    </div>
+                    <div class="col-md-2">
+                        <br />
+                        <input type="button" class="btn btn-primary" data-bind="click: agregarInsumo" value="Agregar">
+                    </div>
+                </div>
+                <div class="col-md-12">
+                    <br />
+                    <table class="table-hover table">
+                        <thead>
+                            <tr>
+                                <th><b>Nombre del insumo</b></th>
+                                <th><b>Unidad de venta</b></th>
+                                <th><b>Precio Costo</b></th>
+                                <th><b>Cantidad utilizada</b></th>
+                                <th><b>Total</b></th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!--ko foreach: insumosUtilizados-->
+                            <tr>
+                                <td data-bind="text: ProductoNombre"></td>
+                                <td data-bind="text: UnidadMedidaVentaNombre"></td>
+                                <td data-bind="text: PrecioCostoInsumo"></td>
+                                <td data-bind="text: CantidadUtilizada"></td>
+                                <td data-bind="text: TotalInsumo"></td>
+                                <td><button class="btn btn-danger" data-bind="click:$root.quitarInsumoUtilizado">
+                                    <i class="fas fa-trash"></i>
+                                </button></td>
+                            </tr>
+                            <!--/ko-->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+
+
+
+    </div>
+</div>
