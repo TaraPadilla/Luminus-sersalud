@@ -174,21 +174,39 @@ var CitaHospiVM = function () {
 
   //FUNCIONES VIEWMODEL
   self.pacienteSeleccionado.subscribe(function (paciente) {
-    if (paciente.Id == null || paciente.Id == undefined) {
+    if (paciente == null || paciente == undefined || paciente === "") {
+      self.pacienteSeleccionadoNombre("");
+      $("#PacienteNombre").val("");
+      $("#PacienteId").val("");
+      $("#dpiPacienteSeleccionado").val("");
+      $("#SexoId").val("");
+      $("#Telefono").val("");
+      $("#Email").val("");
+      $("#Direccion").val("");
+      $("#no_IGGS").val("");
+      $("#FechaNacimiento").val("");
+      $("#PacienteEdad").val("");
+      $("#EtniaPaciente").val("");
+      $("#OrigenPaciente").val("");
+      $("#ReligionPaciente").val("");
+
+      self.departamentoSeleccionado(null);
+      self.municipioSeleccionado(null);
+    } else if (paciente.Id == null || paciente.Id == undefined) {
       self.pacienteSeleccionadoNombre(paciente);
       $("#PacienteNombre").val(paciente);
-      $("#PacienteId").val(null);
-      $("#dpiPacienteSeleccionado").val(null);
-      $("#SexoId").val(null);
-      $("#Telefono").val(null);
-      $("#Email").val(null);
-      $("#Direccion").val(null);
-      $("#no_IGGS").val(null);
-      $("#FechaNacimiento").val(null);
-      $("#PacienteEdad").val(null);
-      $("#EtniaPaciente").val(null);
-      $("#OrigenPaciente").val(null);
-      $("#ReligionPaciente").val(null);
+      $("#PacienteId").val("");
+      $("#dpiPacienteSeleccionado").val("");
+      $("#SexoId").val("");
+      $("#Telefono").val("");
+      $("#Email").val("");
+      $("#Direccion").val("");
+      $("#no_IGGS").val("");
+      $("#FechaNacimiento").val("");
+      $("#PacienteEdad").val("");
+      $("#EtniaPaciente").val("");
+      $("#OrigenPaciente").val("");
+      $("#ReligionPaciente").val("");
 
       self.departamentoSeleccionado(null);
       self.municipioSeleccionado(null);
@@ -1579,8 +1597,8 @@ var CitaHospiVM = function () {
   };
 };
 
-function citaHospiSelect2Options(placeholder) {
-  return {
+function citaHospiSelect2Options(placeholder, extraOptions) {
+  return $.extend({
     theme: "bootstrap4",
     width: "100%",
     minimumResultsForSearch: 0,
@@ -1590,7 +1608,7 @@ function citaHospiSelect2Options(placeholder) {
       noResults: function () { return "No se encontraron resultados"; },
       searching: function () { return "Buscando..."; }
     }
-  };
+  }, extraOptions || {});
 }
 
 function syncSelectPacienteCitaHospi() {
@@ -1601,6 +1619,7 @@ function syncSelectPacienteCitaHospi() {
   var pacientes = citaHospiVm.pacientes() || [];
   var selected = citaHospiVm.pacienteSeleccionado();
   var selectedId = selected && selected.Id ? String(selected.Id) : "";
+  var selectedText = (typeof selected === "string") ? selected.trim() : "";
 
   if ($sel.hasClass("select2-hidden-accessible")) {
     $sel.select2("destroy");
@@ -1616,9 +1635,23 @@ function syncSelectPacienteCitaHospi() {
 
   if (selectedId) {
     $sel.val(selectedId);
+  } else if (selectedText) {
+    $sel.append($("<option>").val(selectedText).text(selectedText).attr("data-select2-tag", "true"));
+    $sel.val(selectedText);
   }
 
-  $sel.select2(citaHospiSelect2Options("Seleccionar paciente"));
+  $sel.select2(citaHospiSelect2Options("Seleccionar paciente", {
+    tags: true,
+    createTag: function (params) {
+      var term = $.trim(params.term || "");
+      if (term === "") return null;
+      return {
+        id: term,
+        text: term,
+        newPaciente: true
+      };
+    }
+  }));
 
   $sel.off("change.citaHospiPaciente").on("change.citaHospiPaciente", function () {
     var raw = $(this).val();
@@ -1626,10 +1659,15 @@ function syncSelectPacienteCitaHospi() {
       citaHospiVm.pacienteSeleccionado(null);
       return;
     }
-    var id = parseInt(raw, 10);
-    var paciente = citaHospiVm.pacientes().find(function (p) { return p.Id === id; });
+    var paciente = null;
+    if (/^\d+$/.test(raw)) {
+      var id = parseInt(raw, 10);
+      paciente = citaHospiVm.pacientes().find(function (p) { return p.Id === id; });
+    }
     if (paciente) {
       citaHospiVm.pacienteSeleccionado(paciente);
+    } else {
+      citaHospiVm.pacienteSeleccionado(raw);
     }
   });
 }

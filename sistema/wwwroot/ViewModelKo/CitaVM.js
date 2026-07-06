@@ -96,20 +96,38 @@ var CitaVM = function (serverModel) {
 
   //FUNCIONES VIEWMODEL
   self.pacienteSeleccionado.subscribe(function (paciente) {
-    if (paciente.Id == null || paciente.Id == undefined) {
+    if (paciente == null || paciente == undefined || paciente === "") {
+      self.pacienteSeleccionadoNombre("");
+      $("#PacienteNombre").val("");
+      $("#PacienteId").val("");
+      $("#dpiPacienteSeleccionado").val("");
+      $("#SexoId").val("");
+      $("#Telefono").val("");
+      $("#Email").val("");
+      $("#Direccion").val("");
+      $("#no_IGGS").val("");
+      $("#FechaNacimiento").val("");
+      $("#PacienteEdad").val("");
+      $("#EtniaPaciente").val("");
+      $("#OrigenPaciente").val("");
+      self.departamentoSeleccionado(null);
+      self.municipioSeleccionado(null);
+      self.departamentoPaciente(null);
+      self.municipioPaciente(null);
+    } else if (paciente.Id == null || paciente.Id == undefined) {
       self.pacienteSeleccionadoNombre(paciente);
       $("#PacienteNombre").val(paciente);
-      $("#PacienteId").val(null);
-      $("#dpiPacienteSeleccionado").val(null);
-      $("#SexoId").val(null);
-      $("#Telefono").val(null);
-      $("#Email").val(null);
-      $("#Direccion").val(null);
-      $("#no_IGGS").val(null);
-      $("#FechaNacimiento").val(null);
-      $("#PacienteEdad").val(null);
-      $("#EtniaPaciente").val(null);
-      $("#OrigenPaciente").val(null);
+      $("#PacienteId").val("");
+      $("#dpiPacienteSeleccionado").val("");
+      $("#SexoId").val("");
+      $("#Telefono").val("");
+      $("#Email").val("");
+      $("#Direccion").val("");
+      $("#no_IGGS").val("");
+      $("#FechaNacimiento").val("");
+      $("#PacienteEdad").val("");
+      $("#EtniaPaciente").val("");
+      $("#OrigenPaciente").val("");
       self.departamentoSeleccionado(null);
       self.municipioSeleccionado(null);
       self.departamentoPaciente(null);
@@ -1288,8 +1306,8 @@ var CitaVM = function (serverModel) {
   self.cargarEquipoQuirurgico = self.cargarEquipoQuirurgicoDesdeModel;
 };
 
-function citaSelect2Options(placeholder) {
-  return {
+function citaSelect2Options(placeholder, extraOptions) {
+  return $.extend({
     theme: "bootstrap4",
     width: "100%",
     minimumResultsForSearch: 0,
@@ -1299,7 +1317,7 @@ function citaSelect2Options(placeholder) {
       noResults: function () { return "No se encontraron resultados"; },
       searching: function () { return "Buscando..."; }
     }
-  };
+  }, extraOptions || {});
 }
 
 function refreshKoSelect2($el, placeholder) {
@@ -1347,6 +1365,7 @@ function syncSelectPacienteCita() {
   var pacientes = citaVm.pacientes() || [];
   var selected = citaVm.pacienteSeleccionado();
   var selectedId = selected && selected.Id ? String(selected.Id) : "";
+  var selectedText = (typeof selected === "string") ? selected.trim() : "";
 
   if ($sel.hasClass("select2-hidden-accessible")) {
     $sel.select2("destroy");
@@ -1362,9 +1381,23 @@ function syncSelectPacienteCita() {
 
   if (selectedId) {
     $sel.val(selectedId);
+  } else if (selectedText) {
+    $sel.append($("<option>").val(selectedText).text(selectedText).attr("data-select2-tag", "true"));
+    $sel.val(selectedText);
   }
 
-  $sel.select2(citaSelect2Options("Seleccionar paciente"));
+  $sel.select2(citaSelect2Options("Seleccionar paciente", {
+    tags: true,
+    createTag: function (params) {
+      var term = $.trim(params.term || "");
+      if (term === "") return null;
+      return {
+        id: term,
+        text: term,
+        newPaciente: true
+      };
+    }
+  }));
 
   $sel.off("change.citaPaciente").on("change.citaPaciente", function () {
     var raw = $(this).val();
@@ -1372,10 +1405,15 @@ function syncSelectPacienteCita() {
       citaVm.pacienteSeleccionado(null);
       return;
     }
-    var id = parseInt(raw, 10);
-    var paciente = citaVm.pacientes().find(function (p) { return p.Id === id; });
+    var paciente = null;
+    if (/^\d+$/.test(raw)) {
+      var id = parseInt(raw, 10);
+      paciente = citaVm.pacientes().find(function (p) { return p.Id === id; });
+    }
     if (paciente) {
       citaVm.pacienteSeleccionado(paciente);
+    } else {
+      citaVm.pacienteSeleccionado(raw);
     }
   });
 }
