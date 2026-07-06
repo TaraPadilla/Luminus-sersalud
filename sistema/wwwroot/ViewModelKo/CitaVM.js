@@ -174,6 +174,7 @@ var CitaVM = function (serverModel) {
   }
 
   self.consultarServiciosExistentes = function () {
+    console.log("[COEX][Servicios] Consultando servicios existentes...");
     showLoading();
     self.serviciosAgregados([]);
     $.ajax({
@@ -182,9 +183,16 @@ var CitaVM = function (serverModel) {
       data: model,
       success: function (dataResult) {
         hideLoading();
+        console.log("[COEX][Servicios] Respuesta cruda:", dataResult);
         var data = JSON.parse(dataResult);
+        console.log("[COEX][Servicios] Respuesta parseada:", {
+          exitoso: data.Exitoso,
+          cantidad: data.Resultado ? data.Resultado.length : 0,
+          primerItem: data.Resultado && data.Resultado.length ? data.Resultado[0] : null
+        });
         if (data.Exitoso) {
           self.serviciosExistentes(data.Resultado);
+          console.log("[COEX][Servicios] Observable actualizado:", self.serviciosExistentes().length);
           if (
             self.servicioAgregarSeleccionado() != null &&
             self.servicioAgregarSeleccionado() != undefined
@@ -193,14 +201,18 @@ var CitaVM = function (serverModel) {
               self.servicioAgregarSeleccionado().ServicioId
             );
           }
-          setTimeout(refreshAllKoSelect2OnPage, 0);
+          setTimeout(function () {
+            syncSelectServicioCita();
+            console.log("[COEX][Servicios] Opciones en select servicio:", $("select[data-bind*='serviciosExistentes'] option").length);
+          }, 0);
         } else {
+          console.warn("[COEX][Servicios] Backend respondió error:", data.Mensaje);
           alert(data.Mensaje);
         }
       },
       error: function (dataError) {
         hideLoading();
-        console.log(dataError);
+        console.error("[COEX][Servicios] Error AJAX:", dataError);
         alert(dataError);
       },
     });
@@ -495,11 +507,19 @@ var CitaVM = function (serverModel) {
   };
 
   self.servicioAgregarSeleccionado.subscribe(function (value) {
+    if (!value || !value.ServicioId) {
+      self.preciosServicioSeleccionado([]);
+      return;
+    }
     self.consultarPreciosServicio(value.ServicioId);
   });
 
   self.examenSeleccionado.subscribe(function (value) {
-    self.consultarPreciosExamen(value.ServicioId);
+    if (!value || !value.ExamenId) {
+      self.preciosExamen([]);
+      return;
+    }
+    self.consultarPreciosExamen(value.ExamenId);
   });
   self.consultarPreciosExamen = function () {
     showLoading();
@@ -1173,23 +1193,36 @@ var CitaVM = function (serverModel) {
   };
 
   self.consultarExamenesExistentes = function () {
+    console.log("[COEX][Examenes] Consultando examenes existentes...");
     $.ajax({
       method: "POST",
       url: "/Venta/ConsultarExamenesExistentes",
       data: model,
       success: function (dataResult) {
         hideLoading();
+        console.log("[COEX][Examenes] Respuesta cruda:", dataResult);
         let data = JSON.parse(dataResult);
+        console.log("[COEX][Examenes] Respuesta parseada:", {
+          exitoso: data.Exitoso,
+          cantidad: data.Resultado ? data.Resultado.length : 0,
+          primerItem: data.Resultado && data.Resultado.length ? data.Resultado[0] : null
+        });
         if (data.Exitoso) {
           self.examenesExistentes(data.Resultado);
-          setTimeout(refreshAllKoSelect2OnPage, 0);
+          console.log("[COEX][Examenes] Observable actualizado:", self.examenesExistentes().length);
+          setTimeout(function () {
+            syncSelectExamenCita();
+            console.log("[COEX][Examenes] Opciones en select examen:", $("select[data-bind*='examenesExistentes'] option").length);
+          }, 0);
         } else {
           hideLoading();
+          console.warn("[COEX][Examenes] Backend respondió error:", data.Mensaje);
           alert(data.Mensaje);
         }
       },
       error: function (data) {
         hideLoading();
+        console.error("[COEX][Examenes] Error AJAX:", data);
         alert(data.error);
       },
     });
@@ -1352,8 +1385,87 @@ function refreshAllKoSelect2OnPage() {
     if ($el.attr("id") === "selectPaciente" || $el.attr("id") === "municipioSeleccionado") return;
     var bindAttr = $el.attr("data-bind") || "";
     if (bindAttr.indexOf("options:") < 0) return;
+    if (bindAttr.indexOf("serviciosExistentes") >= 0 || bindAttr.indexOf("examenesExistentes") >= 0) return;
     var placeholder = $el.find('option[value=""]').first().text() || "Buscar...";
     refreshKoSelect2($el, placeholder);
+  });
+}
+
+function syncSelectServicioCita() {
+  if (typeof window.citaVm === "undefined" || !window.citaVm) return;
+  var $sel = $("select[data-bind*='serviciosExistentes']").first();
+  if (!$sel.length || !$.fn.select2) return;
+
+  var servicios = citaVm.serviciosExistentes() || [];
+  var selected = citaVm.servicioAgregarSeleccionado();
+  var selectedId = selected && selected.ServicioId ? String(selected.ServicioId) : "";
+
+  if ($sel.hasClass("select2-hidden-accessible")) {
+    $sel.select2("destroy");
+  }
+
+  $sel.empty();
+  $sel.append($("<option>").val("").text("Seleccionar servicio"));
+  servicios.forEach(function (s) {
+    if (!s || s.ServicioId == null) return;
+    var label = s.ServicioNombreMostrar || s.ServicioNombre || String(s.ServicioId);
+    $sel.append($("<option>").val(String(s.ServicioId)).text(label));
+  });
+
+  if (selectedId) {
+    $sel.val(selectedId);
+  }
+
+  $sel.select2(citaSelect2Options("Seleccionar servicio"));
+
+  $sel.off("change.citaServicio").on("change.citaServicio", function () {
+    var raw = $(this).val();
+    if (!raw) {
+      citaVm.servicioAgregarSeleccionado(null);
+      return;
+    }
+    var id = parseInt(raw, 10);
+    var servicio = citaVm.serviciosExistentes().find(function (s) { return s.ServicioId === id; });
+    citaVm.servicioAgregarSeleccionado(servicio || null);
+  });
+}
+
+function syncSelectExamenCita() {
+  if (typeof window.citaVm === "undefined" || !window.citaVm) return;
+  var $sel = $("select[data-bind*='examenesExistentes']").first();
+  if (!$sel.length || !$.fn.select2) return;
+
+  var examenes = citaVm.examenesExistentes() || [];
+  var selected = citaVm.examenSeleccionado();
+  var selectedId = selected && selected.ExamenId ? String(selected.ExamenId) : "";
+
+  if ($sel.hasClass("select2-hidden-accessible")) {
+    $sel.select2("destroy");
+  }
+
+  $sel.empty();
+  $sel.append($("<option>").val("").text("Seleccionar examen"));
+  examenes.forEach(function (e) {
+    if (!e || e.ExamenId == null) return;
+    var label = e.ExamenNombreMostrar || e.ExamenNombre || String(e.ExamenId);
+    $sel.append($("<option>").val(String(e.ExamenId)).text(label));
+  });
+
+  if (selectedId) {
+    $sel.val(selectedId);
+  }
+
+  $sel.select2(citaSelect2Options("Seleccionar examen"));
+
+  $sel.off("change.citaExamen").on("change.citaExamen", function () {
+    var raw = $(this).val();
+    if (!raw) {
+      citaVm.examenSeleccionado(null);
+      return;
+    }
+    var id = parseInt(raw, 10);
+    var examen = citaVm.examenesExistentes().find(function (e) { return e.ExamenId === id; });
+    citaVm.examenSeleccionado(examen || null);
   });
 }
 
