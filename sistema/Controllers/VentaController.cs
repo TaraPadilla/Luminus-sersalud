@@ -1057,15 +1057,8 @@ namespace sistema.Controllers
         {
             try
             {
-                Console.WriteLine("[COEX][Examenes][Backend] ConsultarExamenesExistentes iniciado");
                 //var examenesExistentes = new List<VentaUnificadaExamenExistenteViewModel>();
                 var examenesExistentes = _laboratorioRepository.GetListExamenesLaboratorioSP();
-                Console.WriteLine($"[COEX][Examenes][Backend] Examenes enviados: {examenesExistentes?.Count ?? 0}");
-                if (examenesExistentes != null && examenesExistentes.Any())
-                {
-                    var primero = examenesExistentes.First();
-                    Console.WriteLine($"[COEX][Examenes][Backend] Primer examen: Id={primero.ExamenId}, Codigo={primero.ExamenCodigo}, Nombre={primero.ExamenNombre}");
-                }
                 //if (examenesBd != null)
                 //{
                 //    foreach (var examen in examenesBd)
@@ -1086,7 +1079,6 @@ namespace sistema.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[COEX][Examenes][Backend] Error: {ex}");
                 return JsonSerializer.Serialize(new
                 {
                     Exitoso = false,

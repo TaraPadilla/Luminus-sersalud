@@ -513,10 +513,8 @@ namespace sistema.Controllers
         {
             try
             {
-                Console.WriteLine("[COEX][Servicios][Backend] ConsultarServiciosExistentes iniciado");
                 var serviciosExistentes = new List<CitaServicioExistenteViewModel>();
                 var serviciosBd = _servicioRepository.GetListaServicios();
-                Console.WriteLine($"[COEX][Servicios][Backend] Servicios BD: {serviciosBd?.Count ?? 0}");
                 if (serviciosBd != null)
                 {
                     foreach (var servicio in serviciosBd)
@@ -532,12 +530,6 @@ namespace sistema.Controllers
                         serviciosExistentes.Add(servicioExistente);
                     }
                 }
-                Console.WriteLine($"[COEX][Servicios][Backend] Servicios enviados: {serviciosExistentes.Count}");
-                if (serviciosExistentes.Any())
-                {
-                    var primero = serviciosExistentes.First();
-                    Console.WriteLine($"[COEX][Servicios][Backend] Primer servicio: Id={primero.ServicioId}, Codigo={primero.ServicioCodigo}, Nombre={primero.ServicioNombre}");
-                }
                 return JsonSerializer.Serialize(new
                 {
                     Exitoso = true,
@@ -546,7 +538,6 @@ namespace sistema.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[COEX][Servicios][Backend] Error: {ex}");
                 return JsonSerializer.Serialize(new
                 {
                     Exitoso = false,
