@@ -136,8 +136,17 @@
     </div>
     <div class="app-container app-theme-white body-tabs-shadow fixed-sidebar fixed-header layout-sersalud-compact" id="menu-navegacion-izquierdo">
         <div class="app-header header-shadow header-text-light" style="background:@background; ">
-            <div class="app-header__logo sersalud-header-logo d-none">
-                @* Brand lives in sidebar column (client design) *@
+            <div class="app-header__logo sersalud-header-logo" style="display: flex; align-items: center; justify-content: center;">
+                @await Html.PartialAsync("_LogoSrc")
+                <div class="header__pane ml-auto">
+                    <div>
+                        <button type="button" class="hamburger close-sidebar-btn hamburger--elastic" data-class="closed-sidebar">
+                            <span class="hamburger-box">
+                                <span class="hamburger-inner"></span>
+                            </span>
+                        </button>
+                    </div>
+                </div>
             </div>
             <div class="app-header__mobile-menu">
                 <div>
@@ -180,7 +189,7 @@
                         <li class="nav-item-custom">
                             <div class="user-name-display">
                                 <a class="nav-link text-light p-0" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">
-                                    <span id="configuracion-nombre-establecimiento">@(Config["EstablecimientoPestana"] ?? Config["EstablecimientoNombreEmpresa"] ?? "SerSalud")</span>
+                                    <span id="configuracion-nombre-establecimiento"></span>
                                 </a>
                                 <a class="nav-link text-light p-0" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">
                                     @farmamest.Utilidades.SerSaludUiHelper.ObtenerNombreUsuario(User) (@farmamest.Utilidades.SerSaludUiHelper.ObtenerRolVisible(User))
@@ -367,7 +376,7 @@
 
             <div class="app-sidebar sidebar-shadow sidebar-text-light" style="background: #0d1619">
                 <div class="app-header__logo sersalud-sidebar-brand">
-                    @await Html.PartialAsync("_SidebarBrandSerSalud")
+                    @await Html.PartialAsync("_LogoSrc")
                     <div class="header__pane ml-auto">
                         <div>
                             <button type="button" class="hamburger close-sidebar-btn hamburger--elastic" data-class="closed-sidebar">
