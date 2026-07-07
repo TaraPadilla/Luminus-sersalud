@@ -174,7 +174,6 @@ var CitaVM = function (serverModel) {
   }
 
   self.consultarServiciosExistentes = function () {
-    console.log("[COEX][Servicios] Consultando servicios existentes...");
     showLoading();
     self.serviciosAgregados([]);
     $.ajax({
@@ -183,16 +182,9 @@ var CitaVM = function (serverModel) {
       data: model,
       success: function (dataResult) {
         hideLoading();
-        console.log("[COEX][Servicios] Respuesta cruda:", dataResult);
         var data = JSON.parse(dataResult);
-        console.log("[COEX][Servicios] Respuesta parseada:", {
-          exitoso: data.Exitoso,
-          cantidad: data.Resultado ? data.Resultado.length : 0,
-          primerItem: data.Resultado && data.Resultado.length ? data.Resultado[0] : null
-        });
         if (data.Exitoso) {
           self.serviciosExistentes(data.Resultado);
-          console.log("[COEX][Servicios] Observable actualizado:", self.serviciosExistentes().length);
           if (
             self.servicioAgregarSeleccionado() != null &&
             self.servicioAgregarSeleccionado() != undefined
@@ -203,7 +195,6 @@ var CitaVM = function (serverModel) {
           }
           setTimeout(function () {
             syncSelectServicioCita();
-            console.log("[COEX][Servicios] Opciones en select servicio:", $("select[data-bind*='serviciosExistentes'] option").length);
           }, 0);
         } else {
           console.warn("[COEX][Servicios] Backend respondió error:", data.Mensaje);
@@ -212,7 +203,6 @@ var CitaVM = function (serverModel) {
       },
       error: function (dataError) {
         hideLoading();
-        console.error("[COEX][Servicios] Error AJAX:", dataError);
         alert(dataError);
       },
     });
@@ -547,10 +537,21 @@ var CitaVM = function (serverModel) {
   };
 
   self.agregarServicio = function () {
+    var servicioNombreSeleccionado =
+      self.servicioAgregarSeleccionado().ServicioNombre ||
+      self.servicioAgregarSeleccionado().ServicioNombreMostrar ||
+      $("select[data-bind*='serviciosExistentes']")
+        .first()
+        .find("option:selected")
+        .text();
+    console.log("[COEX][AgregarServicio]", {
+      servicioSeleccionado: self.servicioAgregarSeleccionado(),
+      servicioNombreSeleccionado: servicioNombreSeleccionado,
+    });
     self.serviciosAgregados.push({
       Item: itemServicio,
       ServicioId: self.servicioAgregarSeleccionado().ServicioId,
-      ServicioNombre: self.servicioAgregarSeleccionado().ServicioNombre,
+      ServicioNombre: servicioNombreSeleccionado,
       Cantidad: 1,
       ServicioDuracionHoras:
         self.servicioAgregarSeleccionado().ServicioDuracionHoras,
@@ -598,10 +599,29 @@ var CitaVM = function (serverModel) {
     self.validarDisponibilidadEmpleado();
   };
   self.agregarExamen = function () {
+    var examenSeleccionado = self.examenSeleccionado();
+    var examenId = getExamenIdCita(examenSeleccionado);
+    if (!examenId) {
+      examenId = parseInt(
+        $("select[data-bind*='examenesExistentes']").first().val(),
+        10
+      );
+    }
+    if (!examenId) {
+      alert("Seleccione un examen valido.");
+      return;
+    }
+    var examenNombreSeleccionado =
+      examenSeleccionado.ExamenNombre ||
+      examenSeleccionado.ExamenNombreMostrar ||
+      $("select[data-bind*='examenesExistentes']")
+        .first()
+        .find("option:selected")
+        .text();
     self.examenesAgregados.push({
       Item: itemExamen,
-      ExamenId: self.examenSeleccionado().ExamenId,
-      ExamenNombre: self.examenSeleccionado().ExamenNombre,
+      ExamenId: examenId,
+      ExamenNombre: examenNombreSeleccionado,
       Cantidad: 1,
       PrecioId:
         self.precioSeleccionadoExamen() == undefined
@@ -1437,7 +1457,7 @@ function syncSelectExamenCita() {
 
   var examenes = citaVm.examenesExistentes() || [];
   var selected = citaVm.examenSeleccionado();
-  var selectedId = selected && selected.ExamenId ? String(selected.ExamenId) : "";
+  var selectedId = selected ? String(getExamenIdCita(selected) || "") : "";
 
   if ($sel.hasClass("select2-hidden-accessible")) {
     $sel.select2("destroy");
@@ -1446,9 +1466,10 @@ function syncSelectExamenCita() {
   $sel.empty();
   $sel.append($("<option>").val("").text("Seleccionar examen"));
   examenes.forEach(function (e) {
-    if (!e || e.ExamenId == null) return;
-    var label = e.ExamenNombreMostrar || e.ExamenNombre || String(e.ExamenId);
-    $sel.append($("<option>").val(String(e.ExamenId)).text(label));
+    var examenId = getExamenIdCita(e);
+    if (!examenId) return;
+    var label = e.ExamenNombreMostrar || e.ExamenNombre || String(examenId);
+    $sel.append($("<option>").val(String(examenId)).text(label));
   });
 
   if (selectedId) {
@@ -1464,9 +1485,16 @@ function syncSelectExamenCita() {
       return;
     }
     var id = parseInt(raw, 10);
-    var examen = citaVm.examenesExistentes().find(function (e) { return e.ExamenId === id; });
+    var examen = citaVm.examenesExistentes().find(function (e) { return getExamenIdCita(e) === id; });
     citaVm.examenSeleccionado(examen || null);
   });
+}
+
+function getExamenIdCita(examen) {
+  if (!examen) return null;
+  var id = examen.ExamenId || examen.examenId;
+  id = parseInt(id, 10);
+  return isNaN(id) || id <= 0 ? null : id;
 }
 
 function syncSelectPacienteCita() {
