@@ -18,10 +18,10 @@
     display: flex !important;
     flex-direction: column;
     overflow: hidden;
-    background: #1a1d21 !important;
+    background: #0d1619 !important;
     z-index: 1030;
     box-shadow: none;
-    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    border-right: 0;
 }
 
 /* Theme hides this when fixed-sidebar + fixed-header; must override */
@@ -39,15 +39,15 @@
     height: 60px;
     flex: 0 0 60px;
     padding: 0 3rem 0 1.5rem;
-    background: #2d3339 !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    background: #0d1619 !important;
+    border-bottom: 0;
     z-index: 12;
 }
 
 .layout-sersalud-compact .app-sidebar .sersalud-sidebar-title {
     font-size: 1.05rem;
     font-weight: 600;
-    color: #d1d5db;
+    color: #7e7e7e;
     letter-spacing: 0.02em;
     text-align: left;
     flex: 1 1 auto;
@@ -254,7 +254,7 @@
     overflow-y: auto !important;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    background: #1a1d21;
+    background: #0d1619;
 }
 
 .layout-sersalud-compact.fixed-sidebar.closed-sidebar:not(.sidebar-mobile-open) .app-sidebar .scrollbar-sidebar,
@@ -310,74 +310,68 @@
 
 /* ── Menu typography & spacing (client reference) ── */
 .layout-sersalud-compact .app-sidebar .app-sidebar__inner {
-    padding: 4px 1.5rem 1.5rem;
+    padding: 2px 1.5rem 1.5rem;
 }
 
 .layout-sersalud-compact .app-sidebar .app-sidebar__heading {
-    margin: 0.85rem 0 0.4rem;
-    padding: 0;
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: rgba(255, 255, 255, 0.45) !important;
+    margin: .75rem 0;
+    font-size: .8rem;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.6) !important;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
-.layout-sersalud-compact .app-sidebar .app-sidebar__heading::before {
-    display: none !important;
+    letter-spacing: normal;
 }
 
 .layout-sersalud-compact .app-sidebar .vertical-nav-menu li a {
     line-height: 2.4rem;
     height: 2.4rem;
-    padding: 0 1.75rem 0 45px;
-    margin: 0;
-    border-radius: 0.25rem;
-    color: #9ca3af !important;
-    font-size: 0.92rem;
-    font-weight: 400;
+    padding: 0 1.5rem 0 45px;
+    margin: .1rem 0;
+    border-radius: .25rem;
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-size: 1rem;
+    font-weight: normal;
 }
 
 .layout-sersalud-compact .app-sidebar .vertical-nav-menu ul > li > a {
     height: 2rem;
     line-height: 2rem;
-    padding: 0 1rem 0 0.5rem;
-    color: rgba(255, 255, 255, 0.55) !important;
-    font-size: 0.88rem;
+    padding: 0 1.5rem 0;
+    color: rgba(255, 255, 255, 0.6) !important;
+    font-size: 1rem;
 }
 
 .layout-sersalud-compact .app-sidebar .vertical-nav-menu ul.mm-show {
-    padding: 0.35em 0 0.35em 2rem;
+    padding: .5em 0 0 2rem;
 }
 
 .layout-sersalud-compact .app-sidebar .vertical-nav-menu ul:before {
-    display: none !important;
+    display: block !important;
 }
 
 .layout-sersalud-compact .app-sidebar .vertical-nav-menu li a:hover,
 .layout-sersalud-compact .app-sidebar .vertical-nav-menu li a.mm-active {
-    background: rgba(255, 255, 255, 0.08) !important;
-    color: #e5e7eb !important;
-    font-weight: 400;
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: #fff !important;
 }
 
 .layout-sersalud-compact .app-sidebar .vertical-nav-menu i.metismenu-icon {
     line-height: 34px;
-    opacity: 0.55;
-    font-size: 1.15rem;
-    left: 12px;
+    opacity: .5;
+    font-size: 1.5rem;
+    left: 5px;
 }
 
 .layout-sersalud-compact .app-sidebar .vertical-nav-menu i.metismenu-state-icon {
     line-height: 34px;
-    opacity: 0.45;
-    right: 0.5rem;
-    font-size: 1.1rem;
+    opacity: .5;
+    right: 0;
+    font-size: 1.5rem;
 }
 
 .layout-sersalud-compact .app-sidebar .vertical-nav-menu li a:hover i.metismenu-icon,
 .layout-sersalud-compact .app-sidebar .vertical-nav-menu li a:hover i.metismenu-state-icon {
-    opacity: 0.85;
+    opacity: .8;
 }
 
 .layout-sersalud-compact .app-sidebar .vertical-nav-menu li.mm-active > a i.metismenu-state-icon {
