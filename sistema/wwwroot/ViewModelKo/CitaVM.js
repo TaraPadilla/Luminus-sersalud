@@ -537,9 +537,27 @@ var CitaVM = function (serverModel) {
   };
 
   self.agregarServicio = function () {
+    var servicioSeleccionado = self.servicioAgregarSeleccionado();
+    var servicioId = getServicioIdCita(servicioSeleccionado);
+    if (!servicioId) {
+      servicioId = parseInt(
+        $("select[data-bind*='serviciosExistentes']").first().val(),
+        10
+      );
+    }
+    if (!servicioId) {
+      alert("Seleccione un servicio valido.");
+      return;
+    }
+    var servicioExistente = self.serviciosExistentes().find(function (s) {
+      return getServicioIdCita(s) === servicioId;
+    });
+    if (servicioExistente) {
+      servicioSeleccionado = servicioExistente;
+    }
     var servicioNombreSeleccionado =
-      self.servicioAgregarSeleccionado().ServicioNombre ||
-      self.servicioAgregarSeleccionado().ServicioNombreMostrar ||
+      servicioSeleccionado.ServicioNombre ||
+      servicioSeleccionado.ServicioNombreMostrar ||
       $("select[data-bind*='serviciosExistentes']")
         .first()
         .find("option:selected")
@@ -550,15 +568,15 @@ var CitaVM = function (serverModel) {
     });
     self.serviciosAgregados.push({
       Item: itemServicio,
-      ServicioId: self.servicioAgregarSeleccionado().ServicioId,
+      ServicioId: servicioId,
       ServicioNombre: servicioNombreSeleccionado,
       Cantidad: 1,
       ServicioDuracionHoras:
-        self.servicioAgregarSeleccionado().ServicioDuracionHoras,
+        servicioSeleccionado.ServicioDuracionHoras,
       ServicioDuracionMinutos:
-        self.servicioAgregarSeleccionado().ServicioDuracionMinutos,
+        servicioSeleccionado.ServicioDuracionMinutos,
       ServicioDuracionText:
-        self.servicioAgregarSeleccionado().ServicioDuracionText,
+        servicioSeleccionado.ServicioDuracionText,
       PrecioId:
         self.precioServicioAgregarSeleccionado() == undefined
           ? null
@@ -1015,7 +1033,7 @@ var CitaVM = function (serverModel) {
                   class: "btn btn-success",
                   click: function () {
                     showLoading();
-                    self.getModel();
+                    var model = self.getModel();
                     $.ajax({
                       url: "/Cita/EditarCita",
                       method: "POST",
@@ -1493,6 +1511,13 @@ function syncSelectExamenCita() {
 function getExamenIdCita(examen) {
   if (!examen) return null;
   var id = examen.ExamenId || examen.examenId;
+  id = parseInt(id, 10);
+  return isNaN(id) || id <= 0 ? null : id;
+}
+
+function getServicioIdCita(servicio) {
+  if (!servicio) return null;
+  var id = servicio.ServicioId || servicio.servicioId;
   id = parseInt(id, 10);
   return isNaN(id) || id <= 0 ? null : id;
 }
